@@ -1,38 +1,38 @@
-"""Core analytical functions for the Kelly criterion.
+"""Funzioni analitiche di base per il criterio di Kelly.
 
-This module provides pure analytical formulations for the classical Kelly
-criterion, including the optimal fraction and expected logarithmic growth rate.
-Both functions accept scalar floats.
+Questo modulo fornisce le formulazioni analitiche pure per il criterio di
+Kelly classico, inclusi la frazione ottimale e il tasso di crescita logaritmico
+atteso. Entrambe le funzioni accettano valori scalari float.
 """
 
 import math
 
 
 def kelly_fraction(p: float, b: float) -> float:
-    """Calculate the optimal Kelly betting fraction for a binary bet.
+    """Calcola la frazione di scommessa ottimale di Kelly per una scommessa binaria.
 
-    The optimal fraction is defined as:
+    La frazione ottimale è definita come:
         f* = (b * p - q) / b
-    where q = 1 - p. If the edge is non-positive (f* <= 0), 0.0 is returned,
-    indicating that no capital should be wagered.
+    dove q = 1 - p. Se il vantaggio non è positivo (f* <= 0), viene restituito 0.0,
+    a indicare che non deve essere scommesso alcun capitale.
 
-    Parameters
-    ----------
+    Parametri
+    ---------
     p : float
-        Probability of winning, in [0, 1].
+        Probabilità di vincita, in [0, 1].
     b : float
-        Net decimal odds (b to 1). Must be strictly positive (b > 0).
+        Quota decimale netta (b a 1). Deve essere strettamente positiva (b > 0).
 
-    Returns
-    -------
+    Restituisce
+    -----------
     float
-        Optimal fraction of wealth to wager, constrained to [0, 1].
-        Returns 0.0 if the expected edge is non-positive.
+        Frazione ottimale di capitale da scommettere, vincolata a [0, 1].
+        Restituisce 0.0 se il vantaggio atteso non è positivo.
 
-    Raises
-    ------
+    Solleva
+    -------
     ValueError
-        If p is not in [0, 1] or if b <= 0.
+        Se p non è compreso in [0, 1] oppure se b <= 0.
     """
     if not (0.0 <= p <= 1.0):
         raise ValueError(f"Probability 'p' must be in [0, 1], got {p}")
@@ -49,32 +49,32 @@ def kelly_fraction(p: float, b: float) -> float:
 
 
 def log_growth_rate(f: float, p: float, b: float) -> float:
-    """Calculate the expected logarithmic growth rate for a given betting fraction.
+    """Calcola il tasso di crescita logaritmico atteso per una data frazione di scommessa.
 
-    The expected logarithmic growth rate is defined as:
+    Il tasso di crescita logaritmico atteso è definito come:
         g(f) = p * ln(1 + b * f) + (1 - p) * ln(1 - f)
 
-    This function accepts scalar float inputs.
+    Questa funzione accetta input scalari di tipo float.
 
-    Parameters
-    ----------
+    Parametri
+    ---------
     f : float
-        Fraction of wealth wagered, in [0, 1).
+        Frazione di capitale scommessa, in [0, 1).
     p : float
-        Probability of winning, in [0, 1].
+        Probabilità di vincita, in [0, 1].
     b : float
-        Net decimal odds (b to 1). Must be strictly positive (b > 0).
+        Quota decimale netta (b a 1). Deve essere strettamente positiva (b > 0).
 
-    Returns
-    -------
+    Restituisce
+    -----------
     float
-        Expected logarithmic growth rate g(f).
+        Tasso di crescita logaritmico atteso g(f).
 
-    Raises
-    ------
+    Solleva
+    -------
     ValueError
-        If f is not in [0, 1), if p is not in [0, 1], if b <= 0,
-        or if an argument of a logarithm is non-positive (<= 0).
+        Se f non è compreso in [0, 1), se p non è compreso in [0, 1], se b <= 0,
+        oppure se un argomento di un logaritmo non è positivo (<= 0).
     """
     if not (0.0 <= p <= 1.0):
         raise ValueError(f"Probability 'p' must be in [0, 1], got {p}")

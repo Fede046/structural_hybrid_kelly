@@ -1,4 +1,4 @@
-"""Structural Hybrid Kelly (shk) package."""
+"""Pacchetto Structural Hybrid Kelly (shk)."""
 
 __version__ = "0.1.0"
 

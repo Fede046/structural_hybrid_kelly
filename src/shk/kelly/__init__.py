@@ -1,4 +1,4 @@
-"""Kelly criterion module."""
+"""Modulo per il criterio di Kelly."""
 
 from shk.kelly.core import kelly_fraction, log_growth_rate
 
