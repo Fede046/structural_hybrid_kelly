@@ -80,5 +80,23 @@ def log_wealth_paths(outcomes: np.ndarray, f: float, b: float) -> np.ndarray:
         Questa funzione è deliberatamente lasciata non implementata per essere
         scritta manualmente.
     """
-    raise NotImplementedError
+
+    log_win = np.log(1+(b*f))
+    log_loss = np.log(1-f)
+
+    # np.where(condizione, valore_se_vero, valore_se_falso)
+
+    log_factors = np.where(outcomes,log_win,log_loss)
+
+    cumulative = np.cumsum(log_factors, axis=1)
+
+    row, column = cumulative.shape
+
+    paths = np.zeros((row, column +1))
+
+    paths[:,1:] = cumulative
+
+
+
+    return paths
 
