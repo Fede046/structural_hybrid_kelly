@@ -93,3 +93,52 @@ def log_growth_rate(f: float, p: float, b: float) -> float:
 
     return float(p * math.log(arg_win) + (1.0 - p) * math.log(arg_loss))
 
+
+def expected_final_wealth(
+    f: float, p: float, b: float, T: int, b0: float = 1.0
+) -> float:
+    """Calcola il valore atteso analitico del capitale finale.
+
+    La media aritmetica analitica del bankroll al tempo T è definita come:
+        E[B_T] = b0 * (1 + f * (b * p - (1 - p)))^T
+
+    Questa funzione fornisce la soluzione esatta per scommesse binarie i.i.d.
+
+    Parametri
+    ---------
+    f : float
+        Frazione di capitale scommessa, in [0, 1).
+    p : float
+        Probabilità di vincita, in [0, 1].
+    b : float
+        Quota decimale netta (b a 1). Deve essere strettamente positiva (b > 0).
+    T : int
+        Numero di scommesse/passi temporali (T >= 0).
+    b0 : float, opzionale
+        Capitale iniziale, strettamente positivo (default pari a 1.0).
+
+    Restituisce
+    -----------
+    float
+        Media aritmetica attesa del capitale finale E[B_T].
+
+    Solleva
+    -------
+    ValueError
+        Se p non è compreso in [0, 1], se b <= 0, se f non è compreso in [0, 1),
+        se T < 0 oppure se b0 <= 0.
+    """
+    if not (0.0 <= p <= 1.0):
+        raise ValueError(f"Probability 'p' must be in [0, 1], got {p}")
+    if b <= 0.0:
+        raise ValueError(f"Odds 'b' must be strictly positive (b > 0), got {b}")
+    if not (0.0 <= f < 1.0):
+        raise ValueError(f"Fraction 'f' must be in [0, 1), got {f}")
+    if T < 0:
+        raise ValueError(f"Number of steps 'T' must be non-negative (T >= 0), got {T}")
+    if b0 <= 0.0:
+        raise ValueError(f"Initial wealth 'b0' must be strictly positive (b0 > 0), got {b0}")
+
+    factor = 1.0 + f * (b * p - (1.0 - p))
+    return float(b0 * (factor ** T))
+
