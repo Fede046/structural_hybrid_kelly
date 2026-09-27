@@ -64,9 +64,8 @@ Criteri di accettazione:
 7. Nessuna docstring di simulate.py o di tests/test_simulate.py dichiara più NotImplementedError.
 
 Esito: 2026-09-27 — file toccati: src/shk/kelly/simulate.py, tests/test_simulate.py. Deviazioni: motore chiamato simulate_growth(outcomes, fractions, b); frazioni accettate solo con broadcasting NumPy standard verso (M, T), cioè scalare, (T,), (1, T), (M, 1), (M, T), e una frazione per traiettoria si passa come (M, 1); aggiunto il rifiuto delle frazioni non finite; criterio 4 verificato con git grep e firma nel report invece che con un test. Non fatto: nulla. Da confermare nel Task 2: che le formule dei fattori logaritmici siano rimaste np.log(1 + b*f) e np.log(1 - f), senza log1p. Valori misurati: pytest -v 26 passati e 4 deselezionati; pytest -m slow 4 passati (12.75 s); discrepanza 0.0 sui criteri 2 e 3; log_wealth_paths e simulate_growth danno array identici. Report: .agent/report/T1.md.
-
 ### Task 2 — Generatore di stime perturbate p̂
-Stato: da fare
+Stato: fatto
 
 Obiettivo: esiste un modulo che produce stime p̂ di p, sia con perturbazione relativa deterministica sia con rumore gaussiano indipendente per ogni scommessa, riproducibili dato il generatore casuale.
 
@@ -103,7 +102,7 @@ Criteri di accettazione:
 5. p fuori da [0, 1] o σ_p < 0 sollevano ValueError; un rng che non sia np.random.Generator solleva TypeError.
 6. pytest -v passa.
 
-Esito: —
+Esito: 2026-09-27 — file toccati: src/shk/kelly/estimation.py (creato), tests/test_estimation.py (creato). Deviazioni: nessuna; funzioni relative_perturbation(p, delta) e noisy_estimates(p, sigma_p, T, M, rng); valori fuori da [0, 1] saturati agli estremi con clipping; sigma_p = 0 ammesso e restituisce p costante; delta non finito rifiutato con ValueError. Non fatto: nulla. Valori misurati: criterio 3 con seed 20260927, media 0.52000381 e deviazione standard 0.02831994; criterio 1 con errore 0.0; pytest -v 32 passati (6 nuovi) e 4 deselezionati. Controllo iniziale: il commit 52f0cba sul branch C1 contiene solo i file del Task 1 e .agent/. Report: .agent/report/T2.md.
 
 ### Task 3 — Regola di staking Kelly sulla stima, con troncamento e moltiplicatore λ
 Stato: da fare
