@@ -4,7 +4,7 @@ import numpy as np
 import pytest
 
 from shk.kelly.core import kelly_fraction
-from shk.kelly.staking import kelly_staking
+from shk.kelly.staking import StakingMoments, kelly_staking, staking_moments
 
 
 def test_kelly_staking_positive_edge_and_agreement():
@@ -134,3 +134,50 @@ def test_kelly_staking_validation_errors():
         kelly_staking(np.array([0.60, 1.10]), 1.0)
     with pytest.raises(ValueError):
         kelly_staking(np.array([0.60, np.nan]), 1.0)
+
+
+def test_staking_moments_hand_calculated():
+    """Verifica il calcolo dei momenti empirici di c su valori noti a mano."""
+    # f_star = 0.20
+    # f_hat = [0.0, 0.10, 0.20, 0.30] -> c = [0.0, 0.5, 1.0, 1.5]
+    # E[c] = (0.0 + 0.5 + 1.0 + 1.5) / 4 = 3.0 / 4 = 0.75
+    # E[c^2] = (0.0 + 0.25 + 1.0 + 2.25) / 4 = 3.5 / 4 = 0.875
+    # Var(c) = 0.875 - 0.75^2 = 0.875 - 0.5625 = 0.3125
+    # fraction_zero = 1 / 4 = 0.25
+    f_hat = np.array([0.0, 0.10, 0.20, 0.30])
+    moments = staking_moments(f_hat, 0.20)
+    assert isinstance(moments, StakingMoments)
+    assert abs(moments.mean_c - 0.75) < 1e-12
+    assert abs(moments.mean_c2 - 0.875) < 1e-12
+    assert abs(moments.var_c - 0.3125) < 1e-12
+    assert abs(moments.fraction_zero - 0.25) < 1e-12
+
+    # Verifica forma 2D (pooled su tutte le celle)
+    f_hat_2d = f_hat.reshape(2, 2)
+    moments_2d = staking_moments(f_hat_2d, 0.20)
+    assert abs(moments_2d.mean_c - 0.75) < 1e-12
+    assert abs(moments_2d.mean_c2 - 0.875) < 1e-12
+    assert abs(moments_2d.var_c - 0.3125) < 1e-12
+    assert abs(moments_2d.fraction_zero - 0.25) < 1e-12
+
+
+def test_staking_moments_validation_errors():
+    """Verifica le validazioni di input per staking_moments."""
+    # f_star <= 0 oppure non finito
+    with pytest.raises(ValueError):
+        staking_moments(np.array([0.1]), 0.0)
+    with pytest.raises(ValueError):
+        staking_moments(np.array([0.1]), -0.2)
+    with pytest.raises(ValueError):
+        staking_moments(np.array([0.1]), float("nan"))
+    with pytest.raises(ValueError):
+        staking_moments(np.array([0.1]), float("inf"))
+
+    # f_hat con valori negativi o non finiti
+    with pytest.raises(ValueError):
+        staking_moments(np.array([-0.05, 0.1]), 0.2)
+    with pytest.raises(ValueError):
+        staking_moments(np.array([np.nan, 0.1]), 0.2)
+    with pytest.raises(ValueError):
+        staking_moments(np.array([np.inf, 0.1]), 0.2)
+

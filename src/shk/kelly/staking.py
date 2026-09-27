@@ -1,6 +1,7 @@
 """Modulo per la regola di staking del criterio di Kelly con stima e frazionamento."""
 
 import math
+from typing import NamedTuple
 import numpy as np
 
 
@@ -70,3 +71,71 @@ def kelly_staking(
         return float(f)
 
     return f
+
+
+class StakingMoments(NamedTuple):
+    """Momenti campionari e statistiche descrittive per il moltiplicatore c = f_hat / f_star.
+
+    Campi
+    -----
+    mean_c : float
+        Valore atteso empirico E[c].
+    mean_c2 : float
+        Momento secondo empirico E[c^2].
+    var_c : float
+        Varianza empirica Var(c) = E[c^2] - (E[c])^2.
+    fraction_zero : float
+        Quota pooled di scommesse in cui la frazione f_hat è pari a 0.0.
+    """
+
+    mean_c: float
+    mean_c2: float
+    var_c: float
+    fraction_zero: float
+
+
+def staking_moments(f_hat: np.ndarray, f_star: float) -> StakingMoments:
+    """Calcola i momenti empirici di c = f_hat / f_star e la quota di puntate nulle.
+
+    Tutte le stime sono calcolate in forma pooled sull'insieme di tutte le scommesse
+    presenti nell'array f_hat.
+
+    Parametri
+    ---------
+    f_hat : np.ndarray
+        Array (1D o 2D) contenente le frazioni di scommessa stimate.
+    f_star : float
+        Frazione ottimale teorica di Kelly (deve essere strettamente positiva, f_star > 0).
+
+    Restituisce
+    -----------
+    StakingMoments
+        NamedTuple contenente (mean_c, mean_c2, var_c, fraction_zero).
+
+    Solleva
+    -------
+    ValueError
+        Se f_star <= 0 o non finito, oppure se f_hat contiene valori non finiti o negativi.
+    """
+    if not math.isfinite(f_star) or f_star <= 0.0:
+        raise ValueError(f"Optimal fraction 'f_star' must be strictly positive (f_star > 0), got {f_star}")
+
+    f_arr = np.asarray(f_hat, dtype=float)
+    if not np.all(np.isfinite(f_arr)):
+        raise ValueError("All elements of 'f_hat' must be finite (no NaN or Inf allowed)")
+    if np.any(f_arr < 0.0):
+        raise ValueError(f"Elements of 'f_hat' must be non-negative, got min={np.min(f_arr)}")
+
+    c = f_arr / f_star
+    mean_c = float(np.mean(c))
+    mean_c2 = float(np.mean(c ** 2))
+    var_c = float(np.var(c))
+    fraction_zero = float(np.mean(f_arr == 0.0))
+
+    return StakingMoments(
+        mean_c=mean_c,
+        mean_c2=mean_c2,
+        var_c=var_c,
+        fraction_zero=fraction_zero,
+    )
+

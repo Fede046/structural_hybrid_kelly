@@ -194,9 +194,8 @@ Criteri di accettazione:
 Da misurare e riportare, senza farlo tornare: crescita mediana e drawdown mediano con p̂ = 1.1·p e p̂ = 0.9·p, in entrambi gli scenari, con la loro differenza. Nello scenario base il segno della differenza è il risultato: non modificare parametri, seed o T per ottenerne uno.
 
 Esito: 2026-09-27 — file toccati: src/shk/kelly/scenarios.py (creato), tests/test_us_c1_2_acceptance.py (creato). Deviazioni: la composizione è divisa in due funzioni, draw_scenario_outcomes(scenario, rng) e simulate_scenario(scenario, outcomes, p_hat, lam=1.0), quest'ultima senza generatori e senza modificare outcomes; seed SEED = 20260927 con spawn_generators(seed) su SeedSequence.spawn(2) (primo generatore per gli esiti, secondo per il rumore); criteri 1 e 2 nella suite veloce con scenario ridotto, criterio 3 marcato slow. Non fatto: nulla. Valori misurati (seed 20260927). Scenario sottile: mediana delle vincite 198; con sovrastima crescita mediana −0.00437141 e drawdown mediano 0.98145658; con sottostima crescita 0.0 e drawdown 0.0; differenze −0.00437141 e +0.98145658. Scenario base: mediana delle vincite 600; con sovrastima crescita mediana 0.01231405 e drawdown mediano 0.99969185; con sottostima crescita 0.01282398 e drawdown 0.63474934; differenze −0.00050993 (crescita) e +0.36494251 (drawdown). Test: pytest -v 40 passati; pytest -m slow 5 passati (12.54 s). Report: .agent/report/T4.md.
-
 ### Task 5 — Var(c) empirica e dominanza dell'errore di stima
-Stato: da fare
+Stato: fatto
 
 Obiettivo: una funzione stima dalle frazioni simulate i momenti di c = f̂/f*, e un test di accettazione mostra che nello scenario sottile l'errore di stima domina il segnale (Var(c) > 1) mentre nel base no.
 
@@ -231,7 +230,7 @@ Criteri di accettazione:
 
 Da misurare e riportare, senza farlo tornare: per entrambi gli scenari e per σ_p ∈ {0.015, 0.0283, 0.045}: E[c], E[c²], Var(c) empirica, Var(c) dalla formula lineare (o·σ_p/EV)², quota di scommesse con f̂ = 0. Non modificare σ_p né gli scenari per spostare questi valori.
 
-Esito: —
+Esito: 2026-09-27 — file toccati: src/shk/kelly/staking.py, tests/test_staking.py, tests/test_us_c1_2_acceptance.py. Deviazioni: funzione staking_moments(f_hat, f_star) con risultato StakingMoments(mean_c, mean_c2, var_c, fraction_zero), in staking.py perché estimation.py per vincolo non tratta frazioni; test unitario in tests/test_staking.py; riferimento del criterio 1 calcolato dai parametri dello scenario; generatore del rumore nuovo da spawn_generators(SEED)[1] per ogni combinazione di scenario e σ_p. Non fatto: nulla. Valori misurati (seed 20260927; per ogni riga E[c], E[c²], Var(c) empirica, Var(c) lineare, quota f̂ = 0). Base σ_p 0.015: 0.999988, 1.022479, 0.022503, 0.022500, 0.000000. Base σ_p 0.0283: 0.999991, 1.080053, 0.080072, 0.080089, 0.000203. Base σ_p 0.045: 1.002022, 1.201864, 0.197815, 0.202500, 0.013098. Sottile σ_p 0.015: 1.031868, 1.543004, 0.478253, 0.562500, 0.091241. Sottile σ_p 0.0283: 1.199995, 2.721659, 1.281670, 2.002225, 0.239729. Sottile σ_p 0.045: 1.484927, 4.884419, 2.679412, 5.062500, 0.328173. Test: pytest -v 42 passati; pytest -m slow 7 passati (13.39 s). Report: .agent/report/T5.md.
 
 ### Task 6 — λ* contro quarto-Kelly
 Stato: da fare

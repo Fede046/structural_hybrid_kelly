@@ -6,7 +6,10 @@ import pytest
 from shk.kelly.core import kelly_fraction
 from shk.kelly.simulate import log_wealth_paths
 from shk.kelly.metrics import median_growth_rate
+from shk.kelly.estimation import noisy_estimates
+from shk.kelly.staking import kelly_staking, staking_moments
 from shk.kelly.scenarios import (
+    BASE_SCENARIO,
     Scenario,
     SUBTLE_SCENARIO,
     SEED,
@@ -69,3 +72,47 @@ def test_acceptance_subtle_scenario_overestimation_asymmetry():
     assert g_over < 0.0
     assert g_under == 0.0
     assert g_over < g_under
+
+
+@pytest.mark.slow
+def test_acceptance_base_scenario_var_c():
+    """Verifica che nello scenario base con rumore sigma_p = 0.0283:
+    1. Var(c) disti meno di 0.005 dal riferimento teorico (o*sigma_p/EV)^2;
+    2. Var(c) < 1 (il segnale domina l'errore di stima).
+    """
+    sigma_p = 0.0283
+    _, rng_noise = spawn_generators(SEED)
+    p_hat = noisy_estimates(
+        BASE_SCENARIO.p, sigma_p, BASE_SCENARIO.T, BASE_SCENARIO.M, rng_noise
+    )
+    f_hat = kelly_staking(p_hat, BASE_SCENARIO.b, lam=1.0)
+    f_star = kelly_fraction(BASE_SCENARIO.p, BASE_SCENARIO.b)
+    moments = staking_moments(f_hat, f_star)
+
+    # Criterio 1: vicinanza al riferimento calcolato dinamicamente dai parametri dello scenario
+    o = BASE_SCENARIO.b + 1.0
+    ev = BASE_SCENARIO.p * o - 1.0
+    reference = ((o * sigma_p) / ev) ** 2
+    assert abs(moments.var_c - reference) < 0.005
+
+    # Criterio 2: Var(c) < 1
+    assert moments.var_c < 1.0
+
+
+@pytest.mark.slow
+def test_acceptance_subtle_scenario_var_c_dominance():
+    """Verifica che nello scenario sottile con rumore sigma_p = 0.0283:
+    3. Var(c) > 1 (l'errore di stima domina il segnale).
+    """
+    sigma_p = 0.0283
+    _, rng_noise = spawn_generators(SEED)
+    p_hat = noisy_estimates(
+        SUBTLE_SCENARIO.p, sigma_p, SUBTLE_SCENARIO.T, SUBTLE_SCENARIO.M, rng_noise
+    )
+    f_hat = kelly_staking(p_hat, SUBTLE_SCENARIO.b, lam=1.0)
+    f_star = kelly_fraction(SUBTLE_SCENARIO.p, SUBTLE_SCENARIO.b)
+    moments = staking_moments(f_hat, f_star)
+
+    # Criterio 3: Var(c) > 1
+    assert moments.var_c > 1.0
+
