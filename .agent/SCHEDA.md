@@ -4,7 +4,7 @@ Origine: mappa del 2026-09-27, report fino a R10@2026-09-27
 ## Stato repo
 Radice: c:\Users\malse\Documents\GitHub\structural_hybrid_kelly [V, R1@2026-09-27]
 Branch di lavoro C1, allineato a origin/C1 al momento di R13, con un commit per task: 52f0cba (T1), a328642 (T2), ca0aff7 (T3), 946606b (T4), a3d831e (T5), sopra a7420cb; da a7420cb sono cambiati solo i file di codice e test di T1-T5 e .agent/ [V, R13@2026-09-27]; posizione attuale di main non riverificata [D]
-Working tree modificato dal Task 6 (src/shk/kelly/staking.py, tests/test_staking.py, tests/test_us_c1_2_acceptance.py); era pulito prima del Task 6 [V, R13@2026-09-27] [D per lo stato attuale]
+Il Task 6 è nel commit 9f6206c; working tree pulito prima del Task 7 [V, R15@2026-09-27]; dopo il Task 7 risultano non tracciati scripts/us_c1_2_estimation_error.py, results/us_c1_2_estimation_error.csv, thesis/figures/us_c1_2_estimation_error.png [V, R16@2026-09-27] [D per lo stato attuale]
 .agent/ è versionata: MAPPA.md, SCHEDA.md, BACKLOG.md e report/T1.md sono nel commit 52f0cba [V, R6@2026-09-27]
 main allineato a origin/main rispetto all'ultimo fetch locale al momento di R1; nessun git fetch eseguito [V, R1@2026-09-27]
 Remote origin: https://github.com/Fede046/structural_hybrid_kelly.git [V, R1@2026-09-27]
@@ -24,6 +24,7 @@ Suite veloce: 44 test; suite slow: 9 test (4 di accettazione C1.1, 5 di C1.2); t
 Solo test slow: pytest -m slow [V, R4@2026-09-27]; tutti i test: pytest -o addopts="" [D]
 CI: .github/workflows/test.yml, trigger su push verso main e su pull_request; non esegue mai i test slow [V, R2@2026-09-27]
 Esperimento C1.1: python scripts/us_c1_1_growth_vs_lambda.py dalla radice, con shk installato perché lo script importa da shk.kelly.* [D]
+Esperimento C1.2: python scripts/us_c1_2_estimation_error.py dalla radice, circa 70 s; due esecuzioni danno CSV identici byte per byte [V, R16@2026-09-27]
 Nessuna variabile d'ambiente richiesta [D]
 Nessun file .env tracciato né presente fra gli ignorati [V, R1@2026-09-27]
 config/ e data/raw/ contengono solo .gitkeep [V, R2@2026-09-27]
@@ -54,6 +55,7 @@ Accettazione C1.1: tests/test_us_c1_1_acceptance.py, @pytest.mark.slow, stessi p
 Accettazione C1.1, asserzioni: picco della mediana a λ=1.0; drawdown mediano non decrescente con tolleranza -0.01; |g mediano| < 0.002 a λ=1.946; crescita negativa a λ=2.5 [V, R1@2026-09-27]
 Accettazione C1.2: tests/test_us_c1_2_acceptance.py; nella suite veloce, esiti indipendenti da p̂ e accordo con log_wealth_paths per p̂ = p; nella suite slow, asimmetria ±10% nello scenario sottile, Var(c) con σ_p = 0.0283 (base entro 0.005 dalla formula lineare e < 1; sottile > 1), e λ* = 1/(1 + Var(c)) contro λ = 0.25 con σ_p = 0.0283 (un test per scenario, confronto appaiato) [V, R14@2026-09-27]
 Momenti di c: rumore da spawn_generators(SEED)[1], nuovo per ogni combinazione di scenario e σ_p; p̂ da noisy_estimates, f̂ da kelly_staking con lam = 1, f* da kelly_fraction, momenti da staking_moments [V, R12@2026-09-27]
+Esperimento C1.2: scripts/us_c1_2_estimation_error.py con run_experiment() senza argomenti; parametri da scenarios.py; generatori da spawn_generators(SEED) per ogni combinazione; scrive results/us_c1_2_estimation_error.csv (46 righe; colonne scenario, sigma_p, rule, lambda, mean_c, mean_c2, var_c_empirical, var_c_linear, fraction_f_hat_zero, median_growth_rate, median_drawdown, fraction_below_start; regole overestimation_10pct, underestimation_10pct, lambda_star, ratio_moments, lambda_linear, quarter_kelly, half_kelly, full_kelly, plugin; float nativi, stringa vuota per i non applicabili) e thesis/figures/us_c1_2_estimation_error.png (pannello A: crescita mediana contro errore relativo su p̂ da −20% a +20%; pannello B: crescita mediana contro λ da 0 a 1.5 con σ_p = 0.0283, λ* e 0.25 marcati; curve divise per log_growth_rate(f*, p, b)) [V, R16@2026-09-27]
 Uso come libreria: from shk.kelly import kelly_fraction, log_growth_rate; expected_final_wealth solo da shk.kelly.core [V, R1@2026-09-27]
 Valori analitici di riferimento (p=0.6, b=1): f*=0.2; g(0.2)=0.020136; g(0.4)=-0.002447; g(0.5)≈-0.0340; zero di g a f≈0.3894, cioè λ≈1.947 [D, ricalcolo del supervisore]
 Le costanti di tests/test_kelly_core.py:32 e :39 e il λ=1.946 dell'accettazione sono valori analitici, non empirici [D, ricalcolo del supervisore]
@@ -69,7 +71,7 @@ Nessun try:, print( o logging in src/ e scripts/ [D, simulate.py modificato dal 
 L'RNG entra come argomento np.random.Generator, mai creato dentro le funzioni di libreria (draw_outcomes, noisy_estimates) [V, R5@2026-09-27 e R6@2026-09-27]
 Vettorizzazione NumPy lungo l'asse delle M traiettorie; del paths nei loop Monte Carlo [V, R1@2026-09-27]
 Script di esperimento: matplotlib.use("Agg") prima di importare pyplot; import diretti da shk.kelly.<modulo>; parametri locali in run_experiment(); nessun argomento da riga di comando [V, R2@2026-09-27]
-Nome degli script: scripts/us_<storia>_<descrizione>.py, con lo stesso nome base per CSV e PNG [D, dedotto da un solo esempio]
+Nome degli script: scripts/us_<storia>_<descrizione>.py, con lo stesso nome base per CSV e PNG; seguito da C1.1 e C1.2 [V, R16@2026-09-27]
 Output: CSV in results/, figure in thesis/figures/, entrambi versionati in git [V, R2@2026-09-27]
 Test in tests/test_*.py; i Monte Carlo su larga scala si marcano @pytest.mark.slow [V, R2@2026-09-27]
 Documento della storia alla radice: C1.1.md, unico .md tracciato [V, R2@2026-09-27]
@@ -79,7 +81,7 @@ noisy_estimates può restituire p̂ = 1 per saturazione; kelly_staking dà allor
 expected_final_wealth non ha test: 0 occorrenze in tests/ [V, R2@2026-09-27]; lo script C1.1 la importa alla riga 16 [V, R2@2026-09-27]
 Parametri dell'esperimento C1.1 duplicati fra run_experiment() (righe 30-41) e test di accettazione: cambiarli da una parte sola disallinea esperimento e verifica [V, R2@2026-09-27]
 I test di accettazione non girano in CI: dopo ogni modifica a simulate.py o metrics.py vanno lanciati a mano con pytest -m slow [V, R2@2026-09-27 per la CI; V, R4@2026-09-27 per il comando]
-Rieseguire lo script C1.1 sovrascrive CSV e PNG versionati: ogni task che rigenera un esperimento deve dire se committarli [V, R2@2026-09-27]
+Rieseguire uno script di esperimento (C1.1 o C1.2) sovrascrive i suoi CSV e PNG versionati: ogni task che rigenera un esperimento deve dire se committarli [V, R2@2026-09-27 e R16@2026-09-27]
 Il test del drawdown non decrescente (tolleranza -0.01) è l'unica asserzione di accettazione di C1.1 di cui non è stata stimata la robustezza al seed e alla versione di NumPy [D]
 Dipendenze senza versione in pyproject e CI che installa con pip senza lockfile [V, R2@2026-09-27]; NumPy non garantisce la stabilità del flusso di Generator fra versioni [D]
 tests/test_metrics.py:test_metrics_error_conditions non verifica il ValueError di median_final_wealth e mean_final_wealth [D]
@@ -88,4 +90,4 @@ tests/test_metrics.py:test_metrics_error_conditions non verifica il ValueError d
 Gestore canonico delle dipendenze (pip + pyproject oppure uv + uv.lock): non deciso dal programmatore. Blocca: se un task che aggiunge o fissa una dipendenza debba rigenerare uv.lock e se la CI vada migrata a uv. Si procede con pyproject.toml come fonte di verità, perché è l'unica che la CI verifica; un task che tocca le dipendenze modifica pyproject.toml e segnala uv.lock come da aggiornare.
 
 ## Ultimo aggiornamento
-R14@2026-09-27 — task di scrittura chiusi dopo la mappa del 2026-09-27: T1, T2, T3, T4, T5, T6
+R16@2026-09-27 — task di scrittura chiusi dopo la mappa del 2026-09-27: T1, T2, T3, T4, T5, T6, T7
