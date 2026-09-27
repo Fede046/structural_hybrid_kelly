@@ -18,6 +18,7 @@ Aperta il 2026-09-27.
 - Fatti usati senza farli riverificare: draw_outcomes(p, T, M, rng) da riga 6 di src/shk/kelly/simulate.py, con validazione e rng di tipo np.random.Generator [V, R2@2026-09-27]; log_wealth_paths(outcomes, f, b) da riga 49 dello stesso file, senza validazione, output (M, T+1) float64 con colonna 0 nulla [V, R2@2026-09-27]; comando dei test veloci pytest -v con addopts "-m 'not slow'" [V, R2@2026-09-27]; convenzioni di stile e di script [V, R1@2026-09-27 e R2@2026-09-27].
 
 **Domande aperte:**
+
 ### Task 1 — Motore di crescita che riceve le frazioni dall'esterno
 Stato: fatto
 
@@ -63,7 +64,8 @@ Criteri di accettazione:
 6. pytest -v e pytest -m slow passano, senza modificare nessuna asserzione dei test di C1.1.
 7. Nessuna docstring di simulate.py o di tests/test_simulate.py dichiara più NotImplementedError.
 
-Esito: 2026-09-27 — file toccati: src/shk/kelly/simulate.py, tests/test_simulate.py. Deviazioni: motore chiamato simulate_growth(outcomes, fractions, b); frazioni accettate solo con broadcasting NumPy standard verso (M, T), cioè scalare, (T,), (1, T), (M, 1), (M, T), e una frazione per traiettoria si passa come (M, 1); aggiunto il rifiuto delle frazioni non finite; criterio 4 verificato con git grep e firma nel report invece che con un test. Non fatto: nulla. Da confermare nel Task 2: che le formule dei fattori logaritmici siano rimaste np.log(1 + b*f) e np.log(1 - f), senza log1p. Valori misurati: pytest -v 26 passati e 4 deselezionati; pytest -m slow 4 passati (12.75 s); discrepanza 0.0 sui criteri 2 e 3; log_wealth_paths e simulate_growth danno array identici. Report: .agent/report/T1.md.
+Esito: 2026-09-27 — file toccati: src/shk/kelly/simulate.py, tests/test_simulate.py. Deviazioni: motore chiamato simulate_growth(outcomes, fractions, b); frazioni accettate solo con broadcasting NumPy standard verso (M, T), cioè scalare, (T,), (1, T), (M, 1), (M, T), e una frazione per traiettoria si passa come (M, 1); aggiunto il rifiuto delle frazioni non finite; criterio 4 verificato con git grep e firma nel report invece che con un test. Non fatto: nulla. Confermato nel Task 2 (R5): le formule dei fattori logaritmici sono np.log(1 + b*f) e np.log(1 - f), senza log1p. Valori misurati: pytest -v 26 passati e 4 deselezionati; pytest -m slow 4 passati (12.75 s); discrepanza 0.0 sui criteri 2 e 3; log_wealth_paths e simulate_growth danno array identici. Report: .agent/report/T1.md.
+
 ### Task 2 — Generatore di stime perturbate p̂
 Stato: fatto
 
@@ -149,7 +151,7 @@ Criteri di accettazione:
 Esito: 2026-09-27 — file toccati: src/shk/kelly/staking.py (creato), tests/test_staking.py (creato). Deviazioni: funzione kelly_staking(p_hat, b, lam=1.0); formula calcolata in proprio perché kelly_fraction accetta solo scalari (core.py righe 37, 45, 48), con lo stesso ordine di operazioni di core.py; uno scalare o un array 0-dimensionale in ingresso dà un float Python; la frazione non è limitata sotto 1 e una frazione ≥ 1 viene rifiutata a valle da simulate_growth (documentato nella docstring); rifiutati anche b e λ non finiti. Non fatto: nulla. Valori misurati: errore 0.0 contro kelly_fraction su p̂ = 0.60 e sulla griglia con edge positivo; 0.0 esatto con p̂ = 0.468; pytest -v 38 passati (6 nuovi) e 4 deselezionati; git diff --stat senza modifiche a simulate.py. Report: .agent/report/T3.md.
 
 ### Task 4 — Simulazione con p̂ ≠ p e asimmetria sovrastima/sottostima
-Stato: da fare
+Stato: fatto
 
 Obiettivo: un test di accettazione mostra che il simulatore punta secondo p̂ mentre gli esiti seguono p, e che nello scenario sottile sovrastimare p del 10% relativo danneggia la crescita mediana più che sottostimarlo della stessa quantità.
 
@@ -189,4 +191,140 @@ Criteri di accettazione:
 3. Scenario sottile: con p̂ = 1.1·p la crescita mediana è negativa; con p̂ = 0.9·p è esattamente 0; quindi la sovrastima danneggia più della sottostima.
 4. pytest -v e pytest -m slow passano.
 
-Da misurare e riportare, senza farlo tornare: crescita mediana e drawdown mediano con p̂ = 1.1·p e p̂ = 0.9·p, in entrambi gli scenari, con la loro differenza. Nello scenario base il segno della
+Da misurare e riportare, senza farlo tornare: crescita mediana e drawdown mediano con p̂ = 1.1·p e p̂ = 0.9·p, in entrambi gli scenari, con la loro differenza. Nello scenario base il segno della differenza è il risultato: non modificare parametri, seed o T per ottenerne uno.
+
+Esito: 2026-09-27 — file toccati: src/shk/kelly/scenarios.py (creato), tests/test_us_c1_2_acceptance.py (creato). Deviazioni: la composizione è divisa in due funzioni, draw_scenario_outcomes(scenario, rng) e simulate_scenario(scenario, outcomes, p_hat, lam=1.0), quest'ultima senza generatori e senza modificare outcomes; seed SEED = 20260927 con spawn_generators(seed) su SeedSequence.spawn(2) (primo generatore per gli esiti, secondo per il rumore); criteri 1 e 2 nella suite veloce con scenario ridotto, criterio 3 marcato slow. Non fatto: nulla. Valori misurati (seed 20260927). Scenario sottile: mediana delle vincite 198; con sovrastima crescita mediana −0.00437141 e drawdown mediano 0.98145658; con sottostima crescita 0.0 e drawdown 0.0; differenze −0.00437141 e +0.98145658. Scenario base: mediana delle vincite 600; con sovrastima crescita mediana 0.01231405 e drawdown mediano 0.99969185; con sottostima crescita 0.01282398 e drawdown 0.63474934; differenze −0.00050993 (crescita) e +0.36494251 (drawdown). Test: pytest -v 40 passati; pytest -m slow 5 passati (12.54 s). Report: .agent/report/T4.md.
+
+### Task 5 — Var(c) empirica e dominanza dell'errore di stima
+Stato: da fare
+
+Obiettivo: una funzione stima dalle frazioni simulate i momenti di c = f̂/f*, e un test di accettazione mostra che nello scenario sottile l'errore di stima domina il segnale (Var(c) > 1) mentre nel base no.
+
+Dipende da: Task 2, Task 3, Task 4 (modulo degli scenari).
+
+Contesto:
+- f̂ è la frazione della regola di Task 3 con λ = 1 applicata a p̂ con rumore per scommessa (Task 2); f* è la frazione ottima calcolata con il p vero.
+- La funzione restituisce E[c], E[c²], Var(c) e la quota di scommesse con f̂ = 0, stimati in forma pooled su tutte le M·T scommesse. Sta in src/shk/kelly/estimation.py oppure in staking.py, a scelta motivata nel piano.
+- Formula lineare di propagazione, senza troncamento: Var(c) = (o·σ_p/EV)², con o = b + 1 ed EV = p·o − 1 (note di tesi 3.2).
+- Nello scenario base con σ_p = 0.0283 la formula dà 0.0801, e il troncamento vi è trascurabile (probabilità di f̂ = 0 dell'ordine di 2e-4) [D, ricalcolo del supervisore].
+
+Da verificare prima di iniziare: nessuna.
+
+Passi richiesti:
+1. Proporre il piano: posizione della funzione e interfaccia. Attendere conferma.
+2. Implementare la funzione dei momenti di c.
+3. Aggiungere a tests/test_us_c1_2_acceptance.py i test dei criteri 1-3, usando gli scenari del modulo creato in Task 4.
+4. Misurare i valori informativi ed eseguire pytest -v e pytest -m slow.
+
+Vincoli:
+- Non modificare il motore in simulate.py, né core.py, metrics.py o i file di C1.1.
+- Nessun commit e nessuna operazione git che modifichi lo stato del repository.
+- Commenti e docstring in italiano; identificatori, messaggi delle eccezioni e nomi dei test in inglese (è la convenzione del progetto).
+- Prima di scrivere codice, proporre il piano e fare le domande necessarie.
+- A fine task scrivere .agent/report/T5.md, unico file di .agent/ che si può toccare, con sezioni distinte: percorsi dei file modificati, creati o rimossi; esito di ciascun criterio; valori misurati; deviazioni dal piano; cose non fatte; comandi eseguiti.
+
+Criteri di accettazione:
+1. Scenario base, σ_p = 0.0283: Var(c) empirica entro 0.005 da (o·σ_p/EV)² = 0.0801 (verifica della catena Var(p̂) → Var(f̂) → Var(c)).
+2. Scenario base, σ_p = 0.0283: Var(c) < 1.
+3. Scenario sottile, σ_p = 0.0283: Var(c) > 1.
+4. pytest -v e pytest -m slow passano.
+
+Da misurare e riportare, senza farlo tornare: per entrambi gli scenari e per σ_p ∈ {0.015, 0.0283, 0.045}: E[c], E[c²], Var(c) empirica, Var(c) dalla formula lineare (o·σ_p/EV)², quota di scommesse con f̂ = 0. Non modificare σ_p né gli scenari per spostare questi valori.
+
+Esito: —
+
+### Task 6 — λ* contro quarto-Kelly
+Stato: da fare
+
+Obiettivo: un test di accettazione mostra che, con rumore di stima per scommessa, λ* = 1/(1 + Var(c)), con Var(c) empirica, dà una crescita mediana maggiore del quarto-Kelly fisso; le varianti di λ previste dalla tesi sono misurate e riportate.
+
+Dipende da: Task 1, Task 2, Task 3, Task 4, Task 5.
+
+Contesto:
+- Frazione giocata: f = λ·f̂, con f̂ dalla regola di Task 3 applicata a p̂ con rumore per scommessa (Task 2); Var(c), E[c] ed E[c²] dalla funzione di Task 5.
+- Il confronto è appaiato: stessi esiti e stesse stime p̂ per tutti i valori di λ.
+- Regola plug-in per scommessa, dalle note di tesi 3.2 §7.5: λ_t = 1/(1 + (o·σ_p/EV̂_t)²), con EV̂_t = p̂_t·o − 1, e f = 0 quando EV̂_t ≤ 0. È una nuova regola di staking da aggiungere in src/shk/kelly/staking.py senza toccare il motore.
+- Scenari nel modulo creato in Task 4.
+
+Da verificare prima di iniziare:
+- Lo stato dei file toccati dai Task 1-5, leggendo i report in .agent/report/T1.md … T5.md e il campo Esito di questo backlog [D, finché la scheda non viene rimappata].
+
+Passi richiesti:
+1. Leggere i report T1-T5 e confrontarli con il codice attuale.
+2. Proporre il piano: regola plug-in e struttura dei test. Attendere conferma.
+3. Implementare la regola plug-in in src/shk/kelly/staking.py.
+4. Aggiungere a tests/test_us_c1_2_acceptance.py il test del criterio 1, marcato slow.
+5. Misurare i valori informativi ed eseguire pytest -v e pytest -m slow; controllare con git diff --stat che simulate.py non sia cambiato in questo task.
+
+Vincoli:
+- Non modificare il motore in simulate.py, né core.py, metrics.py o i file di C1.1.
+- Nessun commit e nessuna operazione git che modifichi lo stato del repository.
+- Commenti e docstring in italiano; identificatori, messaggi delle eccezioni e nomi dei test in inglese (è la convenzione del progetto).
+- Prima di scrivere codice, proporre il piano e fare le domande necessarie.
+- A fine task scrivere .agent/report/T6.md, unico file di .agent/ che si può toccare, con sezioni distinte: percorsi dei file modificati, creati o rimossi; esito di ciascun criterio; valori misurati; deviazioni dal piano; cose non fatte; comandi eseguiti.
+
+Criteri di accettazione:
+1. In entrambi gli scenari, con σ_p = 0.0283, la crescita mediana con λ* = 1/(1 + Var(c) empirica) è maggiore della crescita mediana con λ = 0.25.
+2. git diff --stat non mostra modifiche a src/shk/kelly/simulate.py introdotte in questo task.
+3. pytest -v e pytest -m slow passano.
+
+Da misurare e riportare, senza farlo tornare: per entrambi gli scenari e per σ_p ∈ {0.015, 0.0283, 0.045}, crescita mediana, drawdown mediano e quota di traiettorie sotto il capitale iniziale con queste regole: λ* = 1/(1 + Var(c) empirica); λ = E[c]/E[c²]; λ = 1/(1 + (o·σ_p/EV)²) con la formula lineare; λ = 0.25; λ = 0.5; λ = 1; regola plug-in per scommessa. Per ogni combinazione, indicare se λ* batte λ = 0.25. Non modificare σ_p, scenari o seed per far vincere o perdere una regola.
+
+Esito: —
+
+### Task 7 — Script dell'esperimento C1.2, CSV e figura per la tesi
+Stato: da fare
+
+Obiettivo: uno script riproducibile rigenera tutte le misure dei Task 4-6 in un CSV e in una figura a due pannelli destinata alla tesi.
+
+Dipende da: Task 4, Task 5, Task 6.
+
+Contesto:
+- Modello da seguire: scripts/us_c1_1_growth_vs_lambda.py. Usa matplotlib.use("Agg") prima di importare pyplot, importa direttamente da shk.kelly.<modulo>, tiene i parametri locali in run_experiment() e non legge argomenti da riga di comando; il blocco __main__ chiama run_experiment() [V, R2@2026-09-27].
+- Gli output vanno in results/ e thesis/figures/ e sono versionati [V, R2@2026-09-27].
+- Nome dei file: scripts/us_c1_2_estimation_error.py, results/us_c1_2_estimation_error.csv, thesis/figures/us_c1_2_estimation_error.png, secondo lo schema us_<storia>_<descrizione> [D, dedotto da un solo esempio].
+- In questo script i parametri degli scenari vengono dal modulo creato in Task 4, non sono ripetuti.
+- Il flusso di np.random.Generator non è garantito stabile fra versioni di NumPy, e le dipendenze non hanno versione fissata [D].
+
+Da verificare prima di iniziare:
+- Lo stato dei file toccati dai Task 1-6, leggendo i report in .agent/report/ [D, finché la scheda non viene rimappata].
+
+Passi richiesti:
+1. Proporre il piano: colonne del CSV e contenuto dei due pannelli. Attendere conferma.
+2. Scrivere lo script con run_experiment(); il CSV ha una riga per combinazione di scenario, σ_p e regola, con le quantità misurate nei Task 4-6.
+3. Figura a due pannelli. Pannello A: crescita mediana in funzione dell'errore relativo su p̂, da −20% a +20%, per entrambi gli scenari. Pannello B: crescita mediana in funzione di λ con σ_p = 0.0283, per entrambi gli scenari, con λ* e λ = 0.25 marcati.
+4. Eseguire lo script due volte e confrontare i due CSV prodotti.
+5. Eseguire pytest -v e pytest -m slow.
+
+Vincoli:
+- Non modificare codice in src/ né i file di C1.1; non rieseguire lo script di C1.1.
+- Nessun print, logging o try nello script.
+- Nessun commit e nessuna operazione git che modifichi lo stato del repository: CSV e PNG li committa il programmatore.
+- Commenti e docstring in italiano; identificatori, messaggi delle eccezioni e nomi dei test in inglese (è la convenzione del progetto).
+- Prima di scrivere codice, proporre il piano e fare le domande necessarie.
+- A fine task scrivere .agent/report/T7.md, unico file di .agent/ che si può toccare, con sezioni distinte: percorsi dei file modificati, creati o rimossi; esito di ciascun criterio; valori misurati; deviazioni dal piano; cose non fatte; comandi eseguiti.
+
+Criteri di accettazione:
+1. Lo script produce results/us_c1_2_estimation_error.csv e thesis/figures/us_c1_2_estimation_error.png.
+2. Due esecuzioni consecutive producono CSV identici byte per byte (seed impostabile e risultati riproducibili).
+3. I valori del CSV coincidono con quelli riportati nei report T4, T5 e T6, entro 1e-12.
+4. Lo script rispetta le convenzioni del modello C1.1 elencate nel Contesto.
+5. I file di C1.1 in results/ e thesis/figures/ non risultano modificati (git status).
+6. pytest -v e pytest -m slow passano.
+
+Esito: —
+
+### Fuori scope di S1
+- Barriera assorbente o floor nel motore (growth_engine con floor, note di tesi 2.5 §11.1): appartiene ai checkpoint successivi.
+- Controllo di sanità sulle frequenze di drawdown ≈ α^(2/λ−1): le note 2.5 §10.4 lo collocano al checkpoint C1, ma nessuna story lo chiede. Può diventare una US-C1.4, se il programmatore la scrive.
+- Errore di stima persistente per traiettoria o bias comune (note 2.5 §3.3).
+- Stima di σ_p dai residui (Modulo 2) e λ* dinamico nel tempo.
+- Kelly bayesiano o robusto (Baseline F).
+- Correzioni aperte da C1.1: parametri duplicati fra script e test di C1.1, test di expected_final_wealth, re-export in __init__, allineamento della CI a uv.
+- Scommesse simultanee e Kelly congiunto.
+
+### Resta al programmatore per S1
+- Definition of Done di US-C1.2: un caso numerico in cui λ* batte il quarto-Kelly fisso e uno in cui non lo fa. La tabella informativa del Task 6 fornisce i candidati, ma la scelta e la spiegazione sono sue.
+- Confermare o correggere le scelte di scenario e di rumore elencate in Assunzioni fatte prima di avviare il Task 4.
+- Commit del codice, del CSV e della figura al termine dei task.
+- Rimappatura del progetto fra il Task 5 e il Task 6.
