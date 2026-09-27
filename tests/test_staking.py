@@ -4,7 +4,12 @@ import numpy as np
 import pytest
 
 from shk.kelly.core import kelly_fraction
-from shk.kelly.staking import StakingMoments, kelly_staking, staking_moments
+from shk.kelly.staking import (
+    StakingMoments,
+    kelly_staking,
+    plugin_staking,
+    staking_moments,
+)
 
 
 def test_kelly_staking_positive_edge_and_agreement():
@@ -180,4 +185,83 @@ def test_staking_moments_validation_errors():
         staking_moments(np.array([np.nan, 0.1]), 0.2)
     with pytest.raises(ValueError):
         staking_moments(np.array([np.inf, 0.1]), 0.2)
+
+
+def test_plugin_staking_hand_calculated_and_edge_cases():
+    """Verifica la regola plug-in con calcoli a mano, casi limite e forme di output."""
+    # 1. Caso a mano con edge positivo:
+    # p = 0.60, b = 1.0, sigma_p = 0.0283
+    # o = 2.0, EV_hat = 0.20, f_base = 0.20
+    # ratio = 2.0 * 0.0283 / 0.20 = 0.283
+    # lambda_t = 1 / (1 + 0.283^2) = 1 / (1 + 0.080089) = 1 / 1.080089
+    # f = lambda_t * 0.20
+    b = 1.0
+    sigma_p = 0.0283
+    expected_lam = 1.0 / (1.0 + (2.0 * sigma_p / 0.20) ** 2)
+    expected_f = expected_lam * 0.20
+    actual_f = plugin_staking(0.60, b, sigma_p)
+    assert isinstance(actual_f, float)
+    assert abs(actual_f - expected_f) < 1e-12
+
+    # 2. Casi EV_hat <= 0: restituiscono 0.0 esatto senza RuntimeWarning
+    assert plugin_staking(0.468, b, sigma_p) == 0.0
+    assert plugin_staking(0.500, b, sigma_p) == 0.0
+
+    # Vettore con valori negativi, nulli e positivi
+    p_vec = np.array([0.40, 0.50, 0.60])
+    actual_vec = plugin_staking(p_vec, b, sigma_p)
+    expected_vec = np.array([0.0, 0.0, expected_f])
+    np.testing.assert_allclose(actual_vec, expected_vec, atol=1e-12)
+
+    # 3. Caso sigma_p = 0.0: coincide esattamente con kelly_staking lam = 1.0
+    f_zero_sigma = plugin_staking(0.60, b, 0.0)
+    assert f_zero_sigma == kelly_staking(0.60, b, lam=1.0)
+    f_zero_sigma_vec = plugin_staking(p_vec, b, 0.0)
+    np.testing.assert_allclose(f_zero_sigma_vec, kelly_staking(p_vec, b, lam=1.0), atol=1e-12)
+
+    # 4. Forme di output: scalare NumPy e array 0D -> float Python; 1D e 2D -> ndarray
+    out_numpy_scalar = plugin_staking(np.float64(0.60), b, sigma_p)
+    assert isinstance(out_numpy_scalar, float)
+    assert abs(out_numpy_scalar - expected_f) < 1e-12
+
+    out_0d = plugin_staking(np.array(0.60), b, sigma_p)
+    assert isinstance(out_0d, float)
+    assert abs(out_0d - expected_f) < 1e-12
+
+    out_1d = plugin_staking(p_vec, b, sigma_p)
+    assert isinstance(out_1d, np.ndarray)
+    assert out_1d.shape == (3,)
+
+    p_2d = np.full((3, 5), 0.60)
+    out_2d = plugin_staking(p_2d, b, sigma_p)
+    assert isinstance(out_2d, np.ndarray)
+    assert out_2d.shape == (3, 5)
+
+
+def test_plugin_staking_validation_errors():
+    """Verifica le validazioni dei parametri per plugin_staking."""
+    # sigma_p negativo o non finito
+    with pytest.raises(ValueError):
+        plugin_staking(0.60, 1.0, -0.01)
+    with pytest.raises(ValueError):
+        plugin_staking(0.60, 1.0, float("nan"))
+    with pytest.raises(ValueError):
+        plugin_staking(0.60, 1.0, float("inf"))
+
+    # b <= 0 o non finito
+    with pytest.raises(ValueError):
+        plugin_staking(0.60, 0.0, 0.0283)
+    with pytest.raises(ValueError):
+        plugin_staking(0.60, -1.0, 0.0283)
+    with pytest.raises(ValueError):
+        plugin_staking(0.60, float("nan"), 0.0283)
+
+    # p_hat non valido
+    with pytest.raises(ValueError):
+        plugin_staking(-0.1, 1.0, 0.0283)
+    with pytest.raises(ValueError):
+        plugin_staking(1.1, 1.0, 0.0283)
+    with pytest.raises(ValueError):
+        plugin_staking(np.array([0.60, np.nan]), 1.0, 0.0283)
+
 

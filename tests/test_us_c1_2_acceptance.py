@@ -116,3 +116,50 @@ def test_acceptance_subtle_scenario_var_c_dominance():
     # Criterio 3: Var(c) > 1
     assert moments.var_c > 1.0
 
+
+@pytest.mark.slow
+def test_acceptance_base_lambda_star_beats_quarter_kelly():
+    """Verifica che nello scenario base con sigma_p = 0.0283, lambda* batta lambda = 0.25."""
+    scenario = BASE_SCENARIO
+    sigma_p = 0.0283
+    rng_outcomes, rng_noise = spawn_generators(SEED)
+    outcomes = draw_scenario_outcomes(scenario, rng_outcomes)
+    p_hat = noisy_estimates(scenario.p, sigma_p, scenario.T, scenario.M, rng_noise)
+
+    f_hat = kelly_staking(p_hat, scenario.b, lam=1.0)
+    f_star = kelly_fraction(scenario.p, scenario.b)
+    moments = staking_moments(f_hat, f_star)
+    lam_star = 1.0 / (1.0 + moments.var_c)
+
+    paths_star = simulate_scenario(scenario, outcomes, p_hat, lam=lam_star)
+    paths_quarter = simulate_scenario(scenario, outcomes, p_hat, lam=0.25)
+
+    g_star = median_growth_rate(paths_star)
+    g_quarter = median_growth_rate(paths_quarter)
+
+    assert g_star > g_quarter
+
+
+@pytest.mark.slow
+def test_acceptance_subtle_lambda_star_beats_quarter_kelly():
+    """Verifica che nello scenario sottile con sigma_p = 0.0283, lambda* batta lambda = 0.25."""
+    scenario = SUBTLE_SCENARIO
+    sigma_p = 0.0283
+    rng_outcomes, rng_noise = spawn_generators(SEED)
+    outcomes = draw_scenario_outcomes(scenario, rng_outcomes)
+    p_hat = noisy_estimates(scenario.p, sigma_p, scenario.T, scenario.M, rng_noise)
+
+    f_hat = kelly_staking(p_hat, scenario.b, lam=1.0)
+    f_star = kelly_fraction(scenario.p, scenario.b)
+    moments = staking_moments(f_hat, f_star)
+    lam_star = 1.0 / (1.0 + moments.var_c)
+
+    paths_star = simulate_scenario(scenario, outcomes, p_hat, lam=lam_star)
+    paths_quarter = simulate_scenario(scenario, outcomes, p_hat, lam=0.25)
+
+    g_star = median_growth_rate(paths_star)
+    g_quarter = median_growth_rate(paths_quarter)
+
+    assert g_star > g_quarter
+
+

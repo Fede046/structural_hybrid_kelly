@@ -139,3 +139,84 @@ def staking_moments(f_hat: np.ndarray, f_star: float) -> StakingMoments:
         fraction_zero=fraction_zero,
     )
 
+
+def plugin_staking(
+    p_hat: float | np.ndarray, b: float, sigma_p: float
+) -> float | np.ndarray:
+    """Calcola la frazione di scommessa secondo la regola di Kelly plug-in per scommessa.
+
+    Per ciascuna scommessa, calcola il vantaggio atteso stimato EV_hat = p_hat * o - 1
+    (con quota lorda o = b + 1). Se EV_hat <= 0, la frazione è pari a 0.0 esatto.
+    Se EV_hat > 0, calcola il moltiplicatore adattivo locale:
+        lambda_t = 1 / (1 + (o * sigma_p / EV_hat)^2)
+    e restituisce lambda_t * kelly_staking(p_hat, b, lam=1.0).
+
+    Parametri
+    ---------
+    p_hat : float | np.ndarray
+        Stima di probabilità di vincita in [0, 1], scalare o array NumPy.
+    b : float
+        Quota decimale netta (b a 1), strettamente positiva (b > 0).
+    sigma_p : float
+        Deviazione standard del rumore di stima, non negativa (sigma_p >= 0).
+
+    Restituisce
+    -----------
+    float | np.ndarray
+        Frazione di capitale da scommettere, con la stessa forma di p_hat.
+
+    Solleva
+    -------
+    ValueError
+        Se b <= 0 o non finito, se sigma_p < 0 o non finito, oppure se p_hat
+        contiene valori non finiti o non compresi in [0, 1].
+    """
+    if not math.isfinite(sigma_p):
+        raise ValueError(f"Noise parameter 'sigma_p' must be finite, got {sigma_p}")
+    if sigma_p < 0.0:
+        raise ValueError(f"Noise parameter 'sigma_p' must be non-negative (sigma_p >= 0), got {sigma_p}")
+
+    # Validazione di b e p_hat ed estrazione di f_base tramite kelly_staking (Correzione A)
+    f_base = kelly_staking(p_hat, b, lam=1.0)
+
+    # Se sigma_p == 0, lambda_t = 1 ovunque, quindi la frazione coincide con f_base
+    if sigma_p == 0.0:
+        return f_base
+
+    o = b + 1.0
+
+    # Gestione scalare / array 0-dimensionale
+    if np.ndim(p_hat) == 0:
+        if f_base == 0.0:
+            return 0.0
+        ev_hat = float(p_hat) * o - 1.0
+        if ev_hat <= 0.0:
+            return 0.0
+        ratio = (o * sigma_p) / ev_hat
+        lam_t = 1.0 / (1.0 + ratio * ratio)
+        return float(lam_t * f_base)
+
+    # Gestione array NumPy (1D, 2D) con maschera protettiva contro divisione per zero (Correzione B)
+    p_arr = np.asarray(p_hat, dtype=float)
+    ev_hat = p_arr * o - 1.0
+    positive_mask = ev_hat > 0.0
+
+    result = np.zeros_like(p_arr, dtype=float)
+    if np.any(positive_mask):
+        ratio = np.divide(
+            o * sigma_p,
+            ev_hat,
+            out=np.zeros_like(ev_hat, dtype=float),
+            where=positive_mask,
+        )
+        lam_t = np.divide(
+            1.0,
+            1.0 + ratio * ratio,
+            out=np.zeros_like(ratio, dtype=float),
+            where=positive_mask,
+        )
+        result[positive_mask] = lam_t[positive_mask] * f_base[positive_mask]
+
+    return result
+
+
