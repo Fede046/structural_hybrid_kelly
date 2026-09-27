@@ -105,7 +105,7 @@ Criteri di accettazione:
 Esito: 2026-09-27 — file toccati: src/shk/kelly/estimation.py (creato), tests/test_estimation.py (creato). Deviazioni: nessuna; funzioni relative_perturbation(p, delta) e noisy_estimates(p, sigma_p, T, M, rng); valori fuori da [0, 1] saturati agli estremi con clipping; sigma_p = 0 ammesso e restituisce p costante; delta non finito rifiutato con ValueError. Non fatto: nulla. Valori misurati: criterio 3 con seed 20260927, media 0.52000381 e deviazione standard 0.02831994; criterio 1 con errore 0.0; pytest -v 32 passati (6 nuovi) e 4 deselezionati. Controllo iniziale: il commit 52f0cba sul branch C1 contiene solo i file del Task 1 e .agent/. Report: .agent/report/T2.md.
 
 ### Task 3 — Regola di staking Kelly sulla stima, con troncamento e moltiplicatore λ
-Stato: da fare
+Stato: fatto
 
 Obiettivo: esiste una regola di staking che trasforma stime p̂ (scalari o matrici) nelle frazioni f = λ · max(0, f*(p̂, b)), da passare al motore, senza che il motore venga toccato.
 
@@ -146,7 +146,7 @@ Criteri di accettazione:
 6. git diff --stat non mostra modifiche a src/shk/kelly/simulate.py introdotte in questo task.
 7. pytest -v passa.
 
-Esito: —
+Esito: 2026-09-27 — file toccati: src/shk/kelly/staking.py (creato), tests/test_staking.py (creato). Deviazioni: funzione kelly_staking(p_hat, b, lam=1.0); formula calcolata in proprio perché kelly_fraction accetta solo scalari (core.py righe 37, 45, 48), con lo stesso ordine di operazioni di core.py; uno scalare o un array 0-dimensionale in ingresso dà un float Python; la frazione non è limitata sotto 1 e una frazione ≥ 1 viene rifiutata a valle da simulate_growth (documentato nella docstring); rifiutati anche b e λ non finiti. Non fatto: nulla. Valori misurati: errore 0.0 contro kelly_fraction su p̂ = 0.60 e sulla griglia con edge positivo; 0.0 esatto con p̂ = 0.468; pytest -v 38 passati (6 nuovi) e 4 deselezionati; git diff --stat senza modifiche a simulate.py. Report: .agent/report/T3.md.
 
 ### Task 4 — Simulazione con p̂ ≠ p e asimmetria sovrastima/sottostima
 Stato: da fare
