@@ -46,9 +46,8 @@ Aperta il 2026-09-28.
 - Stato git dopo T7 (branch e commit dei file di T7) non confermato: non serve a nessun task, perché nessun task esegue operazioni git.
 
 **Domande aperte:**
-
 ### Task 8 — ANOVA a una via calcolata a mano e verificata contro scipy
-Stato: da fare
+Stato: fatto
 
 Obiettivo: esiste in src/shk/stats/anova.py un'ANOVA a una via calcolata a mano (SS_between, SS_within, SS_total, gradi di libertà, F, p-value), in versione per un singolo dataset e in versione vettorizzata su molte serie, che coincide con scipy.stats.f_oneway.
 
@@ -87,7 +86,7 @@ Criteri di accettazione:
 
 Da misurare e riportare, senza farlo tornare: i valori di SS_between, SS_within, SS_total, F e p-value sul toy, con 15 cifre significative.
 
-Esito: —
+Esito: 2026-09-28 — file toccati: src/shk/stats/__init__.py, src/shk/stats/anova.py, tests/test_anova.py. Deviazioni: pytest -v eseguito con PYTHONPATH=src perché senza, nell'ambiente di Cline, la collection dava ModuleNotFoundError; dopo il primo fallimento è stata corretta la regex attesa in test_oneway_anova_validation_invalid_types (non dichiarato come deviazione nel report). Aggiunte richieste dal supervisore in approvazione del piano: ss_total calcolata dalla definizione; __init__.py con sola docstring; ValueError per gruppi non 1D ed etichette negative; TypeError separati per values e labels non ndarray o con dtype non reale; test vettorizzato su (3, 4, 380) con due disegni (contiguous_2 e k = 5 disuguale permutato); ritorno float per values 1D. Non fatto: niente. Valori misurati (toy): ss_between 0.833333333333333, ss_within 33.1666666666667, ss_total 34.0000000000000, ms_within 11.0555555555556, f_statistic 0.0753768844221105, p_value 0.801483907696341; suite veloce 67 passed, 9 deselected (44 preesistenti + 23 nuovi). Il controllo git grep su try:/print(/logging non ha coperto anova.py (non tracciato). Report: .agent/report/T8.md.
 
 ### Task 9 — Generatore di serie AR(1) stazionarie
 Stato: da fare
