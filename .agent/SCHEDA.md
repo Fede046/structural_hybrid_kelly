@@ -4,7 +4,7 @@ Origine: mappa del 2026-09-28, report fino a R2@2026-09-28
 ## Stato repo
 Radice: c:\Users\malse\Documents\GitHub\structural_hybrid_kelly [V, R1@2026-09-28]
 Branch corrente C2 a 1e7813d "C1 (#14)", allineato a origin/C2 rispetto all'ultimo fetch locale (nessun git fetch eseguito); main punta allo stesso commit 1e7813d [V, R1@2026-09-28]
-Working tree al momento di R1: .agent/BACKLOG.md modificato (story S2, +250/−1), .agent/MAPPA.md modificato, C1.1.md cancellato; niente di staged, nessun file non tracciato [V, R1@2026-09-28]. Dopo T8 si aggiungono, non tracciati salvo commit del programmatore: src/shk/stats/__init__.py, src/shk/stats/anova.py, tests/test_anova.py, .agent/report/T8.md; stato attuale del working tree non verificato [D]
+Working tree al momento di R1: .agent/BACKLOG.md modificato (story S2, +250/−1), .agent/MAPPA.md modificato, C1.1.md cancellato; niente di staged, nessun file non tracciato [V, R1@2026-09-28]. Dopo T8 e T9 si aggiungono, non tracciati salvo commit del programmatore: src/shk/stats/__init__.py, src/shk/stats/anova.py, src/shk/stats/timeseries.py, tests/test_anova.py, tests/test_timeseries.py, .agent/report/T8.md, .agent/report/T9.md; esiste .venv/ nella radice [V, R7@2026-09-28], se sia ignorato da git non è verificato; stato attuale del working tree non verificato [D]
 La cancellazione di C1.1.md è del programmatore, non di un task, e non è committata [V, dichiarazione del programmatore 2026-09-28]
 .agent/PROTOCOLLO.md è stato aggiunto dal programmatore dopo R2 [V, dichiarazione del programmatore 2026-09-28]; il suo stato in git (non tracciato, staged o committato) non è verificato [D]
 Branch C1 a 362c739 (merge di main in C1); nella sua storia T6 = 9f6206c, T7 = 9cb04e9, poi e8f1bba "Document S1 completion and C1.2 closure" [V, R2@2026-09-28]
@@ -22,10 +22,11 @@ Dipendenze runtime numpy, scipy, matplotlib; dev solo pytest; nessun vincolo di 
 uv.lock presente alla radice [V, R1@2026-09-28]; uv sync come alternativa locale [D]
 Installazione usata dalla CI: pip install -e ".[dev]", senza uv.lock [V, R1@2026-09-28]
 CI: .github/workflows/test.yml esegue pytest -v [V, R1@2026-09-28]; trigger su push verso main e su pull_request [D, era V R2@2026-09-27]
-Test veloci: pytest -v; addopts = "-m 'not slow'" in pyproject.toml esclude i test slow [V, R1@2026-09-28]. Nell'ambiente di Cline pytest -v da solo dà ModuleNotFoundError; funziona con $env:PYTHONPATH="src" [V, R4@2026-09-28]; causa probabile un interprete senza shk installato in modalità editable [D]
+Test veloci: pytest -v; addopts = "-m 'not slow'" in pyproject.toml esclude i test slow [V, R1@2026-09-28]. Cline esegue ogni comando Python con l'interprete del venv, esplicitamente: .\.venv\Scripts\python.exe -m pytest -v, .\.venv\Scripts\python.exe <script> [V, R7@2026-09-28; decisione del programmatore 2026-09-28]. Nel venv shk è installato in modalità editable [V, R7@2026-09-28]. Il terminale di Cline usa di default C:\Users\malse\anaconda3\python.exe (Python 3.12.7, pytest 7.4.4), dove shk non è installato [V, R6@2026-09-28]
+Venv del progetto .venv: Python 3.12.7, pytest 9.1.1, NumPy 2.5.2 [V, R7@2026-09-28]
 Solo test slow: pytest -m slow [D, era V R4@2026-09-27]; tutti i test: pytest -o addopts="" [D]
-Baseline dopo T8: 67 test veloci (44 preesistenti + 23 in tests/test_anova.py), tutti verdi, e 9 slow deselezionati [V, R4@2026-09-28]; test slow non rieseguiti dopo la mappa, verdi all'ultima esecuzione nota [D, era V R14@2026-09-27]
-Esperimenti: python scripts/us_c1_1_growth_vs_lambda.py e python scripts/us_c1_2_estimation_error.py dalla radice, con shk installato [D]
+Baseline dopo T9: 80 test veloci (44 preesistenti + 23 in tests/test_anova.py + 13 in tests/test_timeseries.py), tutti verdi nel venv, e 9 slow deselezionati [V, R7@2026-09-28]; test slow non rieseguiti dopo la mappa, verdi all'ultima esecuzione nota [D, era V R14@2026-09-27]
+Esperimenti: .\.venv\Scripts\python.exe scripts/us_c1_1_growth_vs_lambda.py e .\.venv\Scripts\python.exe scripts/us_c1_2_estimation_error.py dalla radice [D]
 Lo script C1.2 dura circa 70 s e due esecuzioni danno CSV identici byte per byte [D, era V R16@2026-09-27]
 Nessun .env presente; config/ e data/raw/ contengono solo .gitkeep [V, R1@2026-09-28, inventario git completo]
 Nessuna variabile d'ambiente richiesta [D]
@@ -44,12 +45,14 @@ src/shk/kelly/scenarios.py — dataclass frozen Scenario(name, p, b, T, M); BASE
 src/shk/kelly/scenarios.py — spawn_generators restituisce due generatori da SeedSequence.spawn(2), il primo per gli esiti e il secondo per il rumore di stima [D, era V R10@2026-09-27]
 src/shk/kelly/metrics.py — su paths: final_log_wealth, median_growth_rate, median_final_wealth, mean_final_wealth, max_drawdown ((M,) in [0, 1)), fraction_below_start; nessun import interno [V, R1@2026-09-28]
 src/shk/kelly/metrics.py — median_growth_rate = mediana di ln(B_T/B_0)/T con T = paths.shape[1] − 1; il drawdown mediano si calcola con np.median(max_drawdown(paths)); fraction_below_start = quota con B_T < B_0 [D, era V R9@2026-09-27 e R13@2026-09-27]
-src/shk/stats/__init__.py — sola docstring di modulo, nessuna re-esportazione [D, richiesto in approvazione del piano R3, contenuto non riportato]
+src/shk/stats/__init__.py — sola docstring di modulo in italiano, nessun import, nessuna re-esportazione, nessun __all__ [V, R5@2026-09-28]
 src/shk/stats/anova.py — OneWayAnovaResult (NamedTuple: ss_between, ss_within, ss_total, df_between, df_within, ms_between, ms_within, f_statistic, p_value); oneway_anova(groups) → OneWayAnovaResult, p-value con scipy.stats.f.sf; oneway_anova_vectorized(values, labels) → float se values è 1D, altrimenti ndarray di forma values.shape[:-1]; values e labels devono essere np.ndarray (TypeError), etichette intere 0..k−1 tutte presenti [V, R4@2026-09-28, test verdi]; medie di gruppo via matrice di incidenza, nessun ciclo sulle serie [D, piano R3]
+src/shk/stats/timeseries.py — generate_ar1_series(phi, n, m, rng) → ndarray float64 di forma (m, n), righe = serie, colonne = tempo; estrazioni nell'ordine: x_0 ~ N(0, 1/(1 − φ²)) con size=m, poi innovazioni N(0, 1) in un blocco (m, n − 1); ciclo solo sul tempo; ValueError per φ non finito o |φ| ≥ 1, n < 2, m < 1; TypeError per n o m bool o non interi e per rng non Generator; interi NumPy accettati [V, R7@2026-09-28, test verdi; ordine delle estrazioni confermato dal ricalcolo del supervisore, identico a 15 cifre]
 tests/test_anova.py — 23 test veloci: toy, concordanza con f_oneway su toy e 3 dataset casuali, partizione della devianza, vettorizzata su (3, 4, 380) con contiguous_2 e k = 5 permutato, validazioni [V, R4@2026-09-28]
+tests/test_timeseries.py — 13 test veloci: forma e dtype, riproducibilità, varianze e autocorrelazione pooled parametrizzate su φ ∈ {0.0, 0.3, 0.7} con seed 20260928, validazioni [V, R7@2026-09-28]
 Classi del pacchetto: Scenario, StakingMoments [V, R1@2026-09-28] e OneWayAnovaResult [V, R4@2026-09-28]; nessun'altra [D]
 Persistenza: solo CSV in results/ e PNG in thesis/figures/ [V, R1@2026-09-28]; nessun database [D]
-Non esistono tests/test_timeseries.py, tests/test_calibration.py, tests/test_us_c2_acceptance.py né scripts/us_c2_* [V, R1@2026-09-28; T8 non li ha creati, R4@2026-09-28]
+Non esistono tests/test_calibration.py, tests/test_us_c2_acceptance.py, src/shk/stats/false_rejection.py, src/shk/stats/calibration.py né scripts/us_c2_* [V, R1@2026-09-28; T8 e T9 non li hanno creati, R4 e R7@2026-09-28]
 
 ## Flussi principali
 Esperimento C1.1 (scripts/us_c1_1_growth_vs_lambda.py, run_experiment() dal blocco __main__): parametri locali p=0.60, b=1.0, T=1000, M=10000, seed 20260905, 51 valori di λ in [0, 2.5] (righe 30-36) [V, R1@2026-09-28]
@@ -71,8 +74,8 @@ Var(c) attesa a σ_p = 0.0283: circa 0.080 nello scenario base, circa 1.28 in qu
 Naming: snake_case per moduli, funzioni e variabili; PascalCase per le classi; UPPER_CASE per le costanti; lettere matematiche standard (p, b, f, T, M, b0, λ, σ_p, c, δ) [V, R1@2026-09-28]
 Lingua: identificatori, nomi dei test e messaggi di eccezione in inglese; commenti e docstring in italiano [V, R1@2026-09-28]
 Type hints completi su argomenti e ritorni; docstring stile NumPy con sezioni Parametri / Restituisce / Solleva [V, R1@2026-09-28]
-Validazione in apertura di funzione: ValueError per i valori, TypeError per i tipi (anche per un rng che non sia np.random.Generator) [V, R1@2026-09-28]
-Nessuna occorrenza di try:, print( o logging nei file tracciati di src/ e scripts/ [V, R4@2026-09-28, git grep]; src/shk/stats/anova.py non coperto dal controllo perché non tracciato [D]
+Validazione in apertura di funzione: ValueError per i valori, TypeError per i tipi; rng controllato con isinstance(rng, np.random.Generator) → TypeError [V, R5@2026-09-28]. Eccezione nel codice esistente: draw_outcomes e noisy_estimates non controllano il tipo di T e M (2.5 fallisce solo dentro NumPy con TypeError, True è accettato come 1) [V, R5@2026-09-28]. Il codice nuovo controlla anche il tipo degli interi (bool e non interi → TypeError), come generate_ar1_series [V, R7@2026-09-28]
+Nessuna occorrenza di try:, print( o logging nei file tracciati di src/ e scripts/ [V, R4@2026-09-28, git grep] e in src/shk/stats/__init__.py e anova.py [V, R5@2026-09-28]; src/shk/stats/timeseries.py non controllato [D]
 L'RNG entra come argomento, mai creato dentro le funzioni di libreria; flussi indipendenti con np.random.SeedSequence.spawn [V, R1@2026-09-28 per spawn; D, era V R5@2026-09-27 e R6@2026-09-27 per il resto]
 Vettorizzazione NumPy senza cicli su M e T nel motore; del paths nei loop Monte Carlo [V, R1@2026-09-28]
 Script di esperimento: matplotlib.use("Agg") in apertura, run_experiment() chiamata dal blocco __main__ [V, R1@2026-09-28]; nessun argomento da riga di comando [D, era V R2@2026-09-27]
@@ -90,7 +93,7 @@ expected_final_wealth (core.py:97-144) è usata dallo script C1.1 [V, R1@2026-09
 Parametri di C1.1 duplicati fra scripts/us_c1_1_growth_vs_lambda.py:30-36 e tests/test_us_c1_1_acceptance.py: cambiarli da una parte sola disallinea esperimento e verifica [V, R1@2026-09-28]
 I test slow non girano in CI: dopo modifiche a simulate.py, staking.py, scenarios.py o metrics.py vanno lanciati a mano [V, R1@2026-09-28]
 Rieseguire uno script di esperimento sovrascrive CSV e PNG versionati: ogni task che rigenera un esperimento deve dire se committarli [V, R1@2026-09-28]
-Dipendenze senza vincolo di versione e CI che installa con pip ignorando uv.lock [V, R1@2026-09-28]; NumPy non garantisce la stabilità del flusso di Generator fra versioni, e i test con tolleranze empiriche possono rompersi [D]
+Dipendenze senza vincolo di versione e CI che installa con pip ignorando uv.lock [V, R1@2026-09-28]; NumPy non garantisce la stabilità del flusso di Generator fra versioni, e i test con tolleranze empiriche possono rompersi [D]. Per default_rng(20260928).normal il flusso dà valori identici a 15 cifre con NumPy 2.4.4 e 2.5.2 [V, R7@2026-09-28 e ricalcolo del supervisore]
 tests/test_metrics.py:test_metrics_error_conditions non verifica il ValueError di median_final_wealth e mean_final_wealth [V, R1@2026-09-28]
 Il test del drawdown non decrescente (tolleranza −0.01) è l'unica asserzione di accettazione C1.1 di cui non si è stimata la robustezza al seed e alla versione di NumPy [D]
 
@@ -98,4 +101,4 @@ Il test del drawdown non decrescente (tolleranza −0.01) è l'unica asserzione 
 Gestore canonico delle dipendenze (pip + pyproject oppure uv + uv.lock), non deciso dal programmatore. Blocca: se un task che aggiunge o fissa una dipendenza debba rigenerare uv.lock e se la CI vada migrata a uv. Si procede con pyproject.toml come fonte di verità, l'unica verificata dalla CI; un task che tocca le dipendenze modifica pyproject.toml e segnala uv.lock come da aggiornare. S2 non aggiunge dipendenze.
 
 ## Ultimo aggiornamento
-R4@2026-09-28 — task di scrittura chiusi dopo la mappa del 2026-09-28: T8
+R7@2026-09-28 — task di scrittura chiusi dopo la mappa del 2026-09-28: T8, T9

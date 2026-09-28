@@ -89,7 +89,7 @@ Da misurare e riportare, senza farlo tornare: i valori di SS_between, SS_within,
 Esito: 2026-09-28 — file toccati: src/shk/stats/__init__.py, src/shk/stats/anova.py, tests/test_anova.py. Deviazioni: pytest -v eseguito con PYTHONPATH=src perché senza, nell'ambiente di Cline, la collection dava ModuleNotFoundError; dopo il primo fallimento è stata corretta la regex attesa in test_oneway_anova_validation_invalid_types (non dichiarato come deviazione nel report). Aggiunte richieste dal supervisore in approvazione del piano: ss_total calcolata dalla definizione; __init__.py con sola docstring; ValueError per gruppi non 1D ed etichette negative; TypeError separati per values e labels non ndarray o con dtype non reale; test vettorizzato su (3, 4, 380) con due disegni (contiguous_2 e k = 5 disuguale permutato); ritorno float per values 1D. Non fatto: niente. Valori misurati (toy): ss_between 0.833333333333333, ss_within 33.1666666666667, ss_total 34.0000000000000, ms_within 11.0555555555556, f_statistic 0.0753768844221105, p_value 0.801483907696341; suite veloce 67 passed, 9 deselected (44 preesistenti + 23 nuovi). Il controllo git grep su try:/print(/logging non ha coperto anova.py (non tracciato). Report: .agent/report/T8.md.
 
 ### Task 9 — Generatore di serie AR(1) stazionarie
-Stato: da fare
+Stato: fatto
 
 Obiettivo: esiste in src/shk/stats/timeseries.py una funzione che genera m serie AR(1) stazionarie indipendenti di lunghezza n, con coefficiente φ noto, a partire da un np.random.Generator passato come argomento.
 
@@ -125,7 +125,7 @@ Criteri di accettazione:
 
 Da misurare e riportare, senza farlo tornare: per ogni φ del terzo criterio, la varianza empirica alla prima e all'ultima colonna e l'autocorrelazione pooled a ritardo 1.
 
-Esito: —
+Esito: 2026-09-28 — file toccati: src/shk/stats/timeseries.py, tests/test_timeseries.py. Deviazioni: la prima esecuzione di pytest -v con l'interprete base di Anaconda è fallita in collection (ModuleNotFoundError: shk); la suite è stata eseguita con .\.venv\Scripts\python.exe -m pytest -v, per decisione del programmatore. Decisioni del supervisore in approvazione del piano: funzione generate_ar1_series(phi, n, m, rng); TypeError per n e m bool o non interi, ValueError per n < 2 e m < 1, interi NumPy accettati; ordine delle estrazioni (x_0 con size=m, poi innovazioni in blocco (m, n−1)) documentato in docstring; autocorrelazione pooled con numeratore e denominatore sulle prime n−1 colonne; seed 20260928 con un generatore nuovo per ogni φ. Non fatto: niente. Valori misurati (var. prima colonna, var. ultima colonna, autocorrelazione pooled lag 1): φ = 0.0 → 0.957140004852581, 0.973226765785744, −0.000720359650811194; φ = 0.3 → 1.0518022031347, 1.07297306762548, 0.299769403361743; φ = 0.7 → 1.87674510755408, 1.96498557456839, 0.700675237719415; riprodotti identici a 15 cifre dal supervisore con NumPy 2.4.4. NumPy nel venv 2.5.2; suite veloce 80 passed, 9 deselected (67 + 13 nuovi). Report: .agent/report/T9.md.
 
 ### Task 10 — Tasso di falso rigetto della F su serie AR(1) (US-C2.2)
 Stato: da fare
