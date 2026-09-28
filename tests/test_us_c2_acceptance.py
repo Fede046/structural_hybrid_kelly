@@ -2,6 +2,7 @@
 
 import os
 import csv
+import math
 import numpy as np
 import pytest
 
@@ -27,6 +28,14 @@ from shk.stats.false_rejection import (
     critical_value_nominal,
     make_design_labels,
     monte_carlo_interval_99,
+)
+
+FLOAT_CSV_COLUMNS: tuple[str, ...] = (
+    "phi",
+    "rejection_rate",
+    "critical_value_mean",
+    "mc_lower_99",
+    "mc_upper_99",
 )
 
 
@@ -187,10 +196,21 @@ def test_acceptance_csv_structure_and_values():
         for col_idx, col_name in enumerate(CSV_COLUMNS):
             expected_val_str = str(exp_dict[col_name])
             actual_val_str = csv_row[col_idx]
-            assert actual_val_str == expected_val_str, (
-                f"Mismatch at nominal row {row_idx}, column '{col_name}': "
-                f"expected '{expected_val_str}', got '{actual_val_str}'"
-            )
+            if col_name in FLOAT_CSV_COLUMNS:
+                assert math.isclose(
+                    float(actual_val_str),
+                    float(expected_val_str),
+                    rel_tol=1e-12,
+                    abs_tol=0.0,
+                ), (
+                    f"Mismatch at nominal row {row_idx}, column '{col_name}': "
+                    f"expected '{expected_val_str}', got '{actual_val_str}'"
+                )
+            else:
+                assert actual_val_str == expected_val_str, (
+                    f"Mismatch at nominal row {row_idx}, column '{col_name}': "
+                    f"expected '{expected_val_str}', got '{actual_val_str}'"
+                )
 
     # 2. Verifica rapida della struttura e sequenza delle righe 12..23 (calibrate)
     expected_pairs = [
@@ -309,10 +329,21 @@ def test_acceptance_csv_calibrated_values(
         for col_idx, col_name in enumerate(CSV_COLUMNS):
             expected_val_str = str(exp_dict[col_name])
             actual_val_str = csv_row[col_idx]
-            assert actual_val_str == expected_val_str, (
-                f"Mismatch at calibrated row {row_idx} (CSV row {row_idx + 12}), "
-                f"column '{col_name}': expected '{expected_val_str}', got '{actual_val_str}'"
-            )
+            if col_name in FLOAT_CSV_COLUMNS:
+                assert math.isclose(
+                    float(actual_val_str),
+                    float(expected_val_str),
+                    rel_tol=1e-12,
+                    abs_tol=0.0,
+                ), (
+                    f"Mismatch at calibrated row {row_idx} (CSV row {row_idx + 12}), "
+                    f"column '{col_name}': expected '{expected_val_str}', got '{actual_val_str}'"
+                )
+            else:
+                assert actual_val_str == expected_val_str, (
+                    f"Mismatch at calibrated row {row_idx} (CSV row {row_idx + 12}), "
+                    f"column '{col_name}': expected '{expected_val_str}', got '{actual_val_str}'"
+                )
 
 
 @pytest.mark.slow

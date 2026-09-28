@@ -1,16 +1,14 @@
+Ecco il contenuto aggiornato per il file `SCHEDA.md` con le modifiche richieste.
+
 # Scheda del progetto
-
-
 
 Origine: mappa del 2026-09-28, report fino a R2@2026-09-28
 
 ## Stato repo
 
-
-
 Radice: c:\Users\malse\Documents\GitHub\structural_hybrid_kelly [V, R1@2026-09-28]
 Branch corrente C2 a 1e7813d "C1 (#14)", allineato a origin/C2 rispetto all'ultimo fetch locale (nessun git fetch eseguito); main punta allo stesso commit 1e7813d [V, R1@2026-09-28]
-Working tree al momento di R1: .agent/BACKLOG.md modificato (story S2, +250/−1), .agent/MAPPA.md modificato, C1.1.md cancellato; niente di staged, nessun file non tracciato [V, R1@2026-09-28]. Dopo T8–T12 si aggiungono o cambiano, non tracciati o modificati salvo commit del programmatore: src/shk/stats/**init**.py, anova.py, timeseries.py, false_rejection.py, calibration.py; scripts/us_c2_anova_autocorrelation.py; tests/test_anova.py, test_timeseries.py, test_us_c2_acceptance.py, test_calibration.py; results/us_c2_anova_autocorrelation.csv (24 righe); thesis/figures/us_c2_anova_autocorrelation.png (pannelli A e B); .agent/report/T8.md … T12.md; esiste .venv/ nella radice [V, R7@2026-09-28], se sia ignorato da git non è verificato; stato attuale del working tree non verificato [D]
+Working tree al momento di R1: .agent/BACKLOG.md modificato (story S2, +250/−1), .agent/MAPPA.md modificato, C1.1.md cancellato; niente di staged, nessun file non tracciato [V, R1@2026-09-28]. Dopo T8–T12 si aggiungono o cambiano, non tracciati o modificati salvo commit del programmatore: src/shk/stats/**init**.py, anova.py, timeseries.py, false_rejection.py, calibration.py; scripts/us_c2_anova_autocorrelation.py; tests/test_anova.py, test_timeseries.py, test_us_c2_acceptance.py, test_calibration.py; results/us_c2_anova_autocorrelation.csv (24 righe); thesis/figures/us_c2_anova_autocorrelation.png (pannelli A e B); .agent/report/T8.md … T12.md; esiste .venv/ nella radice [V, R7@2026-09-28], se sia ignorato da git non è verificato; Dopo T13 cambia tests/test_us_c2_acceptance.py e si aggiunge .agent/report/T13.md [V, R15@2026-09-28]; stato attuale del working tree non verificato [D]
 La cancellazione di C1.1.md è del programmatore, non di un task, e non è committata [V, dichiarazione del programmatore 2026-09-28]
 .agent/PROTOCOLLO.md è stato aggiunto dal programmatore dopo R2 [V, dichiarazione del programmatore 2026-09-28]; il suo stato in git (non tracciato, staged o committato) non è verificato [D]
 Branch C1 a 362c739 (merge di main in C1); nella sua storia T6 = 9f6206c, T7 = 9cb04e9, poi e8f1bba "Document S1 completion and C1.2 closure" [V, R2@2026-09-28]
@@ -22,8 +20,6 @@ File tracciati in .agent/ al momento di R2: BACKLOG.md, MAPPA.md, SCHEDA.md, rep
 
 ## Stack e comandi
 
-
-
 Pacchetto structural-hybrid-kelly 0.1.0 (pyproject.toml e src/shk/**init**.py), importabile come shk, sorgenti in src/shk/ [V, R1@2026-09-28]
 requires-python >=3.11; la CI usa Python 3.12 [V, R1@2026-09-28]
 Build backend hatchling; build con hatch build o python -m build [D]
@@ -31,8 +27,9 @@ Dipendenze runtime numpy, scipy, matplotlib; dev solo pytest; nessun vincolo di 
 uv.lock presente alla radice [V, R1@2026-09-28]; uv sync come alternativa locale [D]
 Installazione usata dalla CI: pip install -e ".[dev]", senza uv.lock [V, R1@2026-09-28]
 CI: .github/workflows/test.yml esegue pytest -v [V, R1@2026-09-28]; trigger su push verso main e su pull_request [D, era V R2@2026-09-27]
+CI (GitHub Actions): Linux, Python 3.12.14, pytest 9.1.1, dipendenze installate senza vincoli di versione; prima di T13 falliva test_acceptance_csv_structure_and_values sul confronto dei float come stringhe [V, log CI fornito dal programmatore 2026-09-28]; verde dopo T13 [D, da confermare al primo push]
 Test veloci: pytest -v; addopts = "-m 'not slow'" in pyproject.toml esclude i test slow [V, R1@2026-09-28]. Cline esegue ogni comando Python con l'interprete del venv, esplicitamente: ..venv\Scripts\python.exe -m pytest -v, ..venv\Scripts\python.exe  [V, R7@2026-09-28; decisione del programmatore 2026-09-28]. Nel venv shk è installato in modalità editable [V, R7@2026-09-28]. Il terminale di Cline usa di default C:\Users\malse\anaconda3\python.exe (Python 3.12.7, pytest 7.4.4), dove shk non è installato [V, R6@2026-09-28]
-Venv del progetto .venv: Python 3.12.7, pytest 9.1.1, NumPy 2.5.2 [V, R7@2026-09-28]
+Venv del progetto .venv: Python 3.12.7, pytest 9.1.1, NumPy 2.5.2, SciPy 1.18.1 [V, R7 e R15@2026-09-28]
 Solo test slow: pytest -m slow [D, era V R4@2026-09-27]; tutti i test: pytest -o addopts="" [D]
 Baseline dopo T12: 109 test veloci (44 preesistenti + 23 test_anova + 13 test_timeseries + 11 test_us_c2_acceptance + 18 test_calibration), tutti verdi nel venv [V, R14@2026-09-28]; 14 test slow (9 di C1, 5 di C2): 13 verdi, 1 rosso per risultato noto, test_acceptance_calibrated_phi_zero_within_mc_interval; pytest -m slow dura circa 117 s [V, R14@2026-09-28]
 Esperimento C2: ..venv\Scripts\python.exe scripts\us_c2_anova_autocorrelation.py dalla radice, circa 90 s; due esecuzioni danno CSV identici byte per byte, SHA256 6711B906A5D0170124BE816BAB04C336854CF7FF62DF135FDC18F22B84AB3831 [V, R14@2026-09-28]
@@ -42,8 +39,6 @@ Nessun .env presente; config/ e data/raw/ contengono solo .gitkeep [V, R1@2026-0
 Nessuna variabile d'ambiente richiesta [D]
 
 ## Moduli e responsabilità
-
-
 
 src/shk/**init**.py — espone **version** [V, R1@2026-09-28]
 src/shk/kelly/**init**.py — re-esporta kelly_fraction e log_growth_rate tramite **all**; expected_final_wealth non è re-esportata [V, R1@2026-09-28]
@@ -65,15 +60,13 @@ src/shk/stats/false_rejection.py — costanti PHI_VALUES = (0.0, 0.3, 0.5, 0.7),
 scripts/us_c2_anova_autocorrelation.py — run_experiment() senza parametri; scrive 24 righe (12 nominali, poi 12 calibrate) con csv.DictWriter e CSV_COLUMNS; PNG con plt.subplots(1, 2): pannello A (nominale, tre disegni), pannello B visibile (contiguous_2 nominale e una curva per L), linea ad ALPHA e banda al 99% in entrambi; etichette in italiano; savefig(dpi=150) [V, R13 e R14@2026-09-28]
 tests/test_anova.py — 23 test veloci: toy, concordanza con f_oneway su toy e 3 dataset casuali, partizione della devianza, vettorizzata su (3, 4, 380) con contiguous_2 e k = 5 permutato, validazioni [V, R4@2026-09-28]
 tests/test_timeseries.py — 13 test veloci: forma e dtype, riproducibilità, varianze e autocorrelazione pooled parametrizzate su φ ∈ {0.0, 0.3, 0.7} con seed 20260928, validazioni [V, R7@2026-09-28]
-tests/test_us_c2_acceptance.py — 11 test veloci (criteri nominali, conteggio delle chiamate, stesse serie, CSV su 24 righe con nominali campo per campo e ordine delle calibrate, PNG, validazioni) e 5 test slow con fixture scope="module" su compute_calibrated_rejection_rates (righe calibrate del CSV, criterio 2 su φ = 0, criterio 3); il test slow del criterio 2 fallisce [V, R14@2026-09-28]
+tests/test_us_c2_acceptance.py — 11 test veloci e 5 test slow con fixture scope="module"; nei confronti fra CSV e risultati calcolati, le colonne in FLOAT_CSV_COLUMNS (phi, rejection_rate, critical_value_mean, mc_lower_99, mc_upper_99) usano math.isclose con rel_tol 1e-12 e abs_tol 0, le altre il confronto esatto come stringhe; il test slow del criterio 2 fallisce per il risultato noto di T12 [V, R15@2026-09-28]
 src/shk/stats/calibration.py — moving_block_indices(n, block_length, n_boot, rng) → int64 (n_boot, n): inizi con rng.integers(0, n − L + 1, size=(n_boot, ⌈n/L⌉)), blocchi per broadcasting, troncamento a n; compute_order_statistic_index(b, alpha) → int ⌈(1 − α)(b + 1)⌉, arrotondato all'intero più vicino se entro 1e-9, ValueError se > b; calibrate_threshold(data, statistic, block_length, n_boot, alpha, rng, vectorized=False) → float: indici estratti una sola volta, con vectorized statistic(data[indices]) su forma (B, *data.shape), altrimenti ciclo sulle B righe; output in float64 di forma (n_boot,) (ValueError altrimenti), non finito → ValueError; soglia = elemento k − 1 delle statistiche ordinate; nessun import da anova.py, timeseries.py o false_rejection.py; docstring del modulo con (a) schema indicativo dei quattro strumenti, (b) rimando alle righe block_bootstrap del CSV C2, (c) H₀ a carico del chiamante; nota: nello schema (a) della docstring, per l'ANOVA F il dato è "la serie della risposta", in contraddizione con (c) "imporre H₀ spetta a chi chiama"; schema dettato dal supervisore, da correggere [V, testo R12@2026-09-28; incoerenza rilevata dal supervisore il 2026-09-28]
 tests/test_calibration.py — 15 funzioni di test (18 test): proprietà degli indici, L = n, integrità delle righe 2D, statistica d'ordine, vectorized contro non vectorized, due statistiche (F del Task 8 e media normalizzata 2D), seed, i quattro casi di compute_order_statistic_index, docstring, validazioni raggruppate in 6 funzioni [V, R12@2026-09-28]
 Classi del pacchetto: Scenario, StakingMoments [V, R1@2026-09-28], OneWayAnovaResult [V, R4@2026-09-28], RejectionResult e PhiStreams [V, R9@2026-09-28]; nessun'altra [D]
 Persistenza: solo CSV in results/ e PNG in thesis/figures/ [V, R1@2026-09-28]; nessun database [D]
 
 ## Flussi principali
-
-
 
 Esperimento C1.1 (scripts/us_c1_1_growth_vs_lambda.py, run_experiment() dal blocco **main**): parametri locali p=0.60, b=1.0, T=1000, M=10000, seed 20260905, 51 valori di λ in [0, 2.5] (righe 30-36) [V, R1@2026-09-28]
 Esperimento C1.1, sequenza: f* con kelly_fraction; una sola matrice di esiti con draw_outcomes; per ogni λ log_wealth_paths, cinque metriche empiriche, del paths, benchmark con log_growth_rate ed expected_final_wealth [V, R1@2026-09-28]
@@ -95,8 +88,6 @@ Costo della calibrazione: una chiamata di calibrate_threshold con n = 380, F a d
 
 ## Convenzioni da rispettare
 
-
-
 Naming: snake_case per moduli, funzioni e variabili; PascalCase per le classi; UPPER_CASE per le costanti; lettere matematiche standard (p, b, f, T, M, b0, λ, σ_p, c, δ) [V, R1@2026-09-28]
 Lingua: identificatori, nomi dei test e messaggi di eccezione in inglese; commenti e docstring in italiano [V, R1@2026-09-28]
 Type hints completi su argomenti e ritorni; docstring stile NumPy con sezioni Parametri / Restituisce / Solleva [V, R1@2026-09-28]
@@ -115,8 +106,6 @@ Nessun documento di storia alla radice: C1.1.md è stato cancellato dal programm
 
 ## Zone fragili da non toccare senza avviso
 
-
-
 Il test slow test_acceptance_calibrated_phi_zero_within_mc_interval fallisce per un risultato noto (T12 da rivedere), non per una regressione: non va "sistemato" allentando la tolleranza o cambiando parametri [V, decisione del programmatore 2026-09-28]
 noisy_estimates può restituire p̂ = 1 per saturazione; kelly_staking dà allora lam·1, e con lam ≥ 1 la frazione è ≥ 1, che simulate_growth rifiuta con ValueError [V, R1@2026-09-28]. Con p ≤ 0.6 e σ_p ≤ 0.045 l'evento dista almeno 8.9 deviazioni standard [D, ricalcolo del supervisore]
 expected_final_wealth (core.py:97-144) è usata dallo script C1.1 [V, R1@2026-09-28] e non ha test [D, era V R2@2026-09-27: 0 occorrenze in tests/]
@@ -127,17 +116,13 @@ Dipendenze senza vincolo di versione e CI che installa con pip ignorando uv.lock
 tests/test_metrics.py:test_metrics_error_conditions non verifica il ValueError di median_final_wealth e mean_final_wealth [V, R1@2026-09-28]
 Il test del drawdown non decrescente (tolleranza −0.01) è l'unica asserzione di accettazione C1.1 di cui non si è stimata la robustezza al seed e alla versione di NumPy [D]
 tests/test_us_c2_acceptance.py confronta il CSV versionato con compute_nominal_rejection_rates (test veloce) e con compute_calibrated_rejection_rates (test slow): ogni modifica a false_rejection.py che cambia i risultati richiede di rieseguire lo script (circa 90 s) prima dei test [V, R14@2026-09-28]
-L'identità byte per byte del CSV C2 dipende anche dalla versione di scipy: il valore critico per k = 2 è 3.866176954321902 nel venv e 3.866176954321901 nell'ambiente del supervisore [V, R9@2026-09-28 e ricalcolo del supervisore]
+L'identità byte per byte del CSV C2 vale solo a parità di ambiente: il valore critico per k = 2 è 3.866176954321902 nel venv (scipy 1.18.1) e 3.866176954321901 in CI [V, R9 e R15@2026-09-28, log CI]. Dopo T13 i test confrontano i float con tolleranza e non dipendono più dall'ultima cifra; rigenerare il CSV in un altro ambiente può comunque cambiare il file [D]
 
 ## Punti ancora incerti
-
-
 
 Gestore canonico delle dipendenze (pip + pyproject oppure uv + uv.lock), non deciso dal programmatore. Blocca: se un task che aggiunge o fissa una dipendenza debba rigenerare uv.lock e se la CI vada migrata a uv. Si procede con pyproject.toml come fonte di verità, l'unica verificata dalla CI; un task che tocca le dipendenze modifica pyproject.toml e segnala uv.lock come da aggiornare. S2 non aggiunge dipendenze.
 Se la calibrazione per block bootstrap debba imporre H₀ nei dati (per l'ANOVA: serie centrata per gruppo) prima di ricampionare. Blocca: la chiusura di T12, la correzione dello schema della docstring di calibration.py e la scelta di L per C5.2, C6.4 e C8. Proposta: un task nuovo con righe method = block_bootstrap_centered aggiunte al CSV accanto a quelle attuali, e criteri scritti e datati prima dell'esecuzione.
 
 ## Ultimo aggiornamento
 
-
-
-R14@2026-09-28 — task di scrittura chiusi dopo la mappa del 2026-09-28: T8, T9, T10, T11, T12
+R15@2026-09-28 — task di scrittura chiusi dopo la mappa del 2026-09-28: T8, T9, T10, T11, T12, T13
