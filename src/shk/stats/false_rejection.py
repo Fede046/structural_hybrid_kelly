@@ -7,6 +7,7 @@ import numpy as np
 import scipy.stats
 
 from shk.stats.anova import oneway_anova_vectorized
+from shk.stats.calibration import calibrate_threshold
 from shk.stats.timeseries import generate_ar1_series
 
 PHI_VALUES: tuple[float, ...] = (0.0, 0.3, 0.5, 0.7)
@@ -14,6 +15,12 @@ N_OBS: int = 380
 N_SERIES: int = 1000
 ALPHA: float = 0.05
 SEED_C2: int = 20260928
+
+BLOCK_LENGTHS: tuple[int, ...] = (7, 20, 40)
+N_BOOT: int = 999
+
+METHOD_NOMINAL: str = "nominal"
+METHOD_BLOCK_BOOTSTRAP: str = "block_bootstrap"
 
 DESIGN_CONTIGUOUS_2: str = "contiguous_2"
 DESIGN_CONTIGUOUS_38: str = "contiguous_38"
@@ -48,7 +55,8 @@ class PhiStreams(NamedTuple):
     perm_rng : np.random.Generator
         Generatore per le permutazioni casuali del disegno random_2.
     boot_seed : np.random.SeedSequence
-        Sequenza di semi riservata per il bootstrap nel Task 12 (verrà divisa con spawn).
+        Sequenza di semi per il bootstrap, divisa con spawn(len(BLOCK_LENGTHS))
+        da compute_calibrated_rejection_rates, con un generatore per ciascun L.
     """
 
     series_rng: np.random.Generator
@@ -67,9 +75,10 @@ class RejectionResult:
     phi : float
         Coefficiente autoregressivo della serie.
     method : str
-        Metodo di calcolo della soglia ("nominal").
+        Metodo di calcolo della soglia ("nominal" oppure "block_bootstrap").
     block_length : str
-        Lunghezza del blocco di bootstrap (stringa vuota "" per il metodo nominale).
+        Lunghezza del blocco di bootstrap ("" per il metodo nominale, lunghezza dei blocchi
+        come stringa per "block_bootstrap").
     n_series : int
         Numero totale di serie simulate.
     rejections : int
@@ -77,7 +86,8 @@ class RejectionResult:
     rejection_rate : float
         Quota empirica di rigetti (rejections / n_series).
     critical_value_mean : float
-        Valore critico nominale impiegato per la decisione.
+        Valore critico nominale per "nominal" e media delle soglie calibrate serie
+        per serie per "block_bootstrap".
     mc_lower_99 : float
         Estremo inferiore dell'intervallo Monte Carlo al 99% attorno ad ALPHA.
     mc_upper_99 : float
@@ -245,7 +255,8 @@ def spawn_c2_generators(
     suddiviso con spawn(3) in tre flussi ordinati:
     1. series_rng: generatore per la matrice di serie AR(1);
     2. perm_rng: generatore per le permutazioni delle serie in random_2;
-    3. boot_seed: SeedSequence intatta riservata per il Task 12 (verrà divisa con spawn).
+    3. boot_seed: SeedSequence per il bootstrap, divisa con spawn(len(BLOCK_LENGTHS))
+       da compute_calibrated_rejection_rates, con un generatore per ciascun L.
 
     Parametri
     ---------
@@ -385,5 +396,103 @@ def compute_nominal_rejection_rates(
     for d in DESIGNS:
         for phi in PHI_VALUES:
             ordered_results.append(results_map[(d, phi)])
+
+    return ordered_results
+
+
+def compute_calibrated_rejection_rates(
+    seed: int = SEED_C2,
+) -> list[RejectionResult]:
+    """Calcola il tasso di falso rigetto calibrato per moving block bootstrap su contiguous_2.
+
+    Per ciascun phi in PHI_VALUES:
+    1. Genera una sola matrice di serie AR(1) di forma (N_SERIES, N_OBS) dal flusso series_rng;
+       le serie generate sono le stesse di compute_nominal_rejection_rates, perché derivano
+       dallo stesso series_rng generato dallo stesso seed.
+    2. Valuta la statistica F osservata per ciascuna serie con il disegno contiguous_2.
+    3. Suddivide il flusso boot_seed con spawn(len(BLOCK_LENGTHS)), ottenendo un generatore
+       indipendente per ciascuna lunghezza di blocco L in BLOCK_LENGTHS.
+    4. Per ciascun L, calcola la soglia calibrata serie per serie tramite calibrate_threshold,
+       utilizzando il generatore in sequenza sulle N_SERIES serie con vectorized=True.
+    5. Rigetta l'ipotesi nulla per le serie in cui la F osservata supera la soglia calibrata
+       della rispettiva serie.
+
+    Restituisce i record RejectionResult ordinati per L nell'ordine di BLOCK_LENGTHS e,
+    all'interno di ciascun L, per phi nell'ordine di PHI_VALUES.
+
+    Parametri
+    ---------
+    seed : int, opzionale
+        Seed master per la simulazione (default: SEED_C2 = 20260928).
+
+    Restituisce
+    -----------
+    list[RejectionResult]
+        Lista di 12 record RejectionResult per le combinazioni di BLOCK_LENGTHS e PHI_VALUES.
+
+    Solleva
+    -------
+    TypeError
+        Se seed non è un intero valido.
+    """
+    if isinstance(seed, bool) or not isinstance(seed, (int, np.integer)):
+        raise TypeError(f"seed must be an integer, got {type(seed).__name__}")
+
+    mc_lower, mc_upper = monte_carlo_interval_99(ALPHA, N_SERIES)
+    labels_cont2 = make_design_labels(DESIGN_CONTIGUOUS_2, N_OBS)
+
+    def stat_contiguous_2(b_data: np.ndarray) -> np.ndarray:
+        return oneway_anova_vectorized(b_data, labels_cont2)
+
+    streams = spawn_c2_generators(seed=seed)
+
+    results_map: dict[tuple[int, float], RejectionResult] = {}
+
+    for phi, phi_stream in zip(PHI_VALUES, streams):
+        # 1. Generazione di UNA SOLA matrice di serie per questo phi
+        series = generate_ar1_series(
+            phi=phi, n=N_OBS, m=N_SERIES, rng=phi_stream.series_rng
+        )
+        f_obs = oneway_anova_vectorized(series, labels_cont2)
+
+        # 2. Divisione del flusso bootstrap per le lunghezze di blocco
+        boot_seeds = phi_stream.boot_seed.spawn(len(BLOCK_LENGTHS))
+
+        for l_val, b_seed in zip(BLOCK_LENGTHS, boot_seeds):
+            rng_l = np.random.default_rng(b_seed)
+            thresholds = np.empty(N_SERIES, dtype=np.float64)
+
+            for s in range(N_SERIES):
+                thresholds[s] = calibrate_threshold(
+                    data=series[s],
+                    statistic=stat_contiguous_2,
+                    block_length=l_val,
+                    n_boot=N_BOOT,
+                    alpha=ALPHA,
+                    rng=rng_l,
+                    vectorized=True,
+                )
+
+            rejections = int(np.sum(f_obs > thresholds))
+            rejection_rate = float(rejections / N_SERIES)
+            critical_value_mean = float(np.mean(thresholds))
+
+            results_map[(l_val, phi)] = RejectionResult(
+                design=DESIGN_CONTIGUOUS_2,
+                phi=phi,
+                method=METHOD_BLOCK_BOOTSTRAP,
+                block_length=str(l_val),
+                n_series=N_SERIES,
+                rejections=rejections,
+                rejection_rate=rejection_rate,
+                critical_value_mean=critical_value_mean,
+                mc_lower_99=mc_lower,
+                mc_upper_99=mc_upper,
+            )
+
+    ordered_results: list[RejectionResult] = []
+    for l_val in BLOCK_LENGTHS:
+        for phi in PHI_VALUES:
+            ordered_results.append(results_map[(l_val, phi)])
 
     return ordered_results
