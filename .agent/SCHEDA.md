@@ -1,5 +1,3 @@
-Ecco il file SCHEDA.md aggiornato in base alle tue indicazioni:
-
 # Scheda del progetto
 
 Origine: mappa del 2026-09-28, report fino a R2@2026-09-28
@@ -8,7 +6,7 @@ Origine: mappa del 2026-09-28, report fino a R2@2026-09-28
 
 Radice: c:\Users\malse\Documents\GitHub\structural_hybrid_kelly [V, R1@2026-09-28]
 Branch corrente C2 a 1e7813d "C1 (#14)", allineato a origin/C2 rispetto all'ultimo fetch locale (nessun git fetch eseguito); main punta allo stesso commit 1e7813d [V, R1@2026-09-28]
-Working tree al momento di R1: .agent/BACKLOG.md modificato (story S2, +250/−1), .agent/MAPPA.md modificato, C1.1.md cancellato; niente di staged, nessun file non tracciato [V, R1@2026-09-28]. Dopo T8–T10 si aggiungono, non tracciati salvo commit del programmatore: src/shk/stats/**init**.py, anova.py, timeseries.py, false_rejection.py; scripts/us_c2_anova_autocorrelation.py; tests/test_anova.py, test_timeseries.py, test_us_c2_acceptance.py; results/us_c2_anova_autocorrelation.csv; thesis/figures/us_c2_anova_autocorrelation.png; .agent/report/T8.md … T10.md; esiste .venv/ nella radice [V, R7@2026-09-28], se sia ignorato da git non è verificato; stato attuale del working tree non verificato [D]
+Working tree al momento di R1: .agent/BACKLOG.md modificato (story S2, +250/−1), .agent/MAPPA.md modificato, C1.1.md cancellato; niente di staged, nessun file non tracciato [V, R1@2026-09-28]. Dopo T8–T11 si aggiungono, non tracciati salvo commit del programmatore: src/shk/stats/**init**.py, anova.py, timeseries.py, false_rejection.py, calibration.py; scripts/us_c2_anova_autocorrelation.py; tests/test_anova.py, test_timeseries.py, test_us_c2_acceptance.py, test_calibration.py; results/us_c2_anova_autocorrelation.csv; thesis/figures/us_c2_anova_autocorrelation.png; .agent/report/T8.md … T11.md; esiste .venv/ nella radice [V, R7@2026-09-28], se sia ignorato da git non è verificato; stato attuale del working tree non verificato [D]
 La cancellazione di C1.1.md è del programmatore, non di un task, e non è committata [V, dichiarazione del programmatore 2026-09-28]
 .agent/PROTOCOLLO.md è stato aggiunto dal programmatore dopo R2 [V, dichiarazione del programmatore 2026-09-28]; il suo stato in git (non tracciato, staged o committato) non è verificato [D]
 Branch C1 a 362c739 (merge di main in C1); nella sua storia T6 = 9f6206c, T7 = 9cb04e9, poi e8f1bba "Document S1 completion and C1.2 closure" [V, R2@2026-09-28]
@@ -30,7 +28,7 @@ CI: .github/workflows/test.yml esegue pytest -v [V, R1@2026-09-28]; trigger su p
 Test veloci: pytest -v; addopts = "-m 'not slow'" in pyproject.toml esclude i test slow [V, R1@2026-09-28]. Cline esegue ogni comando Python con l'interprete del venv, esplicitamente: ..venv\Scripts\python.exe -m pytest -v, ..venv\Scripts\python.exe  [V, R7@2026-09-28; decisione del programmatore 2026-09-28]. Nel venv shk è installato in modalità editable [V, R7@2026-09-28]. Il terminale di Cline usa di default C:\Users\malse\anaconda3\python.exe (Python 3.12.7, pytest 7.4.4), dove shk non è installato [V, R6@2026-09-28]
 Venv del progetto .venv: Python 3.12.7, pytest 9.1.1, NumPy 2.5.2 [V, R7@2026-09-28]
 Solo test slow: pytest -m slow [D, era V R4@2026-09-27]; tutti i test: pytest -o addopts="" [D]
-Baseline dopo T10: 90 test veloci (44 preesistenti + 23 in tests/test_anova.py + 13 in tests/test_timeseries.py + 10 in tests/test_us_c2_acceptance.py), tutti verdi nel venv, e 9 slow deselezionati [V, R9@2026-09-28]; test slow non rieseguiti dopo la mappa, verdi all'ultima esecuzione nota [D, era V R14@2026-09-27]
+Baseline dopo T11: 108 test veloci (44 preesistenti + 23 test_anova + 13 test_timeseries + 10 test_us_c2_acceptance + 18 test_calibration), tutti verdi nel venv, e 9 slow deselezionati [V, R11@2026-09-28]; test slow non rieseguiti dopo la mappa, verdi all'ultima esecuzione nota [D, era V R14@2026-09-27]
 Esperimento C2: ..venv\Scripts\python.exe scripts\us_c2_anova_autocorrelation.py dalla radice, circa 3–3.5 s; due esecuzioni danno CSV identici byte per byte, SHA256 F03139516E5482BCAD698EEA76A7903DC3A3FE4DA3BC905950FE8072A7FC5B77 [V, R9@2026-09-28]
 Esperimenti: ..venv\Scripts\python.exe scripts/us_c1_1_growth_vs_lambda.py e ..venv\Scripts\python.exe scripts/us_c1_2_estimation_error.py dalla radice [D]
 Lo script C1.2 dura circa 70 s e due esecuzioni danno CSV identici byte per byte [D, era V R16@2026-09-27]
@@ -60,9 +58,10 @@ scripts/us_c2_anova_autocorrelation.py — run_experiment() senza parametri; scr
 tests/test_anova.py — 23 test veloci: toy, concordanza con f_oneway su toy e 3 dataset casuali, partizione della devianza, vettorizzata su (3, 4, 380) con contiguous_2 e k = 5 permutato, validazioni [V, R4@2026-09-28]
 tests/test_timeseries.py — 13 test veloci: forma e dtype, riproducibilità, varianze e autocorrelazione pooled parametrizzate su φ ∈ {0.0, 0.3, 0.7} con seed 20260928, validazioni [V, R7@2026-09-28]
 tests/test_us_c2_acceptance.py — 10 test veloci (3.67 s): criteri 1–3 su contiguous_2, conteggio delle chiamate a generate_ar1_series con monkeypatch, stesse serie per tutti i disegni con flussi ricostruiti da SeedSequence(SEED_C2), CSV confrontato campo per campo con compute_nominal_rejection_rates, esistenza del PNG, disegno sconosciuto [V, R9@2026-09-28]
-Classi del pacchetto: Scenario, StakingMoments [V, R1@2026-09-28] e OneWayAnovaResult [V, R4@2026-09-28]; nessun'altra [D]
+src/shk/stats/calibration.py — moving_block_indices(n, block_length, n_boot, rng) → int64 (n_boot, n): inizi con rng.integers(0, n − L + 1, size=(n_boot, ⌈n/L⌉)), blocchi per broadcasting, troncamento a n; compute_order_statistic_index(b, alpha) → int ⌈(1 − α)(b + 1)⌉, arrotondato all'intero più vicino se entro 1e-9, ValueError se > b; calibrate_threshold(data, statistic, block_length, n_boot, alpha, rng, vectorized=False) → float: indici estratti una sola volta, con vectorized statistic(data[indices]) su forma (B, *data.shape), altrimenti ciclo sulle B righe; output in float64 di forma (n_boot,) (ValueError altrimenti), non finito → ValueError; soglia = elemento k − 1 delle statistiche ordinate; nessun import da anova.py, timeseries.py o false_rejection.py; docstring del modulo con (a) schema indicativo dei quattro strumenti, (b) rimando alle righe block_bootstrap del CSV C2, (c) H₀ a carico del chiamante [V, R11 e R12@2026-09-28 per comportamento testato e docstring; D per i dettagli interni, piano R10]
+tests/test_calibration.py — 15 funzioni di test (18 test): proprietà degli indici, L = n, integrità delle righe 2D, statistica d'ordine, vectorized contro non vectorized, due statistiche (F del Task 8 e media normalizzata 2D), seed, i quattro casi di compute_order_statistic_index, docstring, validazioni raggruppate in 6 funzioni [V, R12@2026-09-28]
+Classi del pacchetto: Scenario, StakingMoments [V, R1@2026-09-28], OneWayAnovaResult [V, R4@2026-09-28], RejectionResult e PhiStreams [V, R9@2026-09-28]; nessun'altra [D]
 Persistenza: solo CSV in results/ e PNG in thesis/figures/ [V, R1@2026-09-28]; nessun database [D]
-Non esistono src/shk/stats/calibration.py né tests/test_calibration.py [V, R1@2026-09-28; T8–T10 non li hanno creati, R4, R7 e R9@2026-09-28]
 
 ## Flussi principali
 
@@ -81,6 +80,7 @@ Uso come libreria: from shk.kelly import kelly_fraction, log_growth_rate; expect
 Valori analitici (p=0.6, b=1): f*=0.2; g(0.2)=0.020136; g(0.4)=−0.002447; g(0.5)≈−0.0340; zero di g a f≈0.3894, cioè λ≈1.9470; una vincita in più o in meno su T=1000 sposta la crescita mediana di circa 0.0008 [D, ricalcolo del supervisore]
 Le costanti di tests/test_kelly_core.py:32 e :39 e il λ=1.946 dell'accettazione C1.1 sono valori analitici, non empirici [D, ricalcolo del supervisore]
 Var(c) attesa a σ_p = 0.0283: circa 0.080 nello scenario base, circa 1.28 in quello sottile (troncamento a zero incluso) [D, ricalcolo del supervisore]
+Costo della calibrazione: una chiamata di calibrate_threshold con n = 380, F a due blocchi, L = 20, B = 999, vectorized vero dura in media 6.8 ms nel venv [V, R11@2026-09-28]
 
 ## Convenzioni da rispettare
 
@@ -88,7 +88,7 @@ Naming: snake_case per moduli, funzioni e variabili; PascalCase per le classi; U
 Lingua: identificatori, nomi dei test e messaggi di eccezione in inglese; commenti e docstring in italiano [V, R1@2026-09-28]
 Type hints completi su argomenti e ritorni; docstring stile NumPy con sezioni Parametri / Restituisce / Solleva [V, R1@2026-09-28]
 Validazione in apertura di funzione: ValueError per i valori, TypeError per i tipi; rng controllato con isinstance(rng, np.random.Generator) → TypeError [V, R5@2026-09-28]. Eccezione nel codice esistente: draw_outcomes e noisy_estimates non controllano il tipo di T e M (2.5 fallisce solo dentro NumPy con TypeError, True è accettato come 1) [V, R5@2026-09-28]. Il codice nuovo controlla anche il tipo degli interi (bool e non interi → TypeError), come generate_ar1_series [V, R7@2026-09-28]
-Nessuna occorrenza di try:, print( o logging nei file tracciati di src/ e scripts/ [V, R4@2026-09-28, git grep], in src/shk/stats/**init**.py e anova.py [V, R5@2026-09-28] e in src/shk/stats/timeseries.py [V, R8@2026-09-28]; src/shk/stats/false_rejection.py e scripts/us_c2_anova_autocorrelation.py non controllati [D]
+Nessuna occorrenza di try:, print( o logging nei file tracciati di src/ e scripts/ [V, R4@2026-09-28, git grep] e in tutti i file nuovi di S2: src/shk/stats/**init**.py e anova.py [V, R5@2026-09-28], timeseries.py [V, R8@2026-09-28], false_rejection.py e scripts/us_c2_anova_autocorrelation.py [V, R10@2026-09-28], calibration.py [V, R12@2026-09-28]
 L'RNG entra come argomento, mai creato dentro le funzioni di libreria; flussi indipendenti con np.random.SeedSequence.spawn [V, R1@2026-09-28 per spawn; D, era V R5@2026-09-27 e R6@2026-09-27 per il resto]
 Vettorizzazione NumPy senza cicli su M e T nel motore; del paths nei loop Monte Carlo [V, R1@2026-09-28]
 Script di esperimento: matplotlib.use("Agg") prima di importare pyplot, run_experiment() senza parametri chiamata dal blocco **main**, nessun argomento da riga di comando, import diretti da shk..; CSV con csv.DictWriter, open(mode="w", newline="", encoding="utf-8"), lineterminator di default (\r\n), float nativi e stringa vuota per i non applicabili; PNG con plt.tight_layout() e savefig(dpi=150); etichette delle figure in italiano [V, R8@2026-09-28 su us_c1_2_estimation_error.py; R9@2026-09-28 per la lingua]
@@ -119,4 +119,4 @@ Gestore canonico delle dipendenze (pip + pyproject oppure uv + uv.lock), non dec
 
 ## Ultimo aggiornamento
 
-R9@2026-09-28 — task di scrittura chiusi dopo la mappa del 2026-09-28: T8, T9, T10
+R12@2026-09-28 — task di scrittura chiusi dopo la mappa del 2026-09-28: T8, T9, T10, T11
