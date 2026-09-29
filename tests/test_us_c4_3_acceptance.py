@@ -7,6 +7,7 @@ import numpy as np
 import pandas as pd
 import pytest
 
+from shk.data.loading import DEFAULT_DATA_DIR
 from shk.data.split import load_by_role, read_split_config
 from shk.model.elo_fit import ELO_FITS, derive_fit_schedule
 from shk.model.recalibration import (
@@ -30,6 +31,11 @@ REPO_ROOT = Path(__file__).resolve().parents[1]
 CSV_PATH = REPO_ROOT / "results" / "us_c4_3_calibration.csv"
 PNG_PATH = REPO_ROOT / "thesis" / "figures" / "us_c4_3_calibration.png"
 T23_CSV_PATH = REPO_ROOT / "results" / "us_c4_2_g_hat.csv"
+
+
+def _has_real_data() -> bool:
+    """Verifica se i file CSV dei dati reali sono presenti."""
+    return DEFAULT_DATA_DIR.exists() and len(list(DEFAULT_DATA_DIR.glob("*.csv"))) > 0
 
 
 def test_csv_schema_and_counts():
@@ -128,6 +134,7 @@ def test_figure_exists():
     assert PNG_PATH.stat().st_size > 1000
 
 
+@pytest.mark.skipif(not _has_real_data(), reason="Raw CSV data not available in data/raw/E0/")
 @pytest.mark.skipif(not CSV_PATH.exists(), reason="Requires results/us_c4_3_calibration.csv")
 def test_recalculation_from_real_data_matches_csv():
     """Ricalcolo da zero sui dati reali coincide con il CSV entro 1e-12."""

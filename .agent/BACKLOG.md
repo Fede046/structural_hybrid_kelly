@@ -61,6 +61,7 @@ Note di esecuzione: correttivi in T15 (un test mancante) e T18 (riproducibilità
 - T17 — Tre metodi di de-vigging, US-C3.2 primo criterio — fatto — file: src/shk/market/__init__.py, src/shk/market/devig.py, tests/test_devig.py
 - T18 — Divergenza fra metodi di de-vigging sulle stagioni non di test, US-C3.2 — fatto — file: src/shk/market/divergence.py, scripts/us_c3_2_devig_divergence.py, tests/test_us_c3_2_acceptance.py, results/us_c3_2_devig_divergence.csv, thesis/figures/us_c3_2_devig_divergence.png
 - T19 — Fornitore walk-forward e test anti-leakage, US-C3.4 — fatto — file: src/shk/data/walkforward.py, tests/test_leakage.py
+- dopo la chiusura, la prima CI sul branch C4 ha rivelato che i test di ricalcolo di C4.2 e C4.3 si saltavano solo senza il CSV versionato, non senza i dati grezzi: il criterio "si salta senza CSV" era ambiguo e il supervisore non l'ha controllato in CI. Corretto in T25.
 
 Risultati principali:
 - Dati: 31 stagioni E0 (1993-94 … 2023-24), 11 944 partite (462 nel 1993-94 e nel 1994-95, 380 nelle altre). Risultati completi dal 1993-94; prima terna 1X2 pre-partita completa nel 2000-01 (GB, IW, SB, WH), 2 stagioni prima del 2002-03 del paper; B365 completa in tutte le stagioni dal 2002-03 al 2023-24, assente nel 2000-01, che è di training.
@@ -106,6 +107,7 @@ Note di esecuzione:
 - T22 — Calibrazione espansiva di K, h, ν sul training e previsioni walk-forward, US-C4.1 — fatto — file: src/shk/model/elo_fit.py, scripts/us_c4_1_elo_walkforward.py, tests/test_us_c4_1_acceptance.py, results/us_c4_1_elo_walkforward.csv, thesis/figures/us_c4_1_elo_walkforward.png
 - T23 — ĝ del Modulo 1 contro il mercato de-viggato, US-C4.2 — fatto — file: src/shk/model/scoring.py, scripts/us_c4_2_g_hat.py, tests/test_scoring.py, tests/test_us_c4_2_acceptance.py, results/us_c4_2_g_hat.csv, thesis/figures/us_c4_2_g_hat.png
 - T24 — Calibrazione del Modulo 1: reliability, Brier e ricalibrazione, US-C4.3 — fatto — file: src/shk/model/recalibration.py, scripts/us_c4_3_calibration.py, tests/test_recalibration.py, tests/test_us_c4_3_acceptance.py, results/us_c4_3_calibration.csv, thesis/figures/us_c4_3_calibration.png
+- T25 — Salto dei test di ricalcolo C4.2 e C4.3 senza dati grezzi (correzione della CI, fuori story; sesto task della chat, in deroga alla regola dei cinque, per decisione del programmatore) — in corso: manca la verifica della CI — file: tests/test_us_c4_2_acceptance.py, tests/test_us_c4_3_acceptance.py. Causa: la CI del 2026-09-29 sul branch C4 falliva su test_recalculation_from_real_data_matches_csv di C4.2 e C4.3 (FileNotFoundError, data/raw/E0 assente), perché i due test si saltavano solo senza il CSV versionato in results/ e non senza i dati grezzi. Ora hanno anche skipif(not _has_real_data(), reason="Raw CSV data not available in data/raw/E0/"), come test_elo_predictor.py; in tests/ non resta nessuna chiamata a load_by_role o load_all_seasons senza protezione. In locale i due test passano; suite veloce 248 verdi, 15 deselezionati, 50.28 s. Report: .agent/report/T25.md.
 
 Risultati principali:
 - Modulo 1 Elo: Davidson riproduce la tabella delle note 2.8 §3.3 solo con s = 200 (scarto massimo 4.4e-4; con s = 400 lo scarto sarebbe 0.20). Percorso via fornitore e percorso veloce danno previsioni identiche byte per byte sulle 8 360 partite di training e validazione (0.35 s il veloce, 10.6 s il fornitore).
@@ -146,6 +148,7 @@ Resta aperto:
 - Decidere se aggiungere alle "Convenzioni del progetto" di .agent/PROTOCOLLO.md la regola "ogni valore numerico del report viene da un comando elencato".
 - Rimappare il progetto prima della prossima story: dopo la mappa del 2026-09-29b sono stati chiusi cinque task di scrittura.
 - Committare codice, CSV e figure di T24 (T20–T23 sono in 7f8e928, 4710045, 15b2204, d329766), verificare la CI al primo push del branch C4 e portare C4 in main.
+- Committare T25 (T20–T24 sono in 7f8e928, 4710045, 15b2204, d329766, dc9d8f2), verificare che la CI del branch C4 sia verde e portare C4 in main. Con la CI verde, cambiare lo stato di T25 da "in corso: manca la verifica della CI" a "fatto".
 
 ## Story S2 — C2 ANOVA a mano, autocorrelazione e calibrazione per block bootstrap — aperta il 2026-09-28, T12 da rivedere
 Esito: unisce US-C2.1, US-C2.2 e US-C2.3. T8–T11 chiusi con tutti i criteri coperti da test; T12 fermo sul criterio 2; T13 corregge i test del CSV per la CI. Suite veloce 109 verde; suite slow 14, di cui 1 rossa per il risultato noto di T12. Risultati in results/us_c2_anova_autocorrelation.csv (12 righe nominali definitive + 12 calibrate) e thesis/figures/us_c2_anova_autocorrelation.png (pannelli A e B); valori misurati nei report .agent/report/T8.md … T12.md, riprodotti in modo indipendente dal supervisore.

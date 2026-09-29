@@ -423,3 +423,35 @@ Versionamento dei CSV E0: oggi sono esclusi da .gitignore, quindi in CI i test s
 
 ## Ultimo aggiornamento
 R30@2026-09-29b — task di scrittura chiusi dopo la mappa del 2026-09-29b: T20, T21, T22, T23, T24
+
+---
+
+Stato repo → "Dopo la mappa: … A inizio T24 HEAD su C4 a d329766, working tree pulito [V, R27@2026-09-29b]. Dopo T24 il working tree conteneva, non committati, … ; se siano stati committati non è verificato [D]" →
+(stesso testo fino a "d329766 "close 23" (T23)", poi) , dc9d8f2 "Add C4 Elo and recalibration pipeline" (T24) [V, R15, R22, R24, R27 e R31@2026-09-29b]. A inizio T25 HEAD su C4 a dc9d8f2, con modificato solo .agent/BACKLOG.md [V, R31@2026-09-29b]. Dopo T25 il working tree contiene, non committati, tests/test_us_c4_2_acceptance.py, tests/test_us_c4_3_acceptance.py, .agent/BACKLOG.md e .agent/report/T25.md [D]
+
+Stato repo → "[V per la creazione, R11–R30@2026-09-29b; D per lo stato in git di quelli di T24]" →
+[V per la creazione, R11–R30@2026-09-29b; tutti committati entro dc9d8f2, V, R31@2026-09-29b]
+
+Stack e comandi → "CI (GitHub Actions) al 2026-09-28: … Esito della CI dopo T13, dopo 115e600, dopo 90a77a1 e sul branch C4 non verificato [D]" →
+(stesso testo fino a "…come stringhe [V, log CI fornito dal programmatore 2026-09-28].", poi) CI del 2026-09-29 sul branch C4, dopo T24 (Python 3.12.14, pytest 9.1.1): 263 raccolti, 15 deselezionati, 237 passati, 9 saltati, 2 falliti, 4.05 s. I due falliti sono i test di ricalcolo di C4.2 e C4.3, corretti in T25 [V, log CI fornito dal programmatore 2026-09-29]. Esito dopo T25 non ancora verificato [D]
+
+Stack e comandi → "… Dopo T24: 248 verdi, 15 deselezionati, 42.49 s [V, R11, R21, R23, R26 e R29@2026-09-29b]. …" →
+(stesso testo, con in coda) Dopo T25: 248 verdi, 15 deselezionati, 50.28 s [V, R33@2026-09-29b]
+
+Moduli e responsabilità → "tests/test_us_c4_1_acceptance.py — 7 test: - veloci: test_calibration_training_only_synthetic, …, test_recomputed_predictions_match_csv;" →
+tests/test_us_c4_1_acceptance.py — 7 test: - veloci: test_calibration_training_only_synthetic, test_calibration_objective_matches_count_real_data, test_csv_validation_leakage_and_uniqueness, test_versioned_csv_schema_and_probabilities, test_recomputed_predictions_match_csv, test_elo_fit_validations [V, log CI 2026-09-29];
+
+Moduli e responsabilità → "… tests/test_us_c4_2_acceptance.py — 4 test: schema e riepilogo del CSV, coerenza delle cumulative, esistenza della figura, ricalcolo dai dati reali (saltato senza CSV) [V, R26@2026-09-29b]" →
+… tests/test_us_c4_2_acceptance.py — 4 test: schema e riepilogo del CSV, coerenza delle cumulative, esistenza della figura, ricalcolo dai dati reali, saltato se manca il CSV versionato o se data/raw/E0/ non ha CSV (_has_real_data) [V, R26 e R33@2026-09-29b]
+
+Moduli e responsabilità → "… tests/test_us_c4_3_acceptance.py — 5 test: schema e conteggi del CSV, ĝ raw uguale a T23, figura, ricalcolo dai dati reali (saltato senza CSV) [V, R29 e R30@2026-09-29b]" →
+… tests/test_us_c4_3_acceptance.py — 5 test: schema e conteggi del CSV, z e limiti della reliability (test_reliability_z_scores_and_bounds), ĝ raw uguale a T23, figura, ricalcolo dai dati reali, saltato se manca il CSV versionato o se data/raw/E0/ non ha CSV (_has_real_data) [V, R29, R30 e R33@2026-09-29b]
+
+Zone fragili da non toccare senza avviso → "I test sui dati reali non girano in CI, perché data/raw/* è escluso da .gitignore: in CI si saltano e vanno eseguiti in locale [D]. …" →
+(stesso testo, con in coda) Il salto deve dipendere dai dati grezzi: in tests/ si usa l'helper _has_real_data o una condizione equivalente su DEFAULT_DATA_DIR. Un test sui dati reali che controlla solo il CSV versionato in results/ fallisce in CI, come è successo prima di T25 [V, R31 e R33@2026-09-29b]
+
+Punti ancora incerti → "Esito della CI dopo 90a77a1 e sul branch C4 (pandas più recente, test sintetici di S3 e S4): non verificato. …" →
+CI sul branch C4: la prima esecuzione, dopo T24, è fallita su due test sui dati reali senza salto sui dati grezzi, corretti in T25; per il resto era verde. Da riverificare al push di T25. Non blocca i task.
+
+Ultimo aggiornamento → "R30@2026-09-29b — task di scrittura chiusi dopo la mappa del 2026-09-29b: T20, T21, T22, T23, T24" →
+R33@2026-09-29b — task di scrittura chiusi dopo la mappa del 2026-09-29b: T20, T21, T22, T23, T24, T25
