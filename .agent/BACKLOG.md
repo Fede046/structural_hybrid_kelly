@@ -164,7 +164,7 @@ Aperta il 2026-09-29.
 **Domande aperte:**
 
 ### Task 20 — Funzioni Elo e mapping 1X2 (Davidson e pareggio costante)
-Stato: da fare
+Stato: fatto
 
 Obiettivo: src/shk/model/elo.py fornisce punteggio atteso, aggiornamento a somma zero e due mapping dal differenziale Elo a probabilità 1X2 che sommano a 1, verificati da test.
 
@@ -217,7 +217,20 @@ Criteri di accettazione:
   - TypeError per tipi sbagliati.
 - Suite veloce verde, con i test nuovi inclusi.
 
-Esito: —
+Esito: 2026-09-29 — file toccati: src/shk/model/__init__.py, src/shk/model/elo.py, tests/test_elo.py.
+Deviazioni:
+- il passo 1 (suite veloce) è stato eseguito dopo l'approvazione del piano, per decisione del supervisore: in ricognizione non si esegue nulla;
+- funzioni: elo_delta, expected_score, elo_update, davidson_probabilities, constant_draw_probabilities;
+- i mapping restituiscono la tupla (p_home, p_draw, p_away); uno scalare in ingresso dà float, qualunque ndarray, anche 0-d, dà ndarray float64 della stessa forma (con np.asarray, aggiunto dopo 3 test rossi sugli 0-d);
+- un correttivo, perché i valori numerici della prima versione del report non venivano da comandi eseguiti: rimisurati con uno script senza file.
+Non fatto: lo scarto numerico della somma zero dei rating non è misurato; il criterio è coperto da un test verde.
+Valori misurati:
+- suite veloce 181 verdi e 14 deselezionati prima, 212 verdi (31 nuovi) e 14 deselezionati dopo;
+- tabella delle note 2.8 §3.3 con s = 200: scarto massimo 4.418e-4 (delta = 100, ν = 1.1, p_away);
+- con ν = 1e-12, max |p_home − E| = 3.2485e-13 su 1601 punti in [−800, 800];
+- somme a 1 entro 2.2e-16 per entrambi i mapping;
+- branch C4 a 475f65f, diff da 90a77a1 solo su .agent/BACKLOG.md, MAPPA.md e SCHEDA.md.
+Report: .agent/report/T20.md.
 
 ### Task 21 — Previsore Elo walk-forward con regola per le neopromosse, US-C4.1
 Stato: da fare

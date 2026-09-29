@@ -303,3 +303,51 @@ Versionamento dei CSV E0: oggi sono esclusi da .gitignore, quindi in CI i test s
 
 ## Ultimo aggiornamento
 R6@2026-09-29b — task di scrittura chiusi dopo la mappa del 2026-09-29b: nessuno
+
+
+Stato repo → (nuova riga, dopo "Branch locali: solo main. …") →
+Dopo la mappa: branch C4 creato da 90a77a1 con due commit solo su .agent/ (4b9e6c1 "Refresh C3 project documentation", 475f65f "Update BACKLOG.md"; diff solo su BACKLOG.md, MAPPA.md, SCHEDA.md). A inizio T20 HEAD su C4 a 475f65f, working tree pulito [V, R7 e R11@2026-09-29b]. Dopo T20 il working tree contiene, non committati, src/shk/model/__init__.py, src/shk/model/elo.py, tests/test_elo.py, .agent/report/T20.md [D]
+
+Stato repo → "Branch locali: solo main. Branch remoti: origin/HEAD → origin/main, origin/main [V, R1@2026-09-29b]" →
+Branch locali: C4 (corrente) [V, R11@2026-09-29b]; main presumibilmente ancora presente [D]. Branch remoti: origin/HEAD → origin/main, origin/main [V, R1@2026-09-29b]; se C4 sia pubblicato su origin non è verificato [D]
+
+Stack e comandi → "Suite veloce dopo T19: 181 verdi, 14 deselezionati, circa 14 s con i dati locali presenti [V, R46@2026-09-29]. I 181 sono … Non rieseguita su 90a77a1 [D]" →
+Suite veloce: 181 verdi, 14 deselezionati, 14.41 s su C4 a 475f65f, codice identico a 90a77a1 [V, R11@2026-09-29b]. I 181 sono i 109 di 115e600 più 18 di test_data_loading.py, 12 di test_coverage.py, 14 di test_split.py, 8 di test_devig.py, 11 di test_us_c3_2_acceptance.py e 9 di test_leakage.py. Dopo T20: 212 verdi (più 31 di test_elo.py), 14 deselezionati, 13.92 s [V, R11@2026-09-29b]
+
+Moduli e responsabilità → "src/shk/ contiene 16 moduli applicativi (6 in kelly, 4 in stats, 4 in data, 2 in market) più 5 __init__.py [V, R1@2026-09-29b; conteggio ricalcolato dal supervisore]" →
+src/shk/ contiene 17 moduli applicativi (6 in kelly, 4 in stats, 4 in data, 2 in market, 1 in model) più 6 __init__.py [V, R1@2026-09-29b e R11@2026-09-29b; conteggio ricalcolato dal supervisore]
+
+Moduli e responsabilità → (nuove righe, dopo quelle di src/shk/market/divergence.py) →
+src/shk/model/__init__.py — sola docstring di modulo in italiano [V, R11@2026-09-29b]
+src/shk/model/elo.py — funzioni pure, nessun RNG e nessun accesso ai dati:
+- elo_delta(r_home, r_away, h=0.0) → float, solo scalari;
+- expected_score(delta, s=400.0), E = 1/(1 + 10^(−delta/s));
+- elo_update(r_home, r_away, outcome, k, h=0.0, s=400.0) → (R_casa', R_trasferta'), con S = 1, 0.5, 0 per H, D, A;
+- davidson_probabilities(delta, nu, s=400.0) → (p_home, p_draw, p_away);
+- constant_draw_probabilities(delta, c, s=400.0) → (p_home, p_draw, p_away).
+Uno scalare reale in ingresso dà float; qualunque ndarray, anche 0-d, dà ndarray float64 della stessa forma [V, R11@2026-09-29b per i test verdi; D per le firme esatte e per l'uso di elo_delta ed expected_score dentro elo_update]
+src/shk/model/elo.py — validazioni: TypeError per bool, np.bool_, non numerici, liste, stringhe, ndarray bool o complessi; ValueError per valori non finiti, ν ≤ 0, c fuori da (0, 1), s ≤ 0, k < 0, outcome fuori da H, D, A; k = 0 ammesso [V, R11@2026-09-29b, test verdi]
+src/shk/model/elo.py — calcolo di E e di Davidson: il ramo ndarray usa np.power senza guardie (righe 164-166 e 282-288); il ramo scalare usa math.pow con guardie per |delta/s| > 308, che restituiscono 0 o 1 e p_draw = 0 (righe 169-174 e 291-299) [V, R12@2026-09-29b]. I due rami divergono solo per |delta/s| > 308, fuori da ogni valore realistico [D]
+
+Moduli e responsabilità → "tests/ — 17 moduli: test_kelly_core, …, test_us_c3_2_acceptance [V, R1@2026-09-29b]" →
+tests/ — 18 moduli: test_kelly_core, test_simulate, test_estimation, test_staking, test_metrics, test_anova, test_timeseries, test_calibration, test_data_loading, test_coverage, test_split, test_devig, test_leakage, test_elo, test_us_c1_1_acceptance, test_us_c1_2_acceptance, test_us_c2_acceptance, test_us_c3_2_acceptance [V, R1@2026-09-29b e R11@2026-09-29b]
+
+Moduli e responsabilità → (nuova riga, dopo quella di tests/test_us_c3_2_acceptance.py) →
+tests/test_elo.py — 31 test veloci:
+- somma zero; somma a 1 e probabilità in (0, 1) su delta in [−800, 800] con ν in [0.05, 3] e c in [0.01, 0.99];
+- tabella delle note 2.8 §3.3 con s = 200 (24 valori come costanti, tolleranza 5e-4); simmetria; p_draw monotono su entrambi i lati; limite ν = 1e-12; p_draw == c esatto;
+- validazioni; k = 0.
+[V, R11@2026-09-29b]
+
+Flussi principali → (nuova riga, dopo "Walk-forward anti-leakage, …") →
+Modulo 1 Elo (T20): la tabella Davidson delle note 2.8 §3.3 si riproduce con s = 200 (scarto massimo 4.418e-4, a delta = 100, ν = 1.1, p_away); con s = 400 lo scarto sarebbe 0.20. Con ν = 1e-12, max |p_home − E| = 3.2485e-13 su 1601 punti in [−800, 800], pari al valore teorico ν·max r^1.5/(r + 1)² ≈ 0.325·ν. Somme a 1 entro 2.2e-16 per entrambi i mapping [V, R13@2026-09-29b e ricalcolo del supervisore]
+
+Convenzioni da rispettare → "- file di S3: [V, R14, R26, R32, R43 e R46@2026-09-29]." →
+- file di S3: [V, R14, R26, R32, R43 e R46@2026-09-29];
+- file di S4: src/shk/model/ [V, R11@2026-09-29b, Select-String].
+
+Punti ancora incerti → "Esito della CI su main dopo 90a77a1 (pandas più recente, test S3 sintetici) e stato della suite veloce su 90a77a1: non verificati. Blocca: la baseline del prossimo task di scrittura, che deve partire da una suite verde. Si procede facendo cominciare il prossimo task con l'esecuzione della suite veloce." →
+Esito della CI dopo 90a77a1 (pandas più recente, test S3 sintetici): non verificato. La suite veloce locale è verde su quel codice (181, R11@2026-09-29b). Non blocca i task; da controllare al primo push del branch C4.
+
+Ultimo aggiornamento → "R6@2026-09-29b — task di scrittura chiusi dopo la mappa del 2026-09-29b: nessuno" →
+R14@2026-09-29b — task di scrittura chiusi dopo la mappa del 2026-09-29b: T20
