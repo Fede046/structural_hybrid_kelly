@@ -479,3 +479,56 @@ Rieseguire scripts/us_c4_1_elo_walkforward.py sovrascrive CSV e PNG versionati; 
 
 Ultimo aggiornamento → "R21@2026-09-29b — task di scrittura chiusi dopo la mappa del 2026-09-29b: T20, T21" →
 R23@2026-09-29b — task di scrittura chiusi dopo la mappa del 2026-09-29b: T20, T21, T22
+
+---
+
+Stato repo → "… Commit del programmatore: 7f8e928 … (T20), 4710045 … (T21). A inizio T22 HEAD su C4 a 4710045, working tree pulito [V, R22@2026-09-29b]. Dopo T22 il working tree contiene, non committati, … [D]" →
+… Commit del programmatore: 7f8e928 "Add Elo rating model and 1X2 mappings" (T20), 4710045 "Add Elo walk-forward predictor and tests" (T21), 15b2204 "Finita task 22" (T22). A inizio T23 HEAD su C4 a 15b2204, working tree pulito [V, R24@2026-09-29b]. Dopo T23 il working tree contiene, non committati, src/shk/model/scoring.py, scripts/us_c4_2_g_hat.py, tests/test_scoring.py, tests/test_us_c4_2_acceptance.py, results/us_c4_2_g_hat.csv, thesis/figures/us_c4_2_g_hat.png, .agent/report/T23.md [D]
+
+Stack e comandi → "… Dopo T22: 226 verdi (più 6 di test_us_c4_1_acceptance.py), 15 deselezionati, 33.56 s [V, R23@2026-09-29b]" →
+… Dopo T22: 226 verdi (più 6 di test_us_c4_1_acceptance.py), 15 deselezionati, 33.56 s [V, R23@2026-09-29b]. Dopo T23: 237 verdi (più 11 di test_scoring.py e test_us_c4_2_acceptance.py), 15 deselezionati, 38.08 s [V, R26@2026-09-29b]
+
+Stack e comandi → (nuova riga, dopo "Esperimento C4.1: …") →
+Esperimento C4.2: .\.venv\Scripts\python.exe scripts/us_c4_2_g_hat.py dalla radice, con data/raw/E0/ presente. Due esecuzioni danno CSV identici, SHA256 e076f16f6a39606a4fcba04be5679a1fa0d7ce9f1c44893df47df79e39dee3a9 [V, R26@2026-09-29b]; durata non misurata [D]
+
+Moduli e responsabilità → "src/shk/ contiene 19 moduli applicativi (…, 3 in model) più 6 __init__.py […]" →
+src/shk/ contiene 20 moduli applicativi (6 in kelly, 4 in stats, 4 in data, 2 in market, 4 in model) più 6 __init__.py [V, R1@2026-09-29b, R11, R19, R23 e R26@2026-09-29b; conteggio ricalcolato dal supervisore]
+
+Moduli e responsabilità → (nuove righe, dopo quelle di src/shk/model/elo_fit.py) →
+src/shk/model/scoring.py — costruzione dell'insieme di valutazione, riusata da T24:
+- generate_validation_predictions(df, fits, schedule): previsioni di validazione per fit;
+- align_predictions_with_odds(df_preds, df): abbinamento su season, Date, HomeTeam, AwayTeam, con ValueError per chiavi mancanti o duplicate;
+- prepare_series_evaluation(df_aligned, series, schedule) → oggetto con matches_total, missing_odds, invalid_odds, additive_inapplicable, matches_excluded, matches_used, più probabilità del modello e q dei tre metodi.
+Serie "b365_prematch" (B365H/D/A) e "pinnacle_closing" (PSCH/D/A, stagioni di validazione con anno iniziale ≥ 2012).
+[V, R26@2026-09-29b per l'uso; D per le firme esatte e per i contenuti del risultato non stampati]
+src/shk/model/scoring.py — metriche: log-loss per partita e media, termini di ĝ, ĝ, ĝ cumulativo. Nessun eps: probabilità dell'esito realizzato ≤ 0 → ValueError; matrici (N, 3) con righe che sommano a 1 entro 1e-9 [D, piano approvato; test verdi R26@2026-09-29b]
+scripts/us_c4_2_g_hat.py — run_experiment(): dati con load_by_role, funzioni di scoring.py; CSV lungo con 6 righe summary e una riga cumulative per partita, serie e metodo; PNG a due pannelli (una serie ciascuno, tre metodi, linea dello zero) [V, R26@2026-09-29b; D per i dettagli]
+
+Moduli e responsabilità → "tests/ — 20 moduli: … test_us_c4_1_acceptance [V, R1, R11, R19 e R23@2026-09-29b]" →
+tests/ — 22 moduli: test_kelly_core, test_simulate, test_estimation, test_staking, test_metrics, test_anova, test_timeseries, test_calibration, test_data_loading, test_coverage, test_split, test_devig, test_leakage, test_elo, test_elo_predictor, test_scoring, test_us_c1_1_acceptance, test_us_c1_2_acceptance, test_us_c2_acceptance, test_us_c3_2_acceptance, test_us_c4_1_acceptance, test_us_c4_2_acceptance [V, R1, R11, R19, R23 e R26@2026-09-29b]
+
+Moduli e responsabilità → (nuova riga, dopo quella di tests/test_us_c4_1_acceptance.py) →
+tests/test_scoring.py — 7 test veloci su dati sintetici: validazioni, log-loss, ĝ con p = q e caso a mano, serie cumulativa, preparazione della serie, validazioni delle chiavi. tests/test_us_c4_2_acceptance.py — 4 test: schema e riepilogo del CSV, coerenza delle cumulative, esistenza della figura, ricalcolo dai dati reali (saltato senza CSV) [V, R26@2026-09-29b]
+
+Flussi principali → (nuove righe, dopo quelle dell'esperimento C4.1) →
+Esperimento C4.2 [V, R24 e R26@2026-09-29b; log-loss e ĝ ricalcolati dal supervisore]:
+- PSCH/PSCD/PSCA completa (380 su 380) in ogni stagione dal 2012-13 al 2022-23;
+- devig_power converge sui 3 800 mercati PSC di validazione;
+- partite usate: b365_prematch 7 220, pinnacle_closing 3 800; nessuna esclusione;
+- log-loss del modello: 0.979536 (B365), 0.981229 (Pinnacle); la prima è la media pesata delle log-loss di validazione dei tre fit.
+ĝ (proporzionale / additivo / power) [V, R26@2026-09-29b]:
+- b365_prematch −0.021429 / −0.022401 / −0.022402;
+- pinnacle_closing −0.031474 / −0.031572 / −0.031672.
+Negativo in tutti i casi e in ogni fine stagione del cumulativo.
+
+Convenzioni da rispettare → "Parametri condivisi … elo_fit.py per C4.1. C1.1 è l'eccezione storica […]" →
+Parametri condivisi fra script e test in un modulo di libreria importato da entrambi: scenarios.py per C1.2, false_rejection.py per C2, coverage.py e divergence.py (con split.toml) per C3, elo_fit.py per C4.1, scoring.py per C4.2. C1.1 è l'eccezione storica [V, R1@2026-09-29b, R23 e R26@2026-09-29b]
+
+Convenzioni da rispettare → "- file di S4: … src/shk/model/elo_fit.py [V, R23@2026-09-29b, Select-String]." →
+- file di S4: src/shk/model/elo.py [V, R11@2026-09-29b, Select-String]; src/shk/model/elo_predictor.py [V, R19@2026-09-29b, prima del secondo correttivo di T21; D dopo]; src/shk/model/elo_fit.py [V, R23@2026-09-29b, Select-String]; src/shk/model/scoring.py non controllato [D].
+
+Zone fragili da non toccare senza avviso → "ELO_FITS in src/shk/model/elo_fit.py è congelato e non si modifica: … [D]" →
+ELO_FITS in src/shk/model/elo_fit.py è congelato e non si modifica: T23 e T24 lo vietano esplicitamente. Una modifica a elo.py, elo_predictor.py o scoring.py che cambia le previsioni o le metriche rende ELO_FITS, results/us_c4_1_elo_walkforward.csv e results/us_c4_2_g_hat.csv incoerenti col codice: vanno ricalibrati e rigenerati. Lo segnalano, in locale, test_recomputed_predictions_match_csv, test_recalculation_from_real_data_matches_csv e il test slow di ricalibrazione [D]
+
+Ultimo aggiornamento → "R23@2026-09-29b — task di scrittura chiusi dopo la mappa del 2026-09-29b: T20, T21, T22" →
+R26@2026-09-29b — task di scrittura chiusi dopo la mappa del 2026-09-29b: T20, T21, T22, T23

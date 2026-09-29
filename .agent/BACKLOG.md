@@ -425,8 +425,9 @@ Valori misurati:
 - suite veloce da 220 a 226 verdi, 15 deselezionati, 33.56 s.
 Report: .agent/report/T22.md.
 
+
 ### Task 23 — ĝ del Modulo 1 contro il mercato de-viggato, US-C4.2
-Stato: da fare
+Stato: fatto
 
 Obiettivo: ĝ è calcolato e riportato col segno, sulle stagioni di validazione, per due serie di q e tre metodi di de-vigging, insieme alla sua serie cumulativa. I risultati stanno in results/us_c4_2_g_hat.csv, con la figura thesis/figures/us_c4_2_g_hat.png.
 
@@ -490,7 +491,27 @@ Da misurare e riportare, senza farlo tornare:
 - partite usate ed escluse per causa;
 - ĝ cumulativo a fine di ogni stagione, letto dalla serie.
 
-Esito: —
+Esito: 2026-09-29 — file toccati: src/shk/model/scoring.py, scripts/us_c4_2_g_hat.py, tests/test_scoring.py, tests/test_us_c4_2_acceptance.py, results/us_c4_2_g_hat.csv, thesis/figures/us_c4_2_g_hat.png.
+Deviazioni:
+- correzioni del supervisore al piano:
+  - pinnacle_closing su 10 stagioni: il 2020-21 è di training;
+  - log-loss senza eps, con ValueError per probabilità ≤ 0;
+  - costruzione dell'insieme di valutazione in scoring.py, riusabile da T24 (generate_validation_predictions, align_predictions_with_odds, prepare_series_evaluation);
+  - una causa per ogni partita esclusa;
+  - colonne vuote del CSV per livello;
+- in ricognizione l'agente ha letto i propri log (transcript.jsonl e transcript_full.jsonl, in C:\Users\malse\.gemini\antigravity\…, fuori dal repository);
+- la ricerca di try:, print( e logging su scoring.py non è stata eseguita.
+Non fatto: nulla.
+Valori misurati:
+- partite usate: b365_prematch 7 220 su 7 220 (19 stagioni), pinnacle_closing 3 800 su 3 800 (10 stagioni: dal 2012-13 al 2019-20, 2021-22, 2022-23); 0 esclusioni per ciascuna causa;
+- devig_power converge sui 3 800 mercati PSC, somme a 1 entro 2.2e-16;
+- log-loss del modello: 0.979536 su b365_prematch, 0.981229 su pinnacle_closing;
+- log-loss del mercato (proporzionale / additivo / power): b365 0.958107 / 0.957135 / 0.957134; pinnacle 0.949755 / 0.949657 / 0.949556;
+- ĝ (proporzionale / additivo / power): b365 −0.021429 / −0.022401 / −0.022402; pinnacle −0.031474 / −0.031572 / −0.031672. Il segno non cambia fra i metodi;
+- ĝ cumulativo negativo alla fine di ogni stagione in entrambe le serie; tabelle nel report;
+- CSV di 33 066 righe, SHA256 e076f16f6a39606a4fcba04be5679a1fa0d7ce9f1c44893df47df79e39dee3a9, identico su due esecuzioni;
+- suite veloce da 226 a 237 verdi (11 nuovi), 15 deselezionati, 38.08 s.
+Report: .agent/report/T23.md.
 
 ### Task 24 — Calibrazione del Modulo 1: reliability, Brier e ricalibrazione, US-C4.3
 Stato: da fare
