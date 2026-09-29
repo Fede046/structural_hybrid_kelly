@@ -5,6 +5,7 @@ import io
 from pathlib import Path
 import re
 from typing import Final
+from collections.abc import Collection
 
 import pandas as pd
 
@@ -15,12 +16,16 @@ DEFAULT_DATA_DIR: Final[Path] = (
 )
 
 
-def load_all_seasons(data_dir: Path | str = DEFAULT_DATA_DIR) -> pd.DataFrame:
+def load_all_seasons(
+    data_dir: Path | str = DEFAULT_DATA_DIR,
+    seasons: Collection[str] | None = None,
+) -> pd.DataFrame:
     """Carica tutte le stagioni E0 da file CSV in un unico DataFrame consolidato.
 
-    Legge ogni file CSV presente nella directory specificata, valida la nomenclatura
-    della stagione, applica la procedura deterministica di decodifica, ripulisce
-    le righe irregolari o vuote, valida i formati di data e la finestra temporale
+    Legge i file CSV presenti nella directory specificata, valida la nomenclatura
+    di tutti i file presenti, applica la procedura deterministica di decodifica solo
+    ai file delle stagioni richieste (oppure a tutte le stagioni se seasons e' None),
+    ripulisce le righe irregolari o vuote, valida i formati di data e la finestra temporale
     stagionale, e restituisce un DataFrame ordinato stabilmente per stagione e data.
 
     Regola di decodifica (senza blocchi try/except):
@@ -38,6 +43,9 @@ def load_all_seasons(data_dir: Path | str = DEFAULT_DATA_DIR) -> pd.DataFrame:
     data_dir : Path o str, opzionale
         Percorso della directory contenente i file CSV delle stagioni.
         Il valore predefinito e' DEFAULT_DATA_DIR.
+    seasons : Collection[str] o None, opzionale
+        Insieme delle stagioni da caricare (es. ['2000-01', '2010-11']). Se None
+        (valore predefinito), carica tutte le stagioni trovate nella directory.
 
     Restituisce
     -----------
@@ -49,12 +57,14 @@ def load_all_seasons(data_dir: Path | str = DEFAULT_DATA_DIR) -> pd.DataFrame:
     Solleva
     -------
     TypeError
-        Se data_dir non e' di tipo str o pathlib.Path.
+        Se data_dir non e' di tipo str o pathlib.Path, oppure se seasons e' una str
+        o contiene elementi non str.
     FileNotFoundError
         Se la directory specificata non esiste sul file system.
     ValueError
         Se la directory non contiene file CSV, se uno dei file ha nome non
-        conforme a YYYY-YY.csv o anni non consecutivi, se un file e' vuoto,
+        conforme a YYYY-YY.csv o anni non consecutivi, se seasons e' vuoto o include
+        stagioni prive di file corrispondente, se un file letto e' vuoto,
         se una riga dati ha campi non vuoti in eccesso, se una colonna senza nome
         contiene valori non vuoti, se mancano date o vi sono formati misti/non validi,
         oppure se vi sono date al di fuori della finestra temporale stagionale
@@ -64,6 +74,21 @@ def load_all_seasons(data_dir: Path | str = DEFAULT_DATA_DIR) -> pd.DataFrame:
         raise TypeError(
             f"data_dir must be a str or pathlib.Path, got {type(data_dir).__name__}"
         )
+
+    if seasons is not None:
+        if isinstance(seasons, str):
+            raise TypeError("seasons cannot be a str, must be a Collection[str] or None")
+        if not isinstance(seasons, Collection):
+            raise TypeError(
+                f"seasons must be a Collection[str] or None, got {type(seasons).__name__}"
+            )
+        if len(seasons) == 0:
+            raise ValueError("seasons collection cannot be empty")
+        for s in seasons:
+            if not isinstance(s, str):
+                raise TypeError(
+                    f"All items in seasons must be str, got {type(s).__name__}"
+                )
 
     path = Path(data_dir)
     if not path.exists():
@@ -77,9 +102,35 @@ def load_all_seasons(data_dir: Path | str = DEFAULT_DATA_DIR) -> pd.DataFrame:
     date_2digit_pattern = re.compile(r"^\d{2}/\d{2}/\d{2}$")
     date_4digit_pattern = re.compile(r"^\d{2}/\d{2}/\d{4}$")
 
+    season_to_file: dict[str, Path] = {}
+    for file_path in csv_files:
+        match = filename_pattern.match(file_path.name)
+        if not match:
+            raise ValueError(
+                f"Invalid season filename format: {file_path.name}, expected YYYY-YY.csv"
+            )
+        start_year = int(match.group(1))
+        end_year = int(match.group(2))
+        if (start_year + 1) % 100 != end_year:
+            raise ValueError(
+                f"Season year continuity mismatch in filename: {file_path.name}"
+            )
+        season_name = f"{start_year:04d}-{end_year:02d}"
+        season_to_file[season_name] = file_path
+
+    if seasons is not None:
+        missing_seasons = [s for s in seasons if s not in season_to_file]
+        if missing_seasons:
+            raise ValueError(
+                f"Seasons without corresponding file in {path}: {missing_seasons}"
+            )
+        target_files = [season_to_file[s] for s in sorted(set(seasons))]
+    else:
+        target_files = csv_files
+
     season_dfs: list[pd.DataFrame] = []
 
-    for file_path in csv_files:
+    for file_path in target_files:
         match = filename_pattern.match(file_path.name)
         if not match:
             raise ValueError(
