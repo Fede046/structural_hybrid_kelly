@@ -248,9 +248,8 @@ Criteri di accettazione:
 Da misurare e riportare, senza farlo tornare: elenco delle stagioni per ruolo, comprese le history e le bloccate; numero di partite per ruolo non bloccato.
 
 Esito: 2026-09-29 — file toccati: config/split.toml, src/shk/data/loading.py, src/shk/data/split.py, tests/test_split.py. Deviazioni: contenuto di config/split.toml approvato dal programmatore, con frozen_on = 2026-09-29 come data TOML e test_unlocked_on = "" finché il test è bloccato. Variante di blocco (ii), scelta dal programmatore: load_all_seasons ha il parametro opzionale seasons e i file delle stagioni bloccate non vengono letti dal disco. Le stagioni ≥ min(test) non elencate in test sono bloccate, non un errore. TestSetLockedError(RuntimeError) ha __test__ = False. Il test di guardia usa ast, in tests/test_split.py. Nessun test dedicato confronta due file di split: che la selezione dipenda dal file lo mostrano i test sintetici con stagioni diverse da quelle reali. Il report omette due ricerche in sola lettura e una seconda esecuzione di tests/test_split.py dopo una modifica al test. Non fatto: commit di config/split.toml, a carico del programmatore prima di T18. Valori misurati: training 2000-01, 2010-11, 2020-21 (1 140 partite); validation 19 stagioni, dal 2002-03 al 2022-23 tranne 2010-11 e 2020-21 (7 220 partite); history 1993-94, 1994-95, 1995-96, 1996-97, 1997-98, 1998-99, 1999-00, 2001-02 (3 204 partite); bloccata 2023-24 (380 partite, non caricate); suite veloce 139 → 153 verdi (14 test nuovi), 14 deselezionati. Report: .agent/report/T16.md.
-
 ### Task 17 — Tre metodi di de-vigging (US-C3.2, primo criterio)
-Stato: da fare
+Stato: fatto
 
 Obiettivo: proporzionale, additivo e power sono disponibili come funzioni su quote decimali, restituiscono q che somma a 1 entro 1e-12 e riproducono i valori delle note di tesi 2.1 §7.
 
@@ -297,8 +296,7 @@ Criteri di accettazione:
 
 Da misurare e riportare, senza farlo tornare: massimo di |Σq − 1| per metodo sui mercati casuali; numero di mercati casuali con additivo non applicabile.
 
-Esito: —
-
+Esito: 2026-09-29 — file toccati: src/shk/market/__init__.py, src/shk/market/devig.py, tests/test_devig.py. Deviazioni: intervallo dei mercati casuali [1.1, 10.0], scelto dal supervisore per coprire tutti i regimi del solver (8 095 mercati con S ≤ 1 e 1 905 con S > 1). La proprietà q_proporzionale / q_power vale solo per S > 1, perché il rapporto è π^(1−k)/S: è testata solo lì e documentata. Dtype ammessi: interi o floating reali, convertiti in float64. Power con Newton vettorizzato da k = 1, salvaguardia k_new ≥ k/2, MAX_NEWTON_ITERATIONS = 50, RuntimeError se dopo il ciclo |Σq − 1| > 1e-12. Test sui mercati estremi aggiunti dal supervisore. In fase di piano Cline ha eseguito 9 comandi Python prima dell'approvazione, senza toccare file, riportati nel report. test_extreme_markets è stato corretto dopo un'aspettativa sbagliata dello stesso test (NaN additivo su mercati che non lo producono); devig.py non è mai stato modificato. Non fatto: —. Valori misurati: sui 10 000 mercati casuali, massimo |Σq − 1| pari a 2.2e-16 per il proporzionale, 2.2e-16 per l'additivo (sui 9 849 mercati applicabili) e 4.4e-16 per il power; additivo non applicabile su 151 mercati; k di riferimento 1.079146, 1.088682 e 1.082367 (scarti 4.6e-5, 1.8e-5 e 3.3e-5); scarto massimo sulle probabilità di riferimento 4.75e-6; suite veloce 153 → 161 verdi (8 test nuovi), 14 deselezionati. Report: .agent/report/T17.md.
 ### Task 18 — Divergenza fra metodi di de-vigging sulle stagioni non di test (US-C3.2)
 Stato: da fare
 
