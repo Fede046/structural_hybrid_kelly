@@ -1,5 +1,5 @@
 # Backlog
-Ultimo task: T13
+Ultimo task: T19
 
 ## Decisioni in vigore
 - Scenario base: p = 0.60, b = 1.0 (quota 2.00), T = 1000, M = 10000, lo stesso di C1.1 — S1, 2026-09-27
@@ -23,6 +23,16 @@ Ultimo task: T13
 - I parametri C2 (PHI_VALUES, N_OBS, N_SERIES, ALPHA, SEED_C2, disegni, BLOCK_LENGTHS, N_BOOT, CSV_COLUMNS) si definiscono solo in src/shk/stats/false_rejection.py; script e test li importano — S2, 2026-09-28
 - Nel codice nuovo, interi di tipo sbagliato (bool, float) danno TypeError e interi fuori intervallo ValueError; interi NumPy accettati — S2, 2026-09-28
 - Cline esegue ogni comando Python con .\.venv\Scripts\python.exe (es. .\.venv\Scripts\python.exe -m pytest -v): il suo terminale usa di default l'interprete di Anaconda, senza shk — programmatore, 2026-09-28
+- Dati reali: un CSV E0 di football-data.co.uk per stagione, in data/raw/E0/<YYYY-YY>.csv, dal 1993-94 al 2023-24 (la finestra di KellyBench, per decisione del programmatore); non versionati (.gitignore esclude data/raw/*). La stagione è la stringa YYYY-YY nella colonna season — S3, 2026-09-29
+- Codice dei dati in src/shk/data/, codice di mercato in src/shk/market/; pandas fra le dipendenze runtime senza vincolo di versione, con pyproject.toml come fonte di verità (uv.lock da aggiornare a mano) — S3, 2026-09-29
+- Split congelato in config/split.toml, commit 2cea094 del 2026-09-29: training 2000-01, 2010-11, 2020-21; validation = stagioni anteriori al 2023-24, non di training, con B365 pre-partita completa (19 stagioni); history = le altre stagioni anteriori al 2023-24; test 2023-24. Tutte le stagioni ≥ 2023-24 sono bloccate, e i loro file non vengono letti, finché test_unlocked = false. Il file non si modifica; lo sblocco lo fa solo il programmatore, a mano e con commit, dopo il congelamento dei parametri (US-C8.2) — S3, 2026-09-29
+- Il codice nuovo carica i dati reali solo con load_by_role (src/shk/data/split.py); load_all_seasons è ammessa solo in loading.py, split.py, coverage.py e scripts/us_c3_1_data_coverage.py, e un test di guardia lo verifica — S3, 2026-09-29
+- Colonne quote classificate con classify_column (src/shk/data/coverage.py): group_type, source, market, timing (prematch o closing, aggregatori compresi), kind (odds, line, count); una colonna non classificata dà ValueError. Una terna è completa in una stagione se è non nulla e > 1 su ogni riga — S3, 2026-09-29
+- q si ricava dalla terna Bet365 pre-partita B365H, B365D, B365A. Scelta del supervisore su delega, da confermare dal programmatore — S3, 2026-09-29
+- De-vigging in src/shk/market/devig.py: proporzionale, additivo e power, somma a 1 entro 1e-12. L'additivo non è applicabile a un mercato con un q ≤ 0: quel mercato si esclude dal confronto per tutti i metodi e si conta — S3, 2026-09-29
+- Divergenza fra metodi: spread di un esito = massimo meno minimo dei tre q, in punti percentuali; spread relativo = spread diviso per la media dei tre q; fasce di quota [1, 1.5), [1.5, 2), [2, 3), [3, 5), [5, 10), [10, ∞), chiuse a sinistra; edge di riferimento 2 punti (p − 1/o nello scenario sottile). L'edge è una scelta del supervisore su delega, da confermare — S3, 2026-09-29
+- Anti-leakage: storia = partite con Date strettamente anteriore (le altre dello stesso giorno escluse); la partita da prevedere espone solo la whitelist, costruita per inclusione: identificativi Div, Date, HomeTeam, AwayTeam, season, Time, più le colonne con kind = odds e timing = prematch. Fornitore in src/shk/data/walkforward.py, che C4 riuserà; i test anti-leakage non si marcano slow — S3, 2026-09-29
+- I test sui dati reali si saltano con motivo esplicito se data/raw/E0/ non contiene CSV; il meccanismo è sempre coperto da test su dati sintetici. I criteri verificabili dai CSV versionati girano anche senza dati — S3, 2026-09-29
 
 ## Story chiuse
 ### S1 — C1 Simulatore Kelly: motore riusabile ed errore di stima — chiusa il 2026-09-27
@@ -35,6 +45,49 @@ Resta aperto: Definition of Done di US-C1.2 (scegliere un caso in cui λ* batte 
 - T5 — Var(c) empirica e dominanza dell'errore di stima — fatto — file: src/shk/kelly/staking.py, tests/test_staking.py, tests/test_us_c1_2_acceptance.py
 - T6 — λ* contro quarto-Kelly — fatto — file: src/shk/kelly/staking.py, tests/test_staking.py, tests/test_us_c1_2_acceptance.py
 - T7 — Script dell'esperimento C1.2, CSV e figura per la tesi — fatto — file: scripts/us_c1_2_estimation_error.py, results/us_c1_2_estimation_error.csv, thesis/figures/us_c1_2_estimation_error.png
+
+### S3 — C3 Primo contatto coi dati reali: copertura, split congelato, de-vigging, anti-leakage — chiusa il 2026-09-29
+Esito: unisce US-C3.1, US-C3.2, US-C3.3 e US-C3.4. Sei task (T14–T19), tutti chiusi con i criteri coperti da test, eseguiti in una sola chat per decisione del programmatore (in deroga alla regola dei cinque e al piano di due chat). Suite veloce 109 → 181 verde (72 test nuovi); suite slow invariata (14, di cui 1 rossa per il risultato noto di T12). Split congelato in config/split.toml, commit 2cea094 del 2026-09-29 11:47, verificato prima di T18. Risultati in results/us_c3_1_data_coverage.csv, results/us_c3_2_devig_divergence.csv e nelle due figure omonime in thesis/figures/; valori misurati nei report .agent/report/T14.md … T19.md, ricalcolati in modo indipendente dal supervisore dove numerici.
+Note di esecuzione: correttivi in T15 (un test mancante) e T18 (riproducibilità col codice finale); in T17 Cline ha eseguito comandi Python prima dell'approvazione del piano e in T18 ha creato un file di misura fuori dal repository, senza toccare il codice del progetto.
+- T14 — Caricamento di tutte le stagioni E0 in un unico DataFrame — fatto — file: pyproject.toml, src/shk/data/__init__.py, src/shk/data/loading.py, tests/test_data_loading.py
+- T15 — Audit della copertura di quote, risultati e bookmaker per stagione, US-C3.1 — fatto — file: src/shk/data/coverage.py, scripts/us_c3_1_data_coverage.py, tests/test_coverage.py, results/us_c3_1_data_coverage.csv, thesis/figures/us_c3_1_data_coverage.png
+- T16 — Split congelato su file e blocco del test set, US-C3.3 — fatto — file: config/split.toml, src/shk/data/loading.py, src/shk/data/split.py, tests/test_split.py
+- T17 — Tre metodi di de-vigging, US-C3.2 primo criterio — fatto — file: src/shk/market/__init__.py, src/shk/market/devig.py, tests/test_devig.py
+- T18 — Divergenza fra metodi di de-vigging sulle stagioni non di test, US-C3.2 — fatto — file: src/shk/market/divergence.py, scripts/us_c3_2_devig_divergence.py, tests/test_us_c3_2_acceptance.py, results/us_c3_2_devig_divergence.csv, thesis/figures/us_c3_2_devig_divergence.png
+- T19 — Fornitore walk-forward e test anti-leakage, US-C3.4 — fatto — file: src/shk/data/walkforward.py, tests/test_leakage.py
+
+Risultati principali:
+- Dati: 31 stagioni E0 (1993-94 … 2023-24), 11 944 partite (462 nel 1993-94 e nel 1994-95, 380 nelle altre). Risultati completi dal 1993-94; prima terna 1X2 pre-partita completa nel 2000-01 (GB, IW, SB, WH), 2 stagioni prima del 2002-03 del paper; B365 completa in tutte le stagioni dal 2002-03 al 2023-24, assente nel 2000-01, che è di training.
+- Split: training 2000-01, 2010-11, 2020-21 (1 140 partite); validation 19 stagioni, dal 2002-03 al 2022-23 tranne le due di training (7 220); history 1993-94 … 1999-00 e 2001-02 (3 204); test 2023-24, bloccato e non letto (380).
+- De-vigging: valori delle note 2.1 §7 riprodotti (scarto massimo 4.75e-6 sulle probabilità; k = 1.079146, 1.088682, 1.082367); sui 10 000 mercati casuali |Σq − 1| ≤ 4.4e-16, additivo non applicabile su 151.
+- Divergenza su B365 (7 980 partite; 2000-01 escluso per intero; 0 mercati esclusi per l'additivo): overround medio 5.437%, fuori da 2–7% dal 2002-03 al 2006-07; spread medio in punti massimo in [1, 1.5) (2.33); spread relativo medio massimo in [10, ∞) (0.222), non monotono (minimo in [2, 3)); spread massimo 6.29 punti, 3.14 volte l'edge di 2 punti; 99° percentile 3.45 punti, 1.73 volte.
+- Anti-leakage: 8 360 partite di training e validazione senza violazioni; i tre mutanti sono rilevati; whitelist di 87 campi (6 identificativi e 81 quote pre-partita, nessuna chiusura); il test sui dati reali dura circa 8 s ed è nella suite veloce.
+
+Resta aperto:
+- Scenario di training 2000-01 senza B365: con q alimentato da B365 è escluso per intero. Alternative: dichiararlo in tesi e procedere con 2010-11 e 2020-21; usare per il solo 2000-01 un'altra terna completa (GB, IW, SB o WH); rivedere lo scenario in una chat di backlog.
+- Limiti residui dei test: test_extreme_markets salta i NaN dell'additivo; non è verificato che il test sintetico di T18 includa il mercato 1.25/6.00/11.0; nessun test dedicato confronta due file di split diversi.
+
+### Fuori scope di S3
+- La variante "literature" del 2023/24, che non è ricostruibile da football-data.
+- I metodi Shin e odds ratio (note 2.1 §6.3, §6.5).
+- Il de-vigging di over/under e handicap asiatico.
+- Le quote di chiusura e Pinnacle come benchmark alternativo per q (note 2.4 §2): è una scelta da fare in C4.2.
+- La coerenza dei nomi squadra fra stagioni (note 2.9 §2.4): utile per C4.1, per l'Elo e le neopromosse.
+- L'integrazione del fornitore walk-forward nella pipeline, che spetta a C4.
+- La tabella di sensibilità completa, metodo × metrica × agente (US-C9.3).
+- L'aggiornamento di uv.lock e la migrazione della CI a uv.
+
+### Resta al programmatore per S3
+- Fatto: CSV E0 scaricati (solo 1993-94 … 2023-24); config/split.toml committato (2cea094, 2026-09-29 11:47).
+- Decidere se versionare i CSV E0, controllando la licenza (note 2.9): finché non sono versionati, i test sui dati reali non girano in CI.
+- Decidere sullo scenario di training 2000-01 senza B365 (vedi "Resta aperto").
+- Confermare o cambiare le scelte fatte dal supervisore su delega il 2026-09-29: Bet365 pre-partita come colonna di q; validazione sulle stagioni anteriori al 2023-24 con B365 completa; blocco di tutte le stagioni dal 2023-24 in poi; edge di riferimento di 2 punti; "divergenza massima sugli outsider" letta in termini relativi.
+- US-C3.1, esito informativo: scrivere in tesi la finestra effettiva di analisi (quote 1X2 complete dal 2000-01, B365 dal 2002-03) e la conseguenza sullo scenario di training 2000-01 (note 2.9 §2.2).
+- US-C3.2, Definition of Done: saper dire se la divergenza fra metodi è dello stesso ordine dell'edge (spread massimo 3.14 volte, 99° percentile 1.73 volte, media per fascia da 0.35 a 2.33 punti), e ricavare dal CSV di T18 la prima riga della tabella di sensibilità (US-C9.3).
+- Correggere l'enunciato di US-C3.2 nelle note, come confermato da T18: in punti percentuali la divergenza è massima sul favorito, in termini relativi sull'outsider.
+- US-C3.4: introdurre a mano, una volta, un leakage nel fornitore (per esempio side="right" al posto di side="left" in src/shk/data/walkforward.py), vedere il test rosso e ripristinare.
+- Aggiornare uv.lock dopo l'aggiunta di pandas.
+- Committare codice, CSV e figure di T17–T19, e quelli di T14–T16 se non sono già nel commit 2cea094.
 
 ## Story S2 — C2 ANOVA a mano, autocorrelazione e calibrazione per block bootstrap — aperta il 2026-09-28, T12 da rivedere
 Esito: unisce US-C2.1, US-C2.2 e US-C2.3. T8–T11 chiusi con tutti i criteri coperti da test; T12 fermo sul criterio 2; T13 corregge i test del CSV per la CI. Suite veloce 109 verde; suite slow 14, di cui 1 rossa per il risultato noto di T12. Risultati in results/us_c2_anova_autocorrelation.csv (12 righe nominali definitive + 12 calibrate) e thesis/figures/us_c2_anova_autocorrelation.png (pannelli A e B); valori misurati nei report .agent/report/T8.md … T12.md, riprodotti in modo indipendente dal supervisore.

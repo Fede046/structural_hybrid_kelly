@@ -1,0 +1,478 @@
+season,group_type,group_name,source,market,timing,columns,total_rows,missing_rows,invalid_rows,complete_rows,is_complete
+1993-94,results,results,,,,FTHG FTAG FTR,462,0,0,462,True
+1994-95,results,results,,,,FTHG FTAG FTR,462,0,0,462,True
+1995-96,results,results,,,,FTHG FTAG FTR,380,0,0,380,True
+1996-97,results,results,,,,FTHG FTAG FTR,380,0,0,380,True
+1997-98,results,results,,,,FTHG FTAG FTR,380,0,0,380,True
+1998-99,results,results,,,,FTHG FTAG FTR,380,0,0,380,True
+1999-00,results,results,,,,FTHG FTAG FTR,380,0,0,380,True
+2000-01,results,results,,,,FTHG FTAG FTR,380,0,0,380,True
+2000-01,1x2_prematch,gb_1x2_prematch,GB,1x2,prematch,GBH GBD GBA,380,0,0,380,True
+2000-01,1x2_prematch,iw_1x2_prematch,IW,1x2,prematch,IWH IWD IWA,380,0,0,380,True
+2000-01,1x2_prematch,lb_1x2_prematch,LB,1x2,prematch,LBH LBD LBA,380,55,0,325,False
+2000-01,1x2_prematch,sb_1x2_prematch,SB,1x2,prematch,SBH SBD SBA,380,0,0,380,True
+2000-01,1x2_prematch,wh_1x2_prematch,WH,1x2,prematch,WHH WHD WHA,380,0,0,380,True
+2001-02,results,results,,,,FTHG FTAG FTR,380,0,0,380,True
+2001-02,1x2_prematch,gb_1x2_prematch,GB,1x2,prematch,GBH GBD GBA,380,83,0,297,False
+2001-02,1x2_prematch,iw_1x2_prematch,IW,1x2,prematch,IWH IWD IWA,380,2,0,378,False
+2001-02,1x2_prematch,lb_1x2_prematch,LB,1x2,prematch,LBH LBD LBA,380,5,0,375,False
+2001-02,1x2_prematch,sb_1x2_prematch,SB,1x2,prematch,SBH SBD SBA,380,56,0,324,False
+2001-02,1x2_prematch,sy_1x2_prematch,SY,1x2,prematch,SYH SYD SYA,380,7,0,373,False
+2001-02,1x2_prematch,wh_1x2_prematch,WH,1x2,prematch,WHH WHD WHA,380,6,0,374,False
+2002-03,results,results,,,,FTHG FTAG FTR,380,0,0,380,True
+2002-03,1x2_prematch,b365_1x2_prematch,B365,1x2,prematch,B365H B365D B365A,380,0,0,380,True
+2002-03,1x2_prematch,gb_1x2_prematch,GB,1x2,prematch,GBH GBD GBA,380,0,0,380,True
+2002-03,1x2_prematch,iw_1x2_prematch,IW,1x2,prematch,IWH IWD IWA,380,12,0,368,False
+2002-03,1x2_prematch,lb_1x2_prematch,LB,1x2,prematch,LBH LBD LBA,380,0,0,380,True
+2002-03,1x2_prematch,sb_1x2_prematch,SB,1x2,prematch,SBH SBD SBA,380,0,0,380,True
+2002-03,1x2_prematch,so_1x2_prematch,SO,1x2,prematch,SOH SOD SOA,380,0,0,380,True
+2002-03,1x2_prematch,wh_1x2_prematch,WH,1x2,prematch,WHH WHD WHA,380,1,0,379,False
+2002-03,other_markets,b365_over_under_2.5_prematch,B365,over_under_2.5,prematch,B365>2.5 B365<2.5,380,129,0,251,False
+2002-03,other_markets,gb_over_under_2.5_prematch,GB,over_under_2.5,prematch,GB>2.5 GB<2.5,380,1,0,379,False
+2003-04,results,results,,,,FTHG FTAG FTR,380,0,0,380,True
+2003-04,1x2_prematch,b365_1x2_prematch,B365,1x2,prematch,B365H B365D B365A,380,0,0,380,True
+2003-04,1x2_prematch,gb_1x2_prematch,GB,1x2,prematch,GBH GBD GBA,380,0,0,380,True
+2003-04,1x2_prematch,iw_1x2_prematch,IW,1x2,prematch,IWH IWD IWA,380,0,0,380,True
+2003-04,1x2_prematch,lb_1x2_prematch,LB,1x2,prematch,LBH LBD LBA,380,1,0,379,False
+2003-04,1x2_prematch,sb_1x2_prematch,SB,1x2,prematch,SBH SBD SBA,380,0,0,380,True
+2003-04,1x2_prematch,so_1x2_prematch,SO,1x2,prematch,SOH SOD SOA,380,0,0,380,True
+2003-04,1x2_prematch,wh_1x2_prematch,WH,1x2,prematch,WHH WHD WHA,380,0,0,380,True
+2003-04,other_markets,b365_asian_handicap_prematch,B365,asian_handicap,prematch,B365AHH B365AHA,380,20,0,360,False
+2003-04,other_markets,b365_asian_handicap_prematch_line,B365,asian_handicap,prematch,B365AH,380,20,0,360,False
+2003-04,other_markets,b365_over_under_2.5_prematch,B365,over_under_2.5,prematch,B365>2.5 B365<2.5,380,2,0,378,False
+2003-04,other_markets,gb_asian_handicap_prematch,GB,asian_handicap,prematch,GBAHH GBAHA,380,9,0,371,False
+2003-04,other_markets,gb_asian_handicap_prematch_line,GB,asian_handicap,prematch,GBAH,380,9,0,371,False
+2003-04,other_markets,gb_over_under_2.5_prematch,GB,over_under_2.5,prematch,GB>2.5 GB<2.5,380,1,0,379,False
+2003-04,other_markets,lb_asian_handicap_prematch,LB,asian_handicap,prematch,LBAHH LBAHA,380,28,0,352,False
+2003-04,other_markets,lb_asian_handicap_prematch_line,LB,asian_handicap,prematch,LBAH,380,28,0,352,False
+2004-05,results,results,,,,FTHG FTAG FTR,380,0,0,380,True
+2004-05,1x2_prematch,b365_1x2_prematch,B365,1x2,prematch,B365H B365D B365A,380,0,0,380,True
+2004-05,1x2_prematch,bw_1x2_prematch,BW,1x2,prematch,BWH BWD BWA,380,0,0,380,True
+2004-05,1x2_prematch,gb_1x2_prematch,GB,1x2,prematch,GBH GBD GBA,380,0,0,380,True
+2004-05,1x2_prematch,iw_1x2_prematch,IW,1x2,prematch,IWH IWD IWA,380,2,0,378,False
+2004-05,1x2_prematch,lb_1x2_prematch,LB,1x2,prematch,LBH LBD LBA,380,0,0,380,True
+2004-05,1x2_prematch,sb_1x2_prematch,SB,1x2,prematch,SBH SBD SBA,380,0,0,380,True
+2004-05,1x2_prematch,wh_1x2_prematch,WH,1x2,prematch,WHH WHD WHA,380,0,0,380,True
+2004-05,other_markets,b365_asian_handicap_prematch,B365,asian_handicap,prematch,B365AHH B365AHA,380,2,0,378,False
+2004-05,other_markets,b365_asian_handicap_prematch_line,B365,asian_handicap,prematch,B365AH,380,2,0,378,False
+2004-05,other_markets,b365_over_under_2.5_prematch,B365,over_under_2.5,prematch,B365>2.5 B365<2.5,380,5,0,375,False
+2004-05,other_markets,gb_asian_handicap_prematch,GB,asian_handicap,prematch,GBAHH GBAHA,380,2,0,378,False
+2004-05,other_markets,gb_asian_handicap_prematch_line,GB,asian_handicap,prematch,GBAH,380,2,0,378,False
+2004-05,other_markets,gb_over_under_2.5_prematch,GB,over_under_2.5,prematch,GB>2.5 GB<2.5,380,1,0,379,False
+2004-05,other_markets,lb_asian_handicap_prematch,LB,asian_handicap,prematch,LBAHH LBAHA,380,11,0,369,False
+2004-05,other_markets,lb_asian_handicap_prematch_line,LB,asian_handicap,prematch,LBAH,380,11,0,369,False
+2005-06,results,results,,,,FTHG FTAG FTR,380,0,0,380,True
+2005-06,1x2_prematch,b365_1x2_prematch,B365,1x2,prematch,B365H B365D B365A,380,0,0,380,True
+2005-06,1x2_prematch,bw_1x2_prematch,BW,1x2,prematch,BWH BWD BWA,380,0,0,380,True
+2005-06,1x2_prematch,gb_1x2_prematch,GB,1x2,prematch,GBH GBD GBA,380,0,0,380,True
+2005-06,1x2_prematch,iw_1x2_prematch,IW,1x2,prematch,IWH IWD IWA,380,0,0,380,True
+2005-06,1x2_prematch,lb_1x2_prematch,LB,1x2,prematch,LBH LBD LBA,380,0,0,380,True
+2005-06,1x2_prematch,sb_1x2_prematch,SB,1x2,prematch,SBH SBD SBA,380,0,0,380,True
+2005-06,1x2_prematch,sj_1x2_prematch,SJ,1x2,prematch,SJH SJD SJA,380,0,0,380,True
+2005-06,1x2_prematch,vc_1x2_prematch,VC,1x2,prematch,VCH VCD VCA,380,0,0,380,True
+2005-06,1x2_prematch,wh_1x2_prematch,WH,1x2,prematch,WHH WHD WHA,380,0,0,380,True
+2005-06,aggregators,bb_1x2_prematch,Bb,1x2,prematch,BbMxH BbAvH BbMxD BbAvD BbMxA BbAvA,380,0,0,380,True
+2005-06,aggregators,bb_1x2_prematch_count,Bb,1x2,prematch,Bb1X2,380,0,0,380,True
+2005-06,aggregators,bb_asian_handicap_prematch,Bb,asian_handicap,prematch,BbMxAHH BbAvAHH BbMxAHA BbAvAHA,380,0,0,380,True
+2005-06,aggregators,bb_asian_handicap_prematch_count,Bb,asian_handicap,prematch,BbAH,380,0,0,380,True
+2005-06,aggregators,bb_asian_handicap_prematch_line,Bb,asian_handicap,prematch,BbAHh,380,0,0,380,True
+2005-06,aggregators,bb_over_under_2.5_prematch,Bb,over_under_2.5,prematch,BbMx>2.5 BbAv>2.5 BbMx<2.5 BbAv<2.5,380,0,0,380,True
+2005-06,aggregators,bb_over_under_2.5_prematch_count,Bb,over_under_2.5,prematch,BbOU,380,0,0,380,True
+2006-07,results,results,,,,FTHG FTAG FTR,380,0,0,380,True
+2006-07,1x2_prematch,b365_1x2_prematch,B365,1x2,prematch,B365H B365D B365A,380,0,0,380,True
+2006-07,1x2_prematch,bw_1x2_prematch,BW,1x2,prematch,BWH BWD BWA,380,0,0,380,True
+2006-07,1x2_prematch,gb_1x2_prematch,GB,1x2,prematch,GBH GBD GBA,380,0,0,380,True
+2006-07,1x2_prematch,iw_1x2_prematch,IW,1x2,prematch,IWH IWD IWA,380,0,0,380,True
+2006-07,1x2_prematch,lb_1x2_prematch,LB,1x2,prematch,LBH LBD LBA,380,0,0,380,True
+2006-07,1x2_prematch,sb_1x2_prematch,SB,1x2,prematch,SBH SBD SBA,380,0,0,380,True
+2006-07,1x2_prematch,sj_1x2_prematch,SJ,1x2,prematch,SJH SJD SJA,380,1,0,379,False
+2006-07,1x2_prematch,vc_1x2_prematch,VC,1x2,prematch,VCH VCD VCA,380,0,0,380,True
+2006-07,1x2_prematch,wh_1x2_prematch,WH,1x2,prematch,WHH WHD WHA,380,0,0,380,True
+2006-07,aggregators,bb_1x2_prematch,Bb,1x2,prematch,BbMxH BbAvH BbMxD BbAvD BbMxA BbAvA,380,0,0,380,True
+2006-07,aggregators,bb_1x2_prematch_count,Bb,1x2,prematch,Bb1X2,380,0,0,380,True
+2006-07,aggregators,bb_asian_handicap_prematch,Bb,asian_handicap,prematch,BbMxAHH BbAvAHH BbMxAHA BbAvAHA,380,0,0,380,True
+2006-07,aggregators,bb_asian_handicap_prematch_count,Bb,asian_handicap,prematch,BbAH,380,0,0,380,True
+2006-07,aggregators,bb_asian_handicap_prematch_line,Bb,asian_handicap,prematch,BbAHh,380,0,0,380,True
+2006-07,aggregators,bb_over_under_2.5_prematch,Bb,over_under_2.5,prematch,BbMx>2.5 BbAv>2.5 BbMx<2.5 BbAv<2.5,380,0,0,380,True
+2006-07,aggregators,bb_over_under_2.5_prematch_count,Bb,over_under_2.5,prematch,BbOU,380,0,0,380,True
+2007-08,results,results,,,,FTHG FTAG FTR,380,0,0,380,True
+2007-08,1x2_prematch,b365_1x2_prematch,B365,1x2,prematch,B365H B365D B365A,380,0,0,380,True
+2007-08,1x2_prematch,bs_1x2_prematch,BS,1x2,prematch,BSH BSD BSA,380,0,0,380,True
+2007-08,1x2_prematch,bw_1x2_prematch,BW,1x2,prematch,BWH BWD BWA,380,0,0,380,True
+2007-08,1x2_prematch,gb_1x2_prematch,GB,1x2,prematch,GBH GBD GBA,380,0,0,380,True
+2007-08,1x2_prematch,iw_1x2_prematch,IW,1x2,prematch,IWH IWD IWA,380,0,0,380,True
+2007-08,1x2_prematch,lb_1x2_prematch,LB,1x2,prematch,LBH LBD LBA,380,0,0,380,True
+2007-08,1x2_prematch,sb_1x2_prematch,SB,1x2,prematch,SBH SBD SBA,380,0,0,380,True
+2007-08,1x2_prematch,sj_1x2_prematch,SJ,1x2,prematch,SJH SJD SJA,380,0,0,380,True
+2007-08,1x2_prematch,vc_1x2_prematch,VC,1x2,prematch,VCH VCD VCA,380,0,0,380,True
+2007-08,1x2_prematch,wh_1x2_prematch,WH,1x2,prematch,WHH WHD WHA,380,107,0,273,False
+2007-08,aggregators,bb_1x2_prematch,Bb,1x2,prematch,BbMxH BbAvH BbMxD BbAvD BbMxA BbAvA,380,0,0,380,True
+2007-08,aggregators,bb_1x2_prematch_count,Bb,1x2,prematch,Bb1X2,380,0,0,380,True
+2007-08,aggregators,bb_asian_handicap_prematch,Bb,asian_handicap,prematch,BbMxAHH BbAvAHH BbMxAHA BbAvAHA,380,0,0,380,True
+2007-08,aggregators,bb_asian_handicap_prematch_count,Bb,asian_handicap,prematch,BbAH,380,0,0,380,True
+2007-08,aggregators,bb_asian_handicap_prematch_line,Bb,asian_handicap,prematch,BbAHh,380,0,0,380,True
+2007-08,aggregators,bb_over_under_2.5_prematch,Bb,over_under_2.5,prematch,BbMx>2.5 BbAv>2.5 BbMx<2.5 BbAv<2.5,380,0,0,380,True
+2007-08,aggregators,bb_over_under_2.5_prematch_count,Bb,over_under_2.5,prematch,BbOU,380,0,0,380,True
+2008-09,results,results,,,,FTHG FTAG FTR,380,0,0,380,True
+2008-09,1x2_prematch,b365_1x2_prematch,B365,1x2,prematch,B365H B365D B365A,380,0,0,380,True
+2008-09,1x2_prematch,bs_1x2_prematch,BS,1x2,prematch,BSH BSD BSA,380,0,0,380,True
+2008-09,1x2_prematch,bw_1x2_prematch,BW,1x2,prematch,BWH BWD BWA,380,0,0,380,True
+2008-09,1x2_prematch,gb_1x2_prematch,GB,1x2,prematch,GBH GBD GBA,380,0,0,380,True
+2008-09,1x2_prematch,iw_1x2_prematch,IW,1x2,prematch,IWH IWD IWA,380,1,0,379,False
+2008-09,1x2_prematch,lb_1x2_prematch,LB,1x2,prematch,LBH LBD LBA,380,0,0,380,True
+2008-09,1x2_prematch,sb_1x2_prematch,SB,1x2,prematch,SBH SBD SBA,380,0,0,380,True
+2008-09,1x2_prematch,sj_1x2_prematch,SJ,1x2,prematch,SJH SJD SJA,380,0,0,380,True
+2008-09,1x2_prematch,vc_1x2_prematch,VC,1x2,prematch,VCH VCD VCA,380,0,0,380,True
+2008-09,1x2_prematch,wh_1x2_prematch,WH,1x2,prematch,WHH WHD WHA,380,0,0,380,True
+2008-09,aggregators,bb_1x2_prematch,Bb,1x2,prematch,BbMxH BbAvH BbMxD BbAvD BbMxA BbAvA,380,0,0,380,True
+2008-09,aggregators,bb_1x2_prematch_count,Bb,1x2,prematch,Bb1X2,380,0,0,380,True
+2008-09,aggregators,bb_asian_handicap_prematch,Bb,asian_handicap,prematch,BbMxAHH BbAvAHH BbMxAHA BbAvAHA,380,0,0,380,True
+2008-09,aggregators,bb_asian_handicap_prematch_count,Bb,asian_handicap,prematch,BbAH,380,0,0,380,True
+2008-09,aggregators,bb_asian_handicap_prematch_line,Bb,asian_handicap,prematch,BbAHh,380,0,0,380,True
+2008-09,aggregators,bb_over_under_2.5_prematch,Bb,over_under_2.5,prematch,BbMx>2.5 BbAv>2.5 BbMx<2.5 BbAv<2.5,380,0,0,380,True
+2008-09,aggregators,bb_over_under_2.5_prematch_count,Bb,over_under_2.5,prematch,BbOU,380,0,0,380,True
+2009-10,results,results,,,,FTHG FTAG FTR,380,0,0,380,True
+2009-10,1x2_prematch,b365_1x2_prematch,B365,1x2,prematch,B365H B365D B365A,380,0,0,380,True
+2009-10,1x2_prematch,bs_1x2_prematch,BS,1x2,prematch,BSH BSD BSA,380,0,0,380,True
+2009-10,1x2_prematch,bw_1x2_prematch,BW,1x2,prematch,BWH BWD BWA,380,0,0,380,True
+2009-10,1x2_prematch,gb_1x2_prematch,GB,1x2,prematch,GBH GBD GBA,380,0,0,380,True
+2009-10,1x2_prematch,iw_1x2_prematch,IW,1x2,prematch,IWH IWD IWA,380,0,0,380,True
+2009-10,1x2_prematch,lb_1x2_prematch,LB,1x2,prematch,LBH LBD LBA,380,0,0,380,True
+2009-10,1x2_prematch,sb_1x2_prematch,SB,1x2,prematch,SBH SBD SBA,380,0,0,380,True
+2009-10,1x2_prematch,sj_1x2_prematch,SJ,1x2,prematch,SJH SJD SJA,380,0,0,380,True
+2009-10,1x2_prematch,vc_1x2_prematch,VC,1x2,prematch,VCH VCD VCA,380,0,0,380,True
+2009-10,1x2_prematch,wh_1x2_prematch,WH,1x2,prematch,WHH WHD WHA,380,0,0,380,True
+2009-10,aggregators,bb_1x2_prematch,Bb,1x2,prematch,BbMxH BbAvH BbMxD BbAvD BbMxA BbAvA,380,0,0,380,True
+2009-10,aggregators,bb_1x2_prematch_count,Bb,1x2,prematch,Bb1X2,380,0,0,380,True
+2009-10,aggregators,bb_asian_handicap_prematch,Bb,asian_handicap,prematch,BbMxAHH BbAvAHH BbMxAHA BbAvAHA,380,0,0,380,True
+2009-10,aggregators,bb_asian_handicap_prematch_count,Bb,asian_handicap,prematch,BbAH,380,0,0,380,True
+2009-10,aggregators,bb_asian_handicap_prematch_line,Bb,asian_handicap,prematch,BbAHh,380,0,0,380,True
+2009-10,aggregators,bb_over_under_2.5_prematch,Bb,over_under_2.5,prematch,BbMx>2.5 BbAv>2.5 BbMx<2.5 BbAv<2.5,380,0,0,380,True
+2009-10,aggregators,bb_over_under_2.5_prematch_count,Bb,over_under_2.5,prematch,BbOU,380,0,0,380,True
+2010-11,results,results,,,,FTHG FTAG FTR,380,0,0,380,True
+2010-11,1x2_prematch,b365_1x2_prematch,B365,1x2,prematch,B365H B365D B365A,380,0,0,380,True
+2010-11,1x2_prematch,bs_1x2_prematch,BS,1x2,prematch,BSH BSD BSA,380,0,0,380,True
+2010-11,1x2_prematch,bw_1x2_prematch,BW,1x2,prematch,BWH BWD BWA,380,0,0,380,True
+2010-11,1x2_prematch,gb_1x2_prematch,GB,1x2,prematch,GBH GBD GBA,380,0,0,380,True
+2010-11,1x2_prematch,iw_1x2_prematch,IW,1x2,prematch,IWH IWD IWA,380,0,0,380,True
+2010-11,1x2_prematch,lb_1x2_prematch,LB,1x2,prematch,LBH LBD LBA,380,0,0,380,True
+2010-11,1x2_prematch,sb_1x2_prematch,SB,1x2,prematch,SBH SBD SBA,380,0,0,380,True
+2010-11,1x2_prematch,sj_1x2_prematch,SJ,1x2,prematch,SJH SJD SJA,380,0,0,380,True
+2010-11,1x2_prematch,vc_1x2_prematch,VC,1x2,prematch,VCH VCD VCA,380,0,0,380,True
+2010-11,1x2_prematch,wh_1x2_prematch,WH,1x2,prematch,WHH WHD WHA,380,0,0,380,True
+2010-11,aggregators,bb_1x2_prematch,Bb,1x2,prematch,BbMxH BbAvH BbMxD BbAvD BbMxA BbAvA,380,0,0,380,True
+2010-11,aggregators,bb_1x2_prematch_count,Bb,1x2,prematch,Bb1X2,380,0,0,380,True
+2010-11,aggregators,bb_asian_handicap_prematch,Bb,asian_handicap,prematch,BbMxAHH BbAvAHH BbMxAHA BbAvAHA,380,0,0,380,True
+2010-11,aggregators,bb_asian_handicap_prematch_count,Bb,asian_handicap,prematch,BbAH,380,0,0,380,True
+2010-11,aggregators,bb_asian_handicap_prematch_line,Bb,asian_handicap,prematch,BbAHh,380,0,0,380,True
+2010-11,aggregators,bb_over_under_2.5_prematch,Bb,over_under_2.5,prematch,BbMx>2.5 BbAv>2.5 BbMx<2.5 BbAv<2.5,380,0,0,380,True
+2010-11,aggregators,bb_over_under_2.5_prematch_count,Bb,over_under_2.5,prematch,BbOU,380,0,0,380,True
+2011-12,results,results,,,,FTHG FTAG FTR,380,0,0,380,True
+2011-12,1x2_prematch,b365_1x2_prematch,B365,1x2,prematch,B365H B365D B365A,380,0,0,380,True
+2011-12,1x2_prematch,bs_1x2_prematch,BS,1x2,prematch,BSH BSD BSA,380,0,0,380,True
+2011-12,1x2_prematch,bw_1x2_prematch,BW,1x2,prematch,BWH BWD BWA,380,0,0,380,True
+2011-12,1x2_prematch,gb_1x2_prematch,GB,1x2,prematch,GBH GBD GBA,380,0,0,380,True
+2011-12,1x2_prematch,iw_1x2_prematch,IW,1x2,prematch,IWH IWD IWA,380,0,0,380,True
+2011-12,1x2_prematch,lb_1x2_prematch,LB,1x2,prematch,LBH LBD LBA,380,0,0,380,True
+2011-12,1x2_prematch,sb_1x2_prematch,SB,1x2,prematch,SBH SBD SBA,380,0,0,380,True
+2011-12,1x2_prematch,sj_1x2_prematch,SJ,1x2,prematch,SJH SJD SJA,380,0,0,380,True
+2011-12,1x2_prematch,vc_1x2_prematch,VC,1x2,prematch,VCH VCD VCA,380,0,0,380,True
+2011-12,1x2_prematch,wh_1x2_prematch,WH,1x2,prematch,WHH WHD WHA,380,0,0,380,True
+2011-12,aggregators,bb_1x2_prematch,Bb,1x2,prematch,BbMxH BbAvH BbMxD BbAvD BbMxA BbAvA,380,0,0,380,True
+2011-12,aggregators,bb_1x2_prematch_count,Bb,1x2,prematch,Bb1X2,380,0,0,380,True
+2011-12,aggregators,bb_asian_handicap_prematch,Bb,asian_handicap,prematch,BbMxAHH BbAvAHH BbMxAHA BbAvAHA,380,0,0,380,True
+2011-12,aggregators,bb_asian_handicap_prematch_count,Bb,asian_handicap,prematch,BbAH,380,0,0,380,True
+2011-12,aggregators,bb_asian_handicap_prematch_line,Bb,asian_handicap,prematch,BbAHh,380,0,0,380,True
+2011-12,aggregators,bb_over_under_2.5_prematch,Bb,over_under_2.5,prematch,BbMx>2.5 BbAv>2.5 BbMx<2.5 BbAv<2.5,380,0,0,380,True
+2011-12,aggregators,bb_over_under_2.5_prematch_count,Bb,over_under_2.5,prematch,BbOU,380,0,0,380,True
+2012-13,results,results,,,,FTHG FTAG FTR,380,0,0,380,True
+2012-13,1x2_prematch,b365_1x2_prematch,B365,1x2,prematch,B365H B365D B365A,380,0,0,380,True
+2012-13,1x2_prematch,bs_1x2_prematch,BS,1x2,prematch,BSH BSD BSA,380,0,0,380,True
+2012-13,1x2_prematch,bw_1x2_prematch,BW,1x2,prematch,BWH BWD BWA,380,0,0,380,True
+2012-13,1x2_prematch,gb_1x2_prematch,GB,1x2,prematch,GBH GBD GBA,380,1,0,379,False
+2012-13,1x2_prematch,iw_1x2_prematch,IW,1x2,prematch,IWH IWD IWA,380,0,0,380,True
+2012-13,1x2_prematch,lb_1x2_prematch,LB,1x2,prematch,LBH LBD LBA,380,1,0,379,False
+2012-13,1x2_prematch,ps_1x2_prematch,PS,1x2,prematch,PSH PSD PSA,380,0,0,380,True
+2012-13,1x2_prematch,sj_1x2_prematch,SJ,1x2,prematch,SJH SJD SJA,380,0,0,380,True
+2012-13,1x2_prematch,vc_1x2_prematch,VC,1x2,prematch,VCH VCD VCA,380,0,0,380,True
+2012-13,1x2_prematch,wh_1x2_prematch,WH,1x2,prematch,WHH WHD WHA,380,0,0,380,True
+2012-13,1x2_closing,ps_1x2_closing,PS,1x2,closing,PSCH PSCD PSCA,380,0,0,380,True
+2012-13,aggregators,bb_1x2_prematch,Bb,1x2,prematch,BbMxH BbAvH BbMxD BbAvD BbMxA BbAvA,380,0,0,380,True
+2012-13,aggregators,bb_1x2_prematch_count,Bb,1x2,prematch,Bb1X2,380,0,0,380,True
+2012-13,aggregators,bb_asian_handicap_prematch,Bb,asian_handicap,prematch,BbMxAHH BbAvAHH BbMxAHA BbAvAHA,380,0,0,380,True
+2012-13,aggregators,bb_asian_handicap_prematch_count,Bb,asian_handicap,prematch,BbAH,380,0,0,380,True
+2012-13,aggregators,bb_asian_handicap_prematch_line,Bb,asian_handicap,prematch,BbAHh,380,0,0,380,True
+2012-13,aggregators,bb_over_under_2.5_prematch,Bb,over_under_2.5,prematch,BbMx>2.5 BbAv>2.5 BbMx<2.5 BbAv<2.5,380,0,0,380,True
+2012-13,aggregators,bb_over_under_2.5_prematch_count,Bb,over_under_2.5,prematch,BbOU,380,0,0,380,True
+2013-14,results,results,,,,FTHG FTAG FTR,380,0,0,380,True
+2013-14,1x2_prematch,b365_1x2_prematch,B365,1x2,prematch,B365H B365D B365A,380,0,0,380,True
+2013-14,1x2_prematch,bw_1x2_prematch,BW,1x2,prematch,BWH BWD BWA,380,0,0,380,True
+2013-14,1x2_prematch,iw_1x2_prematch,IW,1x2,prematch,IWH IWD IWA,380,0,0,380,True
+2013-14,1x2_prematch,lb_1x2_prematch,LB,1x2,prematch,LBH LBD LBA,380,0,0,380,True
+2013-14,1x2_prematch,ps_1x2_prematch,PS,1x2,prematch,PSH PSD PSA,380,0,0,380,True
+2013-14,1x2_prematch,sj_1x2_prematch,SJ,1x2,prematch,SJH SJD SJA,380,0,0,380,True
+2013-14,1x2_prematch,vc_1x2_prematch,VC,1x2,prematch,VCH VCD VCA,380,0,0,380,True
+2013-14,1x2_prematch,wh_1x2_prematch,WH,1x2,prematch,WHH WHD WHA,380,0,0,380,True
+2013-14,1x2_closing,ps_1x2_closing,PS,1x2,closing,PSCH PSCD PSCA,380,0,0,380,True
+2013-14,aggregators,bb_1x2_prematch,Bb,1x2,prematch,BbMxH BbAvH BbMxD BbAvD BbMxA BbAvA,380,0,0,380,True
+2013-14,aggregators,bb_1x2_prematch_count,Bb,1x2,prematch,Bb1X2,380,0,0,380,True
+2013-14,aggregators,bb_asian_handicap_prematch,Bb,asian_handicap,prematch,BbMxAHH BbAvAHH BbMxAHA BbAvAHA,380,10,0,370,False
+2013-14,aggregators,bb_asian_handicap_prematch_count,Bb,asian_handicap,prematch,BbAH,380,10,0,370,False
+2013-14,aggregators,bb_asian_handicap_prematch_line,Bb,asian_handicap,prematch,BbAHh,380,10,0,370,False
+2013-14,aggregators,bb_over_under_2.5_prematch,Bb,over_under_2.5,prematch,BbMx>2.5 BbAv>2.5 BbMx<2.5 BbAv<2.5,380,0,0,380,True
+2013-14,aggregators,bb_over_under_2.5_prematch_count,Bb,over_under_2.5,prematch,BbOU,380,0,0,380,True
+2014-15,results,results,,,,FTHG FTAG FTR,380,0,0,380,True
+2014-15,1x2_prematch,b365_1x2_prematch,B365,1x2,prematch,B365H B365D B365A,380,0,0,380,True
+2014-15,1x2_prematch,bw_1x2_prematch,BW,1x2,prematch,BWH BWD BWA,380,0,0,380,True
+2014-15,1x2_prematch,iw_1x2_prematch,IW,1x2,prematch,IWH IWD IWA,380,1,0,379,False
+2014-15,1x2_prematch,lb_1x2_prematch,LB,1x2,prematch,LBH LBD LBA,380,0,0,380,True
+2014-15,1x2_prematch,ps_1x2_prematch,PS,1x2,prematch,PSH PSD PSA,380,0,0,380,True
+2014-15,1x2_prematch,sj_1x2_prematch,SJ,1x2,prematch,SJH SJD SJA,380,340,0,40,False
+2014-15,1x2_prematch,vc_1x2_prematch,VC,1x2,prematch,VCH VCD VCA,380,0,0,380,True
+2014-15,1x2_prematch,wh_1x2_prematch,WH,1x2,prematch,WHH WHD WHA,380,0,0,380,True
+2014-15,1x2_closing,ps_1x2_closing,PS,1x2,closing,PSCH PSCD PSCA,380,0,0,380,True
+2014-15,aggregators,bb_1x2_prematch,Bb,1x2,prematch,BbMxH BbAvH BbMxD BbAvD BbMxA BbAvA,380,0,0,380,True
+2014-15,aggregators,bb_1x2_prematch_count,Bb,1x2,prematch,Bb1X2,380,0,0,380,True
+2014-15,aggregators,bb_asian_handicap_prematch,Bb,asian_handicap,prematch,BbMxAHH BbAvAHH BbMxAHA BbAvAHA,380,0,0,380,True
+2014-15,aggregators,bb_asian_handicap_prematch_count,Bb,asian_handicap,prematch,BbAH,380,0,0,380,True
+2014-15,aggregators,bb_asian_handicap_prematch_line,Bb,asian_handicap,prematch,BbAHh,380,0,0,380,True
+2014-15,aggregators,bb_over_under_2.5_prematch,Bb,over_under_2.5,prematch,BbMx>2.5 BbAv>2.5 BbMx<2.5 BbAv<2.5,380,0,0,380,True
+2014-15,aggregators,bb_over_under_2.5_prematch_count,Bb,over_under_2.5,prematch,BbOU,380,0,0,380,True
+2015-16,results,results,,,,FTHG FTAG FTR,380,0,0,380,True
+2015-16,1x2_prematch,b365_1x2_prematch,B365,1x2,prematch,B365H B365D B365A,380,0,0,380,True
+2015-16,1x2_prematch,bw_1x2_prematch,BW,1x2,prematch,BWH BWD BWA,380,1,0,379,False
+2015-16,1x2_prematch,iw_1x2_prematch,IW,1x2,prematch,IWH IWD IWA,380,0,0,380,True
+2015-16,1x2_prematch,lb_1x2_prematch,LB,1x2,prematch,LBH LBD LBA,380,0,0,380,True
+2015-16,1x2_prematch,ps_1x2_prematch,PS,1x2,prematch,PSH PSD PSA,380,0,0,380,True
+2015-16,1x2_prematch,vc_1x2_prematch,VC,1x2,prematch,VCH VCD VCA,380,0,0,380,True
+2015-16,1x2_prematch,wh_1x2_prematch,WH,1x2,prematch,WHH WHD WHA,380,0,0,380,True
+2015-16,1x2_closing,ps_1x2_closing,PS,1x2,closing,PSCH PSCD PSCA,380,0,0,380,True
+2015-16,aggregators,bb_1x2_prematch,Bb,1x2,prematch,BbMxH BbAvH BbMxD BbAvD BbMxA BbAvA,380,0,0,380,True
+2015-16,aggregators,bb_1x2_prematch_count,Bb,1x2,prematch,Bb1X2,380,0,0,380,True
+2015-16,aggregators,bb_asian_handicap_prematch,Bb,asian_handicap,prematch,BbMxAHH BbAvAHH BbMxAHA BbAvAHA,380,0,0,380,True
+2015-16,aggregators,bb_asian_handicap_prematch_count,Bb,asian_handicap,prematch,BbAH,380,0,0,380,True
+2015-16,aggregators,bb_asian_handicap_prematch_line,Bb,asian_handicap,prematch,BbAHh,380,0,0,380,True
+2015-16,aggregators,bb_over_under_2.5_prematch,Bb,over_under_2.5,prematch,BbMx>2.5 BbAv>2.5 BbMx<2.5 BbAv<2.5,380,0,0,380,True
+2015-16,aggregators,bb_over_under_2.5_prematch_count,Bb,over_under_2.5,prematch,BbOU,380,0,0,380,True
+2016-17,results,results,,,,FTHG FTAG FTR,380,0,0,380,True
+2016-17,1x2_prematch,b365_1x2_prematch,B365,1x2,prematch,B365H B365D B365A,380,0,0,380,True
+2016-17,1x2_prematch,bw_1x2_prematch,BW,1x2,prematch,BWH BWD BWA,380,0,0,380,True
+2016-17,1x2_prematch,iw_1x2_prematch,IW,1x2,prematch,IWH IWD IWA,380,0,0,380,True
+2016-17,1x2_prematch,lb_1x2_prematch,LB,1x2,prematch,LBH LBD LBA,380,0,0,380,True
+2016-17,1x2_prematch,ps_1x2_prematch,PS,1x2,prematch,PSH PSD PSA,380,0,0,380,True
+2016-17,1x2_prematch,vc_1x2_prematch,VC,1x2,prematch,VCH VCD VCA,380,0,0,380,True
+2016-17,1x2_prematch,wh_1x2_prematch,WH,1x2,prematch,WHH WHD WHA,380,0,0,380,True
+2016-17,1x2_closing,ps_1x2_closing,PS,1x2,closing,PSCH PSCD PSCA,380,0,0,380,True
+2016-17,aggregators,bb_1x2_prematch,Bb,1x2,prematch,BbMxH BbAvH BbMxD BbAvD BbMxA BbAvA,380,0,0,380,True
+2016-17,aggregators,bb_1x2_prematch_count,Bb,1x2,prematch,Bb1X2,380,0,0,380,True
+2016-17,aggregators,bb_asian_handicap_prematch,Bb,asian_handicap,prematch,BbMxAHH BbAvAHH BbMxAHA BbAvAHA,380,0,0,380,True
+2016-17,aggregators,bb_asian_handicap_prematch_count,Bb,asian_handicap,prematch,BbAH,380,0,0,380,True
+2016-17,aggregators,bb_asian_handicap_prematch_line,Bb,asian_handicap,prematch,BbAHh,380,0,0,380,True
+2016-17,aggregators,bb_over_under_2.5_prematch,Bb,over_under_2.5,prematch,BbMx>2.5 BbAv>2.5 BbMx<2.5 BbAv<2.5,380,0,0,380,True
+2016-17,aggregators,bb_over_under_2.5_prematch_count,Bb,over_under_2.5,prematch,BbOU,380,0,0,380,True
+2017-18,results,results,,,,FTHG FTAG FTR,380,0,0,380,True
+2017-18,1x2_prematch,b365_1x2_prematch,B365,1x2,prematch,B365H B365D B365A,380,0,0,380,True
+2017-18,1x2_prematch,bw_1x2_prematch,BW,1x2,prematch,BWH BWD BWA,380,0,0,380,True
+2017-18,1x2_prematch,iw_1x2_prematch,IW,1x2,prematch,IWH IWD IWA,380,0,0,380,True
+2017-18,1x2_prematch,lb_1x2_prematch,LB,1x2,prematch,LBH LBD LBA,380,0,0,380,True
+2017-18,1x2_prematch,ps_1x2_prematch,PS,1x2,prematch,PSH PSD PSA,380,0,0,380,True
+2017-18,1x2_prematch,vc_1x2_prematch,VC,1x2,prematch,VCH VCD VCA,380,0,0,380,True
+2017-18,1x2_prematch,wh_1x2_prematch,WH,1x2,prematch,WHH WHD WHA,380,0,0,380,True
+2017-18,1x2_closing,ps_1x2_closing,PS,1x2,closing,PSCH PSCD PSCA,380,0,0,380,True
+2017-18,aggregators,bb_1x2_prematch,Bb,1x2,prematch,BbMxH BbAvH BbMxD BbAvD BbMxA BbAvA,380,0,0,380,True
+2017-18,aggregators,bb_1x2_prematch_count,Bb,1x2,prematch,Bb1X2,380,0,0,380,True
+2017-18,aggregators,bb_asian_handicap_prematch,Bb,asian_handicap,prematch,BbMxAHH BbAvAHH BbMxAHA BbAvAHA,380,0,0,380,True
+2017-18,aggregators,bb_asian_handicap_prematch_count,Bb,asian_handicap,prematch,BbAH,380,0,0,380,True
+2017-18,aggregators,bb_asian_handicap_prematch_line,Bb,asian_handicap,prematch,BbAHh,380,0,0,380,True
+2017-18,aggregators,bb_over_under_2.5_prematch,Bb,over_under_2.5,prematch,BbMx>2.5 BbAv>2.5 BbMx<2.5 BbAv<2.5,380,0,0,380,True
+2017-18,aggregators,bb_over_under_2.5_prematch_count,Bb,over_under_2.5,prematch,BbOU,380,0,0,380,True
+2018-19,results,results,,,,FTHG FTAG FTR,380,0,0,380,True
+2018-19,1x2_prematch,b365_1x2_prematch,B365,1x2,prematch,B365H B365D B365A,380,0,0,380,True
+2018-19,1x2_prematch,bw_1x2_prematch,BW,1x2,prematch,BWH BWD BWA,380,0,0,380,True
+2018-19,1x2_prematch,iw_1x2_prematch,IW,1x2,prematch,IWH IWD IWA,380,0,0,380,True
+2018-19,1x2_prematch,ps_1x2_prematch,PS,1x2,prematch,PSH PSD PSA,380,0,0,380,True
+2018-19,1x2_prematch,vc_1x2_prematch,VC,1x2,prematch,VCH VCD VCA,380,0,0,380,True
+2018-19,1x2_prematch,wh_1x2_prematch,WH,1x2,prematch,WHH WHD WHA,380,0,0,380,True
+2018-19,1x2_closing,ps_1x2_closing,PS,1x2,closing,PSCH PSCD PSCA,380,0,0,380,True
+2018-19,aggregators,bb_1x2_prematch,Bb,1x2,prematch,BbMxH BbAvH BbMxD BbAvD BbMxA BbAvA,380,0,0,380,True
+2018-19,aggregators,bb_1x2_prematch_count,Bb,1x2,prematch,Bb1X2,380,0,0,380,True
+2018-19,aggregators,bb_asian_handicap_prematch,Bb,asian_handicap,prematch,BbMxAHH BbAvAHH BbMxAHA BbAvAHA,380,0,0,380,True
+2018-19,aggregators,bb_asian_handicap_prematch_count,Bb,asian_handicap,prematch,BbAH,380,0,0,380,True
+2018-19,aggregators,bb_asian_handicap_prematch_line,Bb,asian_handicap,prematch,BbAHh,380,0,0,380,True
+2018-19,aggregators,bb_over_under_2.5_prematch,Bb,over_under_2.5,prematch,BbMx>2.5 BbAv>2.5 BbMx<2.5 BbAv<2.5,380,0,0,380,True
+2018-19,aggregators,bb_over_under_2.5_prematch_count,Bb,over_under_2.5,prematch,BbOU,380,0,0,380,True
+2019-20,results,results,,,,FTHG FTAG FTR,380,0,0,380,True
+2019-20,1x2_prematch,b365_1x2_prematch,B365,1x2,prematch,B365H B365D B365A,380,0,0,380,True
+2019-20,1x2_prematch,bw_1x2_prematch,BW,1x2,prematch,BWH BWD BWA,380,0,0,380,True
+2019-20,1x2_prematch,iw_1x2_prematch,IW,1x2,prematch,IWH IWD IWA,380,0,0,380,True
+2019-20,1x2_prematch,ps_1x2_prematch,PS,1x2,prematch,PSH PSD PSA,380,0,0,380,True
+2019-20,1x2_prematch,vc_1x2_prematch,VC,1x2,prematch,VCH VCD VCA,380,0,0,380,True
+2019-20,1x2_prematch,wh_1x2_prematch,WH,1x2,prematch,WHH WHD WHA,380,0,0,380,True
+2019-20,1x2_closing,b365_1x2_closing,B365,1x2,closing,B365CH B365CD B365CA,380,0,0,380,True
+2019-20,1x2_closing,bw_1x2_closing,BW,1x2,closing,BWCH BWCD BWCA,380,0,0,380,True
+2019-20,1x2_closing,iw_1x2_closing,IW,1x2,closing,IWCH IWCD IWCA,380,0,0,380,True
+2019-20,1x2_closing,ps_1x2_closing,PS,1x2,closing,PSCH PSCD PSCA,380,0,0,380,True
+2019-20,1x2_closing,vc_1x2_closing,VC,1x2,closing,VCCH VCCD VCCA,380,0,0,380,True
+2019-20,1x2_closing,wh_1x2_closing,WH,1x2,closing,WHCH WHCD WHCA,380,0,0,380,True
+2019-20,aggregators,avg_1x2_closing,Avg,1x2,closing,AvgCH AvgCD AvgCA,380,0,0,380,True
+2019-20,aggregators,avg_1x2_prematch,Avg,1x2,prematch,AvgH AvgD AvgA,380,0,0,380,True
+2019-20,aggregators,avg_asian_handicap_closing,Avg,asian_handicap,closing,AvgCAHH AvgCAHA,380,0,0,380,True
+2019-20,aggregators,avg_asian_handicap_prematch,Avg,asian_handicap,prematch,AvgAHH AvgAHA,380,0,0,380,True
+2019-20,aggregators,avg_over_under_2.5_closing,Avg,over_under_2.5,closing,AvgC>2.5 AvgC<2.5,380,0,0,380,True
+2019-20,aggregators,avg_over_under_2.5_prematch,Avg,over_under_2.5,prematch,Avg>2.5 Avg<2.5,380,0,0,380,True
+2019-20,aggregators,max_1x2_closing,Max,1x2,closing,MaxCH MaxCD MaxCA,380,0,0,380,True
+2019-20,aggregators,max_1x2_prematch,Max,1x2,prematch,MaxH MaxD MaxA,380,0,0,380,True
+2019-20,aggregators,max_asian_handicap_closing,Max,asian_handicap,closing,MaxCAHH MaxCAHA,380,0,0,380,True
+2019-20,aggregators,max_asian_handicap_prematch,Max,asian_handicap,prematch,MaxAHH MaxAHA,380,0,0,380,True
+2019-20,aggregators,max_over_under_2.5_closing,Max,over_under_2.5,closing,MaxC>2.5 MaxC<2.5,380,0,0,380,True
+2019-20,aggregators,max_over_under_2.5_prematch,Max,over_under_2.5,prematch,Max>2.5 Max<2.5,380,0,0,380,True
+2019-20,other_markets,b365_asian_handicap_closing,B365,asian_handicap,closing,B365CAHH B365CAHA,380,0,0,380,True
+2019-20,other_markets,b365_asian_handicap_prematch,B365,asian_handicap,prematch,B365AHH B365AHA,380,0,0,380,True
+2019-20,other_markets,b365_over_under_2.5_closing,B365,over_under_2.5,closing,B365C>2.5 B365C<2.5,380,0,0,380,True
+2019-20,other_markets,b365_over_under_2.5_prematch,B365,over_under_2.5,prematch,B365>2.5 B365<2.5,380,0,0,380,True
+2019-20,other_markets,market_asian_handicap_closing_line,market,asian_handicap,closing,AHCh,380,0,0,380,True
+2019-20,other_markets,market_asian_handicap_prematch_line,market,asian_handicap,prematch,AHh,380,0,0,380,True
+2019-20,other_markets,p_asian_handicap_closing,P,asian_handicap,closing,PCAHH PCAHA,380,0,0,380,True
+2019-20,other_markets,p_asian_handicap_prematch,P,asian_handicap,prematch,PAHH PAHA,380,0,0,380,True
+2019-20,other_markets,p_over_under_2.5_closing,P,over_under_2.5,closing,PC>2.5 PC<2.5,380,0,0,380,True
+2019-20,other_markets,p_over_under_2.5_prematch,P,over_under_2.5,prematch,P>2.5 P<2.5,380,0,0,380,True
+2020-21,results,results,,,,FTHG FTAG FTR,380,0,0,380,True
+2020-21,1x2_prematch,b365_1x2_prematch,B365,1x2,prematch,B365H B365D B365A,380,0,0,380,True
+2020-21,1x2_prematch,bw_1x2_prematch,BW,1x2,prematch,BWH BWD BWA,380,0,0,380,True
+2020-21,1x2_prematch,iw_1x2_prematch,IW,1x2,prematch,IWH IWD IWA,380,0,0,380,True
+2020-21,1x2_prematch,ps_1x2_prematch,PS,1x2,prematch,PSH PSD PSA,380,0,0,380,True
+2020-21,1x2_prematch,vc_1x2_prematch,VC,1x2,prematch,VCH VCD VCA,380,0,0,380,True
+2020-21,1x2_prematch,wh_1x2_prematch,WH,1x2,prematch,WHH WHD WHA,380,0,0,380,True
+2020-21,1x2_closing,b365_1x2_closing,B365,1x2,closing,B365CH B365CD B365CA,380,0,0,380,True
+2020-21,1x2_closing,bw_1x2_closing,BW,1x2,closing,BWCH BWCD BWCA,380,0,0,380,True
+2020-21,1x2_closing,iw_1x2_closing,IW,1x2,closing,IWCH IWCD IWCA,380,0,0,380,True
+2020-21,1x2_closing,ps_1x2_closing,PS,1x2,closing,PSCH PSCD PSCA,380,0,0,380,True
+2020-21,1x2_closing,vc_1x2_closing,VC,1x2,closing,VCCH VCCD VCCA,380,0,0,380,True
+2020-21,1x2_closing,wh_1x2_closing,WH,1x2,closing,WHCH WHCD WHCA,380,0,0,380,True
+2020-21,aggregators,avg_1x2_closing,Avg,1x2,closing,AvgCH AvgCD AvgCA,380,0,0,380,True
+2020-21,aggregators,avg_1x2_prematch,Avg,1x2,prematch,AvgH AvgD AvgA,380,0,0,380,True
+2020-21,aggregators,avg_asian_handicap_closing,Avg,asian_handicap,closing,AvgCAHH AvgCAHA,380,0,0,380,True
+2020-21,aggregators,avg_asian_handicap_prematch,Avg,asian_handicap,prematch,AvgAHH AvgAHA,380,0,0,380,True
+2020-21,aggregators,avg_over_under_2.5_closing,Avg,over_under_2.5,closing,AvgC>2.5 AvgC<2.5,380,0,0,380,True
+2020-21,aggregators,avg_over_under_2.5_prematch,Avg,over_under_2.5,prematch,Avg>2.5 Avg<2.5,380,0,0,380,True
+2020-21,aggregators,max_1x2_closing,Max,1x2,closing,MaxCH MaxCD MaxCA,380,0,0,380,True
+2020-21,aggregators,max_1x2_prematch,Max,1x2,prematch,MaxH MaxD MaxA,380,0,0,380,True
+2020-21,aggregators,max_asian_handicap_closing,Max,asian_handicap,closing,MaxCAHH MaxCAHA,380,0,0,380,True
+2020-21,aggregators,max_asian_handicap_prematch,Max,asian_handicap,prematch,MaxAHH MaxAHA,380,0,0,380,True
+2020-21,aggregators,max_over_under_2.5_closing,Max,over_under_2.5,closing,MaxC>2.5 MaxC<2.5,380,0,0,380,True
+2020-21,aggregators,max_over_under_2.5_prematch,Max,over_under_2.5,prematch,Max>2.5 Max<2.5,380,0,0,380,True
+2020-21,other_markets,b365_asian_handicap_closing,B365,asian_handicap,closing,B365CAHH B365CAHA,380,0,0,380,True
+2020-21,other_markets,b365_asian_handicap_prematch,B365,asian_handicap,prematch,B365AHH B365AHA,380,0,0,380,True
+2020-21,other_markets,b365_over_under_2.5_closing,B365,over_under_2.5,closing,B365C>2.5 B365C<2.5,380,0,0,380,True
+2020-21,other_markets,b365_over_under_2.5_prematch,B365,over_under_2.5,prematch,B365>2.5 B365<2.5,380,0,0,380,True
+2020-21,other_markets,market_asian_handicap_closing_line,market,asian_handicap,closing,AHCh,380,0,0,380,True
+2020-21,other_markets,market_asian_handicap_prematch_line,market,asian_handicap,prematch,AHh,380,0,0,380,True
+2020-21,other_markets,p_asian_handicap_closing,P,asian_handicap,closing,PCAHH PCAHA,380,0,0,380,True
+2020-21,other_markets,p_asian_handicap_prematch,P,asian_handicap,prematch,PAHH PAHA,380,0,0,380,True
+2020-21,other_markets,p_over_under_2.5_closing,P,over_under_2.5,closing,PC>2.5 PC<2.5,380,0,0,380,True
+2020-21,other_markets,p_over_under_2.5_prematch,P,over_under_2.5,prematch,P>2.5 P<2.5,380,0,0,380,True
+2021-22,results,results,,,,FTHG FTAG FTR,380,0,0,380,True
+2021-22,1x2_prematch,b365_1x2_prematch,B365,1x2,prematch,B365H B365D B365A,380,0,0,380,True
+2021-22,1x2_prematch,bw_1x2_prematch,BW,1x2,prematch,BWH BWD BWA,380,0,0,380,True
+2021-22,1x2_prematch,iw_1x2_prematch,IW,1x2,prematch,IWH IWD IWA,380,0,0,380,True
+2021-22,1x2_prematch,ps_1x2_prematch,PS,1x2,prematch,PSH PSD PSA,380,0,0,380,True
+2021-22,1x2_prematch,vc_1x2_prematch,VC,1x2,prematch,VCH VCD VCA,380,0,0,380,True
+2021-22,1x2_prematch,wh_1x2_prematch,WH,1x2,prematch,WHH WHD WHA,380,0,0,380,True
+2021-22,1x2_closing,b365_1x2_closing,B365,1x2,closing,B365CH B365CD B365CA,380,0,0,380,True
+2021-22,1x2_closing,bw_1x2_closing,BW,1x2,closing,BWCH BWCD BWCA,380,0,0,380,True
+2021-22,1x2_closing,iw_1x2_closing,IW,1x2,closing,IWCH IWCD IWCA,380,3,0,377,False
+2021-22,1x2_closing,ps_1x2_closing,PS,1x2,closing,PSCH PSCD PSCA,380,0,0,380,True
+2021-22,1x2_closing,vc_1x2_closing,VC,1x2,closing,VCCH VCCD VCCA,380,0,0,380,True
+2021-22,1x2_closing,wh_1x2_closing,WH,1x2,closing,WHCH WHCD WHCA,380,0,0,380,True
+2021-22,aggregators,avg_1x2_closing,Avg,1x2,closing,AvgCH AvgCD AvgCA,380,0,0,380,True
+2021-22,aggregators,avg_1x2_prematch,Avg,1x2,prematch,AvgH AvgD AvgA,380,0,0,380,True
+2021-22,aggregators,avg_asian_handicap_closing,Avg,asian_handicap,closing,AvgCAHH AvgCAHA,380,0,0,380,True
+2021-22,aggregators,avg_asian_handicap_prematch,Avg,asian_handicap,prematch,AvgAHH AvgAHA,380,0,0,380,True
+2021-22,aggregators,avg_over_under_2.5_closing,Avg,over_under_2.5,closing,AvgC>2.5 AvgC<2.5,380,0,0,380,True
+2021-22,aggregators,avg_over_under_2.5_prematch,Avg,over_under_2.5,prematch,Avg>2.5 Avg<2.5,380,0,0,380,True
+2021-22,aggregators,max_1x2_closing,Max,1x2,closing,MaxCH MaxCD MaxCA,380,0,0,380,True
+2021-22,aggregators,max_1x2_prematch,Max,1x2,prematch,MaxH MaxD MaxA,380,0,0,380,True
+2021-22,aggregators,max_asian_handicap_closing,Max,asian_handicap,closing,MaxCAHH MaxCAHA,380,0,0,380,True
+2021-22,aggregators,max_asian_handicap_prematch,Max,asian_handicap,prematch,MaxAHH MaxAHA,380,0,0,380,True
+2021-22,aggregators,max_over_under_2.5_closing,Max,over_under_2.5,closing,MaxC>2.5 MaxC<2.5,380,0,0,380,True
+2021-22,aggregators,max_over_under_2.5_prematch,Max,over_under_2.5,prematch,Max>2.5 Max<2.5,380,0,0,380,True
+2021-22,other_markets,b365_asian_handicap_closing,B365,asian_handicap,closing,B365CAHH B365CAHA,380,1,0,379,False
+2021-22,other_markets,b365_asian_handicap_prematch,B365,asian_handicap,prematch,B365AHH B365AHA,380,0,0,380,True
+2021-22,other_markets,b365_over_under_2.5_closing,B365,over_under_2.5,closing,B365C>2.5 B365C<2.5,380,0,1,379,False
+2021-22,other_markets,b365_over_under_2.5_prematch,B365,over_under_2.5,prematch,B365>2.5 B365<2.5,380,1,0,379,False
+2021-22,other_markets,market_asian_handicap_closing_line,market,asian_handicap,closing,AHCh,380,0,0,380,True
+2021-22,other_markets,market_asian_handicap_prematch_line,market,asian_handicap,prematch,AHh,380,0,0,380,True
+2021-22,other_markets,p_asian_handicap_closing,P,asian_handicap,closing,PCAHH PCAHA,380,0,0,380,True
+2021-22,other_markets,p_asian_handicap_prematch,P,asian_handicap,prematch,PAHH PAHA,380,0,0,380,True
+2021-22,other_markets,p_over_under_2.5_closing,P,over_under_2.5,closing,PC>2.5 PC<2.5,380,0,0,380,True
+2021-22,other_markets,p_over_under_2.5_prematch,P,over_under_2.5,prematch,P>2.5 P<2.5,380,0,0,380,True
+2022-23,results,results,,,,FTHG FTAG FTR,380,0,0,380,True
+2022-23,1x2_prematch,b365_1x2_prematch,B365,1x2,prematch,B365H B365D B365A,380,0,0,380,True
+2022-23,1x2_prematch,bw_1x2_prematch,BW,1x2,prematch,BWH BWD BWA,380,0,0,380,True
+2022-23,1x2_prematch,iw_1x2_prematch,IW,1x2,prematch,IWH IWD IWA,380,0,0,380,True
+2022-23,1x2_prematch,ps_1x2_prematch,PS,1x2,prematch,PSH PSD PSA,380,0,0,380,True
+2022-23,1x2_prematch,vc_1x2_prematch,VC,1x2,prematch,VCH VCD VCA,380,0,0,380,True
+2022-23,1x2_prematch,wh_1x2_prematch,WH,1x2,prematch,WHH WHD WHA,380,0,0,380,True
+2022-23,1x2_closing,b365_1x2_closing,B365,1x2,closing,B365CH B365CD B365CA,380,0,0,380,True
+2022-23,1x2_closing,bw_1x2_closing,BW,1x2,closing,BWCH BWCD BWCA,380,0,0,380,True
+2022-23,1x2_closing,iw_1x2_closing,IW,1x2,closing,IWCH IWCD IWCA,380,0,0,380,True
+2022-23,1x2_closing,ps_1x2_closing,PS,1x2,closing,PSCH PSCD PSCA,380,0,0,380,True
+2022-23,1x2_closing,vc_1x2_closing,VC,1x2,closing,VCCH VCCD VCCA,380,0,0,380,True
+2022-23,1x2_closing,wh_1x2_closing,WH,1x2,closing,WHCH WHCD WHCA,380,0,0,380,True
+2022-23,aggregators,avg_1x2_closing,Avg,1x2,closing,AvgCH AvgCD AvgCA,380,0,0,380,True
+2022-23,aggregators,avg_1x2_prematch,Avg,1x2,prematch,AvgH AvgD AvgA,380,0,0,380,True
+2022-23,aggregators,avg_asian_handicap_closing,Avg,asian_handicap,closing,AvgCAHH AvgCAHA,380,0,0,380,True
+2022-23,aggregators,avg_asian_handicap_prematch,Avg,asian_handicap,prematch,AvgAHH AvgAHA,380,0,0,380,True
+2022-23,aggregators,avg_over_under_2.5_closing,Avg,over_under_2.5,closing,AvgC>2.5 AvgC<2.5,380,0,0,380,True
+2022-23,aggregators,avg_over_under_2.5_prematch,Avg,over_under_2.5,prematch,Avg>2.5 Avg<2.5,380,0,0,380,True
+2022-23,aggregators,max_1x2_closing,Max,1x2,closing,MaxCH MaxCD MaxCA,380,0,0,380,True
+2022-23,aggregators,max_1x2_prematch,Max,1x2,prematch,MaxH MaxD MaxA,380,0,0,380,True
+2022-23,aggregators,max_asian_handicap_closing,Max,asian_handicap,closing,MaxCAHH MaxCAHA,380,0,0,380,True
+2022-23,aggregators,max_asian_handicap_prematch,Max,asian_handicap,prematch,MaxAHH MaxAHA,380,0,0,380,True
+2022-23,aggregators,max_over_under_2.5_closing,Max,over_under_2.5,closing,MaxC>2.5 MaxC<2.5,380,0,0,380,True
+2022-23,aggregators,max_over_under_2.5_prematch,Max,over_under_2.5,prematch,Max>2.5 Max<2.5,380,0,0,380,True
+2022-23,other_markets,b365_asian_handicap_closing,B365,asian_handicap,closing,B365CAHH B365CAHA,380,0,0,380,True
+2022-23,other_markets,b365_asian_handicap_prematch,B365,asian_handicap,prematch,B365AHH B365AHA,380,0,0,380,True
+2022-23,other_markets,b365_over_under_2.5_closing,B365,over_under_2.5,closing,B365C>2.5 B365C<2.5,380,0,0,380,True
+2022-23,other_markets,b365_over_under_2.5_prematch,B365,over_under_2.5,prematch,B365>2.5 B365<2.5,380,0,0,380,True
+2022-23,other_markets,market_asian_handicap_closing_line,market,asian_handicap,closing,AHCh,380,0,0,380,True
+2022-23,other_markets,market_asian_handicap_prematch_line,market,asian_handicap,prematch,AHh,380,0,0,380,True
+2022-23,other_markets,p_asian_handicap_closing,P,asian_handicap,closing,PCAHH PCAHA,380,0,0,380,True
+2022-23,other_markets,p_asian_handicap_prematch,P,asian_handicap,prematch,PAHH PAHA,380,0,0,380,True
+2022-23,other_markets,p_over_under_2.5_closing,P,over_under_2.5,closing,PC>2.5 PC<2.5,380,1,0,379,False
+2022-23,other_markets,p_over_under_2.5_prematch,P,over_under_2.5,prematch,P>2.5 P<2.5,380,1,0,379,False
+2023-24,results,results,,,,FTHG FTAG FTR,380,0,0,380,True
+2023-24,1x2_prematch,b365_1x2_prematch,B365,1x2,prematch,B365H B365D B365A,380,0,0,380,True
+2023-24,1x2_prematch,bw_1x2_prematch,BW,1x2,prematch,BWH BWD BWA,380,2,0,378,False
+2023-24,1x2_prematch,iw_1x2_prematch,IW,1x2,prematch,IWH IWD IWA,380,182,0,198,False
+2023-24,1x2_prematch,ps_1x2_prematch,PS,1x2,prematch,PSH PSD PSA,380,0,0,380,True
+2023-24,1x2_prematch,vc_1x2_prematch,VC,1x2,prematch,VCH VCD VCA,380,0,0,380,True
+2023-24,1x2_prematch,wh_1x2_prematch,WH,1x2,prematch,WHH WHD WHA,380,0,0,380,True
+2023-24,1x2_closing,b365_1x2_closing,B365,1x2,closing,B365CH B365CD B365CA,380,0,0,380,True
+2023-24,1x2_closing,bw_1x2_closing,BW,1x2,closing,BWCH BWCD BWCA,380,12,0,368,False
+2023-24,1x2_closing,iw_1x2_closing,IW,1x2,closing,IWCH IWCD IWCA,380,182,0,198,False
+2023-24,1x2_closing,ps_1x2_closing,PS,1x2,closing,PSCH PSCD PSCA,380,0,0,380,True
+2023-24,1x2_closing,vc_1x2_closing,VC,1x2,closing,VCCH VCCD VCCA,380,0,0,380,True
+2023-24,1x2_closing,wh_1x2_closing,WH,1x2,closing,WHCH WHCD WHCA,380,0,0,380,True
+2023-24,aggregators,avg_1x2_closing,Avg,1x2,closing,AvgCH AvgCD AvgCA,380,0,0,380,True
+2023-24,aggregators,avg_1x2_prematch,Avg,1x2,prematch,AvgH AvgD AvgA,380,0,0,380,True
+2023-24,aggregators,avg_asian_handicap_closing,Avg,asian_handicap,closing,AvgCAHH AvgCAHA,380,0,0,380,True
+2023-24,aggregators,avg_asian_handicap_prematch,Avg,asian_handicap,prematch,AvgAHH AvgAHA,380,0,0,380,True
+2023-24,aggregators,avg_over_under_2.5_closing,Avg,over_under_2.5,closing,AvgC>2.5 AvgC<2.5,380,0,0,380,True
+2023-24,aggregators,avg_over_under_2.5_prematch,Avg,over_under_2.5,prematch,Avg>2.5 Avg<2.5,380,0,0,380,True
+2023-24,aggregators,max_1x2_closing,Max,1x2,closing,MaxCH MaxCD MaxCA,380,0,0,380,True
+2023-24,aggregators,max_1x2_prematch,Max,1x2,prematch,MaxH MaxD MaxA,380,0,0,380,True
+2023-24,aggregators,max_asian_handicap_closing,Max,asian_handicap,closing,MaxCAHH MaxCAHA,380,1,0,379,False
+2023-24,aggregators,max_asian_handicap_prematch,Max,asian_handicap,prematch,MaxAHH MaxAHA,380,0,0,380,True
+2023-24,aggregators,max_over_under_2.5_closing,Max,over_under_2.5,closing,MaxC>2.5 MaxC<2.5,380,0,0,380,True
+2023-24,aggregators,max_over_under_2.5_prematch,Max,over_under_2.5,prematch,Max>2.5 Max<2.5,380,0,0,380,True
+2023-24,other_markets,b365_asian_handicap_closing,B365,asian_handicap,closing,B365CAHH B365CAHA,380,0,0,380,True
+2023-24,other_markets,b365_asian_handicap_prematch,B365,asian_handicap,prematch,B365AHH B365AHA,380,0,0,380,True
+2023-24,other_markets,b365_over_under_2.5_closing,B365,over_under_2.5,closing,B365C>2.5 B365C<2.5,380,0,0,380,True
+2023-24,other_markets,b365_over_under_2.5_prematch,B365,over_under_2.5,prematch,B365>2.5 B365<2.5,380,0,0,380,True
+2023-24,other_markets,market_asian_handicap_closing_line,market,asian_handicap,closing,AHCh,380,0,0,380,True
+2023-24,other_markets,market_asian_handicap_prematch_line,market,asian_handicap,prematch,AHh,380,0,0,380,True
+2023-24,other_markets,p_asian_handicap_closing,P,asian_handicap,closing,PCAHH PCAHA,380,0,0,380,True
+2023-24,other_markets,p_asian_handicap_prematch,P,asian_handicap,prematch,PAHH PAHA,380,0,0,380,True
+2023-24,other_markets,p_over_under_2.5_closing,P,over_under_2.5,closing,PC>2.5 PC<2.5,380,7,0,373,False
+2023-24,other_markets,p_over_under_2.5_prematch,P,over_under_2.5,prematch,P>2.5 P<2.5,380,8,0,372,False

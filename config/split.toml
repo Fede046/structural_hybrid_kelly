@@ -1,0 +1,20 @@
+# Split congelato dei dati E0 (story S3, US-C3.3).
+# Validazione: stagioni anteriori al 2023-24, non di training, con la terna B365
+# pre-partita completa secondo results/us_c3_1_data_coverage.csv (.agent/report/T15.md).
+# Le stagioni dal primo anno di test in poi restano bloccate finché test_unlocked è false.
+# Lo sblocco lo fa solo il programmatore, a mano e con commit, dopo il congelamento
+# dei parametri (US-C8.2).
+
+frozen_on = 2026-09-29
+test_unlocked = false
+test_unlocked_on = ""
+
+training = ["2000-01", "2010-11", "2020-21"]
+
+validation = [
+    "2002-03", "2003-04", "2004-05", "2005-06", "2006-07", "2007-08", "2008-09",
+    "2009-10", "2011-12", "2012-13", "2013-14", "2014-15", "2015-16", "2016-17",
+    "2017-18", "2018-19", "2019-20", "2021-22", "2022-23",
+]
+
+test = ["2023-24"]
