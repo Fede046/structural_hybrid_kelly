@@ -33,6 +33,12 @@ Ultimo task: T24
 - Divergenza fra metodi: spread di un esito = massimo meno minimo dei tre q, in punti percentuali; spread relativo = spread diviso per la media dei tre q; fasce di quota [1, 1.5), [1.5, 2), [2, 3), [3, 5), [5, 10), [10, ∞), chiuse a sinistra; edge di riferimento 2 punti (p − 1/o nello scenario sottile). L'edge è una scelta del supervisore su delega, da confermare — S3, 2026-09-29
 - Anti-leakage: storia = partite con Date strettamente anteriore (le altre dello stesso giorno escluse); la partita da prevedere espone solo la whitelist, costruita per inclusione: identificativi Div, Date, HomeTeam, AwayTeam, season, Time, più le colonne con kind = odds e timing = prematch. Fornitore in src/shk/data/walkforward.py, che C4 riuserà; i test anti-leakage non si marcano slow — S3, 2026-09-29
 - I test sui dati reali si saltano con motivo esplicito se data/raw/E0/ non contiene CSV; il meccanismo è sempre coperto da test su dati sintetici. I criteri verificabili dai CSV versionati girano anche senza dati — S3, 2026-09-29
+- Modulo 1 in src/shk/model/. Elo: delta = R_casa − R_trasferta + h; aggiornamento a somma zero con il punteggio atteso logistico E = 1/(1 + 10^(−delta/400)); probabilità 1X2 col mapping di Davidson sulla stessa scala (s = 400); baseline a pareggio costante con c = frequenza del pareggio sulle partite di training del fit — S4, 2026-09-29
+- Neopromosse (decisione del programmatore): una squadra presente in s − 1 conserva il rating; una squadra assente in s − 1 ma già vista riprende l'ultimo rating; una squadra mai vista eredita la media dei rating finali delle ultime tre della classifica di s − 1, calcolata dai soli risultati (3 punti la vittoria, 1 il pareggio; poi differenza reti, gol fatti, nome in ordine alfabetico). La regola si applica alla prima comparsa di ogni squadra in s; nella prima stagione del DataFrame tutte partono da 1500. Le penalizzazioni in punti non sono nei dati — S4, 2026-09-29
+- Calibrazione espansiva (scelta del supervisore su delega, da confermare): per ogni stagione di training j, il fit usa le stagioni di training ≤ j; ogni stagione di validazione si prevede col fit delle stagioni di training strettamente anteriori. Obiettivo: log-loss media Davidson sulle sole partite di training del fit, con i rating che girano dal 1993-94. Nelder-Mead con limiti K ∈ [5, 80], h ∈ [0, 200], ν ∈ [0.05, 3]. Valori congelati in ELO_FITS (src/shk/model/elo_fit.py), che non si modifica — S4, 2026-09-29
+- ĝ = LL(q) − LL(p), misurato solo sulle stagioni di validazione, contro due serie di q (scelta del supervisore su delega, da confermare): b365_prematch (B365H/D/A) sulle 19 stagioni di validazione e pinnacle_closing (PSCH/D/A) sulle 10 stagioni di validazione dal 2012-13. Modello e tre metodi di de-vigging sulle stesse partite; esclusioni contate per causa. Esito informativo: nessun parametro, filtro o metodo si cambia in funzione di ĝ — S4, 2026-09-29
+- Ricalibrazione con lo stesso schema espansivo: one-vs-rest per esito, isotonica e Platt entrambe riportate senza scelta nel codice, limite a [1e-6, 1 − 1e-6] e rinormalizzazione (scelta del supervisore); reliability su 10 bin e Brier multiclasse sulla serie b365_prematch — S4, 2026-09-29
+- Un test sui dati reali che supera 60 s si marca slow e si dichiara nel report — S4, 2026-09-29
 
 ## Story chiuse
 ### S1 — C1 Simulatore Kelly: motore riusabile ed errore di stima — chiusa il 2026-09-27
@@ -89,6 +95,58 @@ Resta aperto:
 - Aggiornare uv.lock dopo l'aggiunta di pandas.
 - Committare codice, CSV e figure di T17–T19, e quelli di T14–T16 se non sono già nel commit 2cea094.
 
+### S4 — C4 Elo e go/no-go: Modulo 1 minimo, ĝ contro il mercato, calibrazione — chiusa il 2026-09-29
+Esito: unisce US-C4.1, US-C4.2 e US-C4.3. Cinque task (T20–T24), tutti chiusi con i criteri coperti da test, in una sola chat, sul branch C4. Suite veloce 181 → 248 verde (67 test nuovi); suite slow 14 → 15 (il nuovo test di ricalibrazione è verde in 119 s; resta rosso il risultato noto di T12). Risultati in results/us_c4_1_elo_walkforward.csv, results/us_c4_2_g_hat.csv, results/us_c4_3_calibration.csv e nelle tre figure omonime in thesis/figures/; valori misurati nei report .agent/report/T20.md … T24.md, ricalcolati in modo indipendente dal supervisore dove numerici.
+Note di esecuzione:
+- correttivi in T20 (valori del report non prodotti da comandi), T21 (report; poi, per decisione del programmatore, tempi del percorso veloce da 31.7 s a 0.35 s a output invariato, verificato con SHA256) e T24 (dimensione della figura non misurata). In tre report su cinque c'erano valori non prodotti da comandi, intercettati dal ricalcolo del supervisore;
+- in T24 test_platt_fit_predict_properties è passata da (0, 1) a [0, 1] dopo un fallimento: su dati sintetici a gradino la sigmoide di Platt satura a 1.0 in float64;
+- in T23 e T24 l'agente ha letto file fuori dal repository: i propri log e, nel correttivo di T24 e contro istruzione, le ultime 50 righe della cronologia di PowerShell. Nessun file scritto fuori scope, nessun comando git vietato.
+- T20 — Funzioni Elo e mapping 1X2 (Davidson e pareggio costante) — fatto — file: src/shk/model/__init__.py, src/shk/model/elo.py, tests/test_elo.py
+- T21 — Previsore Elo walk-forward con regola per le neopromosse, US-C4.1 — fatto — file: src/shk/model/elo_predictor.py, tests/test_elo_predictor.py
+- T22 — Calibrazione espansiva di K, h, ν sul training e previsioni walk-forward, US-C4.1 — fatto — file: src/shk/model/elo_fit.py, scripts/us_c4_1_elo_walkforward.py, tests/test_us_c4_1_acceptance.py, results/us_c4_1_elo_walkforward.csv, thesis/figures/us_c4_1_elo_walkforward.png
+- T23 — ĝ del Modulo 1 contro il mercato de-viggato, US-C4.2 — fatto — file: src/shk/model/scoring.py, scripts/us_c4_2_g_hat.py, tests/test_scoring.py, tests/test_us_c4_2_acceptance.py, results/us_c4_2_g_hat.csv, thesis/figures/us_c4_2_g_hat.png
+- T24 — Calibrazione del Modulo 1: reliability, Brier e ricalibrazione, US-C4.3 — fatto — file: src/shk/model/recalibration.py, scripts/us_c4_3_calibration.py, tests/test_recalibration.py, tests/test_us_c4_3_acceptance.py, results/us_c4_3_calibration.csv, thesis/figures/us_c4_3_calibration.png
+
+Risultati principali:
+- Modulo 1 Elo: Davidson riproduce la tabella delle note 2.8 §3.3 solo con s = 200 (scarto massimo 4.4e-4; con s = 400 lo scarto sarebbe 0.20). Percorso via fornitore e percorso veloce danno previsioni identiche byte per byte sulle 8 360 partite di training e validazione (0.35 s il veloce, 10.6 s il fornitore).
+- Transizioni reali dal 1993-94 al 2022-23: 22, 22, poi 20 squadre; 86 entrate, di cui 28 nuove e 58 tornanti; nomi squadra coerenti. Le ultime tre calcolate coincidono con le uscite effettive in 28 transizioni su 29; al 1997-98 la classifica calcolata dà Coventry al posto del Middlesbrough, penalizzato fuori dai dati.
+- ELO_FITS (Nelder-Mead, tutti i fit convergenti, nessun parametro su un limite): 2000-01 K 10.32, h 125.5, ν 0.806, c 0.266; 2010-11 K 9.93, h 127.9, ν 0.878, c 0.279; 2020-21 K 7.93, h 78.0, ν 0.760, c 0.259. Log-loss di validazione Davidson 0.9738, 0.9838, 0.9833; baseline a pareggio costante 0.9768, 0.9901, 0.9876. La media dei rating a inizio stagione sale da 1500 a circa 1525 nel 2022-23, per effetto dei tornanti.
+- ĝ (proporzionale / additivo / power), negativo in tutti i casi e a ogni fine stagione del cumulativo: b365_prematch (7 220 partite) −0.0214 / −0.0224 / −0.0224; pinnacle_closing (3 800) −0.0315 / −0.0316 / −0.0317. Log-loss del modello 0.9795 e 0.9812; del mercato fra 0.9571 e 0.9581 e fra 0.9496 e 0.9498. Nessuna esclusione; devig_power converge su tutte le chiusure.
+- Calibrazione del modello su b365_prematch, versione raw: fasce peggio calibrate trasferta [0.4, 0.5) con z = +6.06 e [0.5, 0.6) con +5.30, cioè trasferta sottostimata; casa [0.7, 0.8) con +4.34. Log-loss di validazione raw / Platt / isotonica: 0.9795 / 0.9823 / 1.0139 su B365, 0.9812 / 0.9809 / 0.9914 su Pinnacle. ĝ dopo Platt fra −0.024 e −0.031, dopo l'isotonica fra −0.042 e −0.057. Valori limitati: isotonica 265 e 77, Platt 0.
+
+Resta aperto:
+- elo_fit.py duplica in forma pubblica (parse_season_start_year) il parsing della stagione di elo_predictor.py.
+- La ricerca di try:, print( e logging non è stata rieseguita su elo_predictor.py dopo il secondo correttivo di T21, e non è mai stata eseguita sugli script di S4.
+- Imprecisioni nei report, lasciati come sono: nomi di mutante e confronto nel report T21, un comando abbreviato nel report T22, comandi esplorativi del correttivo non elencati nel report T24. Fanno fede i valori riportati qui e nella scheda.
+
+### Fuori scope di S4
+- Il secondo Modulo 1 (Dixon-Coles pesato) e il confronto appaiato fra i due (note 2.8 §11).
+- Il test placebo con esiti permutati entro stagione (note 2.8 §9.3).
+- Gli intervalli di confidenza di ĝ per block bootstrap (C8).
+- La serie h_t a finestra mobile e il crollo del 2020-21 (note 2.8 §2.3).
+- Il blending logit fra modello e mercato (note 2.8 §12).
+- Le varianti di K (margine di vittoria, K decrescente, K maggiore per le squadre nuove) e la regressione verso la media fra stagioni.
+- La verifica Elo = Bradley-Terry a precisione macchina (note 2.8 §2.5).
+- ECE, bande di confidenza sul reliability diagram, stratificazione per fascia di quota.
+- ĝ per stagione e per fascia di quota; la soglia di redditività ĝ > ln π (note 2.4 §8).
+- Il criterio 11 della rubrica, cioè non puntare sulle neopromosse per le prime m giornate: riguarda lo staking.
+- La decisione sullo scenario di training 2000-01 senza B365 resta aperta (S3). In C4 non ha bloccato: ĝ si misura solo sulla validazione.
+
+### Resta al programmatore per S4
+- Confermare o cambiare le scelte fatte dal supervisore su delega il 2026-09-29:
+  - q con serie principale B365 pre-partita e seconda serie Pinnacle chiusura dal 2012-13;
+  - calibrazione espansiva di K, h, ν e della ricalibrazione;
+  - retrocesse identificate dalla classifica calcolata (nel 1996-97 dà Coventry al posto del Middlesbrough);
+  - limite [1e-6, 1 − 1e-6] nella ricalibrazione.
+- Correggere o dichiarare la tabella di Davidson delle note 2.8 §3.3: è calcolata con 10^(ΔR/200), mentre il modello usa la scala 400 del punteggio atteso.
+- US-C4.2, esito informativo: scrivere l'introduzione della tesi in base al segno di ĝ, negativo in tutti i casi, dichiarandolo in apertura e non nei limiti (note 2.4 §6).
+- Dichiarare in tesi: il mapping Davidson e la sensibilità rispetto alla baseline a pareggio costante; la regola per le neopromosse; lo schema espansivo degli iperparametri.
+- US-C4.3: decidere se serve una ricalibrazione e quale adottare, isotonica o Platt, da congelare. Log-loss di validazione raw / Platt / isotonica: 0.9795 / 0.9823 / 1.0139 su B365, 0.9812 / 0.9809 / 0.9914 su Pinnacle.
+- Decidere sull'accesso dell'agente ai file fuori dal repository: lasciarlo com'è, oppure limitarne i permessi alla cartella del progetto e aggiungere il divieto alle "Convenzioni del progetto" di .agent/PROTOCOLLO.md. Controllare che le 50 righe della cronologia di PowerShell lette in T24 non contenessero credenziali.
+- Decidere se aggiungere alle "Convenzioni del progetto" di .agent/PROTOCOLLO.md la regola "ogni valore numerico del report viene da un comando elencato".
+- Rimappare il progetto prima della prossima story: dopo la mappa del 2026-09-29b sono stati chiusi cinque task di scrittura.
+- Committare codice, CSV e figure di T24 (T20–T23 sono in 7f8e928, 4710045, 15b2204, d329766), verificare la CI al primo push del branch C4 e portare C4 in main.
+
 ## Story S2 — C2 ANOVA a mano, autocorrelazione e calibrazione per block bootstrap — aperta il 2026-09-28, T12 da rivedere
 Esito: unisce US-C2.1, US-C2.2 e US-C2.3. T8–T11 chiusi con tutti i criteri coperti da test; T12 fermo sul criterio 2; T13 corregge i test del CSV per la CI. Suite veloce 109 verde; suite slow 14, di cui 1 rossa per il risultato noto di T12. Risultati in results/us_c2_anova_autocorrelation.csv (12 righe nominali definitive + 12 calibrate) e thesis/figures/us_c2_anova_autocorrelation.png (pannelli A e B); valori misurati nei report .agent/report/T8.md … T12.md, riprodotti in modo indipendente dal supervisore.
 - T8 — ANOVA a una via a mano, singola e vettorizzata, verificata contro scipy — fatto — file: src/shk/stats/__init__.py, src/shk/stats/anova.py, tests/test_anova.py
@@ -127,481 +185,3 @@ Resta aperto:
 - Scegliere quale L adottare nelle story che riusano la calibrazione (C5.2, C6.4, C8) e scrivere in tesi il limite misurato del rimedio: rimandato a dopo il seguito di T12.
 - Committare CSV e PNG generati dai Task 10 e 12, e la correzione dei test di T13.
 - Verificare che la CI torni verde al primo push dopo T13.
-
-## Story S4 — C4 Elo e go/no-go: Modulo 1 minimo, ĝ contro il mercato, calibrazione
-Aperta il 2026-09-29.
-
-**Interpretazione:** unisce US-C4.1, US-C4.2 e US-C4.3. Si costruisce un Modulo 1 Elo con mapping di Davidson verso l'1X2 e previsioni walk-forward, con iperparametri stimati solo su stagioni di training anteriori a quelle da prevedere. Poi si misura ĝ contro il mercato de-viggato (tre metodi, due serie di q) e si valuta la calibrazione, con e senza ricalibrazione. ĝ e gli esiti della calibrazione sono informativi: si misurano, non si fanno tornare.
-
-**Assunzioni fatte:**
-- Neopromosse (decisione del programmatore, 2026-09-29): una squadra assente nella stagione precedente ma già vista in una stagione anteriore del dataset riprende il suo ultimo rating. Una squadra mai vista eredita la media dei rating finali delle tre retrocesse della stagione precedente. Le squadre rimaste conservano il rating; nella prima stagione del dataset (1993-94) tutte partono da 1500.
-- Retrocesse senza leakage: sono le ultime tre della classifica della stagione precedente, calcolata dai soli risultati in storia (3 punti la vittoria, 1 il pareggio; a parità di punti contano differenza reti, gol fatti e nome in ordine alfabetico). Le penalizzazioni in punti non sono nei dati, quindi la classifica calcolata può differire da quella reale. Alla transizione 1994-95 → 1995-96 le retrocesse furono quattro: la regola ne usa tre, e l'effetto resta confinato alle stagioni di history.
-- Scelta del supervisore, legata alla regola sulle neopromosse: i tornanti rompono la somma zero dei rating. L'effetto si misura, non si corregge.
-- q (scelta del supervisore su delega, 2026-09-29, da confermare): la serie principale è B365 pre-partita (B365H/D/A), come deciso in S3, sulle 19 stagioni di validazione. La seconda serie è la chiusura Pinnacle (PSCH/PSCD/PSCA) sulle stagioni di validazione dal 2012-13. Motivo: le note 2.4 §6 impostano il go/no-go contro la chiusura, che è il prezzo usato da KellyBench.
-- Calibrazione espansiva (scelta del supervisore su delega, 2026-09-29, da confermare): ogni stagione di validazione è prevista con K, h, ν stimati solo sulle stagioni di training strettamente anteriori.
-  - Il fit 2000-01 serve le stagioni dal 2002-03 al 2009-10.
-  - Il fit 2000-01 + 2010-11 serve le stagioni dal 2011-12 al 2019-20.
-  - Il fit sulle tre stagioni serve il 2021-22 e il 2022-23.
-  
-  Lo schema rispetta sia la story ("solo sul training") sia le note 2.8 §9.1 (nessun parametro stimato su partite successive). La ricalibrazione di US-C4.3 segue lo stesso schema.
-- L'obiettivo della calibrazione è la log-loss media (logaritmo naturale) delle probabilità Davidson sulle sole partite di training del fit. I rating girano dal 1993-94 con un unico terno (K, h, ν); i risultati delle stagioni non di training entrano nei rating come storia, mai nell'obiettivo.
-- Mapping (note 2.8 §3.3): Davidson con r = 10^(delta/s), con s = 400 come nel punteggio atteso Elo, così che con ν → 0 si ritrovi E. La baseline a pareggio costante è p_draw = c, p_home = (1 − c)E, p_away = (1 − c)(1 − E), con c uguale alla frequenza del pareggio sulle partite di training del fit. L'aggiornamento dei rating usa il punteggio atteso logistico E, non il mapping (note 2.8 §2.1 e §13.2).
-- ĝ, log-loss, Brier e reliability si misurano solo sulle stagioni di validazione. Le previsioni delle stagioni di training servono solo a stimare i parametri e la ricalibrazione, e per 3 iperparametri sono in-campione.
-- Il codice del Modulo 1 sta in un nuovo sottopacchetto src/shk/model/.
-- Nessun task di sola ricognizione: le voci dedotte si verificano dentro i task che le usano.
-  - Stato della suite su 90a77a1: primo passo di T20.
-  - Coerenza dei nomi squadra: criterio bloccante di T21.
-  - Completezza di PSC e convergenza di devig_power sulle quote reali: da verificare in T23.
-  - Disponibilità dell'isotonica in SciPy: da verificare in T24.
-- Fatti [V] usati senza verifica:
-  - contratto di walkforward_split e assert_no_leakage, e whitelist senza chiusure [R46@2026-09-29];
-  - load_by_role e i ruoli dello split [R26@2026-09-29];
-  - funzioni e validazioni di devig.py [R30–R36@2026-09-29];
-  - B365 completa dal 2002-03 [R14@2026-09-29];
-  - colonne PSC* presenti dal 2012-13 [R8@2026-09-29, presenza e non completezza];
-  - convenzioni degli script [R8@2026-09-28 e R1@2026-09-29b].
-
-**Domande aperte:**
-
-### Task 20 — Funzioni Elo e mapping 1X2 (Davidson e pareggio costante)
-Stato: fatto
-
-Obiettivo: src/shk/model/elo.py fornisce punteggio atteso, aggiornamento a somma zero e due mapping dal differenziale Elo a probabilità 1X2 che sommano a 1, verificati da test.
-
-Dipende da: nessuno.
-
-Contesto:
-- Nuovo sottopacchetto src/shk/model/, accanto a kelly/, stats/, data/ e market/ [V, R1@2026-09-29b]. Gli __init__.py dei sottopacchetti recenti contengono solo una docstring in italiano [V, R32@2026-09-29 per market/].
-- Formule (note di tesi 2.8 §2.1 e §3.3):
-  - delta = R_casa − R_trasferta + h;
-  - E = 1/(1 + 10^(−delta/s)), con s = 400 di default;
-  - S = 1, 0.5, 0 per esito H, D, A;
-  - aggiornamento R_casa' = R_casa + K(S − E), R_trasferta' = R_trasferta − K(S − E);
-  - Davidson, con r = 10^(delta/s): p_home = r/(r + 1 + ν√r), p_draw = ν√r/(r + 1 + ν√r), p_away = 1/(r + 1 + ν√r);
-  - pareggio costante: p_draw = c, p_home = (1 − c)E, p_away = (1 − c)(1 − E).
-- La tabella delle note 2.8 §3.3 (ν = 0.8 e 1.1; delta = 0, 100, 200, 400) si ottiene con s = 200, non con 400 [D, ricalcolo del supervisore]. Serve solo a verificare la formula; il modello usa s = 400.
-- Convenzioni: type hints, docstring NumPy in italiano, ValueError per i valori e TypeError per i tipi; interi bool o float danno TypeError [V, R1@2026-09-29b e R7@2026-09-28].
-
-Da verificare prima di iniziare: stato della suite veloce su 90a77a1, mai rieseguita dopo la mappa [D]. È il primo passo: se non è verde, fermarsi e riportare prima di scrivere codice.
-
-Passi richiesti:
-1. Eseguire .\.venv\Scripts\python.exe -m pytest -v e riportare conteggi ed esito.
-2. Proporre il piano: firme (scalari e ndarray di delta), validazioni, elenco dei test.
-3. Creare src/shk/model/__init__.py, con la sola docstring di modulo in italiano.
-4. Creare src/shk/model/elo.py con il punteggio atteso, l'aggiornamento, il mapping Davidson e il mapping a pareggio costante, con s come argomento (default 400).
-5. Scrivere tests/test_elo.py.
-6. Rieseguire la suite veloce.
-
-Vincoli:
-- Nessun commit e nessuna operazione git che modifichi lo stato del repository.
-- Commenti e docstring in italiano; identificatori, messaggi delle eccezioni e nomi dei test in inglese.
-- Rispettare la sezione "Convenzioni del progetto" di .agent/PROTOCOLLO.md.
-- Ogni comando Python con .\.venv\Scripts\python.exe.
-- Proporre il piano e fare le domande prima di scrivere codice.
-- Nessuna dipendenza nuova.
-- Funzioni pure: nessun RNG, nessun accesso ai dati.
-- Non toccare file fuori da src/shk/model/ e tests/test_elo.py.
-- A fine task scrivere .agent/report/T20.md, unico file di .agent/ modificabile, con sezioni distinte: percorsi dei file modificati, creati o rimossi; esito di ciascun criterio; valori misurati; deviazioni dal piano; cose non fatte; comandi eseguiti. Fatti e valori senza giudizi.
-
-Criteri di accettazione:
-- Somma zero: dopo l'aggiornamento la somma dei due rating è invariata entro 1e-12, per esiti H, D e A.
-- Somma a 1 per entrambi i mapping, entro 1e-12, con tutte le probabilità in (0, 1).
-  - Davidson: griglia di delta in [−800, 800] e ν in [0.05, 3].
-  - Pareggio costante: stessa griglia di delta e c in [0.01, 0.99].
-- Davidson con s = 200 riproduce i 24 valori della tabella delle note 2.8 §3.3 entro 5e-4. La tabella riporta tre decimali.
-- Simmetria di Davidson: delta → −delta scambia p_home e p_away; a ν fisso, p_draw è strettamente decrescente in |delta|.
-- Con ν = 1e-12, p_home di Davidson coincide con E entro 1e-9.
-- Pareggio costante: p_draw = c esatto e p_home/(p_home + p_away) = E entro 1e-12.
-- Validazioni:
-  - ValueError per ν ≤ 0 o non finito, c fuori da (0, 1), s ≤ 0 o non finito, K < 0 o non finito, esito diverso da H, D, A, delta non finito;
-  - TypeError per tipi sbagliati.
-- Suite veloce verde, con i test nuovi inclusi.
-
-Esito: 2026-09-29 — file toccati: src/shk/model/__init__.py, src/shk/model/elo.py, tests/test_elo.py.
-Deviazioni:
-- il passo 1 (suite veloce) è stato eseguito dopo l'approvazione del piano, per decisione del supervisore: in ricognizione non si esegue nulla;
-- funzioni: elo_delta, expected_score, elo_update, davidson_probabilities, constant_draw_probabilities;
-- i mapping restituiscono la tupla (p_home, p_draw, p_away); uno scalare in ingresso dà float, qualunque ndarray, anche 0-d, dà ndarray float64 della stessa forma (con np.asarray, aggiunto dopo 3 test rossi sugli 0-d);
-- un correttivo, perché i valori numerici della prima versione del report non venivano da comandi eseguiti: rimisurati con uno script senza file.
-Non fatto: lo scarto numerico della somma zero dei rating non è misurato; il criterio è coperto da un test verde.
-Valori misurati:
-- suite veloce 181 verdi e 14 deselezionati prima, 212 verdi (31 nuovi) e 14 deselezionati dopo;
-- tabella delle note 2.8 §3.3 con s = 200: scarto massimo 4.418e-4 (delta = 100, ν = 1.1, p_away);
-- con ν = 1e-12, max |p_home − E| = 3.2485e-13 su 1601 punti in [−800, 800];
-- somme a 1 entro 2.2e-16 per entrambi i mapping;
-- branch C4 a 475f65f, diff da 90a77a1 solo su .agent/BACKLOG.md, MAPPA.md e SCHEDA.md.
-Report: .agent/report/T20.md.
-
-### Task 21 — Previsore Elo walk-forward con regola per le neopromosse, US-C4.1
-Stato: fatto
-
-Obiettivo: dato un DataFrame di partite e un unico terno (K, h, ν), un previsore restituisce, per ogni partita delle stagioni richieste, rating, delta e probabilità 1X2 calcolati solo con partite già giocate. Il previsore applica la regola dichiarata per le neopromosse ed è verificato da test anti-leakage.
-
-Dipende da: T20.
-
-Contesto:
-- src/shk/model/elo.py (T20) fornisce punteggio atteso, aggiornamento e mapping Davidson.
-- src/shk/data/walkforward.py [V, R46@2026-09-29]:
-  - walkforward_split(df, seasons_to_predict) produce coppie (storia, partita);
-  - la storia è df.iloc[:searchsorted(Date, side="left")], cioè le partite con Date strettamente anteriore, ed è una slice da non modificare;
-  - la partita è ridotta alla whitelist: identificativi e quote pre-partita, nessun risultato;
-  - solleva ValueError se df non è ordinato per Date o manca di Date e season;
-  - assert_no_leakage(history, match) solleva LeakageError.
-- Sui dati reali il DataFrame si costruisce concatenando load_by_role("history"), load_by_role("training") e load_by_role("validation"), poi riordinando in modo stabile per Date. load_by_role è la sola via ammessa, e un test di guardia vieta load_all_seasons nei file nuovi [V, R26@2026-09-29]. tests/test_leakage.py usa lo stesso schema [V, R46@2026-09-29].
-- Le stagioni sono stringhe YYYY-YY consecutive dal 1993-94. Il 1993-94 e il 1994-95 hanno 462 partite, le altre 380 [V, R10@2026-09-29].
-- Regola per le neopromosse (decisione del programmatore, 2026-09-29), applicata alla prima partita della stagione s in cui compare ciascuna squadra:
-  - una squadra presente in s − 1 conserva il rating;
-  - una squadra assente in s − 1 ma presente in una stagione anteriore riprende l'ultimo rating che aveva;
-  - una squadra mai vista eredita la media dei rating finali delle tre ultime della classifica di s − 1;
-  - la classifica si calcola dai risultati in storia: 3 punti la vittoria e 1 il pareggio; a parità di punti contano differenza reti, gol fatti e nome in ordine alfabetico;
-  - nella prima stagione del DataFrame tutte le squadre partono da 1500.
-- Il calcolo di K, h e ν non spetta a questo task: il previsore li riceve come argomenti.
-
-Da verificare prima di iniziare:
-- Coerenza dei nomi squadra fra stagioni, mai verificata [D]. La verifica è il criterio sulle transizioni di stagione.
-- FTR assume solo i valori H, D, A [D]. Un valore diverso deve dare ValueError, non un'assegnazione silenziosa.
-
-Passi richiesti:
-1. Proporre il piano.
-   - Firma del previsore: DataFrame, stagioni da prevedere, k, h, nu, rating iniziale con default 1500.
-   - Colonne dell'output: season, Date, HomeTeam, AwayTeam, rating_home, rating_away, delta, p_home, p_draw, p_away, home_promotion e away_promotion. Le ultime due valgono "", "returning" o "new" per tutta la stagione.
-   - Struttura del percorso veloce.
-2. Creare src/shk/model/elo_predictor.py con il percorso via fornitore. Per ogni coppia di walkforward_split si consumano prima, in ordine, le righe di storia non ancora usate per l'aggiornamento, poi si prevede la partita.
-3. Implementare la regola di ingresso di stagione e la classifica.
-4. Implementare un percorso veloce a passata unica sul DataFrame ordinato, per la calibrazione di T22. Tutte le partite di una data si prevedono prima di aggiornare con quella data.
-5. Implementare una funzione di diagnostica delle transizioni di stagione. Per ogni stagione riporta: squadre, squadre entrate (nuove e tornanti), squadre uscite, ultime tre calcolate.
-6. Scrivere tests/test_elo_predictor.py.
-7. Rieseguire la suite veloce.
-
-Vincoli:
-- Nessun commit e nessuna operazione git che modifichi lo stato del repository.
-- Commenti e docstring in italiano; identificatori, messaggi delle eccezioni e nomi dei test in inglese.
-- Rispettare la sezione "Convenzioni del progetto" di .agent/PROTOCOLLO.md.
-- Ogni comando Python con .\.venv\Scripts\python.exe.
-- Proporre il piano e fare le domande prima di scrivere codice.
-- Nessuna dipendenza nuova.
-- Non modificare src/shk/data/, src/shk/market/ né config/split.toml.
-- Non correggere nomi squadra senza chiederlo.
-- I test anti-leakage non si marcano slow. I test sui dati reali si saltano con motivo esplicito se data/raw/E0/ non contiene CSV.
-- A fine task scrivere .agent/report/T21.md, unico file di .agent/ modificabile, con sezioni distinte: percorsi dei file modificati, creati o rimossi; esito di ciascun criterio; valori misurati; deviazioni dal piano; cose non fatte; comandi eseguiti. Fatti e valori senza giudizi.
-
-Criteri di accettazione:
-- Invarianza al futuro, su dati sintetici con più partite nello stesso giorno e almeno tre stagioni con neopromosse nuove e tornanti. Si alterano FTR, FTHG e FTAG di tutte le partite con Date ≥ d: le previsioni delle partite con Date ≤ d restano identiche, con uguaglianza esatta. Il criterio vale per più valori di d, compreso il primo giorno di una stagione.
-- Un mutante che aggiorna i rating con la partita prima di prevederla è rilevato dal criterio precedente. Il mutante sta nel test, come in T19.
-- assert_no_leakage non solleva su nessuna coppia consumata dal percorso via fornitore.
-- Le previsioni restano identiche se si alterano o si rimuovono tutte le colonne di quota.
-- Regola delle neopromosse, su un caso sintetico costruito a mano con i rating attesi calcolati nel test: squadra rimasta, tornante, nuova, prima stagione a 1500, parità in classifica risolte con i criteri dichiarati.
-- Percorso veloce e percorso via fornitore danno le stesse previsioni entro 1e-12, sui dati sintetici e sui dati reali. Sui dati reali il test copre le stagioni di training e validazione e si salta senza CSV.
-- Transizioni di stagione sui dati reali (si salta senza CSV):
-  - 22 squadre nel 1993-94 e nel 1994-95, 20 in ogni stagione successiva fino al 2022-23;
-  - alla transizione 1994-95 → 1995-96 entrano 2 squadre ed escono 4;
-  - a ogni altra transizione ne entrano 3 ed escono 3.
-  
-  Se il criterio non vale, fermarsi e riportare le squadre coinvolte.
-- Validazioni: ValueError per FTR fuori da H, D, A e per parametri non validi; TypeError per tipi sbagliati. seasons_to_predict di tipo str dà TypeError, come in walkforward_split.
-- Le previsioni sono deterministiche: due esecuzioni sugli stessi dati danno output identici. Il previsore non ha componenti aleatorie; se ne servisse una, l'RNG entra come argomento.
-- Suite veloce verde.
-
-Da misurare e riportare, senza farlo tornare:
-- per ogni transizione di stagione, il numero di neopromosse nuove e tornanti;
-- l'accordo fra le ultime tre calcolate e le squadre effettivamente uscite;
-- i tempi dei due percorsi sui dati reali.
-
-Esito: 2026-09-29 — file toccati: src/shk/model/elo_predictor.py, tests/test_elo_predictor.py.
-Deviazioni:
-- correzioni del supervisore al piano:
-  - regola di ingresso applicata squadra per squadra alla prima comparsa in s, con classifica di s − 1 e media delle ultime tre congelate alla prima riga di s;
-  - ValueError per stagioni non consecutive o decrescenti lungo Date e per FTHG o FTAG mancanti;
-  - classe interna _EloTracker condivisa dai due percorsi;
-  - una sola funzione di controllo dell'invarianza, applicata a fornitore, percorso veloce e mutante;
-- helper _get_field per leggere i campi da namedtuple, dict e Series;
-- primo correttivo, sul report: tolti un comando non eseguito e una nota con numeri non misurati; aggiunti la classifica 1996-97 da comando e il profilo del percorso veloce;
-- secondo correttivo, per decisione del programmatore: i due percorsi iterano solo sulle 7 colonne usate dal calcolo (_CALC_COLS), selezionate una volta. Output invariato: SHA256 identico prima e dopo e fra i due percorsi;
-- nel secondo correttivo Cline ha eseguito tre prototipi di sola lettura con funzioni interne, non elencati nel report;
-- la sezione 2 del report nomina mutante e confronto (_MutantEloTracker, res_orig.equals) in modo diverso dal test, che usa verify_future_invariance e predict_elo_mutant_update_before_predict.
-Non fatto: la ricerca di try:, print( e logging in elo_predictor.py non è stata rieseguita dopo il secondo correttivo.
-Valori misurati:
-- 29 transizioni dal 1993-94 al 2022-23: entrate 86, di cui 28 nuove e 58 tornanti (2 al 1995-96, 3 alle altre); uscite 4 al 1995-96, 3 alle altre;
-- accordo fra ultime tre calcolate e uscite effettive: 3 in ogni transizione tranne il 1997-98, dove vale 2. Al 1997-98 risulta calcolata Coventry e uscita Middlesbrough; la classifica 1996-97 calcolata dai risultati dà Coventry 41, Sunderland 40, Nott'm Forest 34;
-- tempi sui dati reali, 8 360 partite previste: percorso veloce 31.71 s e via fornitore 30.31 s prima del secondo correttivo; 0.35 s e 10.58 s dopo;
-- suite veloce da 212 a 220 verdi (8 nuovi), 14 deselezionati; 81.26 s prima del secondo correttivo, 28.48 s dopo;
-- SHA256 delle previsioni con K = 20, h = 60, ν = 1: 0b3048a7a170e7e149f6cb96c2790e36d3f05010a4d5ce35e1ea0febc1fcbce1, per entrambi i percorsi.
-Report: .agent/report/T21.md.
-
-### Task 22 — Calibrazione espansiva di K, h, ν sul training e previsioni walk-forward, US-C4.1
-Stato: fatto
-
-Obiettivo: K, h e ν, e c della baseline, sono stimati solo sulle stagioni di training anteriori alle stagioni da prevedere. I valori sono congelati in un modulo di libreria. Le previsioni di training e validazione stanno in results/us_c4_1_elo_walkforward.csv, con la figura thesis/figures/us_c4_1_elo_walkforward.png.
-
-Dipende da: T21.
-
-Contesto:
-- Split [V, R26@2026-09-29]: training 2000-01, 2010-11, 2020-21; validation 19 stagioni dal 2002-03 al 2022-23, tranne le due di training; history dal 1993-94 al 1999-00 più il 2001-02; test 2023-24, bloccato. I ruoli si leggono con read_split_config e load_by_role (src/shk/data/split.py), non si scrivono a mano.
-- Il 2000-01 non ha B365 [V, R14@2026-09-29]. Qui non serve: la calibrazione usa solo i risultati.
-- Previsore di T21 in src/shk/model/elo_predictor.py. Il percorso veloce, verificato uguale al percorso via fornitore, si può usare per la calibrazione.
-- Schema dei fit (scelta del supervisore su delega, 2026-09-29):
-  - per ogni stagione di training j, il fit "fino a j" usa tutte le stagioni di training ≤ j;
-  - ogni stagione di validazione si prevede con il fit che include le stagioni di training strettamente anteriori;
-  - ne risultano il fit fino al 2000-01 per le stagioni dal 2002-03 al 2009-10, il fit fino al 2010-11 per quelle dal 2011-12 al 2019-20, il fit fino al 2020-21 per il 2021-22 e il 2022-23;
-  - lo schema va derivato dallo split, non scritto a mano.
-- Obiettivo di un fit: la log-loss media (logaritmo naturale) delle probabilità Davidson sulle partite delle stagioni di training del fit. Una corsa walk-forward completa dal 1993-94 con un unico terno (K, h, ν) produce quelle probabilità. Per la baseline, c è la frequenza del pareggio sulle stesse partite.
-- Convenzioni degli script [V, R8@2026-09-28 e R1@2026-09-29b]:
-  - matplotlib.use("Agg") prima di pyplot;
-  - run_experiment() senza parametri, chiamata dal blocco __main__;
-  - CSV con csv.DictWriter, open(mode="w", newline="", encoding="utf-8"), float nativi, stringa vuota per i valori non applicabili;
-  - PNG con tight_layout e savefig(dpi=150), etichette in italiano;
-  - i parametri condivisi da script e test stanno in un modulo di libreria.
-
-Da verificare prima di iniziare: nessuna.
-
-Passi richiesti:
-1. Proporre il piano: metodo di ottimizzazione deterministico, tolleranza, limiti di ricerca (K ∈ [5, 80], h ∈ [0, 200], ν ∈ [0.05, 3]) e stima del tempo.
-2. Creare src/shk/model/elo_fit.py con la funzione obiettivo, la stima di un fit e lo schema dei fit derivato dallo split.
-3. Eseguire la calibrazione e riportare i valori.
-4. Congelare i valori nella costante ELO_FITS di elo_fit.py: chiave = ultima stagione di training del fit, valori K, h, ν, c a precisione piena. La data di calibrazione va nella docstring.
-5. Creare scripts/us_c4_1_elo_walkforward.py, che carica i dati solo con load_by_role e scrive il CSV e la figura.
-   - Il CSV ha, per ogni fit, le righe delle sue stagioni di training (role = training) e delle stagioni di validazione che gli spettano (role = validation).
-   - Colonne del CSV: fit_through, role, season, date (YYYY-MM-DD), home_team, away_team, ftr, home_promotion, away_promotion, rating_home, rating_away, delta, p_home, p_draw, p_away.
-   - Figura: profili della log-loss di training di ciascun fit in funzione di K (h e ν all'ottimo) e di h (K e ν all'ottimo), su due pannelli.
-6. Scrivere tests/test_us_c4_1_acceptance.py.
-7. Eseguire lo script due volte e confrontare gli SHA256.
-8. Rieseguire la suite veloce.
-
-Vincoli:
-- Nessun commit e nessuna operazione git che modifichi lo stato del repository.
-- Commenti e docstring in italiano; identificatori, messaggi delle eccezioni e nomi dei test in inglese.
-- Rispettare la sezione "Convenzioni del progetto" di .agent/PROTOCOLLO.md.
-- Ogni comando Python con .\.venv\Scripts\python.exe.
-- Proporre il piano e fare le domande prima di scrivere codice.
-- Nessuna dipendenza nuova.
-- Non modificare src/shk/data/, src/shk/market/ né config/split.toml.
-- Se un ottimo cade su un limite di ricerca, riportarlo senza allargare i limiti.
-- I test sui dati reali si saltano con motivo esplicito se data/raw/E0/ non contiene CSV. Un test sui dati reali che supera 60 s si marca slow e si dichiara nel report.
-- CSV e PNG sono nuovi e vanno committati dal programmatore.
-- A fine task scrivere .agent/report/T22.md, unico file di .agent/ modificabile, con sezioni distinte: percorsi dei file modificati, creati o rimossi; esito di ciascun criterio; valori misurati; deviazioni dal piano; cose non fatte; comandi eseguiti. Fatti e valori senza giudizi.
-
-Criteri di accettazione:
-- Solo training, su dati sintetici: alterare i risultati delle partite non di training posteriori all'ultima stagione di training del fit non cambia il terno stimato.
-- L'obiettivo di ogni fit è una media esattamente sulle partite delle sue stagioni di training. Sui dati reali sono 380, 760 e 1 140 partite (si salta senza CSV).
-- Nel CSV nessuna riga di validazione usa un fit che contenga una stagione di training uguale o successiva alla stagione prevista. Ogni stagione di validazione compare una sola volta.
-- ELO_FITS coincide con la ricalibrazione dai dati entro math.isclose rel_tol 1e-9 (si salta senza CSV).
-- Test sul CSV versionato, che girano anche senza dati: colonne nell'ordine dichiarato; stagioni e conteggi per fit e ruolo; p_home + p_draw + p_away = 1 entro 1e-12.
-- Il ricalcolo dai dati coincide con il CSV versionato entro math.isclose con rel_tol e abs_tol 1e-12. Le colonne non numeriche si confrontano esattamente. Si salta senza CSV.
-- Due esecuzioni dello script danno CSV identici byte per byte; SHA256 nel report.
-- Suite veloce verde.
-
-Da misurare e riportare, senza farlo tornare:
-- K, h, ν e c di ciascun fit, e se stanno su un limite;
-- per ciascun fit, log-loss di training e di validazione con Davidson e con la baseline a pareggio costante;
-- frequenza del pareggio sulle partite di training di ciascun fit;
-- media dei rating all'inizio di ogni stagione, cioè l'effetto dei tornanti sulla somma zero;
-- durata della calibrazione e dello script.
-
-Esito: 2026-09-29 — file toccati: src/shk/model/elo_fit.py, scripts/us_c4_1_elo_walkforward.py, tests/test_us_c4_1_acceptance.py, results/us_c4_1_elo_walkforward.csv, thesis/figures/us_c4_1_elo_walkforward.png.
-Deviazioni:
-- correzioni del supervisore al piano:
-  - l'obiettivo del fit j usa il DataFrame ridotto alle stagioni ≤ j, con allineamento all'esito verificato sulle chiavi;
-  - ottimizzatore Nelder-Mead con limiti, punto iniziale (30, 60, 1), xatol 1e-4, fatol 1e-10;
-  - funzioni di stima con DataFrame e stagioni come argomenti;
-  - nessun test esegue lo script;
-  - profili su griglie di 41 punti;
-- test_elo_fits_matches_data_recalibration marcato slow: dura 119.09 s;
-- elo_fit.py espone una parse_season_start_year pubblica, accanto a _parse_season_start_year di elo_predictor.py;
-- nel report il comando 8 è abbreviato con "…"; il testo completo è nel log della chat.
-Non fatto: nulla.
-Valori misurati:
-- parametri ottimi, nessuno su un limite; tutti i fit hanno success = True:
-  - 2000-01 (380 partite di training): K = 10.3182, h = 125.540, ν = 0.80622, c = 101/380 = 0.26579; nit 103, nfev 185, 14.80 s;
-  - 2010-11 (760): K = 9.93478, h = 127.878, ν = 0.87756, c = 212/760 = 0.27895; nit 158, nfev 284, 49.59 s;
-  - 2020-21 (1 140): K = 7.92854, h = 78.0336, ν = 0.76038, c = 295/1140 = 0.25877; nit 107, nfev 194, 52.54 s;
-- log-loss (Davidson / baseline):
-  - fit 2000-01: training 1.008189 / 1.014931; validazione (3 040 partite) 0.973761 / 0.976755;
-  - fit 2010-11: training 1.008987 / 1.015189; validazione (3 420) 0.983832 / 0.990144;
-  - fit 2020-21: training 1.020937 / 1.024782; validazione (760) 0.983300 / 0.987629;
-- frequenza del pareggio in validazione: 0.255263, 0.241228 e 0.230263 per i tre fit;
-- media dei rating a inizio stagione: 1500 nel 1993-94 e nel 1994-95 per tutti i fit; dal 1995-96 fra 1502.3 e 1524.9, massima nel 2022-23 (1524.89, 1524.95, 1523.14 per i tre fit); tabella completa nel report;
-- durate: calibrazione 116.93 s; script 49.14 s;
-- CSV di 9 500 righe, SHA256 92716bc7e6aa6a7b798370a09d1b31b33b0c0a49311bf35cd810f7975489f282, identico su due esecuzioni;
-- suite veloce da 220 a 226 verdi, 15 deselezionati, 33.56 s.
-Report: .agent/report/T22.md.
-
-
-### Task 23 — ĝ del Modulo 1 contro il mercato de-viggato, US-C4.2
-Stato: fatto
-
-Obiettivo: ĝ è calcolato e riportato col segno, sulle stagioni di validazione, per due serie di q e tre metodi di de-vigging, insieme alla sua serie cumulativa. I risultati stanno in results/us_c4_2_g_hat.csv, con la figura thesis/figures/us_c4_2_g_hat.png.
-
-Dipende da: T22.
-
-Contesto:
-- Formula: ĝ = (1/T) Σ_t [ln p_t(x_t) − ln q_t(x_t)] = LL(q) − LL(p), dove LL è la log-loss media col logaritmo naturale e x_t è l'esito realizzato (note 2.4 §8).
-- Previsioni del modello: le righe di validazione, ciascuna stagione con il suo fit. Si ricalcolano dalla libreria con ELO_FITS (src/shk/model/elo_fit.py), senza leggere il CSV di T22. I dati si caricano solo con load_by_role.
-- Serie di q (scelta del supervisore su delega, 2026-09-29), con ordine degli esiti H, D, A:
-  - "b365_prematch": B365H, B365D, B365A, completa in tutte le stagioni dal 2002-03 al 2022-23 [V, R14@2026-09-29];
-  - "pinnacle_closing": PSCH, PSCD, PSCA, colonne presenti dal 2012-13 [V, R8@2026-09-29, solo presenza] e usate sulle stagioni di validazione dal 2012-13.
-- Le colonne di chiusura non sono nella whitelist del fornitore [V, R46@2026-09-29]. Si leggono dal DataFrame caricato e si abbinano per season, Date, HomeTeam e AwayTeam, solo per la valutazione: il modello non le vede.
-- De-vigging (src/shk/market/devig.py) [V, R30–R36@2026-09-29 e R1@2026-09-29b]:
-  - devig_proportional, devig_additive e devig_power ricevono un ndarray (N, 3);
-  - quote non finite o ≤ 1 danno ValueError, quindi vanno filtrate prima;
-  - l'additivo restituisce una riga di NaN dove un q ≤ 0, e quella partita si esclude per tutti i metodi (decisione S3);
-  - devig_power solleva RuntimeError se anche un solo mercato non converge.
-
-Da verificare prima di iniziare:
-- Completezza di PSCH/PSCD/PSCA nelle stagioni di validazione dal 2012-13 [D]: leggere le righe 1x2_closing di Pinnacle in results/us_c3_1_data_coverage.csv.
-- Convergenza di devig_power sulle quote reali di chiusura [D]. Se solleva, fermarsi e riportare, senza cambiare tolleranza o numero di iterazioni.
-
-Passi richiesti:
-1. Proporre il piano.
-2. Creare src/shk/model/scoring.py con: log-loss per partita e media, termini di ĝ, ĝ, serie cumulativa.
-3. Creare scripts/us_c4_2_g_hat.py, che scrive CSV e figura.
-   - Il CSV è in formato lungo con colonne level, series, method, t, season, date, matches_used, matches_excluded, log_loss_model, log_loss_market, g_hat.
-   - Le righe level = summary sono 6: 2 serie × 3 metodi.
-   - Le righe level = cumulative sono una per partita, per serie e metodo, con t, season, date e g_hat.
-   - Figura: un pannello per serie, con ĝ cumulativo per i tre metodi e la linea dello zero; etichette in italiano.
-4. Scrivere tests/test_scoring.py e tests/test_us_c4_2_acceptance.py.
-5. Eseguire lo script due volte e confrontare gli SHA256.
-6. Rieseguire la suite veloce.
-
-Vincoli:
-- Nessun commit e nessuna operazione git che modifichi lo stato del repository.
-- Commenti e docstring in italiano; identificatori, messaggi delle eccezioni e nomi dei test in inglese.
-- Rispettare la sezione "Convenzioni del progetto" di .agent/PROTOCOLLO.md.
-- Ogni comando Python con .\.venv\Scripts\python.exe.
-- Proporre il piano e fare le domande prima di scrivere codice.
-- Nessuna dipendenza nuova.
-- Non modificare src/shk/data/, src/shk/market/, config/split.toml né ELO_FITS.
-- Esito informativo: nessun parametro, filtro o metodo si cambia in funzione del valore o del segno di ĝ.
-- I test sui dati reali si saltano con motivo esplicito senza CSV.
-- CSV e PNG sono nuovi e vanno committati dal programmatore.
-- A fine task scrivere .agent/report/T23.md, unico file di .agent/ modificabile, con sezioni distinte: percorsi dei file modificati, creati o rimossi; esito di ciascun criterio; valori misurati; deviazioni dal piano; cose non fatte; comandi eseguiti. Fatti e valori senza giudizi.
-
-Criteri di accettazione:
-- Stesse partite: in ogni serie, modello e mercato si valutano sulle stesse partite, e i tre metodi di de-vigging usano lo stesso insieme. Le esclusioni si contano per causa: quota mancante, quota non valida, additivo non applicabile.
-- In ogni riga di riepilogo, g_hat = log_loss_market − log_loss_model entro 1e-12, riportato col segno.
-- Serie cumulativa: ĝ_t è la media dei primi t termini in ordine cronologico (Date, poi ordine di riga). L'ultimo valore coincide con il riepilogo entro 1e-12.
-- Test unitari: con p = q, ĝ = 0 entro 1e-15; un caso piccolo calcolato a mano torna entro 1e-12; validazioni con ValueError e TypeError.
-- Test sul CSV versionato, che girano anche senza dati: colonne, 6 righe di riepilogo, righe cumulative coerenti con matches_used.
-- Il ricalcolo dai dati coincide con il CSV entro math.isclose con rel_tol e abs_tol 1e-12 (si salta senza CSV).
-- Due esecuzioni dello script danno CSV identici byte per byte; SHA256 nel report.
-- Suite veloce verde.
-
-Da misurare e riportare, senza farlo tornare:
-- ĝ col segno per ciascuna serie e metodo, e se il segno cambia fra i metodi;
-- log-loss di modello e mercato;
-- partite usate ed escluse per causa;
-- ĝ cumulativo a fine di ogni stagione, letto dalla serie.
-
-Esito: 2026-09-29 — file toccati: src/shk/model/scoring.py, scripts/us_c4_2_g_hat.py, tests/test_scoring.py, tests/test_us_c4_2_acceptance.py, results/us_c4_2_g_hat.csv, thesis/figures/us_c4_2_g_hat.png.
-Deviazioni:
-- correzioni del supervisore al piano:
-  - pinnacle_closing su 10 stagioni: il 2020-21 è di training;
-  - log-loss senza eps, con ValueError per probabilità ≤ 0;
-  - costruzione dell'insieme di valutazione in scoring.py, riusabile da T24 (generate_validation_predictions, align_predictions_with_odds, prepare_series_evaluation);
-  - una causa per ogni partita esclusa;
-  - colonne vuote del CSV per livello;
-- in ricognizione l'agente ha letto i propri log (transcript.jsonl e transcript_full.jsonl, in C:\Users\malse\.gemini\antigravity\…, fuori dal repository);
-- la ricerca di try:, print( e logging su scoring.py non è stata eseguita.
-Non fatto: nulla.
-Valori misurati:
-- partite usate: b365_prematch 7 220 su 7 220 (19 stagioni), pinnacle_closing 3 800 su 3 800 (10 stagioni: dal 2012-13 al 2019-20, 2021-22, 2022-23); 0 esclusioni per ciascuna causa;
-- devig_power converge sui 3 800 mercati PSC, somme a 1 entro 2.2e-16;
-- log-loss del modello: 0.979536 su b365_prematch, 0.981229 su pinnacle_closing;
-- log-loss del mercato (proporzionale / additivo / power): b365 0.958107 / 0.957135 / 0.957134; pinnacle 0.949755 / 0.949657 / 0.949556;
-- ĝ (proporzionale / additivo / power): b365 −0.021429 / −0.022401 / −0.022402; pinnacle −0.031474 / −0.031572 / −0.031672. Il segno non cambia fra i metodi;
-- ĝ cumulativo negativo alla fine di ogni stagione in entrambe le serie; tabelle nel report;
-- CSV di 33 066 righe, SHA256 e076f16f6a39606a4fcba04be5679a1fa0d7ce9f1c44893df47df79e39dee3a9, identico su due esecuzioni;
-- suite veloce da 226 a 237 verdi (11 nuovi), 15 deselezionati, 38.08 s.
-Report: .agent/report/T23.md.
-
-### Task 24 — Calibrazione del Modulo 1: reliability, Brier e ricalibrazione, US-C4.3
-Stato: da fare
-
-Obiettivo: sulle stagioni di validazione sono misurati reliability, Brier e log-loss del modello, grezzo e ricalibrato con isotonica e Platt, e ĝ dopo la ricalibrazione. I risultati stanno in results/us_c4_3_calibration.csv, con la figura thesis/figures/us_c4_3_calibration.png.
-
-Dipende da: T23.
-
-Contesto:
-- Previsioni per fit dalla libreria con ELO_FITS (T22). Partite, q e metodi come in T23, con le funzioni di src/shk/model/scoring.py.
-- Ricalibrazione con lo stesso schema espansivo di T22 (scelta del supervisore su delega, 2026-09-29):
-  - per ogni fit, le mappe si stimano sulle previsioni delle sue stagioni di training e si applicano alle stagioni di validazione dello stesso fit;
-  - lo schema è one-vs-rest per esito, seguito da rinormalizzazione a somma 1;
-  - Platt: σ(a·logit(p) + b) stimata per massima verosimiglianza;
-  - isotonica: regressione monotona non decrescente.
-- Prima della rinormalizzazione le probabilità si limitano a [1e-6, 1 − 1e-6], per evitare log(0). Scelta del supervisore.
-- Reliability e Brier si calcolano sulle partite della serie b365_prematch di T23.
-- SciPy nel venv è la 1.18.1 [V, R10@2026-09-29]. Le dipendenze non hanno vincoli di versione [V, R1@2026-09-29b].
-
-Da verificare prima di iniziare: disponibilità di scipy.optimize.isotonic_regression nel venv [D]. Se manca, fermarsi e chiedere, senza aggiungere dipendenze.
-
-Passi richiesti:
-1. Proporre il piano.
-2. Creare src/shk/model/recalibration.py con: stima e applicazione di isotonica e Platt, tabella di reliability, Brier multiclasse.
-3. Creare scripts/us_c4_3_calibration.py, che scrive CSV e figura.
-   - Colonne del CSV: level, version, series, method, outcome, bin_lower, bin_upper, count, mean_predicted, observed_frequency, gap, z, matches_used, log_loss, brier, g_hat.
-   - level = reliability per le righe dei bin; level = score per log-loss, Brier e ĝ.
-   - version vale raw, isotonic, platt o market.
-   - Figura: pannello aggregato con le tre versioni e la diagonale; pannello per esito con la versione grezza; etichette in italiano.
-4. Scrivere tests/test_recalibration.py e tests/test_us_c4_3_acceptance.py.
-5. Eseguire lo script due volte e confrontare gli SHA256.
-6. Rieseguire la suite veloce.
-
-Vincoli:
-- Nessun commit e nessuna operazione git che modifichi lo stato del repository.
-- Commenti e docstring in italiano; identificatori, messaggi delle eccezioni e nomi dei test in inglese.
-- Rispettare la sezione "Convenzioni del progetto" di .agent/PROTOCOLLO.md.
-- Ogni comando Python con .\.venv\Scripts\python.exe.
-- Proporre il piano e fare le domande prima di scrivere codice.
-- Nessuna dipendenza nuova.
-- Non modificare src/shk/data/, src/shk/market/, config/split.toml né ELO_FITS.
-- Nessuna scelta fra isotonica e Platt nel codice: si riportano entrambe.
-- Esiti informativi: nessun parametro si cambia in funzione dei risultati.
-- CSV e PNG sono nuovi e vanno committati dal programmatore.
-- A fine task scrivere .agent/report/T24.md, unico file di .agent/ modificabile, con sezioni distinte: percorsi dei file modificati, creati o rimossi; esito di ciascun criterio; valori misurati; deviazioni dal piano; cose non fatte; comandi eseguiti. Fatti e valori senza giudizi.
-
-Criteri di accettazione:
-- Reliability su 10 bin di ampiezza 0.1 in [0, 1], chiusi a sinistra, con l'ultimo chiuso anche a destra.
-  - Si calcola in forma aggregata (outcome = all, tre coppie per partita) e per esito (H, D, A), per raw, isotonic e platt.
-  - Per ogni bin: conteggio, probabilità media, frequenza osservata, scarto (frequenza − probabilità) e z = scarto / √(p̄(1 − p̄)/n).
-  - Un bin vuoto ha conteggio 0 e le altre colonne vuote.
-- Brier multiclasse (somma sui tre esiti, media sulle partite) riportato accanto alla log-loss, per raw, isotonic, platt e per il mercato con i tre metodi, sulle stesse partite di T23 e per entrambe le serie.
-- Il report elenca le fasce peggio calibrate: i tre bin con |z| maggiore in forma aggregata e per ciascun esito, per la versione raw.
-- Le probabilità ricalibrate sommano a 1 entro 1e-12. Il numero di valori limitati a [1e-6, 1 − 1e-6] è contato.
-- Fuori campione, su dati sintetici: alterare gli esiti delle stagioni di validazione non cambia le mappe di ricalibrazione.
-- ĝ dopo la ricalibrazione, per isotonic e platt, per serie e metodo, sulle stesse partite di T23. Con la versione raw coincide con T23 entro 1e-12.
-- Il ricalcolo dai dati coincide con il CSV entro math.isclose con rel_tol e abs_tol 1e-12 (si salta senza CSV). I test di struttura sul CSV versionato girano anche senza dati.
-- Due esecuzioni dello script danno CSV identici byte per byte; SHA256 nel report.
-- Suite veloce verde.
-
-Da misurare e riportare, senza farlo tornare:
-- scarti e z per bin;
-- fasce peggio calibrate;
-- log-loss e Brier di raw, isotonic, platt e mercato;
-- ĝ prima e dopo la ricalibrazione, per serie e metodo;
-- numero di valori limitati.
-
-Esito: —
-
-### Fuori scope di S4
-- Il secondo Modulo 1 (Dixon-Coles pesato) e il confronto appaiato fra i due (note 2.8 §11).
-- Il test placebo con esiti permutati entro stagione (note 2.8 §9.3).
-- Gli intervalli di confidenza di ĝ per block bootstrap (C8).
-- La serie h_t a finestra mobile e il crollo del 2020-21 (note 2.8 §2.3).
-- Il blending logit fra modello e mercato (note 2.8 §12).
-- Le varianti di K (margine di vittoria, K decrescente, K maggiore per le squadre nuove) e la regressione verso la media fra stagioni.
-- La verifica Elo = Bradley-Terry a precisione macchina (note 2.8 §2.5).
-- ECE, bande di confidenza sul reliability diagram, stratificazione per fascia di quota.
-- ĝ per stagione e per fascia di quota; la soglia di redditività ĝ > ln π (note 2.4 §8).
-- Il criterio 11 della rubrica, cioè non puntare sulle neopromosse per le prime m giornate: riguarda lo staking.
-- La decisione sullo scenario di training 2000-01 senza B365 resta aperta (S3). Qui non blocca: ĝ si misura solo sulla validazione.
-
-### Resta al programmatore per S4
-- Confermare o cambiare le scelte fatte dal supervisore su delega il 2026-09-29:
-  - q con serie principale B365 pre-partita e seconda serie Pinnacle chiusura dal 2012-13;
-  - calibrazione espansiva di K, h, ν e della ricalibrazione;
-  - retrocesse identificate dalla classifica calcolata;
-  - limite [1e-6, 1 − 1e-6] nella ricalibrazione.
-- Correggere o dichiarare la tabella di Davidson delle note 2.8 §3.3: è calcolata con 10^(ΔR/200), mentre il modello usa la scala 400 del punteggio atteso.
-- US-C4.2, esito informativo: scrivere l'introduzione della tesi in base al segno di ĝ, dichiarandolo in apertura e non nei limiti (note 2.4 §6).
-- Dichiarare in tesi: il mapping Davidson e la sensibilità rispetto alla baseline a pareggio costante; la regola per le neopromosse; lo schema espansivo degli iperparametri.
-- US-C4.3: decidere, dai numeri di T24, se serve una ricalibrazione e quale adottare, isotonica o Platt, da congelare.
-- Committare codice, CSV e figure di T20–T24.

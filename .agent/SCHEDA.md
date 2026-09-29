@@ -1,17 +1,18 @@
 # Scheda del progetto
-Origine: mappa completa del 2026-09-29 a 90a77a1 (serie 2026-09-29b), report fino a R6@2026-09-29b. Riferimenti: la numerazione R_n riparte da R1 a ogni mappa. La serie di questa mappa si cita @2026-09-29b: R1 = mappa, R2–R6 = risposte di Cline alla chat di scheda, i report dei prossimi task proseguono da R7@2026-09-29b. @2026-09-29 senza suffisso indica la serie precedente: R1 = mappa a 115e600, R2–R46 = report dei task T14–T19. @2026-09-28 e @2026-09-27 indicano le serie più vecchie. I fatti non rimappati conservano il riferimento originale.
+Origine: mappa completa del 2026-09-29 a 90a77a1 (serie 2026-09-29b), aggiornata con i report fino a R30@2026-09-29b (story S4, task T20–T24). Riferimenti: la numerazione R_n riparte da R1 a ogni mappa. La serie di questa mappa si cita @2026-09-29b: R1 = mappa, R2–R6 = risposte di Cline alla chat di scheda, R7–R30 = report dei task T20–T24. @2026-09-29 senza suffisso indica la serie precedente: R1 = mappa a 115e600, R2–R46 = report dei task T14–T19. @2026-09-28 e @2026-09-27 indicano le serie più vecchie. I fatti non rimappati conservano il riferimento originale. Dopo T24 i task di scrittura chiusi dopo la mappa sono cinque: la prossima chat deve rifare la mappatura.
 
 ## Stato repo
 Radice: c:\Users\malse\Documents\GitHub\structural_hybrid_kelly [V, R1@2026-09-29b]
 Alla mappa: branch main a 90a77a1 "C3 (#17)"; working tree pulito, nessun file staged, modificato o non tracciato [V, R1@2026-09-29b]
 main è allineato a origin/main rispetto all'ultimo fetch locale (0 avanti, 0 indietro). La mappa non ha eseguito git fetch, quindi lo stato reale del remote non è verificato [V, R1@2026-09-29b]. L'ultimo aggiornamento da origin è un pull fast-forward a 90a77a1, il 2026-09-29 alle 12:54:31 +0200 [V, R5@2026-09-29b]
-Branch locali: solo main. Branch remoti: origin/HEAD → origin/main, origin/main [V, R1@2026-09-29b]
+Branch locali: C4 (corrente) [V, R11@2026-09-29b]; main presumibilmente ancora presente [D]. Branch remoti: origin/HEAD → origin/main, origin/main [V, R1@2026-09-29b]; se C4 sia pubblicato su origin non è verificato [D]
+Dopo la mappa: branch C4 creato da 90a77a1 con due commit solo su .agent/ (4b9e6c1 "Refresh C3 project documentation", 475f65f "Update BACKLOG.md"; diff solo su BACKLOG.md, MAPPA.md, SCHEDA.md) [V, R7 e R11@2026-09-29b]. Commit del programmatore dopo ciascun task: 7f8e928 "Add Elo rating model and 1X2 mappings" (T20), 4710045 "Add Elo walk-forward predictor and tests" (T21), 15b2204 "Finita task 22" (T22), d329766 "close 23" (T23) [V, R15, R22, R24 e R27@2026-09-29b]. A inizio T24 HEAD su C4 a d329766, working tree pulito [V, R27@2026-09-29b]. Dopo T24 il working tree conteneva, non committati, src/shk/model/recalibration.py, scripts/us_c4_3_calibration.py, tests/test_recalibration.py, tests/test_us_c4_3_acceptance.py, results/us_c4_3_calibration.csv, thesis/figures/us_c4_3_calibration.png, .agent/report/T24.md; se siano stati committati non è verificato [D]
 Remote origin: https://github.com/Fede046/structural_hybrid_kelly.git, fetch e push [V, R1@2026-09-29b]
 Ultimi cinque commit su main: 90a77a1 "C3 (#17)", 115e600 "C2 (#16)", 1e7813d "C1 (#14)", 640b906 "C1 (#13)", a7420cb "create c1 (#5)" [V, R1@2026-09-29b]. Data autore e data commit di 90a77a1: 2026-09-29T12:54:03+02:00 [V, R2@2026-09-29b]
 Commit di story su main: 115e600 = S2/C2, 90a77a1 = S3/C3 [V, R1@2026-09-29 e R1@2026-09-29b]
 I commit dei branch di lavoro non sono nella storia di main. Il branch C3 (5065407, 7bd013b, 2cea094, 4bb6327, a650494, 0406ef1, dalle 11:13 alle 12:52 del 2026-09-29) è entrato in main come il solo 90a77a1. Il branch C2 (da 5f7d414 a 2e623bd, 2026-09-28) è entrato come il solo 115e600. I branch locali C2 e C3 non esistono più [V, R1, R4 e R5@2026-09-29b]. Il meccanismo è lo squash merge del PR su GitHub [D]
 File ignorati presenti: .pytest_cache/, .venv/, data/raw/E0/, e __pycache__/ in src/shk, kelly, stats, data, market e tests [V, R1@2026-09-29b]
-Albero tracciato in HEAD (90a77a1):
+Albero tracciato alla mappa (90a77a1):
 - src/shk/ con i sottopacchetti kelly/, stats/, data/, market/
 - tests/ con 17 moduli di test
 - scripts/ con 5 script
@@ -21,6 +22,12 @@ Albero tracciato in HEAD (90a77a1):
 - .agent/ con PROTOCOLLO.md, BACKLOG.md, MAPPA.md, SCHEDA.md, report/T1.md … report/T19.md
 - alla radice pyproject.toml, uv.lock, .gitignore, LICENSE
 [V, R1@2026-09-29b]
+Aggiunte di S4 sul branch C4 (T20–T24), da ricontrollare alla prossima mappa:
+- src/shk/model/ con __init__.py, elo.py, elo_predictor.py, elo_fit.py, scoring.py, recalibration.py;
+- 7 moduli di test nuovi (vedi Moduli e responsabilità);
+- scripts/us_c4_1_elo_walkforward.py, us_c4_2_g_hat.py, us_c4_3_calibration.py, con i CSV in results/ e i PNG in thesis/figures/ omonimi;
+- .agent/report/T20.md … T24.md.
+[V per la creazione, R11–R30@2026-09-29b; D per lo stato in git di quelli di T24]
 config/split.toml: su main lo tocca un solo commit, 90a77a1 (2026-09-29T12:54:03+02:00) [V, R2@2026-09-29b]. Il contenuto è identico a quello di 2cea0944b651b424fb704e03747340cfc26eda0e (2026-09-29T11:47:18+02:00, "Add frozen split config and role-based loading"). Quel commit non è contenuto in alcun branch locale o remoto ed è raggiungibile solo dalla reflog locale [V, R3–R6@2026-09-29b]. Il testo coincide con quello approvato, con test_unlocked = false [V, R28 e R38@2026-09-29]
 data/raw/E0/ contiene 31 CSV, da 1993-94.csv a 2023-24.csv, scaricati dal programmatore il 2026-09-29 (solo la finestra di KellyBench, per sua decisione). .gitignore esclude data/raw/* tranne .gitkeep, quindi i CSV non sono versionati [V, R6 e R7@2026-09-29; presenza confermata da R1@2026-09-29b]
 Nessun .env presente [V, R1@2026-09-29b, git status --ignored e albero]
@@ -32,23 +39,27 @@ Build backend hatchling [V, R1@2026-09-29b]; build con hatch build o python -m b
 Dipendenze runtime: numpy, scipy, matplotlib, pandas (pandas aggiunta in T14). Dipendenze dev: solo pytest. Nessun vincolo di versione [V, R1@2026-09-29b]
 uv.lock è presente alla radice ma non è aggiornato con pandas [V, R1@2026-09-29b]; uv sync come alternativa locale [D]
 CI (.github/workflows/test.yml): pip install -e ".[dev]" senza uv.lock, poi pytest -v [V, R1@2026-09-29b]; trigger su push verso main e su pull_request [D]
-CI (GitHub Actions) al 2026-09-28: Linux, Python 3.12.14, pytest 9.1.1, dipendenze senza vincoli. Prima di T13 falliva test_acceptance_csv_structure_and_values sul confronto dei float come stringhe [V, log CI fornito dal programmatore 2026-09-28]. Esito della CI dopo T13, dopo 115e600 e dopo 90a77a1 non verificato [D]
+CI (GitHub Actions) al 2026-09-28: Linux, Python 3.12.14, pytest 9.1.1, dipendenze senza vincoli. Prima di T13 falliva test_acceptance_csv_structure_and_values sul confronto dei float come stringhe [V, log CI fornito dal programmatore 2026-09-28]. Esito della CI dopo T13, dopo 115e600, dopo 90a77a1 e sul branch C4 non verificato [D]
 Test veloci: pytest -v; addopts = "-m 'not slow'" in pyproject.toml esclude i test slow [V, R1@2026-09-29b]
 Interprete: Cline esegue ogni comando Python esplicitamente con il venv, cioè .\.venv\Scripts\python.exe -m pytest -v e .\.venv\Scripts\python.exe <script> [V, R7@2026-09-28; decisione del programmatore 2026-09-28]. Nel venv shk è installato in modalità editable [V, R7@2026-09-28]. Il terminale di Cline usa di default C:\Users\malse\anaconda3\python.exe (Python 3.12.7, pytest 7.4.4), dove shk non è installato [V, R6@2026-09-28]
 Venv .venv: Python 3.12.7, pytest 9.1.1 [V, R7 e R15@2026-09-28]; NumPy 2.5.2, SciPy 1.18.1, pandas 3.0.6 [V, R10@2026-09-29]
 Solo test slow: pytest -m slow; tutti i test: pytest -o addopts="" [D]
-Suite veloce dopo T19: 181 verdi, 14 deselezionati, circa 14 s con i dati locali presenti [V, R46@2026-09-29]. I 181 sono i 109 di 115e600 più 18 di test_data_loading.py, 12 di test_coverage.py, 14 di test_split.py, 8 di test_devig.py, 11 di test_us_c3_2_acceptance.py e 9 di test_leakage.py. Non rieseguita su 90a77a1 [D]
-Test slow: 14 (9 di C1, 5 di C2). Ultimo esito: 13 verdi e 1 rosso per il risultato noto test_acceptance_calibrated_phi_zero_within_mc_interval; pytest -m slow dura circa 117 s [V, R14@2026-09-28; non rieseguiti dopo]
+Suite veloce: 181 verdi, 14 deselezionati, 14.41 s su C4 a 475f65f, codice identico a 90a77a1 [V, R11@2026-09-29b]. I 181 sono i 109 di 115e600 più 18 di test_data_loading.py, 12 di test_coverage.py, 14 di test_split.py, 8 di test_devig.py, 11 di test_us_c3_2_acceptance.py e 9 di test_leakage.py.
+Suite veloce durante S4, con i dati locali presenti: 212 dopo T20, 220 dopo T21, 226 dopo T22, 237 dopo T23. Dopo T24: 248 verdi, 15 deselezionati, 42.49 s [V, R11, R21, R23, R26 e R29@2026-09-29b]. I 67 test nuovi: 31 di test_elo.py, 8 di test_elo_predictor.py (13.52 s da soli), 6 veloci di test_us_c4_1_acceptance.py, 11 di test_scoring.py e test_us_c4_2_acceptance.py, 11 di test_recalibration.py e test_us_c4_3_acceptance.py
+Test slow: 15 (9 di C1, 5 di C2, 1 di C4). I 14 di C1 e C2 all'ultimo esito: 13 verdi e 1 rosso per il risultato noto test_acceptance_calibrated_phi_zero_within_mc_interval, circa 117 s [V, R14@2026-09-28; non rieseguiti dopo]. Quello di C4, test_elo_fits_matches_data_recalibration, è verde in 119.09 s [V, R23@2026-09-29b]
 Esperimento C1.1: .\.venv\Scripts\python.exe scripts/us_c1_1_growth_vs_lambda.py dalla radice [D]
 Esperimento C1.2: .\.venv\Scripts\python.exe scripts/us_c1_2_estimation_error.py dalla radice, circa 70 s; due esecuzioni danno CSV identici byte per byte [D, era V R16@2026-09-27]
 Esperimento C2: .\.venv\Scripts\python.exe scripts\us_c2_anova_autocorrelation.py dalla radice, circa 90 s. Due esecuzioni danno CSV identici, SHA256 6711B906A5D0170124BE816BAB04C336854CF7FF62DF135FDC18F22B84AB3831 [V, R14@2026-09-28, sul CSV di allora]; hash non ricalcolato sul CSV versionato [D]
 Esperimento C3.1: .\.venv\Scripts\python.exe scripts/us_c3_1_data_coverage.py dalla radice, con data/raw/E0/ presente. Due esecuzioni danno CSV identici, SHA256 F9EEA7264F5457A1728EA609CD6660BCEE9779D450099D446CC30A919D73E15C [V, R14@2026-09-29]
 Esperimento C3.2: .\.venv\Scripts\python.exe scripts/us_c3_2_devig_divergence.py dalla radice, con data/raw/E0/ presente. CSV identico su quattro esecuzioni, SHA256 5e9743252db28de1c2c6e28b5584725f4c2f78f47d4d830e318922d88e77ce92 [V, R43 e R44@2026-09-29]
+Esperimento C4.1: .\.venv\Scripts\python.exe scripts/us_c4_1_elo_walkforward.py dalla radice, con data/raw/E0/ presente, circa 49 s. Due esecuzioni danno CSV identici, SHA256 92716bc7e6aa6a7b798370a09d1b31b33b0c0a49311bf35cd810f7975489f282 [V, R23@2026-09-29b]
+Esperimento C4.2: .\.venv\Scripts\python.exe scripts/us_c4_2_g_hat.py dalla radice, con data/raw/E0/ presente. Due esecuzioni danno CSV identici, SHA256 e076f16f6a39606a4fcba04be5679a1fa0d7ce9f1c44893df47df79e39dee3a9 [V, R26@2026-09-29b]; durata non misurata [D]
+Esperimento C4.3: .\.venv\Scripts\python.exe scripts/us_c4_3_calibration.py dalla radice, con data/raw/E0/ presente. Due esecuzioni danno CSV identici, SHA256 cc0d3577168ea47cc7f89b9d44f59c29be67062a2ad41634285d11e417ac2073 [V, R29@2026-09-29b]; durata non misurata [D]
 File di configurazione: pyproject.toml e config/split.toml [V, R1@2026-09-29b]
 Nessuna variabile d'ambiente richiesta o letta dal codice [D]
 
 ## Moduli e responsabilità
-src/shk/ contiene 16 moduli applicativi (6 in kelly, 4 in stats, 4 in data, 2 in market) più 5 __init__.py [V, R1@2026-09-29b; conteggio ricalcolato dal supervisore]
+src/shk/ contiene 21 moduli applicativi (6 in kelly, 4 in stats, 4 in data, 2 in market, 5 in model) più 6 __init__.py [V, R1@2026-09-29b, R11, R19, R23, R26 e R29@2026-09-29b; conteggio ricalcolato dal supervisore]
 src/shk/__init__.py — espone __version__ [V, R1@2026-09-28]
 src/shk/kelly/__init__.py — re-esporta kelly_fraction e log_growth_rate tramite __all__; expected_final_wealth non è re-esportata [V, R1@2026-09-29b]
 src/shk/kelly/core.py — formule chiuse per scommessa binaria: kelly_fraction(p, b), log_growth_rate(f, p, b), expected_final_wealth(f, p, b, T, b0=1.0) alle righe 97-144 [V, R1@2026-09-29b]; nessun import interno [V, R1@2026-09-28]
@@ -128,7 +139,7 @@ src/shk/data/walkforward.py — walkforward_split(df, seasons_to_predict) → ge
 - TypeError se seasons_to_predict è str o ha elementi non str.
 [V, R46@2026-09-29; D per i dettagli interni]
 src/shk/data/walkforward.py — check_leakage(history, match, whitelist=None) → lista di violazioni: date non anteriori, partita presente nella storia, campi fuori whitelist; la whitelist predefinita si ricava da history.columns. assert_no_leakage solleva LeakageError. Il modulo non chiama load_all_seasons [V, R46@2026-09-29]
-walkforward_split e assert_no_leakage oggi sono usati solo da tests/test_leakage.py: nessuno script li chiama [D]
+walkforward_split e assert_no_leakage sono usati da tests/test_leakage.py e da predict_elo_walkforward di src/shk/model/elo_predictor.py, che chiama assert_no_leakage su ogni coppia [V, R21@2026-09-29b]; nessuno script li chiama direttamente [D]
 src/shk/market/__init__.py — sola docstring di modulo in italiano [V, R32@2026-09-29]
 src/shk/market/devig.py — funzioni: implied_probabilities(odds) → (N, n); overround(odds) → (N,) con S − 1; devig_proportional(odds) → (N, n); devig_additive(odds) → (N, n), con riga di NaN dove un q ≤ 0; devig_power(odds) → (q (N, n), k (N,)). Non importa da shk.data [V, R30–R36 e R39@2026-09-29; valori ricalcolati dal supervisore]
 src/shk/market/devig.py — validazione comune: argomento ndarray (N, n) con n ≥ 2. TypeError per argomento non ndarray o dtype non intero né floating reale (bool, complessi, object). ValueError per forma sbagliata e per quote non finite o ≤ 1. Conversione interna in float64 [V, R30–R36@2026-09-29]
@@ -145,9 +156,60 @@ src/shk/market/divergence.py — assign_odds_bin: fasce chiuse a sinistra. compu
 - 99° percentile con np.percentile method="linear";
 - con zero partite usate le colonne statistiche restano vuote.
 [V, R41 e R44@2026-09-29; D per i dettagli del piano]
+src/shk/model/__init__.py — sola docstring di modulo in italiano [V, R11@2026-09-29b]
+src/shk/model/elo.py — funzioni pure, nessun RNG e nessun accesso ai dati:
+- elo_delta(r_home, r_away, h=0.0) → float, solo scalari;
+- expected_score(delta, s=400.0), E = 1/(1 + 10^(−delta/s));
+- elo_update(r_home, r_away, outcome, k, h=0.0, s=400.0) → (R_casa', R_trasferta'), con S = 1, 0.5, 0 per H, D, A;
+- davidson_probabilities(delta, nu, s=400.0) → (p_home, p_draw, p_away);
+- constant_draw_probabilities(delta, c, s=400.0) → (p_home, p_draw, p_away).
+Uno scalare reale in ingresso dà float; qualunque ndarray, anche 0-d, dà ndarray float64 della stessa forma [V, R11@2026-09-29b per i test verdi; firme e tipi restituiti V, R16@2026-09-29b; elo_update calcola delta con elo_delta ed E con expected_score, righe 228-230, seguite da assert isinstance(e, float), V, R17@2026-09-29b]
+src/shk/model/elo.py — validazioni: TypeError per bool, np.bool_, non numerici, liste, stringhe, ndarray bool o complessi; ValueError per valori non finiti, ν ≤ 0, c fuori da (0, 1), s ≤ 0, k < 0, outcome fuori da H, D, A; k = 0 ammesso [V, R11@2026-09-29b, test verdi]
+src/shk/model/elo.py — calcolo di E e di Davidson: il ramo ndarray usa np.power senza guardie (righe 164-166 e 282-288); il ramo scalare usa math.pow con guardie per |delta/s| > 308, che restituiscono 0 o 1 e p_draw = 0 (righe 169-174 e 291-299) [V, R12@2026-09-29b]. I due rami divergono solo per |delta/s| > 308, fuori da ogni valore realistico [D]
+src/shk/model/elo_predictor.py — funzioni pubbliche:
+- compute_season_standings(df) → DataFrame ordinato con almeno team, points, goal_diff, goals_for;
+- predict_elo_walkforward(df, seasons_to_predict, k, h, nu, s=400.0, initial_rating=1500.0) e predict_elo_fast con la stessa firma (righe 433-441) → DataFrame con season, Date, HomeTeam, AwayTeam, rating_home, rating_away, delta, p_home, p_draw, p_away, home_promotion, away_promotion; FTR, FTHG e FTAG non compaiono nell'output;
+- diagnose_season_transitions(df) → DataFrame con una riga per stagione dalla seconda: season, n_teams, n_promoted_new, promoted_new, n_promoted_returning, promoted_returning, promoted_total, n_relegated_actual, relegated_actual, relegated_calculated, relegation_agreement.
+[V, R19–R22@2026-09-29b; D per le firme di compute_season_standings, predict_elo_walkforward e diagnose_season_transitions, prese dal piano approvato]
+src/shk/model/elo_predictor.py — parti interne: _EloTracker (consume_match, predict_match, _ensure_season), condiviso dai due percorsi; _get_field, _validate_inputs, _parse_season_start_year; _CALC_COLS = Date, season, HomeTeam, AwayTeam, FTR, FTHG, FTAG (righe 14-22) [V, R21 e R22@2026-09-29b]
+src/shk/model/elo_predictor.py — regola di ingresso: alla prima riga di s si congelano la classifica di s − 1 e la media dei rating finali delle sue ultime tre. Ogni squadra riceve rating e stato alla sua prima comparsa in s, una sola volta. Nella prima stagione del DataFrame tutte le squadre partono da initial_rating con stato "" [D, piano approvato; coperta da test verdi, R19@2026-09-29b]
+src/shk/model/elo_predictor.py — validazioni: ValueError per FTR fuori da H, D, A, colonne mancanti (Date, season, HomeTeam, AwayTeam, FTHG, FTAG), stagioni non consecutive, stagione decrescente lungo Date, df non ordinato, parametri non validi; TypeError per tipi sbagliati e per seasons_to_predict str [V, R19@2026-09-29b, test verdi]
+src/shk/model/elo_predictor.py — percorsi:
+- via fornitore: chiama assert_no_leakage su ogni coppia e consuma la storia nuova proiettata su _CALC_COLS;
+- veloce: una passata con itertools.groupby per Date su df[_CALC_COLS].itertuples; le partite di una data si prevedono prima di aggiornare con quella data (righe 477-484).
+Sui dati reali i due percorsi danno CSV identici byte per byte: SHA256 0b3048a7a170e7e149f6cb96c2790e36d3f05010a4d5ce35e1ea0febc1fcbce1 con K = 20, h = 60, ν = 1 [V, R21 e R22@2026-09-29b]
+src/shk/model/elo_fit.py — funzioni:
+- derive_fit_schedule(training, validation=None), con training anche SplitConfig (riga 112) → dict dalla stagione del fit a {"training": […], "validation": […]};
+- calibrate_all_fits(df, schedule) → dict dalla stagione del fit a un risultato con success, message, nit, nfev, duration_seconds, k, h, nu, c, log_loss_train, log_loss_train_baseline, n_train_matches, is_on_boundary;
+- compute_training_log_loss, interna, restituisce (loss, preds);
+- parse_season_start_year, pubblica: duplica _parse_season_start_year di elo_predictor.py.
+Tipi e costanti: EloFitParams (NamedTuple: k, h, nu, c; righe 68-74); ELO_FITS (righe 321-340); WALKFORWARD_CSV_COLUMNS (15 colonne); limiti, punto iniziale e opzioni di Nelder-Mead; griglie dei profili.
+[V, R23 e R24@2026-09-29b; D per le firme non riportate e per i nomi delle costanti non citati nei comandi]
+src/shk/model/elo_fit.py — ELO_FITS, congelato il 2026-09-29 [V, R23@2026-09-29b; coincide con la ricalibrazione entro rel_tol 1e-9]:
+- "2000-01": K = 10.318224689650037, h = 125.54022316884253, ν = 0.8062246331085681, c = 0.2657894736842105;
+- "2010-11": K = 9.934776455088759, h = 127.87791672140764, ν = 0.8775613268630023, c = 0.2789473684210526;
+- "2020-21": K = 7.928543266007228, h = 78.033626101627, ν = 0.7603760315281511, c = 0.25877192982456143.
+src/shk/model/scoring.py — costruzione dell'insieme di valutazione, riusata da T24:
+- generate_validation_predictions(df, fits, schedule): previsioni di validazione per fit (riga 218);
+- align_predictions_with_odds(df_preds, df): abbinamento su season, Date, HomeTeam, AwayTeam, con ValueError per chiavi mancanti o duplicate (riga 290);
+- prepare_series_evaluation(df_aligned, series, schedule) → SeriesEvaluationData (riga 355).
+Serie "b365_prematch" (B365H/D/A) e "pinnacle_closing" (PSCH/D/A, stagioni di validazione con anno iniziale ≥ 2012).
+[V, R26 e R27@2026-09-29b]
+src/shk/model/scoring.py — SeriesEvaluationData (NamedTuple, righe 336-352): series, seasons, matches_total, matches_used, missing_odds, invalid_odds, additive_inapplicable, matches_excluded, df_used, p_model (N×3), q_proportional, q_additive, q_power (N×3), outcomes (stringhe H/D/A). Le righe sono in ordine cronologico stabile [V, R27@2026-09-29b]
+src/shk/model/scoring.py — metriche: compute_log_loss, compute_mean_log_loss, compute_g_hat_terms, compute_g_hat, compute_cumulative_g_hat (righe 79-190). Nessun eps: probabilità dell'esito realizzato ≤ 0 → ValueError; matrici (N, 3) con righe che sommano a 1 entro 1e-9 [V, R27@2026-09-29b per i nomi; D per le validazioni, dal piano approvato; test verdi R26@2026-09-29b]
+src/shk/model/recalibration.py — funzioni:
+- generate_fit_training_predictions(df, fit_j, train_seasons, params): previsioni sulle stagioni di training del fit;
+- fit_all_calibration_maps(df, fits, schedule) → per fit, .platt[esito] (a, b, success, nit, nfev) e .isotonic[esito] (p_support, …);
+- recalibrate_series_predictions(ev_data, fit_maps, version, schedule) → (probabilità N×3, totale dei valori limitati, conteggi per esito);
+- fit_platt_single e predict_platt_single; tabella di reliability; Brier multiclasse.
+Algoritmi: one-vs-rest per esito, limite a [1e-6, 1 − 1e-6], rinormalizzazione; isotonica con valori uguali aggregati, scipy.optimize.isotonic_regression e np.interp con estrapolazione costante; Platt con L-BFGS-B, gradiente analitico, punto iniziale (1, 0).
+[V, R29 e R30@2026-09-29b per l'uso; D per le firme esatte e per i dettagli non stampati]
 scripts/us_c3_1_data_coverage.py — run_experiment(): load_all_seasons, compute_coverage, CSV con csv.DictWriter. PNG con imshow della quota complete_rows/total_rows, colormap viridis; gruppi assenti come NaN in grigio #dcdcdc, spiegati in legenda [V, R14 e R17@2026-09-29]
 scripts/us_c3_2_devig_divergence.py — run_experiment(): read_split_config, load_by_role("training") e load_by_role("validation") concatenati, compute_divergence_table. CSV di 29 righe (6 fasce, 22 stagioni di training e validazione, 1 overall). PNG a due pannelli (spread medio in punti e spread relativo medio per fascia, etichette in italiano) [V, R43@2026-09-29 e R1@2026-09-29b]
-tests/ — 17 moduli: test_kelly_core, test_simulate, test_estimation, test_staking, test_metrics, test_anova, test_timeseries, test_calibration, test_data_loading, test_coverage, test_split, test_devig, test_leakage, test_us_c1_1_acceptance, test_us_c1_2_acceptance, test_us_c2_acceptance, test_us_c3_2_acceptance [V, R1@2026-09-29b]
+scripts/us_c4_1_elo_walkforward.py — run_experiment(): dati solo con load_by_role; CSV di 9 500 righe e 15 colonne (per fit: prima training, poi validation); PNG a due pannelli con i profili della log-loss di training in K e in h, calcolati da ELO_FITS [V, R23@2026-09-29b; D per i dettagli]
+scripts/us_c4_2_g_hat.py — run_experiment(): dati con load_by_role, funzioni di scoring.py; CSV lungo con 6 righe summary e una riga cumulative per partita, serie e metodo (33 066 righe); PNG a due pannelli (una serie ciascuno, tre metodi, linea dello zero) [V, R26@2026-09-29b; D per i dettagli]
+scripts/us_c4_3_calibration.py — run_experiment(): CSV di 144 righe (120 reliability su b365_prematch, 24 score), PNG a due pannelli (aggregato con tre versioni e diagonale; per esito con la versione raw), 2025×825 pixel a 150 DPI [V, R29 e R30@2026-09-29b; D per i dettagli]
+tests/ — 24 moduli: test_kelly_core, test_simulate, test_estimation, test_staking, test_metrics, test_anova, test_timeseries, test_calibration, test_data_loading, test_coverage, test_split, test_devig, test_leakage, test_elo, test_elo_predictor, test_scoring, test_recalibration, test_us_c1_1_acceptance, test_us_c1_2_acceptance, test_us_c2_acceptance, test_us_c3_2_acceptance, test_us_c4_1_acceptance, test_us_c4_2_acceptance, test_us_c4_3_acceptance [V, R1, R11, R19, R23, R26 e R29@2026-09-29b]
 tests/test_anova.py — 23 test veloci: toy; concordanza con f_oneway su toy e su 3 dataset casuali; partizione della devianza; versione vettorizzata su (3, 4, 380) con contiguous_2 e con k = 5 permutato; validazioni [V, R4@2026-09-28]
 tests/test_timeseries.py — 13 test veloci: forma e dtype; riproducibilità; varianze e autocorrelazione pooled parametrizzate su φ ∈ {0.0, 0.3, 0.7} con seed 20260928; validazioni [V, R7@2026-09-28]
 tests/test_calibration.py — 15 funzioni di test (18 test): proprietà degli indici, L = n, integrità delle righe 2D, statistica d'ordine, vectorized contro non vectorized, due statistiche, seed, i quattro casi di compute_order_statistic_index, docstring, validazioni [V, R12@2026-09-28]
@@ -183,7 +245,24 @@ tests/test_us_c3_2_acceptance.py — 11 test veloci:
 - criteri letti dal CSV versionato: somma a 1 entro 1e-12, overround medio in [0.01, 0.15], spread relativo massimo nella fascia [10, inf), sole stagioni di training e validazione;
 - ricalcolo dai dati reali con math.isclose (rel_tol e abs_tol 1e-12), saltato senza CSV.
 [V, R44@2026-09-29 e R1@2026-09-29b]
-Classi del pacchetto: Scenario, StakingMoments, OneWayAnovaResult, RejectionResult, PhiStreams, ColumnClassification, SplitConfig, TestSetLockedError, LeakageError [V, R1@2026-09-29b]; nessun'altra [D]
+tests/test_elo.py — 31 test veloci:
+- somma zero; somma a 1 e probabilità in (0, 1) su delta in [−800, 800] con ν in [0.05, 3] e c in [0.01, 0.99];
+- tabella delle note 2.8 §3.3 con s = 200 (24 valori come costanti, tolleranza 5e-4); simmetria; p_draw monotono su entrambi i lati; limite ν = 1e-12; p_draw == c esatto;
+- validazioni; k = 0.
+[V, R11@2026-09-29b]
+tests/test_elo_predictor.py — 8 test veloci:
+- invarianza al futuro: una sola funzione di controllo, verify_future_invariance (righe 92-147), applicata al percorso via fornitore, al percorso veloce e al mutante predict_elo_mutant_update_before_predict; date di taglio 2001-08-18, 2001-08-25, 2002-08-17;
+- invarianza alle quote; regola delle neopromosse calcolata a mano; equivalenza fra i due percorsi su dati sintetici e reali (i reali si saltano senza CSV); transizioni sui dati reali; validazioni; determinismo.
+Costanti di test: K = 20, h = 60, ν = 1, s = 400, rating iniziale 1500.
+[V, R20@2026-09-29b; costanti dal piano, D]
+tests/test_us_c4_1_acceptance.py — 7 test:
+- veloci: test_calibration_training_only_synthetic, test_calibration_objective_matches_count_real_data, test_csv_validation_leakage_and_uniqueness, test_versioned_csv_schema_and_probabilities, test_recomputed_predictions_match_csv;
+- slow: test_elo_fits_matches_data_recalibration (119.09 s).
+I test sui dati reali si saltano senza CSV; nessun test esegue lo script.
+[V, R23@2026-09-29b]
+tests/test_scoring.py — 7 test veloci su dati sintetici: validazioni, log-loss, ĝ con p = q e caso a mano, serie cumulativa, preparazione della serie, validazioni delle chiavi. tests/test_us_c4_2_acceptance.py — 4 test: schema e riepilogo del CSV, coerenza delle cumulative, esistenza della figura, ricalcolo dai dati reali (saltato senza CSV) [V, R26@2026-09-29b]
+tests/test_recalibration.py — 6 test su dati sintetici: Brier, reliability, isotonica, Platt, invarianza fuori campione. test_platt_fit_predict_properties accetta 0 e 1 inclusi (righe 132-133), perché su dati a gradino la sigmoide di Platt satura a 1.0 in float64. tests/test_us_c4_3_acceptance.py — 5 test: schema e conteggi del CSV, ĝ raw uguale a T23, figura, ricalcolo dai dati reali (saltato senza CSV) [V, R29 e R30@2026-09-29b]
+Classi del pacchetto: Scenario, StakingMoments, OneWayAnovaResult, RejectionResult, PhiStreams, ColumnClassification, SplitConfig, TestSetLockedError, LeakageError [V, R1@2026-09-29b], EloFitParams [V, R23@2026-09-29b], SeriesEvaluationData [V, R27@2026-09-29b], più la classe interna _EloTracker [V, R21@2026-09-29b]. In recalibration.py ci sono tipi per mappe e risultati di Platt e isotonica, con nomi non verificati [D]; nessun'altra [D]
 Persistenza: risultati solo come CSV versionati in results/ e PNG versionati in thesis/figures/; configurazione dello split in config/split.toml; dati grezzi in data/raw/E0/, non versionati [V, R1@2026-09-29b]; nessun database [D]
 
 ## Flussi principali
@@ -239,6 +318,42 @@ Esperimento C3.2 (B365 pre-partita, training e validazione) [V, R43@2026-09-29 e
 - spread relativo medio massimo in [10, ∞) (0.222), non monotono (minimo in [2, 3), 0.008);
 - spread massimo 6.29 punti, cioè 3.14 volte l'edge di 2 punti; 99° percentile 3.45 punti, cioè 1.73 volte.
 Walk-forward anti-leakage, verificato da tests/test_leakage.py sulle stagioni di training e validazione con la history come storia pregressa: 8 360 partite previste, zero violazioni. Sulle colonne reali la whitelist ha 87 campi: 6 identificativi e 81 quote pre-partita (1X2 dei bookmaker e aggregate, over/under 2.5, handicap asiatico); nessuna chiusura, linea o conteggio [V, R46@2026-09-29; composizione ricontata dal supervisore]
+Modulo 1 Elo (T20): la tabella Davidson delle note 2.8 §3.3 si riproduce con s = 200 (scarto massimo 4.418e-4, a delta = 100, ν = 1.1, p_away); con s = 400 lo scarto sarebbe 0.20. Con ν = 1e-12, max |p_home − E| = 3.2485e-13 su 1601 punti in [−800, 800], pari al valore teorico ν·max r^1.5/(r + 1)² ≈ 0.325·ν. Somme a 1 entro 2.2e-16 per entrambi i mapping [V, R13@2026-09-29b e ricalcolo del supervisore]
+Transizioni reali dal 1993-94 al 2022-23 (29) [V, R21@2026-09-29b; somme del supervisore dallo stdout]:
+- 22 squadre nel 1993-94 e nel 1994-95, 20 dopo;
+- entrate 86: 28 nuove, 58 tornanti. Ne entrano 2 al 1995-96 e 3 alle altre transizioni; ne escono 4 al 1995-96 e 3 alle altre;
+- nomi squadra coerenti fra stagioni secondo questo criterio.
+Accordo fra ultime tre calcolate e uscite effettive: 3 in ogni transizione tranne il 1997-98, dove vale 2. Classifica 1996-97 calcolata dai risultati: Everton 42, Southampton 41 (−6), Coventry 41 (−16), Sunderland 40 (−18), Nott'm Forest 34 (−28); il Middlesbrough non è fra le ultime tre. Le penalizzazioni non sono nei dati [V, R20@2026-09-29b]
+Tempi del previsore Elo sui dati reali (8 360 partite previste): percorso veloce 0.35 s, via fornitore 10.58 s. Prima del secondo correttivo di T21 erano 31.71 s e 30.31 s; il profilo attribuiva 68.7 dei 72 s profilati a itertuples su tutte le colonne, 3 199 volte [V, R20 e R21@2026-09-29b]
+Esperimento C4.1, calibrazione espansiva Nelder-Mead [V, R23@2026-09-29b; c e durate ricalcolati dal supervisore]:
+- tutti i fit con success = True, nessun parametro su un limite;
+- nit/nfev 103/185, 158/284, 107/194; durate 14.80, 49.59, 52.54 s, in tutto 116.93 s;
+- partite di training 380, 760, 1 140; pareggi 101, 212, 295, cioè 111 nel 2010-11 e 83 nel 2020-21.
+Esperimento C4.1, log-loss (Davidson / baseline a pareggio costante) [V, R23@2026-09-29b]:
+- fit 2000-01: training 1.008189 / 1.014931; validazione (3 040 partite) 0.973761 / 0.976755;
+- fit 2010-11: training 1.008987 / 1.015189; validazione (3 420) 0.983832 / 0.990144;
+- fit 2020-21: training 1.020937 / 1.024782; validazione (760) 0.983300 / 0.987629.
+Frequenza del pareggio in validazione: 0.255263, 0.241228, 0.230263.
+Media dei rating a inizio stagione, con i parametri di ciascun fit: 1500 nel 1993-94 e nel 1994-95; dal 1995-96 fra 1502.3 e 1524.9, con il massimo nel 2022-23 [V, R23@2026-09-29b; tabella in .agent/report/T22.md]
+Esperimento C4.2 [V, R24 e R26@2026-09-29b; log-loss e ĝ ricalcolati dal supervisore]:
+- PSCH/PSCD/PSCA completa (380 su 380) in ogni stagione dal 2012-13 al 2022-23;
+- devig_power converge sui 3 800 mercati PSC di validazione;
+- partite usate: b365_prematch 7 220 (19 stagioni), pinnacle_closing 3 800 (10 stagioni: dal 2012-13 al 2019-20, 2021-22, 2022-23); nessuna esclusione;
+- log-loss del modello: 0.979536 (B365), 0.981229 (Pinnacle); la prima è la media pesata delle log-loss di validazione dei tre fit.
+ĝ (proporzionale / additivo / power) [V, R26@2026-09-29b]:
+- b365_prematch −0.021429 / −0.022401 / −0.022402;
+- pinnacle_closing −0.031474 / −0.031572 / −0.031672.
+Negativo in tutti i casi e in ogni fine stagione del cumulativo.
+Esperimento C4.3 [V, R29@2026-09-29b; ĝ e z ricalcolati dal supervisore]:
+- mappe stimate su 380, 760 e 1 140 partite di training; Platt converge sempre (a fra 1.14 e 1.34 per H, fra 2.08 e 3.33 per D, fra 0.82 e 0.90 per A);
+- valori limitati: isotonica 265 (B365) e 77 (Pinnacle), Platt 0;
+- fasce peggio calibrate della versione raw: A [0.4, 0.5) z = +6.06, A [0.5, 0.6) +5.30, H [0.7, 0.8) +4.34.
+Log-loss / Brier:
+- b365: raw 0.979536 / 0.583437, isotonic 1.013931 / 0.586291, platt 0.982340 / 0.584171; mercato fra 0.957134 e 0.958107 / fra 0.567947 e 0.568515;
+- pinnacle: raw 0.981229 / 0.583208, isotonic 0.991359 / 0.584444, platt 0.980927 / 0.583522; mercato fra 0.949556 e 0.949755 / fra 0.561269 e 0.561439.
+ĝ (proporzionale / additivo / power):
+- isotonic: b365 −0.055824 / −0.056797 / −0.056797, pinnacle −0.041604 / −0.041703 / −0.041803;
+- platt: b365 −0.024233 / −0.025205 / −0.025206, pinnacle −0.031173 / −0.031271 / −0.031371.
 
 ## Convenzioni da rispettare
 Naming: snake_case per moduli, funzioni e variabili; PascalCase per le classi; UPPER_CASE per le costanti; lettere matematiche della letteratura (p, b, f, T, M, b0, λ, σ_p, c, δ, φ, L, B, α, q) [V, R1@2026-09-29b]
@@ -250,20 +365,21 @@ Il codice nuovo controlla anche il tipo degli interi (bool e non interi → Type
 Nessuna occorrenza di try:, print( o logging in src/ e scripts/. Fonti:
 - file di S1: [V, R4@2026-09-28, git grep];
 - file di S2: [V, R5, R8, R10 e R12@2026-09-28];
-- file di S3: [V, R14, R26, R32, R43 e R46@2026-09-29].
+- file di S3: [V, R14, R26, R32, R43 e R46@2026-09-29];
+- file di S4: src/shk/model/elo.py [V, R11@2026-09-29b]; elo_predictor.py [V, R19@2026-09-29b, prima del secondo correttivo di T21; D dopo]; elo_fit.py [V, R23@2026-09-29b]; scoring.py e recalibration.py [V, R29@2026-09-29b]. Gli script di S4 non sono stati controllati [D].
 Non ricontrollato con una ricerca sulla mappa di 90a77a1 [D]
 L'RNG entra come argomento e non viene mai creato dentro le funzioni di libreria; i flussi indipendenti si derivano con np.random.SeedSequence.spawn [V, R1@2026-09-29b]
 Vettorizzazione NumPy senza cicli su M e T nel motore; del paths nei loop Monte Carlo [V, R1@2026-09-28]
 Script di esperimento: matplotlib.use("Agg") prima di importare pyplot; run_experiment() senza parametri, chiamata dal blocco __main__; nessun argomento da riga di comando; import diretti da shk.* [V, R8@2026-09-28 e R1@2026-09-29b]
 Output degli script: CSV con csv.DictWriter, open(mode="w", newline="", encoding="utf-8"), lineterminator di default (\r\n), float nativi e stringa vuota per i valori non applicabili; PNG con plt.tight_layout() e savefig(dpi=150); etichette delle figure in italiano [V, R8 e R9@2026-09-28 e R1@2026-09-29b]
-Parametri condivisi fra script e test in un modulo di libreria importato da entrambi: scenarios.py per C1.2, false_rejection.py per C2, coverage.py e divergence.py (con split.toml) per C3. C1.1 è l'eccezione storica [V, R1@2026-09-29b]
+Parametri condivisi fra script e test in un modulo di libreria importato da entrambi: scenarios.py per C1.2, false_rejection.py per C2, coverage.py e divergence.py (con split.toml) per C3, elo_fit.py per C4.1, scoring.py per C4.2, recalibration.py per C4.3. C1.1 è l'eccezione storica [V, R1@2026-09-29b, R23, R26 e R29@2026-09-29b]
 Nomi: scripts/us_<story>_<nome>.py, con lo stesso nome base per results/<nome>.csv e thesis/figures/<nome>.png, entrambi versionati [V, R1@2026-09-29b]
-Test in tests/test_*.py. I Monte Carlo su larga scala si marcano @pytest.mark.slow; i test sui dati reali si saltano con motivo esplicito se data/raw/E0/ non contiene CSV; i test anti-leakage non si marcano slow [V, R1@2026-09-29b; decisioni della story S3]
+Test in tests/test_*.py. I Monte Carlo su larga scala si marcano @pytest.mark.slow; i test sui dati reali si saltano con motivo esplicito se data/raw/E0/ non contiene CSV; i test anti-leakage non si marcano slow; un test sui dati reali che supera 60 s si marca slow [V, R1@2026-09-29b; decisioni delle story S3 e S4]
 Dati reali nel codice nuovo solo attraverso load_by_role; load_all_seasons è ammessa solo nei quattro file controllati dal test di guardia [V, R26@2026-09-29 e R1@2026-09-29b]
 Commit fatti solo dal programmatore, a mano [V, testo di .agent/PROTOCOLLO.md fornito dal programmatore 2026-09-28]. Ogni story si sviluppa su un branch di lavoro (C2, C3) che entra in main come un solo commit; i commit intermedi non restano nella storia di main e il branch locale viene poi cancellato [V, R4 e R5@2026-09-29b]
 Cline scrive in .agent/ solo MAPPA.md in mappatura e report/T<n>.md in esecuzione [V, testo di .agent/PROTOCOLLO.md fornito dal programmatore 2026-09-28]
 .agent/PROTOCOLLO.md, sezione "Convenzioni del progetto": nessuna convenzione aggiuntiva per questo progetto; valgono le regole di base dei prompt e quelle di questa sezione [V, testo di .agent/PROTOCOLLO.md fornito dal programmatore 2026-09-28]
-Documenti di processo in .agent/: PROTOCOLLO.md, BACKLOG.md, MAPPA.md, SCHEDA.md, report/T<n>.md (oggi da T1 a T19), tutti versionati [V, R1@2026-09-29b]
+Documenti di processo in .agent/: PROTOCOLLO.md, BACKLOG.md, MAPPA.md, SCHEDA.md, report/T<n>.md (oggi da T1 a T24), versionati [V, R1@2026-09-29b fino a T19; D per T20–T24]
 
 ## Zone fragili da non toccare senza avviso
 Il test slow test_acceptance_calibrated_phi_zero_within_mc_interval (tests/test_us_c2_acceptance.py:350-363 [V, R1@2026-09-29b]) fallisce per un risultato noto: 29 rigetti su 1000 a φ = 0 con L = 20, sotto l'estremo inferiore 32.25 dell'intervallo al 99% (T12 da rivedere). Non è una regressione e non va "sistemato" allentando la tolleranza o cambiando parametri [V, decisione del programmatore 2026-09-28; conteggio da R14@2026-09-28, non rieseguito]
@@ -278,9 +394,10 @@ Il test del drawdown non decrescente (tolleranza −0.01) è l'unica asserzione 
 tests/test_us_c2_acceptance.py confronta il CSV versionato con compute_nominal_rejection_rates (test veloce) e con compute_calibrated_rejection_rates (test slow). Ogni modifica a false_rejection.py che cambia i risultati richiede di rieseguire lo script (circa 90 s) prima dei test [V, R14@2026-09-28]
 L'identità byte per byte del CSV C2 vale solo a parità di ambiente: il valore critico per k = 2 è 3.866176954321902 nel venv (scipy 1.18.1) e 3.866176954321901 in CI [V, R9 e R15@2026-09-28, log CI]. Dopo T13 i test confrontano i float con tolleranza; rigenerare il CSV in un altro ambiente può comunque cambiare il file [D]
 Controlli dei CSV versionati:
-- i run_experiment() dei cinque script non sono richiamati da alcun test [D];
+- i run_experiment() degli otto script non sono richiamati da alcun test [D];
 - il CSV di C2 è confrontato con il codice da tests/test_us_c2_acceptance.py [V, R14@2026-09-28];
 - il CSV di C3.2 da tests/test_us_c3_2_acceptance.py, con ricalcolo solo in locale [V, R44@2026-09-29];
+- i CSV di C4.1, C4.2 e C4.3 da test_us_c4_1_acceptance.py, test_us_c4_2_acceptance.py e test_us_c4_3_acceptance.py, con ricalcolo solo in locale [V, R23, R26 e R29@2026-09-29b];
 - il CSV di C3.1 non ha un test di confronto [D].
 pandas 3.0.6 è nel venv; la CI installa l'ultima versione senza vincoli. In pandas 3 Date esce in datetime64[us], non [ns] [V, R10@2026-09-29], e le colonne di testo hanno di default il dtype stringa, non object [D]: da tenere presente nei controlli sulle quote non numeriche
 I test sui dati reali non girano in CI, perché data/raw/* è escluso da .gitignore: in CI si saltano e vanno eseguiti in locale [D]. Il test sui dati reali di tests/test_leakage.py dura circa 8 s ed è nella suite veloce [V, R46@2026-09-29]
@@ -292,243 +409,17 @@ Il test di guardia di tests/test_split.py fallisce se load_all_seasons compare, 
 devig_power solleva RuntimeError se anche un solo mercato non converge entro 1e-12 in 50 iterazioni: su quote estreme ferma l'intero calcolo, non solo il mercato [V, R32@2026-09-29 e R1@2026-09-29b per il comportamento; D per le quote reali]
 devig_additive restituisce righe di NaN, che vanno escluse dal confronto per tutti i metodi (decisione della story S3) [V, R32@2026-09-29]. tests/test_devig.py:test_extreme_markets salta i mercati NaN dell'additivo e non rileverebbe un NaN spurio su quei mercati [V, R35@2026-09-29]
 Una parte dei test di tests/test_us_c3_2_acceptance.py legge il CSV versionato: ogni modifica a divergence.py o devig.py che cambia i risultati richiede di rieseguire lo script (con i dati locali) prima dei test [V, R44@2026-09-29]
+I due percorsi di src/shk/model/elo_predictor.py iterano solo sulle colonne di _CALC_COLS: un calcolo che usa un'altra colonna deve aggiungerla a _CALC_COLS [D]. Dopo ogni modifica al file, il confronto dello SHA256 delle previsioni con 0b3048a7…cbce1 (K = 20, h = 60, ν = 1) mostra se l'output è cambiato [V, R21@2026-09-29b]
+ELO_FITS in src/shk/model/elo_fit.py è congelato e non si modifica. Una modifica a elo.py, elo_predictor.py, scoring.py o recalibration.py che cambia previsioni o metriche rende incoerenti col codice ELO_FITS e i CSV us_c4_1_elo_walkforward.csv, us_c4_2_g_hat.csv e us_c4_3_calibration.csv: vanno ricalibrati e rigenerati. Lo segnalano in locale i test di ricalcolo dai dati di C4.1, C4.2 e C4.3 e il test slow di ricalibrazione [D]
+Rieseguire scripts/us_c4_1_elo_walkforward.py sovrascrive CSV e PNG versionati; dura circa 49 s [V, R23@2026-09-29b]
 
 ## Punti ancora incerti
 Prova del congelamento dello split: la data su main è 12:54:03 (90a77a1); quella delle 11:47:18 (2cea094) sta solo nella reflog locale. Blocca: la data di congelamento da dichiarare in US-C3.3 e in tesi, e la conservazione di 2cea094. Alternative, da decidere col programmatore: (a) dichiarare 90a77a1 come prova, precisando che il contenuto è identico a quello di 2cea094; (b) conservare 2cea094 con un tag pubblicato su origin, messo a mano dal programmatore prima che la reflog scada; (c) affidarsi al ref del PR #17 su GitHub, non verificato [D]. Si procede: il contenuto non è cambiato e nessun task di codice dipende dalla scelta.
 Gestore canonico delle dipendenze (pip + pyproject.toml oppure uv + uv.lock), non deciso dal programmatore; uv.lock non è aggiornato con pandas. Blocca: se la CI vada migrata a uv. Si procede con pyproject.toml come fonte di verità, l'unica usata dalla CI.
 Se la calibrazione per block bootstrap debba imporre H₀ nei dati prima di ricampionare (per l'ANOVA: serie centrata per gruppo). Blocca: la chiusura di T12 (test slow rosso), la correzione dello schema della docstring di calibration.py e la scelta di L per C5.2, C6.4 e C8. Si procede lasciando il test slow com'è e senza toccare calibration.py né false_rejection.py. Proposta: un task nuovo che aggiunge al CSV righe method = block_bootstrap_centered accanto a quelle attuali, con criteri scritti e datati prima dell'esecuzione.
-Esito della CI su main dopo 90a77a1 (pandas più recente, test S3 sintetici) e stato della suite veloce su 90a77a1: non verificati. Blocca: la baseline del prossimo task di scrittura, che deve partire da una suite verde. Si procede facendo cominciare il prossimo task con l'esecuzione della suite veloce.
-Scenario di training 2000-01 senza B365: con q alimentato da B365, in C3.2 è escluso per intero (380 partite). Blocca: gli esperimenti di C4 e C8 che usano quello scenario. Alternative: (a) dichiararlo in tesi e procedere con 2010-11 e 2020-21; (b) usare per il solo 2000-01 un'altra terna completa (GB, IW, SB o WH); (c) rivedere lo scenario in una chat di backlog. Decisione del programmatore [V, R14 e R43@2026-09-29]
+Esito della CI dopo 90a77a1 e sul branch C4 (pandas più recente, test sintetici di S3 e S4): non verificato. La suite veloce locale è verde (248 dopo T24, R29@2026-09-29b). Non blocca i task; da controllare al primo push del branch C4.
+Scenario di training 2000-01 senza B365: con q alimentato da B365, in C3.2 è escluso per intero (380 partite). In C4 non ha bloccato: la calibrazione dell'Elo usa solo i risultati e ĝ si misura solo sulla validazione. Blocca ancora gli esperimenti di C8 che usano quello scenario. Alternative: (a) dichiararlo in tesi e procedere con 2010-11 e 2020-21; (b) usare per il solo 2000-01 un'altra terna completa (GB, IW, SB o WH); (c) rivedere lo scenario in una chat di backlog. Decisione del programmatore [V, R14 e R43@2026-09-29]
 Versionamento dei CSV E0: oggi sono esclusi da .gitignore, quindi in CI i test sui dati reali si saltano. Blocca: se la CI possa mai verificare le pipeline su dati reali. Decisione del programmatore, dopo il controllo della licenza (note 2.9) [V, R6@2026-09-29]
 
 ## Ultimo aggiornamento
-R6@2026-09-29b — task di scrittura chiusi dopo la mappa del 2026-09-29b: nessuno
-
-----
-
-Stato repo → (nuova riga, dopo "Branch locali: solo main. …") →
-Dopo la mappa: branch C4 creato da 90a77a1 con due commit solo su .agent/ (4b9e6c1 "Refresh C3 project documentation", 475f65f "Update BACKLOG.md"; diff solo su BACKLOG.md, MAPPA.md, SCHEDA.md). A inizio T20 HEAD su C4 a 475f65f, working tree pulito [V, R7 e R11@2026-09-29b]. Dopo T20 il working tree contiene, non committati, src/shk/model/__init__.py, src/shk/model/elo.py, tests/test_elo.py, .agent/report/T20.md [D]
-
-Stato repo → "Branch locali: solo main. Branch remoti: origin/HEAD → origin/main, origin/main [V, R1@2026-09-29b]" →
-Branch locali: C4 (corrente) [V, R11@2026-09-29b]; main presumibilmente ancora presente [D]. Branch remoti: origin/HEAD → origin/main, origin/main [V, R1@2026-09-29b]; se C4 sia pubblicato su origin non è verificato [D]
-
-Stack e comandi → "Suite veloce dopo T19: 181 verdi, 14 deselezionati, circa 14 s con i dati locali presenti [V, R46@2026-09-29]. I 181 sono … Non rieseguita su 90a77a1 [D]" →
-Suite veloce: 181 verdi, 14 deselezionati, 14.41 s su C4 a 475f65f, codice identico a 90a77a1 [V, R11@2026-09-29b]. I 181 sono i 109 di 115e600 più 18 di test_data_loading.py, 12 di test_coverage.py, 14 di test_split.py, 8 di test_devig.py, 11 di test_us_c3_2_acceptance.py e 9 di test_leakage.py. Dopo T20: 212 verdi (più 31 di test_elo.py), 14 deselezionati, 13.92 s [V, R11@2026-09-29b]
-
-Moduli e responsabilità → "src/shk/ contiene 16 moduli applicativi (6 in kelly, 4 in stats, 4 in data, 2 in market) più 5 __init__.py [V, R1@2026-09-29b; conteggio ricalcolato dal supervisore]" →
-src/shk/ contiene 17 moduli applicativi (6 in kelly, 4 in stats, 4 in data, 2 in market, 1 in model) più 6 __init__.py [V, R1@2026-09-29b e R11@2026-09-29b; conteggio ricalcolato dal supervisore]
-
-Moduli e responsabilità → (nuove righe, dopo quelle di src/shk/market/divergence.py) →
-src/shk/model/__init__.py — sola docstring di modulo in italiano [V, R11@2026-09-29b]
-src/shk/model/elo.py — funzioni pure, nessun RNG e nessun accesso ai dati:
-- elo_delta(r_home, r_away, h=0.0) → float, solo scalari;
-- expected_score(delta, s=400.0), E = 1/(1 + 10^(−delta/s));
-- elo_update(r_home, r_away, outcome, k, h=0.0, s=400.0) → (R_casa', R_trasferta'), con S = 1, 0.5, 0 per H, D, A;
-- davidson_probabilities(delta, nu, s=400.0) → (p_home, p_draw, p_away);
-- constant_draw_probabilities(delta, c, s=400.0) → (p_home, p_draw, p_away).
-Uno scalare reale in ingresso dà float; qualunque ndarray, anche 0-d, dà ndarray float64 della stessa forma [V, R11@2026-09-29b per i test verdi; D per le firme esatte e per l'uso di elo_delta ed expected_score dentro elo_update]
-src/shk/model/elo.py — validazioni: TypeError per bool, np.bool_, non numerici, liste, stringhe, ndarray bool o complessi; ValueError per valori non finiti, ν ≤ 0, c fuori da (0, 1), s ≤ 0, k < 0, outcome fuori da H, D, A; k = 0 ammesso [V, R11@2026-09-29b, test verdi]
-src/shk/model/elo.py — calcolo di E e di Davidson: il ramo ndarray usa np.power senza guardie (righe 164-166 e 282-288); il ramo scalare usa math.pow con guardie per |delta/s| > 308, che restituiscono 0 o 1 e p_draw = 0 (righe 169-174 e 291-299) [V, R12@2026-09-29b]. I due rami divergono solo per |delta/s| > 308, fuori da ogni valore realistico [D]
-
-Moduli e responsabilità → "tests/ — 17 moduli: test_kelly_core, …, test_us_c3_2_acceptance [V, R1@2026-09-29b]" →
-tests/ — 18 moduli: test_kelly_core, test_simulate, test_estimation, test_staking, test_metrics, test_anova, test_timeseries, test_calibration, test_data_loading, test_coverage, test_split, test_devig, test_leakage, test_elo, test_us_c1_1_acceptance, test_us_c1_2_acceptance, test_us_c2_acceptance, test_us_c3_2_acceptance [V, R1@2026-09-29b e R11@2026-09-29b]
-
-Moduli e responsabilità → (nuova riga, dopo quella di tests/test_us_c3_2_acceptance.py) →
-tests/test_elo.py — 31 test veloci:
-- somma zero; somma a 1 e probabilità in (0, 1) su delta in [−800, 800] con ν in [0.05, 3] e c in [0.01, 0.99];
-- tabella delle note 2.8 §3.3 con s = 200 (24 valori come costanti, tolleranza 5e-4); simmetria; p_draw monotono su entrambi i lati; limite ν = 1e-12; p_draw == c esatto;
-- validazioni; k = 0.
-[V, R11@2026-09-29b]
-
-Flussi principali → (nuova riga, dopo "Walk-forward anti-leakage, …") →
-Modulo 1 Elo (T20): la tabella Davidson delle note 2.8 §3.3 si riproduce con s = 200 (scarto massimo 4.418e-4, a delta = 100, ν = 1.1, p_away); con s = 400 lo scarto sarebbe 0.20. Con ν = 1e-12, max |p_home − E| = 3.2485e-13 su 1601 punti in [−800, 800], pari al valore teorico ν·max r^1.5/(r + 1)² ≈ 0.325·ν. Somme a 1 entro 2.2e-16 per entrambi i mapping [V, R13@2026-09-29b e ricalcolo del supervisore]
-
-Convenzioni da rispettare → "- file di S3: [V, R14, R26, R32, R43 e R46@2026-09-29]." →
-- file di S3: [V, R14, R26, R32, R43 e R46@2026-09-29];
-- file di S4: src/shk/model/ [V, R11@2026-09-29b, Select-String].
-
-Punti ancora incerti → "Esito della CI su main dopo 90a77a1 (pandas più recente, test S3 sintetici) e stato della suite veloce su 90a77a1: non verificati. Blocca: la baseline del prossimo task di scrittura, che deve partire da una suite verde. Si procede facendo cominciare il prossimo task con l'esecuzione della suite veloce." →
-Esito della CI dopo 90a77a1 (pandas più recente, test S3 sintetici): non verificato. La suite veloce locale è verde su quel codice (181, R11@2026-09-29b). Non blocca i task; da controllare al primo push del branch C4.
-
-Ultimo aggiornamento → "R6@2026-09-29b — task di scrittura chiusi dopo la mappa del 2026-09-29b: nessuno" →
-R14@2026-09-29b — task di scrittura chiusi dopo la mappa del 2026-09-29b: T20
-
--------
-
-Stato repo → "Dopo la mappa: branch C4 creato da 90a77a1 con due commit solo su .agent/ (…). A inizio T20 HEAD su C4 a 475f65f, working tree pulito [V, R7 e R11@2026-09-29b]. Dopo T20 il working tree contiene, non committati, src/shk/model/__init__.py, src/shk/model/elo.py, tests/test_elo.py, .agent/report/T20.md [D]" →
-Dopo la mappa: branch C4 creato da 90a77a1 con due commit solo su .agent/ (4b9e6c1 "Refresh C3 project documentation", 475f65f "Update BACKLOG.md") [V, R7 e R11@2026-09-29b]. Commit del programmatore per T20: 7f8e928 "Add Elo rating model and 1X2 mappings". A inizio T21 HEAD su C4 a 7f8e928, working tree pulito [V, R15@2026-09-29b]. Dopo T21 il working tree contiene, non committati, src/shk/model/elo_predictor.py, tests/test_elo_predictor.py, .agent/report/T21.md [D]
-
-Stack e comandi → "… Dopo T20: 212 verdi (più 31 di test_elo.py), 14 deselezionati, 13.92 s [V, R11@2026-09-29b]" →
-… Dopo T20: 212 verdi (più 31 di test_elo.py), 14 deselezionati, 13.92 s [V, R11@2026-09-29b]. Dopo T21: 220 verdi (più 8 di test_elo_predictor.py), 14 deselezionati, 28.48 s; tests/test_elo_predictor.py da solo 13.52 s, con i dati locali presenti [V, R21@2026-09-29b]
-
-Moduli e responsabilità → "src/shk/ contiene 17 moduli applicativi (6 in kelly, 4 in stats, 4 in data, 2 in market, 1 in model) più 6 __init__.py […]" →
-src/shk/ contiene 18 moduli applicativi (6 in kelly, 4 in stats, 4 in data, 2 in market, 2 in model) più 6 __init__.py [V, R1@2026-09-29b, R11 e R19@2026-09-29b; conteggio ricalcolato dal supervisore]
-
-Moduli e responsabilità → "src/shk/model/elo.py — funzioni pure, … [V, R11@2026-09-29b per i test verdi; D per le firme esatte e per l'uso di elo_delta ed expected_score dentro elo_update]" →
-(stesso testo fino a "della stessa forma", poi) [V, R11@2026-09-29b per i test verdi; firme e tipi restituiti V, R16@2026-09-29b; elo_update calcola delta con elo_delta ed E con expected_score, righe 228-230, seguite da assert isinstance(e, float), V, R17@2026-09-29b]
-
-Moduli e responsabilità → (nuove righe, dopo quelle di src/shk/model/elo.py) →
-src/shk/model/elo_predictor.py — funzioni pubbliche:
-- compute_season_standings(df) → DataFrame ordinato con almeno team, points, goal_diff, goals_for;
-- predict_elo_walkforward(df, seasons_to_predict, k, h, nu, s=400.0, initial_rating=1500.0) e predict_elo_fast con la stessa firma → DataFrame con season, Date, HomeTeam, AwayTeam, rating_home, rating_away, delta, p_home, p_draw, p_away, home_promotion, away_promotion;
-- diagnose_season_transitions(df) → DataFrame con una riga per stagione dalla seconda: season, n_teams, n_promoted_new, promoted_new, n_promoted_returning, promoted_returning, promoted_total, n_relegated_actual, relegated_actual, relegated_calculated, relegation_agreement.
-[V, R19–R21@2026-09-29b per l'uso; D per le firme esatte, prese dal piano approvato]
-src/shk/model/elo_predictor.py — parti interne: _EloTracker (consume_match, predict_match, _ensure_season), condiviso dai due percorsi; _get_field, _validate_inputs, _parse_season_start_year; _CALC_COLS = Date, season, HomeTeam, AwayTeam, FTR, FTHG, FTAG [V, R21@2026-09-29b]
-src/shk/model/elo_predictor.py — regola di ingresso: alla prima riga di s si congelano la classifica di s − 1 e la media dei rating finali delle sue ultime tre. Ogni squadra riceve rating e stato alla sua prima comparsa in s, una sola volta. Nella prima stagione del DataFrame tutte le squadre partono da initial_rating con stato "" [D, piano approvato; coperta da test verdi, R19@2026-09-29b]
-src/shk/model/elo_predictor.py — validazioni: ValueError per FTR fuori da H, D, A, colonne mancanti (Date, season, HomeTeam, AwayTeam, FTHG, FTAG), stagioni non consecutive, stagione decrescente lungo Date, df non ordinato, parametri non validi; TypeError per tipi sbagliati e per seasons_to_predict str [V, R19@2026-09-29b, test verdi]
-src/shk/model/elo_predictor.py — percorsi:
-- via fornitore: chiama assert_no_leakage su ogni coppia e consuma la storia nuova proiettata su _CALC_COLS;
-- veloce: una passata con itertools.groupby per Date su df[_CALC_COLS].itertuples; le partite di una data si prevedono prima di aggiornare con quella data.
-Sui dati reali i due percorsi danno CSV identici byte per byte: SHA256 0b3048a7a170e7e149f6cb96c2790e36d3f05010a4d5ce35e1ea0febc1fcbce1 con K = 20, h = 60, ν = 1 [V, R21@2026-09-29b]
-
-Moduli e responsabilità → "tests/ — 18 moduli: … test_elo, … [V, R1@2026-09-29b e R11@2026-09-29b]" →
-tests/ — 19 moduli: test_kelly_core, test_simulate, test_estimation, test_staking, test_metrics, test_anova, test_timeseries, test_calibration, test_data_loading, test_coverage, test_split, test_devig, test_leakage, test_elo, test_elo_predictor, test_us_c1_1_acceptance, test_us_c1_2_acceptance, test_us_c2_acceptance, test_us_c3_2_acceptance [V, R1, R11 e R19@2026-09-29b]
-
-Moduli e responsabilità → (nuova riga, dopo quella di tests/test_elo.py) →
-tests/test_elo_predictor.py — 8 test veloci:
-- invarianza al futuro: una sola funzione di controllo, verify_future_invariance (righe 92-147), applicata al percorso via fornitore, al percorso veloce e al mutante predict_elo_mutant_update_before_predict; date di taglio 2001-08-18, 2001-08-25, 2002-08-17;
-- invarianza alle quote; regola delle neopromosse calcolata a mano; equivalenza fra i due percorsi su dati sintetici e reali (i reali si saltano senza CSV); transizioni sui dati reali; validazioni; determinismo.
-Costanti di test: K = 20, h = 60, ν = 1, s = 400, rating iniziale 1500.
-[V, R20@2026-09-29b; costanti dal piano, D]
-
-Moduli e responsabilità → "Classi del pacchetto: Scenario, StakingMoments, OneWayAnovaResult, RejectionResult, PhiStreams, ColumnClassification, SplitConfig, TestSetLockedError, LeakageError [V, R1@2026-09-29b]; nessun'altra [D]" →
-Classi del pacchetto: Scenario, StakingMoments, OneWayAnovaResult, RejectionResult, PhiStreams, ColumnClassification, SplitConfig, TestSetLockedError, LeakageError [V, R1@2026-09-29b], più la classe interna _EloTracker di src/shk/model/elo_predictor.py [V, R21@2026-09-29b]; nessun'altra [D]
-
-Flussi principali → (nuove righe, dopo quella del Modulo 1 Elo di T20) →
-Transizioni reali dal 1993-94 al 2022-23 (29) [V, R21@2026-09-29b; somme del supervisore dallo stdout]:
-- 22 squadre nel 1993-94 e nel 1994-95, 20 dopo;
-- entrate 86: 28 nuove, 58 tornanti. Ne entrano 2 al 1995-96 e 3 alle altre transizioni; ne escono 4 al 1995-96 e 3 alle altre;
-- nomi squadra coerenti fra stagioni secondo questo criterio.
-Accordo fra ultime tre calcolate e uscite effettive: 3 in ogni transizione tranne il 1997-98, dove vale 2. Classifica 1996-97 calcolata dai risultati: Everton 42, Southampton 41 (−6), Coventry 41 (−16), Sunderland 40 (−18), Nott'm Forest 34 (−28); il Middlesbrough non è fra le ultime tre. Le penalizzazioni non sono nei dati [V, R20@2026-09-29b]
-Tempi del previsore Elo sui dati reali (8 360 partite previste): percorso veloce 0.35 s, via fornitore 10.58 s. Prima del secondo correttivo di T21 erano 31.71 s e 30.31 s; il profilo attribuiva 68.7 dei 72 s profilati a itertuples su tutte le colonne, 3 199 volte [V, R20 e R21@2026-09-29b]
-
-Convenzioni da rispettare → "- file di S4: src/shk/model/ [V, R11@2026-09-29b, Select-String]." →
-- file di S4: src/shk/model/elo.py [V, R11@2026-09-29b, Select-String]; src/shk/model/elo_predictor.py [V, R19@2026-09-29b, prima del secondo correttivo di T21; D dopo].
-
-Zone fragili da non toccare senza avviso → (nuova riga, in fondo) →
-I due percorsi di src/shk/model/elo_predictor.py iterano solo sulle colonne di _CALC_COLS: un calcolo che usa un'altra colonna deve aggiungerla a _CALC_COLS [D]. Dopo ogni modifica al file, il confronto dello SHA256 delle previsioni con 0b3048a7…cbce1 (K = 20, h = 60, ν = 1) mostra se l'output è cambiato [V, R21@2026-09-29b]
-
-Ultimo aggiornamento → "R14@2026-09-29b — task di scrittura chiusi dopo la mappa del 2026-09-29b: T20" →
-R21@2026-09-29b — task di scrittura chiusi dopo la mappa del 2026-09-29b: T20, T21
-
-
----
-
-Stato repo → "… Commit del programmatore per T20: 7f8e928 "Add Elo rating model and 1X2 mappings". A inizio T21 HEAD su C4 a 7f8e928, working tree pulito [V, R15@2026-09-29b]. Dopo T21 il working tree contiene, non committati, src/shk/model/elo_predictor.py, tests/test_elo_predictor.py, .agent/report/T21.md [D]" →
-… Commit del programmatore: 7f8e928 "Add Elo rating model and 1X2 mappings" (T20), 4710045 "Add Elo walk-forward predictor and tests" (T21). A inizio T22 HEAD su C4 a 4710045, working tree pulito [V, R22@2026-09-29b]. Dopo T22 il working tree contiene, non committati, src/shk/model/elo_fit.py, scripts/us_c4_1_elo_walkforward.py, tests/test_us_c4_1_acceptance.py, results/us_c4_1_elo_walkforward.csv, thesis/figures/us_c4_1_elo_walkforward.png, .agent/report/T22.md [D]
-
-Stack e comandi → "… Dopo T21: 220 verdi (più 8 di test_elo_predictor.py), 14 deselezionati, 28.48 s; tests/test_elo_predictor.py da solo 13.52 s, con i dati locali presenti [V, R21@2026-09-29b]" →
-… Dopo T21: 220 verdi (più 8 di test_elo_predictor.py), 14 deselezionati, 28.48 s; tests/test_elo_predictor.py da solo 13.52 s, con i dati locali presenti [V, R21@2026-09-29b]. Dopo T22: 226 verdi (più 6 di test_us_c4_1_acceptance.py), 15 deselezionati, 33.56 s [V, R23@2026-09-29b]
-
-Stack e comandi → "Test slow: 14 (9 di C1, 5 di C2). Ultimo esito: 13 verdi e 1 rosso per il risultato noto test_acceptance_calibrated_phi_zero_within_mc_interval; pytest -m slow dura circa 117 s [V, R14@2026-09-28; non rieseguiti dopo]" →
-Test slow: 15 (9 di C1, 5 di C2, 1 di C4). I 14 di C1 e C2 all'ultimo esito: 13 verdi e 1 rosso per il risultato noto test_acceptance_calibrated_phi_zero_within_mc_interval, circa 117 s [V, R14@2026-09-28; non rieseguiti dopo]. Quello di C4, test_elo_fits_matches_data_recalibration, è verde in 119.09 s [V, R23@2026-09-29b]
-
-Stack e comandi → (nuova riga, dopo "Esperimento C3.2: …") →
-Esperimento C4.1: .\.venv\Scripts\python.exe scripts/us_c4_1_elo_walkforward.py dalla radice, con data/raw/E0/ presente, circa 49 s. Due esecuzioni danno CSV identici, SHA256 92716bc7e6aa6a7b798370a09d1b31b33b0c0a49311bf35cd810f7975489f282 [V, R23@2026-09-29b]
-
-Moduli e responsabilità → "src/shk/ contiene 18 moduli applicativi (6 in kelly, 4 in stats, 4 in data, 2 in market, 2 in model) più 6 __init__.py […]" →
-src/shk/ contiene 19 moduli applicativi (6 in kelly, 4 in stats, 4 in data, 2 in market, 3 in model) più 6 __init__.py [V, R1@2026-09-29b, R11, R19 e R23@2026-09-29b; conteggio ricalcolato dal supervisore]
-
-Moduli e responsabilità → (nuove righe, dopo quelle di src/shk/model/elo_predictor.py) →
-src/shk/model/elo_fit.py — funzioni:
-- derive_fit_schedule(cfg) → dict dalla stagione del fit a {"training": […], "validation": […]}, derivato da SplitConfig;
-- calibrate_all_fits(df, schedule) → dict dalla stagione del fit a un risultato con success, message, nit, nfev, duration_seconds, k, h, nu, c, log_loss_train, log_loss_train_baseline, n_train_matches, is_on_boundary;
-- parse_season_start_year, pubblica: duplica _parse_season_start_year di elo_predictor.py.
-Tipi e costanti: EloFitParams (NamedTuple: k, h, nu, c); ELO_FITS; WALKFORWARD_CSV_COLUMNS (15 colonne); limiti, punto iniziale e opzioni di Nelder-Mead; griglie dei profili.
-[V, R23@2026-09-29b per l'uso; D per le firme esatte e per i nomi delle costanti non citati nei comandi]
-src/shk/model/elo_fit.py — ELO_FITS, congelato il 2026-09-29 [V, R23@2026-09-29b; coincide con la ricalibrazione entro rel_tol 1e-9]:
-- "2000-01": K = 10.318224689650037, h = 125.54022316884253, ν = 0.8062246331085681, c = 0.2657894736842105;
-- "2010-11": K = 9.934776455088759, h = 127.87791672140764, ν = 0.8775613268630023, c = 0.2789473684210526;
-- "2020-21": K = 7.928543266007228, h = 78.033626101627, ν = 0.7603760315281511, c = 0.25877192982456143.
-scripts/us_c4_1_elo_walkforward.py — run_experiment(): dati solo con load_by_role; CSV di 9 500 righe e 15 colonne (per fit: prima training, poi validation); PNG a due pannelli con i profili della log-loss di training in K e in h, calcolati da ELO_FITS [V, R23@2026-09-29b; D per i dettagli]
-
-Moduli e responsabilità → "tests/ — 19 moduli: … test_elo_predictor, test_us_c1_1_acceptance, … [V, R1, R11 e R19@2026-09-29b]" →
-tests/ — 20 moduli: test_kelly_core, test_simulate, test_estimation, test_staking, test_metrics, test_anova, test_timeseries, test_calibration, test_data_loading, test_coverage, test_split, test_devig, test_leakage, test_elo, test_elo_predictor, test_us_c1_1_acceptance, test_us_c1_2_acceptance, test_us_c2_acceptance, test_us_c3_2_acceptance, test_us_c4_1_acceptance [V, R1, R11, R19 e R23@2026-09-29b]
-
-Moduli e responsabilità → (nuova riga, dopo quella di tests/test_elo_predictor.py) →
-tests/test_us_c4_1_acceptance.py — 7 test:
-- veloci: test_calibration_training_only_synthetic, test_calibration_objective_matches_count_real_data, test_csv_validation_leakage_and_uniqueness, test_versioned_csv_schema_and_probabilities, test_recomputed_predictions_match_csv;
-- slow: test_elo_fits_matches_data_recalibration (119.09 s).
-I test sui dati reali si saltano senza CSV; nessun test esegue lo script.
-[V, R23@2026-09-29b]
-
-Moduli e responsabilità → "Classi del pacchetto: … più la classe interna _EloTracker di src/shk/model/elo_predictor.py [V, R21@2026-09-29b]; nessun'altra [D]" →
-Classi del pacchetto: Scenario, StakingMoments, OneWayAnovaResult, RejectionResult, PhiStreams, ColumnClassification, SplitConfig, TestSetLockedError, LeakageError [V, R1@2026-09-29b], EloFitParams [V, R23@2026-09-29b], più la classe interna _EloTracker di src/shk/model/elo_predictor.py [V, R21@2026-09-29b]; nessun'altra [D]
-
-Flussi principali → (nuove righe, dopo quelle del previsore Elo di T21) →
-Esperimento C4.1, calibrazione espansiva Nelder-Mead [V, R23@2026-09-29b; c e durate ricalcolati dal supervisore]:
-- tutti i fit con success = True, nessun parametro su un limite;
-- nit/nfev 103/185, 158/284, 107/194; durate 14.80, 49.59, 52.54 s, in tutto 116.93 s;
-- partite di training 380, 760, 1 140; pareggi 101, 212, 295, cioè 111 nel 2010-11 e 83 nel 2020-21.
-Esperimento C4.1, log-loss (Davidson / baseline a pareggio costante) [V, R23@2026-09-29b]:
-- fit 2000-01: training 1.008189 / 1.014931; validazione (3 040 partite) 0.973761 / 0.976755;
-- fit 2010-11: training 1.008987 / 1.015189; validazione (3 420) 0.983832 / 0.990144;
-- fit 2020-21: training 1.020937 / 1.024782; validazione (760) 0.983300 / 0.987629.
-Frequenza del pareggio in validazione: 0.255263, 0.241228, 0.230263.
-Media dei rating a inizio stagione, con i parametri di ciascun fit: 1500 nel 1993-94 e nel 1994-95; dal 1995-96 fra 1502.3 e 1524.9, con il massimo nel 2022-23 [V, R23@2026-09-29b; tabella in .agent/report/T22.md]
-
-Convenzioni da rispettare → "Parametri condivisi fra script e test in un modulo di libreria importato da entrambi: scenarios.py per C1.2, false_rejection.py per C2, coverage.py e divergence.py (con split.toml) per C3. C1.1 è l'eccezione storica [V, R1@2026-09-29b]" →
-Parametri condivisi fra script e test in un modulo di libreria importato da entrambi: scenarios.py per C1.2, false_rejection.py per C2, coverage.py e divergence.py (con split.toml) per C3, elo_fit.py per C4.1. C1.1 è l'eccezione storica [V, R1@2026-09-29b e R23@2026-09-29b]
-
-Convenzioni da rispettare → "- file di S4: src/shk/model/elo.py [V, R11@2026-09-29b, Select-String]; src/shk/model/elo_predictor.py [V, R19@2026-09-29b, prima del secondo correttivo di T21; D dopo]." →
-- file di S4: src/shk/model/elo.py [V, R11@2026-09-29b, Select-String]; src/shk/model/elo_predictor.py [V, R19@2026-09-29b, prima del secondo correttivo di T21; D dopo]; src/shk/model/elo_fit.py [V, R23@2026-09-29b, Select-String].
-
-Zone fragili da non toccare senza avviso → (nuove righe, in fondo) →
-ELO_FITS in src/shk/model/elo_fit.py è congelato e non si modifica: T23 e T24 lo vietano esplicitamente. Una modifica a elo.py o elo_predictor.py che cambia le previsioni rende ELO_FITS e results/us_c4_1_elo_walkforward.csv incoerenti col codice: vanno ricalibrati e rigenerati, e lo segnalano test_recomputed_predictions_match_csv (in locale) e il test slow di ricalibrazione [D]
-Rieseguire scripts/us_c4_1_elo_walkforward.py sovrascrive CSV e PNG versionati; dura circa 49 s [V, R23@2026-09-29b]
-
-Ultimo aggiornamento → "R21@2026-09-29b — task di scrittura chiusi dopo la mappa del 2026-09-29b: T20, T21" →
-R23@2026-09-29b — task di scrittura chiusi dopo la mappa del 2026-09-29b: T20, T21, T22
-
----
-
-Stato repo → "… Commit del programmatore: 7f8e928 … (T20), 4710045 … (T21). A inizio T22 HEAD su C4 a 4710045, working tree pulito [V, R22@2026-09-29b]. Dopo T22 il working tree contiene, non committati, … [D]" →
-… Commit del programmatore: 7f8e928 "Add Elo rating model and 1X2 mappings" (T20), 4710045 "Add Elo walk-forward predictor and tests" (T21), 15b2204 "Finita task 22" (T22). A inizio T23 HEAD su C4 a 15b2204, working tree pulito [V, R24@2026-09-29b]. Dopo T23 il working tree contiene, non committati, src/shk/model/scoring.py, scripts/us_c4_2_g_hat.py, tests/test_scoring.py, tests/test_us_c4_2_acceptance.py, results/us_c4_2_g_hat.csv, thesis/figures/us_c4_2_g_hat.png, .agent/report/T23.md [D]
-
-Stack e comandi → "… Dopo T22: 226 verdi (più 6 di test_us_c4_1_acceptance.py), 15 deselezionati, 33.56 s [V, R23@2026-09-29b]" →
-… Dopo T22: 226 verdi (più 6 di test_us_c4_1_acceptance.py), 15 deselezionati, 33.56 s [V, R23@2026-09-29b]. Dopo T23: 237 verdi (più 11 di test_scoring.py e test_us_c4_2_acceptance.py), 15 deselezionati, 38.08 s [V, R26@2026-09-29b]
-
-Stack e comandi → (nuova riga, dopo "Esperimento C4.1: …") →
-Esperimento C4.2: .\.venv\Scripts\python.exe scripts/us_c4_2_g_hat.py dalla radice, con data/raw/E0/ presente. Due esecuzioni danno CSV identici, SHA256 e076f16f6a39606a4fcba04be5679a1fa0d7ce9f1c44893df47df79e39dee3a9 [V, R26@2026-09-29b]; durata non misurata [D]
-
-Moduli e responsabilità → "src/shk/ contiene 19 moduli applicativi (…, 3 in model) più 6 __init__.py […]" →
-src/shk/ contiene 20 moduli applicativi (6 in kelly, 4 in stats, 4 in data, 2 in market, 4 in model) più 6 __init__.py [V, R1@2026-09-29b, R11, R19, R23 e R26@2026-09-29b; conteggio ricalcolato dal supervisore]
-
-Moduli e responsabilità → (nuove righe, dopo quelle di src/shk/model/elo_fit.py) →
-src/shk/model/scoring.py — costruzione dell'insieme di valutazione, riusata da T24:
-- generate_validation_predictions(df, fits, schedule): previsioni di validazione per fit;
-- align_predictions_with_odds(df_preds, df): abbinamento su season, Date, HomeTeam, AwayTeam, con ValueError per chiavi mancanti o duplicate;
-- prepare_series_evaluation(df_aligned, series, schedule) → oggetto con matches_total, missing_odds, invalid_odds, additive_inapplicable, matches_excluded, matches_used, più probabilità del modello e q dei tre metodi.
-Serie "b365_prematch" (B365H/D/A) e "pinnacle_closing" (PSCH/D/A, stagioni di validazione con anno iniziale ≥ 2012).
-[V, R26@2026-09-29b per l'uso; D per le firme esatte e per i contenuti del risultato non stampati]
-src/shk/model/scoring.py — metriche: log-loss per partita e media, termini di ĝ, ĝ, ĝ cumulativo. Nessun eps: probabilità dell'esito realizzato ≤ 0 → ValueError; matrici (N, 3) con righe che sommano a 1 entro 1e-9 [D, piano approvato; test verdi R26@2026-09-29b]
-scripts/us_c4_2_g_hat.py — run_experiment(): dati con load_by_role, funzioni di scoring.py; CSV lungo con 6 righe summary e una riga cumulative per partita, serie e metodo; PNG a due pannelli (una serie ciascuno, tre metodi, linea dello zero) [V, R26@2026-09-29b; D per i dettagli]
-
-Moduli e responsabilità → "tests/ — 20 moduli: … test_us_c4_1_acceptance [V, R1, R11, R19 e R23@2026-09-29b]" →
-tests/ — 22 moduli: test_kelly_core, test_simulate, test_estimation, test_staking, test_metrics, test_anova, test_timeseries, test_calibration, test_data_loading, test_coverage, test_split, test_devig, test_leakage, test_elo, test_elo_predictor, test_scoring, test_us_c1_1_acceptance, test_us_c1_2_acceptance, test_us_c2_acceptance, test_us_c3_2_acceptance, test_us_c4_1_acceptance, test_us_c4_2_acceptance [V, R1, R11, R19, R23 e R26@2026-09-29b]
-
-Moduli e responsabilità → (nuova riga, dopo quella di tests/test_us_c4_1_acceptance.py) →
-tests/test_scoring.py — 7 test veloci su dati sintetici: validazioni, log-loss, ĝ con p = q e caso a mano, serie cumulativa, preparazione della serie, validazioni delle chiavi. tests/test_us_c4_2_acceptance.py — 4 test: schema e riepilogo del CSV, coerenza delle cumulative, esistenza della figura, ricalcolo dai dati reali (saltato senza CSV) [V, R26@2026-09-29b]
-
-Flussi principali → (nuove righe, dopo quelle dell'esperimento C4.1) →
-Esperimento C4.2 [V, R24 e R26@2026-09-29b; log-loss e ĝ ricalcolati dal supervisore]:
-- PSCH/PSCD/PSCA completa (380 su 380) in ogni stagione dal 2012-13 al 2022-23;
-- devig_power converge sui 3 800 mercati PSC di validazione;
-- partite usate: b365_prematch 7 220, pinnacle_closing 3 800; nessuna esclusione;
-- log-loss del modello: 0.979536 (B365), 0.981229 (Pinnacle); la prima è la media pesata delle log-loss di validazione dei tre fit.
-ĝ (proporzionale / additivo / power) [V, R26@2026-09-29b]:
-- b365_prematch −0.021429 / −0.022401 / −0.022402;
-- pinnacle_closing −0.031474 / −0.031572 / −0.031672.
-Negativo in tutti i casi e in ogni fine stagione del cumulativo.
-
-Convenzioni da rispettare → "Parametri condivisi … elo_fit.py per C4.1. C1.1 è l'eccezione storica […]" →
-Parametri condivisi fra script e test in un modulo di libreria importato da entrambi: scenarios.py per C1.2, false_rejection.py per C2, coverage.py e divergence.py (con split.toml) per C3, elo_fit.py per C4.1, scoring.py per C4.2. C1.1 è l'eccezione storica [V, R1@2026-09-29b, R23 e R26@2026-09-29b]
-
-Convenzioni da rispettare → "- file di S4: … src/shk/model/elo_fit.py [V, R23@2026-09-29b, Select-String]." →
-- file di S4: src/shk/model/elo.py [V, R11@2026-09-29b, Select-String]; src/shk/model/elo_predictor.py [V, R19@2026-09-29b, prima del secondo correttivo di T21; D dopo]; src/shk/model/elo_fit.py [V, R23@2026-09-29b, Select-String]; src/shk/model/scoring.py non controllato [D].
-
-Zone fragili da non toccare senza avviso → "ELO_FITS in src/shk/model/elo_fit.py è congelato e non si modifica: … [D]" →
-ELO_FITS in src/shk/model/elo_fit.py è congelato e non si modifica: T23 e T24 lo vietano esplicitamente. Una modifica a elo.py, elo_predictor.py o scoring.py che cambia le previsioni o le metriche rende ELO_FITS, results/us_c4_1_elo_walkforward.csv e results/us_c4_2_g_hat.csv incoerenti col codice: vanno ricalibrati e rigenerati. Lo segnalano, in locale, test_recomputed_predictions_match_csv, test_recalculation_from_real_data_matches_csv e il test slow di ricalibrazione [D]
-
-Ultimo aggiornamento → "R23@2026-09-29b — task di scrittura chiusi dopo la mappa del 2026-09-29b: T20, T21, T22" →
-R26@2026-09-29b — task di scrittura chiusi dopo la mappa del 2026-09-29b: T20, T21, T22, T23
+R30@2026-09-29b — task di scrittura chiusi dopo la mappa del 2026-09-29b: T20, T21, T22, T23, T24
