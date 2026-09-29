@@ -304,6 +304,7 @@ Versionamento dei CSV E0: oggi sono esclusi da .gitignore, quindi in CI i test s
 ## Ultimo aggiornamento
 R6@2026-09-29b — task di scrittura chiusi dopo la mappa del 2026-09-29b: nessuno
 
+----
 
 Stato repo → (nuova riga, dopo "Branch locali: solo main. …") →
 Dopo la mappa: branch C4 creato da 90a77a1 con due commit solo su .agent/ (4b9e6c1 "Refresh C3 project documentation", 475f65f "Update BACKLOG.md"; diff solo su BACKLOG.md, MAPPA.md, SCHEDA.md). A inizio T20 HEAD su C4 a 475f65f, working tree pulito [V, R7 e R11@2026-09-29b]. Dopo T20 il working tree contiene, non committati, src/shk/model/__init__.py, src/shk/model/elo.py, tests/test_elo.py, .agent/report/T20.md [D]
@@ -351,3 +352,61 @@ Esito della CI dopo 90a77a1 (pandas più recente, test S3 sintetici): non verifi
 
 Ultimo aggiornamento → "R6@2026-09-29b — task di scrittura chiusi dopo la mappa del 2026-09-29b: nessuno" →
 R14@2026-09-29b — task di scrittura chiusi dopo la mappa del 2026-09-29b: T20
+
+-------
+
+Stato repo → "Dopo la mappa: branch C4 creato da 90a77a1 con due commit solo su .agent/ (…). A inizio T20 HEAD su C4 a 475f65f, working tree pulito [V, R7 e R11@2026-09-29b]. Dopo T20 il working tree contiene, non committati, src/shk/model/__init__.py, src/shk/model/elo.py, tests/test_elo.py, .agent/report/T20.md [D]" →
+Dopo la mappa: branch C4 creato da 90a77a1 con due commit solo su .agent/ (4b9e6c1 "Refresh C3 project documentation", 475f65f "Update BACKLOG.md") [V, R7 e R11@2026-09-29b]. Commit del programmatore per T20: 7f8e928 "Add Elo rating model and 1X2 mappings". A inizio T21 HEAD su C4 a 7f8e928, working tree pulito [V, R15@2026-09-29b]. Dopo T21 il working tree contiene, non committati, src/shk/model/elo_predictor.py, tests/test_elo_predictor.py, .agent/report/T21.md [D]
+
+Stack e comandi → "… Dopo T20: 212 verdi (più 31 di test_elo.py), 14 deselezionati, 13.92 s [V, R11@2026-09-29b]" →
+… Dopo T20: 212 verdi (più 31 di test_elo.py), 14 deselezionati, 13.92 s [V, R11@2026-09-29b]. Dopo T21: 220 verdi (più 8 di test_elo_predictor.py), 14 deselezionati, 28.48 s; tests/test_elo_predictor.py da solo 13.52 s, con i dati locali presenti [V, R21@2026-09-29b]
+
+Moduli e responsabilità → "src/shk/ contiene 17 moduli applicativi (6 in kelly, 4 in stats, 4 in data, 2 in market, 1 in model) più 6 __init__.py […]" →
+src/shk/ contiene 18 moduli applicativi (6 in kelly, 4 in stats, 4 in data, 2 in market, 2 in model) più 6 __init__.py [V, R1@2026-09-29b, R11 e R19@2026-09-29b; conteggio ricalcolato dal supervisore]
+
+Moduli e responsabilità → "src/shk/model/elo.py — funzioni pure, … [V, R11@2026-09-29b per i test verdi; D per le firme esatte e per l'uso di elo_delta ed expected_score dentro elo_update]" →
+(stesso testo fino a "della stessa forma", poi) [V, R11@2026-09-29b per i test verdi; firme e tipi restituiti V, R16@2026-09-29b; elo_update calcola delta con elo_delta ed E con expected_score, righe 228-230, seguite da assert isinstance(e, float), V, R17@2026-09-29b]
+
+Moduli e responsabilità → (nuove righe, dopo quelle di src/shk/model/elo.py) →
+src/shk/model/elo_predictor.py — funzioni pubbliche:
+- compute_season_standings(df) → DataFrame ordinato con almeno team, points, goal_diff, goals_for;
+- predict_elo_walkforward(df, seasons_to_predict, k, h, nu, s=400.0, initial_rating=1500.0) e predict_elo_fast con la stessa firma → DataFrame con season, Date, HomeTeam, AwayTeam, rating_home, rating_away, delta, p_home, p_draw, p_away, home_promotion, away_promotion;
+- diagnose_season_transitions(df) → DataFrame con una riga per stagione dalla seconda: season, n_teams, n_promoted_new, promoted_new, n_promoted_returning, promoted_returning, promoted_total, n_relegated_actual, relegated_actual, relegated_calculated, relegation_agreement.
+[V, R19–R21@2026-09-29b per l'uso; D per le firme esatte, prese dal piano approvato]
+src/shk/model/elo_predictor.py — parti interne: _EloTracker (consume_match, predict_match, _ensure_season), condiviso dai due percorsi; _get_field, _validate_inputs, _parse_season_start_year; _CALC_COLS = Date, season, HomeTeam, AwayTeam, FTR, FTHG, FTAG [V, R21@2026-09-29b]
+src/shk/model/elo_predictor.py — regola di ingresso: alla prima riga di s si congelano la classifica di s − 1 e la media dei rating finali delle sue ultime tre. Ogni squadra riceve rating e stato alla sua prima comparsa in s, una sola volta. Nella prima stagione del DataFrame tutte le squadre partono da initial_rating con stato "" [D, piano approvato; coperta da test verdi, R19@2026-09-29b]
+src/shk/model/elo_predictor.py — validazioni: ValueError per FTR fuori da H, D, A, colonne mancanti (Date, season, HomeTeam, AwayTeam, FTHG, FTAG), stagioni non consecutive, stagione decrescente lungo Date, df non ordinato, parametri non validi; TypeError per tipi sbagliati e per seasons_to_predict str [V, R19@2026-09-29b, test verdi]
+src/shk/model/elo_predictor.py — percorsi:
+- via fornitore: chiama assert_no_leakage su ogni coppia e consuma la storia nuova proiettata su _CALC_COLS;
+- veloce: una passata con itertools.groupby per Date su df[_CALC_COLS].itertuples; le partite di una data si prevedono prima di aggiornare con quella data.
+Sui dati reali i due percorsi danno CSV identici byte per byte: SHA256 0b3048a7a170e7e149f6cb96c2790e36d3f05010a4d5ce35e1ea0febc1fcbce1 con K = 20, h = 60, ν = 1 [V, R21@2026-09-29b]
+
+Moduli e responsabilità → "tests/ — 18 moduli: … test_elo, … [V, R1@2026-09-29b e R11@2026-09-29b]" →
+tests/ — 19 moduli: test_kelly_core, test_simulate, test_estimation, test_staking, test_metrics, test_anova, test_timeseries, test_calibration, test_data_loading, test_coverage, test_split, test_devig, test_leakage, test_elo, test_elo_predictor, test_us_c1_1_acceptance, test_us_c1_2_acceptance, test_us_c2_acceptance, test_us_c3_2_acceptance [V, R1, R11 e R19@2026-09-29b]
+
+Moduli e responsabilità → (nuova riga, dopo quella di tests/test_elo.py) →
+tests/test_elo_predictor.py — 8 test veloci:
+- invarianza al futuro: una sola funzione di controllo, verify_future_invariance (righe 92-147), applicata al percorso via fornitore, al percorso veloce e al mutante predict_elo_mutant_update_before_predict; date di taglio 2001-08-18, 2001-08-25, 2002-08-17;
+- invarianza alle quote; regola delle neopromosse calcolata a mano; equivalenza fra i due percorsi su dati sintetici e reali (i reali si saltano senza CSV); transizioni sui dati reali; validazioni; determinismo.
+Costanti di test: K = 20, h = 60, ν = 1, s = 400, rating iniziale 1500.
+[V, R20@2026-09-29b; costanti dal piano, D]
+
+Moduli e responsabilità → "Classi del pacchetto: Scenario, StakingMoments, OneWayAnovaResult, RejectionResult, PhiStreams, ColumnClassification, SplitConfig, TestSetLockedError, LeakageError [V, R1@2026-09-29b]; nessun'altra [D]" →
+Classi del pacchetto: Scenario, StakingMoments, OneWayAnovaResult, RejectionResult, PhiStreams, ColumnClassification, SplitConfig, TestSetLockedError, LeakageError [V, R1@2026-09-29b], più la classe interna _EloTracker di src/shk/model/elo_predictor.py [V, R21@2026-09-29b]; nessun'altra [D]
+
+Flussi principali → (nuove righe, dopo quella del Modulo 1 Elo di T20) →
+Transizioni reali dal 1993-94 al 2022-23 (29) [V, R21@2026-09-29b; somme del supervisore dallo stdout]:
+- 22 squadre nel 1993-94 e nel 1994-95, 20 dopo;
+- entrate 86: 28 nuove, 58 tornanti. Ne entrano 2 al 1995-96 e 3 alle altre transizioni; ne escono 4 al 1995-96 e 3 alle altre;
+- nomi squadra coerenti fra stagioni secondo questo criterio.
+Accordo fra ultime tre calcolate e uscite effettive: 3 in ogni transizione tranne il 1997-98, dove vale 2. Classifica 1996-97 calcolata dai risultati: Everton 42, Southampton 41 (−6), Coventry 41 (−16), Sunderland 40 (−18), Nott'm Forest 34 (−28); il Middlesbrough non è fra le ultime tre. Le penalizzazioni non sono nei dati [V, R20@2026-09-29b]
+Tempi del previsore Elo sui dati reali (8 360 partite previste): percorso veloce 0.35 s, via fornitore 10.58 s. Prima del secondo correttivo di T21 erano 31.71 s e 30.31 s; il profilo attribuiva 68.7 dei 72 s profilati a itertuples su tutte le colonne, 3 199 volte [V, R20 e R21@2026-09-29b]
+
+Convenzioni da rispettare → "- file di S4: src/shk/model/ [V, R11@2026-09-29b, Select-String]." →
+- file di S4: src/shk/model/elo.py [V, R11@2026-09-29b, Select-String]; src/shk/model/elo_predictor.py [V, R19@2026-09-29b, prima del secondo correttivo di T21; D dopo].
+
+Zone fragili da non toccare senza avviso → (nuova riga, in fondo) →
+I due percorsi di src/shk/model/elo_predictor.py iterano solo sulle colonne di _CALC_COLS: un calcolo che usa un'altra colonna deve aggiungerla a _CALC_COLS [D]. Dopo ogni modifica al file, il confronto dello SHA256 delle previsioni con 0b3048a7…cbce1 (K = 20, h = 60, ν = 1) mostra se l'output è cambiato [V, R21@2026-09-29b]
+
+Ultimo aggiornamento → "R14@2026-09-29b — task di scrittura chiusi dopo la mappa del 2026-09-29b: T20" →
+R21@2026-09-29b — task di scrittura chiusi dopo la mappa del 2026-09-29b: T20, T21

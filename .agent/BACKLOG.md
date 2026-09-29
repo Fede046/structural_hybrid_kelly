@@ -233,7 +233,7 @@ Valori misurati:
 Report: .agent/report/T20.md.
 
 ### Task 21 — Previsore Elo walk-forward con regola per le neopromosse, US-C4.1
-Stato: da fare
+Stato: fatto
 
 Obiettivo: dato un DataFrame di partite e un unico terno (K, h, ν), un previsore restituisce, per ogni partita delle stagioni richieste, rating, delta e probabilità 1X2 calcolati solo con partite già giocate. Il previsore applica la regola dichiarata per le neopromosse ed è verificato da test anti-leakage.
 
@@ -307,7 +307,26 @@ Da misurare e riportare, senza farlo tornare:
 - l'accordo fra le ultime tre calcolate e le squadre effettivamente uscite;
 - i tempi dei due percorsi sui dati reali.
 
-Esito: —
+Esito: 2026-09-29 — file toccati: src/shk/model/elo_predictor.py, tests/test_elo_predictor.py.
+Deviazioni:
+- correzioni del supervisore al piano:
+  - regola di ingresso applicata squadra per squadra alla prima comparsa in s, con classifica di s − 1 e media delle ultime tre congelate alla prima riga di s;
+  - ValueError per stagioni non consecutive o decrescenti lungo Date e per FTHG o FTAG mancanti;
+  - classe interna _EloTracker condivisa dai due percorsi;
+  - una sola funzione di controllo dell'invarianza, applicata a fornitore, percorso veloce e mutante;
+- helper _get_field per leggere i campi da namedtuple, dict e Series;
+- primo correttivo, sul report: tolti un comando non eseguito e una nota con numeri non misurati; aggiunti la classifica 1996-97 da comando e il profilo del percorso veloce;
+- secondo correttivo, per decisione del programmatore: i due percorsi iterano solo sulle 7 colonne usate dal calcolo (_CALC_COLS), selezionate una volta. Output invariato: SHA256 identico prima e dopo e fra i due percorsi;
+- nel secondo correttivo Cline ha eseguito tre prototipi di sola lettura con funzioni interne, non elencati nel report;
+- la sezione 2 del report nomina mutante e confronto (_MutantEloTracker, res_orig.equals) in modo diverso dal test, che usa verify_future_invariance e predict_elo_mutant_update_before_predict.
+Non fatto: la ricerca di try:, print( e logging in elo_predictor.py non è stata rieseguita dopo il secondo correttivo.
+Valori misurati:
+- 29 transizioni dal 1993-94 al 2022-23: entrate 86, di cui 28 nuove e 58 tornanti (2 al 1995-96, 3 alle altre); uscite 4 al 1995-96, 3 alle altre;
+- accordo fra ultime tre calcolate e uscite effettive: 3 in ogni transizione tranne il 1997-98, dove vale 2. Al 1997-98 risulta calcolata Coventry e uscita Middlesbrough; la classifica 1996-97 calcolata dai risultati dà Coventry 41, Sunderland 40, Nott'm Forest 34;
+- tempi sui dati reali, 8 360 partite previste: percorso veloce 31.71 s e via fornitore 30.31 s prima del secondo correttivo; 0.35 s e 10.58 s dopo;
+- suite veloce da 212 a 220 verdi (8 nuovi), 14 deselezionati; 81.26 s prima del secondo correttivo, 28.48 s dopo;
+- SHA256 delle previsioni con K = 20, h = 60, ν = 1: 0b3048a7a170e7e149f6cb96c2790e36d3f05010a4d5ce35e1ea0febc1fcbce1, per entrambi i percorsi.
+Report: .agent/report/T21.md.
 
 ### Task 22 — Calibrazione espansiva di K, h, ν sul training e previsioni walk-forward, US-C4.1
 Stato: da fare
