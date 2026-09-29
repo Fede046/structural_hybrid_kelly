@@ -102,6 +102,7 @@ Aperta il 2026-09-29. Sei task (T14–T19), in deroga alla regola dei cinque per
 - nessuna
 
 ### Task 14 — Caricamento di tutte le stagioni E0 in un unico DataFrame
+
 Stato: fatto
 
 Obiettivo: una funzione legge tutti i CSV di data/raw/E0/ e restituisce un unico DataFrame con la colonna season e le date interpretate, coperta da test.
@@ -151,9 +152,8 @@ Criteri di accettazione:
 Da misurare e riportare, senza farlo tornare: sui dati reali, numero di stagioni caricate, righe totali e per stagione, righe vuote scartate per stagione, numero di colonne per stagione, versione di pandas installata.
 
 Esito: 2026-09-29 — file toccati: pyproject.toml, src/shk/data/__init__.py, src/shk/data/loading.py, tests/test_data_loading.py. Deviazioni: il programmatore ha scaricato solo le stagioni dal 1993-94 al 2023-24, la finestra di KellyBench, invece che fino all'ultima stagione disponibile (decisione del programmatore 2026-09-29). Scelte fissate dal supervisore nel piano: decodifica per file (BOM → utf-8-sig, UTF-8 valido → utf-8, altrimenti cp1252; il 2004-05 esce in cp1252 per 9 byte 0xA0 davanti ai nomi degli arbitri, il 2021-22 ha il BOM); colonne senza nome scartate solo se vuote, altrimenti ValueError; campi in eccesso tagliati solo se vuoti; formato di Date esplicito per file (%d/%m/%y o %d/%m/%Y); tipi inferiti da pd.read_csv; DEFAULT_DATA_DIR calcolata dalla radice del repository. Non fatto: uv.lock da aggiornare; il test sui dati reali non gira in CI perché .gitignore esclude data/raw/*. Valori misurati: 31 stagioni; 11 944 righe (462 nel 1993-94 e nel 1994-95, 380 nelle altre); 697 righe vuote scartate (90 nel 1993-94, 90 nel 1994-95, 172 nel 1995-96, 172 nel 1996-97, 172 nel 1999-00, 1 nel 2014-15, 0 altrove); colonne con nome per stagione da 7 (1993-94 e 1994-95) a 106 (dal 2019-20); 161 colonne distinte più season; pandas 3.0.6, numpy 2.5.2 e scipy 1.18.1 invariate; suite veloce 109 → 127 verdi (18 test nuovi), 14 deselezionati. Report: .agent/report/T14.md.
-
 ### Task 15 — Audit della copertura di quote, risultati e bookmaker per stagione (US-C3.1)
-Stato: da fare
+Stato: fatto
 
 Obiettivo: un CSV e una figura riportano, per ogni stagione, righe, mancanti e valori non validi di risultati e quote per bookmaker, e il report indica la prima stagione con quote complete confrontata col 2002-03.
 
@@ -198,8 +198,7 @@ Criteri di accettazione:
 
 Da misurare e riportare, senza farlo tornare: prima stagione con quote complete e suo scarto dal 2002-03; prima stagione con B365 completa; se la stagione 2000-01 ha qualche terna 1X2 e con quale completezza; completezza di B365 nelle stagioni 2010-11 e 2020-21; distanza in stagioni fra primi risultati e prime quote; bookmaker presenti per stagione; stagioni con numero di righe diverso da 380; SHA256 del CSV.
 
-Esito: —
-
+Esito: 2026-09-29 — file toccati: src/shk/data/coverage.py, scripts/us_c3_1_data_coverage.py, tests/test_coverage.py, results/us_c3_1_data_coverage.csv, thesis/figures/us_c3_1_data_coverage.png. Deviazioni: classificazione approvata dal programmatore (opzione A). classify_column è pubblica e restituisce una NamedTuple (group_type, group_name, source, market, timing, kind); gli aggregatori sono tutte le colonne Bb*, Max* e Avg*, con timing valorizzato (MaxC*, AvgC* → closing); linee di handicap (AHh, AHCh, BbAHh, B365AH, GBAH, LBAH) e conteggi Bb (Bb1X2, BbOU, BbAH) sono gruppi a sé, con soli mancanti; le colonne non classificate danno ValueError; le 7 statistiche di gara del 2000-02 sono escluse dall'audit; al CSV è aggiunta la colonna complete_rows. Un test (esclusione delle colonne di statistica e primo tempo) è stato aggiunto con un correttivo del supervisore. Non fatto: commit di codice, CSV e PNG, a carico del programmatore. Valori misurati: prima stagione con quote complete 2000-01 (terne GB, IW, SB, WH complete; LB 325/380), scarto −2 dal 2002-03; prima stagione con B365 completa 2002-03, scarto 0; B365 completa in tutte le 22 stagioni dal 2002-03 al 2023-24, quindi anche nel 2010-11 e nel 2020-21 (380/380); primi risultati completi 1993-94, distanza 7 stagioni dalle prime quote complete; stagioni con righe diverse da 380: 1993-94 e 1994-95 (462); bookmaker presenti per stagione nella tabella di T15.md; CSV di 477 righe, SHA256 F9EEA7264F5457A1728EA609CD6660BCEE9779D450099D446CC30A919D73E15C, identico su due esecuzioni; suite veloce 127 → 139 verdi (12 test nuovi), 14 deselezionati. Report: .agent/report/T15.md.
 ### Task 16 — Split congelato su file e blocco del test set (US-C3.3)
 Stato: da fare
 

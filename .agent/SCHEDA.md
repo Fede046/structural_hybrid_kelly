@@ -1,12 +1,10 @@
+Ecco il contenuto aggiornato di `SCHEDA.md` con tutte le modifiche e aggiunte richieste:
+
 # Scheda del progetto
-
-
 
 Origine: mappa del 2026-09-29, report fino a R1@2026-09-29 (la numerazione R_n riparte da R1 a ogni mappa e la data distingue le serie; i fatti non rimappati conservano il riferimento originale)
 
 ## Stato repo
-
-
 
 Radice: c:\Users\malse\Documents\GitHub\structural_hybrid_kelly [V, R1@2026-09-29]
 Branch main a 115e600 "C2 (#16)", allineato a origin/main rispetto all'ultimo fetch locale (nessun git fetch nell'elenco comandi), 0 commit avanti e 0 indietro [V, R1@2026-09-29]
@@ -14,7 +12,7 @@ Nessun altro branch locale; branch remoti: solo origin/HEAD → origin/main [V, 
 Ultimi cinque commit su main: 115e600 "C2 (#16)", 1e7813d "C1 (#14)", 640b906 "C1 (#13)", a7420cb "create c1 (#5)", 6187309 "Feature/us c1.1 trade off crescita/varianza (#4)" [V, R1@2026-09-29]
 Il commit 115e600 è quello della Story S2 / C2 [V, R1@2026-09-29]
 Remote origin: [https://github.com/Fede046/structural_hybrid_kelly.git](https://www.google.com/search?q=https://github.com/Fede046/structural_hybrid_kelly.git), fetch e push [V, R1@2026-09-29]
-Working tree dopo T14, se non sono stati fatti commit: pyproject.toml modificato; nuovi src/shk/data/**init**.py, src/shk/data/loading.py, tests/test_data_loading.py, .agent/report/T14.md; più le modifiche a .agent/ precedenti al task [D]
+Working tree dopo T15: rispetto all'ultimo commit del programmatore possono risultare non committati i file di T14 (pyproject.toml, src/shk/data/**init**.py, src/shk/data/loading.py, tests/test_data_loading.py) e di T15 (src/shk/data/coverage.py, scripts/us_c3_1_data_coverage.py, tests/test_coverage.py, results/us_c3_1_data_coverage.csv, thesis/figures/us_c3_1_data_coverage.png), più i report T14 e T15 [D]
 Cline ha riscritto .agent/MAPPA.md dopo quello status e questa scheda riscrive .agent/SCHEDA.md: entrambi risulteranno modificati fino al commit del programmatore [D]
 File ignorati presenti: .venv/, .pytest_cache/, src/shk/**pycache**/, src/shk/kelly/**pycache**/, src/shk/stats/**pycache**/, tests/**pycache**/ [V, R1@2026-09-29]
 Albero tracciato in HEAD: src/shk/ (sottopacchetti kelly/ e stats/), tests/ (11 file di test), scripts/ (3 script), results/ (3 CSV), thesis/figures/ (3 PNG), config/ e data/raw/ (solo .gitkeep), .github/workflows/test.yml, .agent/, e alla radice pyproject.toml, uv.lock, .gitignore, LICENSE [V, R1@2026-09-29, inventario git dei file di HEAD]
@@ -25,8 +23,6 @@ src/shk/data/ creato in T14: **init**.py e loading.py, non ancora committati [V,
 C1.1.md non compare nella radice descritta dalla mappa né fra le cancellazioni pendenti: la cancellazione fatta dal programmatore il 2026-09-28 risulta committata [D]
 
 ## Stack e comandi
-
-
 
 Pacchetto structural-hybrid-kelly 0.1.0 (pyproject.toml e src/shk/**init**.py), importabile come shk, sorgenti in src/shk/ [D, era V R1@2026-09-28; pyproject.toml toccato da T14]
 requires-python >=3.11 [D, era V R1@2026-09-28; pyproject.toml toccato da T14]; la CI usa Python 3.12 [V, R1@2026-09-28]
@@ -39,16 +35,15 @@ CI (GitHub Actions): Linux, Python 3.12.14, pytest 9.1.1, dipendenze installate 
 Test veloci: pytest -v; addopts = "-m 'not slow'" in pyproject.toml esclude i test slow [V, R1@2026-09-28]. Cline esegue ogni comando Python con l'interprete del venv, esplicitamente: ..venv\Scripts\python.exe -m pytest -v, ..venv\Scripts\python.exe  [V, R7@2026-09-28; decisione del programmatore 2026-09-28]. Nel venv shk è installato in modalità editable [V, R7@2026-09-28]. Il terminale di Cline usa di default C:\Users\malse\anaconda3\python.exe (Python 3.12.7, pytest 7.4.4), dove shk non è installato [V, R6@2026-09-28]
 Venv del progetto .venv: Python 3.12.7, pytest 9.1.1 [V, R7 e R15@2026-09-28], NumPy 2.5.2, SciPy 1.18.1, pandas 3.0.6 (NumPy e SciPy invariate dall'installazione di pandas) [V, R10@2026-09-29]
 Solo test slow: pytest -m slow [D, era V R4@2026-09-27]; tutti i test: pytest -o addopts="" [D]
-Suite veloce su 115e600, prima di T14: 109 verdi, 14 deselezionati [V, R10@2026-09-29]. Dopo T14: 127 verdi (i 109 più 18 di tests/test_data_loading.py), 14 deselezionati [V, R10@2026-09-29]. 14 test slow (9 di C1, 5 di C2): ultimo esito 13 verdi e 1 rosso per risultato noto, test_acceptance_calibrated_phi_zero_within_mc_interval; pytest -m slow dura circa 117 s [V, R14@2026-09-28; non rieseguiti dopo]
+Suite veloce su 115e600, prima di T14: 109 verdi, 14 deselezionati [V, R10@2026-09-29]. Dopo T15: 139 verdi (109 + 18 di tests/test_data_loading.py + 12 di tests/test_coverage.py), 14 deselezionati [V, R18@2026-09-29]. 14 test slow (9 di C1, 5 di C2): ultimo esito 13 verdi e 1 rosso per risultato noto, test_acceptance_calibrated_phi_zero_within_mc_interval; pytest -m slow dura circa 117 s [V, R14@2026-09-28; non rieseguiti dopo]
 Esperimento C2: ..venv\Scripts\python.exe scripts\us_c2_anova_autocorrelation.py dalla radice, circa 90 s; due esecuzioni danno CSV identici byte per byte, SHA256 6711B906A5D0170124BE816BAB04C336854CF7FF62DF135FDC18F22B84AB3831 [V, R14@2026-09-28, sul CSV di allora]; l'hash non è stato ricalcolato sul CSV committato in 115e600 [D]
+Esperimento C3.1: ..venv\Scripts\python.exe scripts/us_c3_1_data_coverage.py dalla radice; due esecuzioni danno CSV identici, SHA256 F9EEA7264F5457A1728EA609CD6660BCEE9779D450099D446CC30A919D73E15C [V, R14@2026-09-29]
 Esperimenti: ..venv\Scripts\python.exe scripts/us_c1_1_growth_vs_lambda.py e ..venv\Scripts\python.exe scripts/us_c1_2_estimation_error.py dalla radice [D]
 Lo script C1.2 dura circa 70 s e due esecuzioni danno CSV identici byte per byte [D, era V R16@2026-09-27]
 Nessun .env presente [V, R1@2026-09-29, status --ignored]; config/ contiene solo .gitkeep [V, R1@2026-09-29]; data/raw/ contiene .gitkeep ed E0/ con 31 CSV non versionati [V, R6 e R7@2026-09-29]
 Nessuna variabile d'ambiente richiesta [D]
 
 ## Moduli e responsabilità
-
-
 
 src/shk/**init**.py — espone **version** [V, R1@2026-09-28]
 src/shk/kelly/**init**.py — re-esporta kelly_fraction e log_growth_rate tramite **all**; expected_final_wealth non è re-esportata [V, R1@2026-09-28]
@@ -75,13 +70,14 @@ tests/test_us_c2_acceptance.py — 11 test veloci e 5 test slow con fixture scop
 tests/test_calibration.py — 15 funzioni di test (18 test): proprietà degli indici, L = n, integrità delle righe 2D, statistica d'ordine, vectorized contro non vectorized, due statistiche (F del Task 8 e media normalizzata 2D), seed, i quattro casi di compute_order_statistic_index, docstring, validazioni raggruppate in 6 funzioni [V, R12@2026-09-28]
 src/shk/data/**init**.py — sola docstring di modulo in italiano [D, piano approvato di T14]
 src/shk/data/loading.py — DEFAULT_DATA_DIR = Path(**file**).resolve().parents[3] / "data" / "raw" / "E0"; load_all_seasons(data_dir=DEFAULT_DATA_DIR) → unico DataFrame con colonna season (YYYY-YY dal nome del file), Date datetime64[us] senza nulli, ordinamento stabile per season e Date; TypeError per data_dir non str né Path; FileNotFoundError per directory inesistente; ValueError per directory senza CSV, nome non conforme, date miste, non conformi o fuori finestra (1° luglio – 31 agosto), campo in eccesso non vuoto, colonna senza nome non vuota [V, R10@2026-09-29, test verdi]. Decodifica per file: BOM → utf-8-sig, UTF-8 valido → utf-8, altrimenti cp1252, senza try:; righe di soli campi vuoti scartate; campi mancanti in coda completati con vuoti; colonne senza nome vuote scartate; tipi inferiti da pd.read_csv, Date letta come stringa e convertita con formato esplicito %d/%m/%y o %d/%m/%Y [D, piano approvato di T14]
+src/shk/data/coverage.py — NON_ODDS_COLUMNS (identificativi, risultati, primo tempo, arbitro e statistiche, comprese Attendance, HHW, AHW, HO, AO, HBP, ABP); ColumnClassification (NamedTuple: group_type, group_name, source, market, timing, kind); classify_column(name), pubblica: group_type ∈ {1x2_prematch, 1x2_closing, aggregators, other_markets}, timing ∈ {prematch, closing}, kind ∈ {odds, line, count}; tutte le Bb*, Max* e Avg* sono aggregators, con timing valorizzato; ValueError per colonne non di quota o sconosciute; COVERAGE_CSV_COLUMNS (12 colonne: season, group_type, group_name, source, market, timing, columns, total_rows, missing_rows, invalid_rows, complete_rows, is_complete); compute_coverage(df) → DataFrame lungo, una riga per stagione × gruppo presente [V, R14–R17@2026-09-29]. Presenza = almeno un valore non nullo del gruppo nella stagione; non validità solo per kind = odds (pd.to_numeric con coerce: non numerico, non finito o ≤ 1); NaN conta come mancante; gruppo results con validità di gol e FTR e coerenza fra gol ed esito [D, piano approvato di T15]. Nessuna occorrenza di try:, print( o logging [V, R14@2026-09-29]
+scripts/us_c3_1_data_coverage.py — run_experiment(): load_all_seasons, compute_coverage, CSV con csv.DictWriter, PNG con imshow della quota complete_rows/total_rows, colormap viridis, gruppi assenti come NaN in grigio #dcdcdc, spiegati in legenda; nessuna occorrenza di try:, print( o logging [V, R14 e R17@2026-09-29]
+tests/test_coverage.py — 12 test veloci su DataFrame sintetici: classificazione (compresi MaxCH e AvgCA come aggregators closing, colonne non di quota e sconosciute → ValueError), stringa non numerica, inf, NaN, line e count mai non validi, riga insieme mancante e non valida, gruppo assente omesso, risultati, colonne e ordinamento del CSV, esclusione delle colonne di statistica e primo tempo [V, R15, R16 e R18@2026-09-29]; se l'ultimo test usi tutte le 23 colonne elencate non è verificato [D]
 tests/test_data_loading.py — 18 test veloci su CSV sintetici in tmp_path, più un test sui dati reali saltato se data/raw/E0/ non contiene CSV [V, R10@2026-09-29]; nomi dei test non riportati [D]
 Classi del pacchetto: Scenario, StakingMoments [V, R1@2026-09-28], OneWayAnovaResult [V, R4@2026-09-28], RejectionResult e PhiStreams [V, R9@2026-09-28]; nessun'altra [D]
 Persistenza: solo CSV in results/ e PNG in thesis/figures/ [V, R1@2026-09-28]; nessun database [D]
 
 ## Flussi principali
-
-
 
 Esperimento C1.1 (scripts/us_c1_1_growth_vs_lambda.py, run_experiment() dal blocco **main**): parametri locali p=0.60, b=1.0, T=1000, M=10000, seed 20260905, 51 valori di λ in [0, 2.5] (righe 30-36) [V, R1@2026-09-28]
 Esperimento C1.1, sequenza: f* con kelly_fraction; una sola matrice di esiti con draw_outcomes; per ogni λ log_wealth_paths, cinque metriche empiriche, del paths, benchmark con log_growth_rate ed expected_final_wealth [V, R1@2026-09-28]
@@ -102,10 +98,9 @@ Le costanti di tests/test_kelly_core.py:32 e :39 e il λ=1.946 dell'accettazione
 Var(c) attesa a σ_p = 0.0283: circa 0.080 nello scenario base, circa 1.28 in quello sottile (troncamento a zero incluso) [D, ricalcolo del supervisore]
 Costo della calibrazione: una chiamata di calibrate_threshold con n = 380, F a due blocchi, L = 20, B = 999, vectorized vero dura in media 6.8 ms nel venv [V, R11@2026-09-28]
 Dati E0 caricati da load_all_seasons: 31 stagioni, 11 944 partite (462 nel 1993-94 e nel 1994-95, 380 nelle altre), 161 colonne originali più season; colonne con nome per stagione da 7 a 106 [V, R10@2026-09-29]. Colonne comuni a tutte le stagioni: Div, Date, HomeTeam, AwayTeam, FTHG, FTAG, FTR; Time solo dal 2019-20. Presenza delle colonne (non la completezza): B365 pre-partita dal 2002-03; IW e WH dal 2000-01; PS e PSC* dal 2012-13; B365C* e le altre terne di chiusura dal 2019-20; Bb* dal 2005-06 al 2018-19; Max*/Avg* dal 2019-20 [V, R8@2026-09-29]. Il 2004-05 esce decodificato in cp1252 (9 byte 0xA0 davanti ai nomi degli arbitri, righe 316–324); il 2021-22 ha il BOM UTF-8 [V, R9@2026-09-29]
+Esperimento C3.1: results/us_c3_1_data_coverage.csv, 477 righe (31 risultati + 183 terne pre-partita + 37 terne di chiusura + 158 aggregatori + 68 altri mercati), e thesis/figures/us_c3_1_data_coverage.png [V, R14@2026-09-29; scomposizione ricalcolata dal supervisore da R11]. Risultati completi in tutte le stagioni dal 1993-94. Prima terna 1X2 pre-partita completa nel 2000-01 (GB, IW, SB, WH; LB 325/380), scarto −2 dal 2002-03 del paper. B365 pre-partita completa in tutte le 22 stagioni dal 2002-03 al 2023-24; assente dal 1993-94 al 2001-02, quindi anche nel 2000-01, che è di training [V, R14@2026-09-29]
 
 ## Convenzioni da rispettare
-
-
 
 Naming: snake_case per moduli, funzioni e variabili; PascalCase per le classi; UPPER_CASE per le costanti; lettere matematiche standard (p, b, f, T, M, b0, λ, σ_p, c, δ) [V, R1@2026-09-28]
 Lingua: identificatori, nomi dei test e messaggi di eccezione in inglese; commenti e docstring in italiano [V, R1@2026-09-28]
@@ -113,6 +108,7 @@ Type hints completi su argomenti e ritorni; docstring stile NumPy con sezioni Pa
 Validazione in apertura di funzione: ValueError per i valori, TypeError per i tipi; rng controllato con isinstance(rng, np.random.Generator) → TypeError [V, R5@2026-09-28]. Eccezione nel codice esistente: draw_outcomes e noisy_estimates non controllano il tipo di T e M (2.5 fallisce solo dentro NumPy con TypeError, True è accettato come 1) [V, R5@2026-09-28]. Il codice nuovo controlla anche il tipo degli interi (bool e non interi → TypeError), come generate_ar1_series [V, R7@2026-09-28]
 Nessuna occorrenza di try:, print( o logging nei file tracciati di src/ e scripts/ [V, R4@2026-09-28, git grep] e in tutti i file nuovi di S2: src/shk/stats/**init**.py e anova.py [V, R5@2026-09-28], timeseries.py [V, R8@2026-09-28], false_rejection.py e scripts/us_c2_anova_autocorrelation.py [V, R10@2026-09-28], calibration.py [V, R12@2026-09-28]
 Assenza di try:, print( e logging in src/shk/data/: controllo eseguito da Cline in T14, esito non riportato [D]
+Nessuna occorrenza di try:, print( o logging in src/shk/data/coverage.py e scripts/us_c3_1_data_coverage.py [V, R14@2026-09-29]
 L'RNG entra come argomento, mai creato dentro le funzioni di libreria; flussi indipendenti con np.random.SeedSequence.spawn [V, R1@2026-09-28 per spawn; D, era V R5@2026-09-27 e R6@2026-09-27 per il resto]
 Vettorizzazione NumPy senza cicli su M e T nel motore; del paths nei loop Monte Carlo [V, R1@2026-09-28]
 Script di esperimento: matplotlib.use("Agg") prima di importare pyplot, run_experiment() senza parametri chiamata dal blocco **main**, nessun argomento da riga di comando, import diretti da shk.; CSV con csv.DictWriter, open(mode="w", newline="", encoding="utf-8"), lineterminator di default (\r\n), float nativi e stringa vuota per i non applicabili; PNG con plt.tight_layout() e savefig(dpi=150); etichette delle figure in italiano [V, R8@2026-09-28 su us_c1_2_estimation_error.py; R9@2026-09-28 per la lingua]
@@ -124,8 +120,6 @@ Commit fatti solo dal programmatore, a mano; Cline scrive in .agent/ solo MAPPA.
 Documenti di processo in .agent/: PROTOCOLLO.md, BACKLOG.md, MAPPA.md, SCHEDA.md, report/T.md [V, R1@2026-09-29]
 
 ## Zone fragili da non toccare senza avviso
-
-
 
 Il test slow test_acceptance_calibrated_phi_zero_within_mc_interval (tests/test_us_c2_acceptance.py, circa righe 350-363 [D]) fallisce per un risultato noto (29 rigetti su 1000 a φ = 0 con L = 20, sotto l'estremo inferiore 32.25 dell'intervallo al 99%; T12 da rivedere), non per una regressione: non va "sistemato" allentando la tolleranza o cambiando parametri [V, decisione del programmatore 2026-09-28; conteggio da R14@2026-09-28]
 noisy_estimates può restituire p̂ = 1 per saturazione; kelly_staking dà allora lam·1, e con lam ≥ 1 la frazione è ≥ 1, che simulate_growth rifiuta con ValueError [V, R1@2026-09-28]. Con p ≤ 0.6 e σ_p ≤ 0.045 l'evento dista almeno 8.9 deviazioni standard [D, ricalcolo del supervisore]
@@ -141,10 +135,9 @@ L'identità byte per byte del CSV C2 vale solo a parità di ambiente: il valore 
 I run_experiment() dei tre script non sono richiamati da alcun test; spawn_c2_generators, PhiStreams e METHOD_NOMINAL non compaiono direttamente nelle asserzioni dei test [D]; l'unico confronto fra un CSV versionato e il codice è quello di tests/test_us_c2_acceptance.py [D]
 pandas 3.0.6 nel venv; la CI installa l'ultima versione senza vincoli. In pandas 3 Date esce in datetime64[us], non [ns] [V, R10@2026-09-29], e le colonne di testo hanno di default il dtype stringa, non object [D]: da tenere presente nei controlli sulle quote non numeriche (T15)
 I test sui dati reali non girano in CI, perché data/raw/* è escluso da .gitignore: in CI si saltano, e vanno eseguiti in locale [D, dedotto da R6@2026-09-29]
+classify_column solleva ValueError su ogni colonna che le regole non classificano: nuovi file E0 con colonne nuove (per esempio stagioni successive al 2023-24) fermano audit e fornitore walk-forward finché le regole non vengono estese. Il timing di classify_column è la base della whitelist anti-leakage di T19 [D]
 
 ## Punti ancora incerti
-
-
 
 Gestore canonico delle dipendenze (pip + pyproject oppure uv + uv.lock), non deciso dal programmatore. T14 ha aggiunto pandas a pyproject.toml e uv.lock non è aggiornato. Blocca: se la CI vada migrata a uv. Si procede con pyproject.toml come fonte di verità, l'unica verificata dalla CI.
 Se la calibrazione per block bootstrap debba imporre H₀ nei dati (per l'ANOVA: serie centrata per gruppo) prima di ricampionare. Blocca: la chiusura di T12 (test slow rosso), la correzione dello schema della docstring di calibration.py e la scelta di L per C5.2, C6.4 e C8. Non blocca C3. Si procede lasciando il test slow com'è e senza toccare calibration.py né false_rejection.py. Proposta: un task nuovo con righe method = block_bootstrap_centered aggiunte al CSV accanto a quelle attuali, e criteri scritti e datati prima dell'esecuzione.
@@ -152,6 +145,4 @@ Esito della CI su main dopo il merge di #16: non verificato. La suite veloce su 
 
 ## Ultimo aggiornamento
 
-
-
-R10@2026-09-29 — task di scrittura chiusi dopo la mappa del 2026-09-29: T14
+R18@2026-09-29 — task di scrittura chiusi dopo la mappa del 2026-09-29: T14, T15
