@@ -329,7 +329,7 @@ Valori misurati:
 Report: .agent/report/T21.md.
 
 ### Task 22 — Calibrazione espansiva di K, h, ν sul training e previsioni walk-forward, US-C4.1
-Stato: da fare
+Stato: fatto
 
 Obiettivo: K, h e ν, e c della baseline, sono stimati solo sulle stagioni di training anteriori alle stagioni da prevedere. I valori sono congelati in un modulo di libreria. Le previsioni di training e validazione stanno in results/us_c4_1_elo_walkforward.csv, con la figura thesis/figures/us_c4_1_elo_walkforward.png.
 
@@ -397,7 +397,33 @@ Da misurare e riportare, senza farlo tornare:
 - media dei rating all'inizio di ogni stagione, cioè l'effetto dei tornanti sulla somma zero;
 - durata della calibrazione e dello script.
 
-Esito: —
+Esito: 2026-09-29 — file toccati: src/shk/model/elo_fit.py, scripts/us_c4_1_elo_walkforward.py, tests/test_us_c4_1_acceptance.py, results/us_c4_1_elo_walkforward.csv, thesis/figures/us_c4_1_elo_walkforward.png.
+Deviazioni:
+- correzioni del supervisore al piano:
+  - l'obiettivo del fit j usa il DataFrame ridotto alle stagioni ≤ j, con allineamento all'esito verificato sulle chiavi;
+  - ottimizzatore Nelder-Mead con limiti, punto iniziale (30, 60, 1), xatol 1e-4, fatol 1e-10;
+  - funzioni di stima con DataFrame e stagioni come argomenti;
+  - nessun test esegue lo script;
+  - profili su griglie di 41 punti;
+- test_elo_fits_matches_data_recalibration marcato slow: dura 119.09 s;
+- elo_fit.py espone una parse_season_start_year pubblica, accanto a _parse_season_start_year di elo_predictor.py;
+- nel report il comando 8 è abbreviato con "…"; il testo completo è nel log della chat.
+Non fatto: nulla.
+Valori misurati:
+- parametri ottimi, nessuno su un limite; tutti i fit hanno success = True:
+  - 2000-01 (380 partite di training): K = 10.3182, h = 125.540, ν = 0.80622, c = 101/380 = 0.26579; nit 103, nfev 185, 14.80 s;
+  - 2010-11 (760): K = 9.93478, h = 127.878, ν = 0.87756, c = 212/760 = 0.27895; nit 158, nfev 284, 49.59 s;
+  - 2020-21 (1 140): K = 7.92854, h = 78.0336, ν = 0.76038, c = 295/1140 = 0.25877; nit 107, nfev 194, 52.54 s;
+- log-loss (Davidson / baseline):
+  - fit 2000-01: training 1.008189 / 1.014931; validazione (3 040 partite) 0.973761 / 0.976755;
+  - fit 2010-11: training 1.008987 / 1.015189; validazione (3 420) 0.983832 / 0.990144;
+  - fit 2020-21: training 1.020937 / 1.024782; validazione (760) 0.983300 / 0.987629;
+- frequenza del pareggio in validazione: 0.255263, 0.241228 e 0.230263 per i tre fit;
+- media dei rating a inizio stagione: 1500 nel 1993-94 e nel 1994-95 per tutti i fit; dal 1995-96 fra 1502.3 e 1524.9, massima nel 2022-23 (1524.89, 1524.95, 1523.14 per i tre fit); tabella completa nel report;
+- durate: calibrazione 116.93 s; script 49.14 s;
+- CSV di 9 500 righe, SHA256 92716bc7e6aa6a7b798370a09d1b31b33b0c0a49311bf35cd810f7975489f282, identico su due esecuzioni;
+- suite veloce da 220 a 226 verdi, 15 deselezionati, 33.56 s.
+Report: .agent/report/T22.md.
 
 ### Task 23 — ĝ del Modulo 1 contro il mercato de-viggato, US-C4.2
 Stato: da fare

@@ -410,3 +410,72 @@ I due percorsi di src/shk/model/elo_predictor.py iterano solo sulle colonne di _
 
 Ultimo aggiornamento → "R14@2026-09-29b — task di scrittura chiusi dopo la mappa del 2026-09-29b: T20" →
 R21@2026-09-29b — task di scrittura chiusi dopo la mappa del 2026-09-29b: T20, T21
+
+
+---
+
+Stato repo → "… Commit del programmatore per T20: 7f8e928 "Add Elo rating model and 1X2 mappings". A inizio T21 HEAD su C4 a 7f8e928, working tree pulito [V, R15@2026-09-29b]. Dopo T21 il working tree contiene, non committati, src/shk/model/elo_predictor.py, tests/test_elo_predictor.py, .agent/report/T21.md [D]" →
+… Commit del programmatore: 7f8e928 "Add Elo rating model and 1X2 mappings" (T20), 4710045 "Add Elo walk-forward predictor and tests" (T21). A inizio T22 HEAD su C4 a 4710045, working tree pulito [V, R22@2026-09-29b]. Dopo T22 il working tree contiene, non committati, src/shk/model/elo_fit.py, scripts/us_c4_1_elo_walkforward.py, tests/test_us_c4_1_acceptance.py, results/us_c4_1_elo_walkforward.csv, thesis/figures/us_c4_1_elo_walkforward.png, .agent/report/T22.md [D]
+
+Stack e comandi → "… Dopo T21: 220 verdi (più 8 di test_elo_predictor.py), 14 deselezionati, 28.48 s; tests/test_elo_predictor.py da solo 13.52 s, con i dati locali presenti [V, R21@2026-09-29b]" →
+… Dopo T21: 220 verdi (più 8 di test_elo_predictor.py), 14 deselezionati, 28.48 s; tests/test_elo_predictor.py da solo 13.52 s, con i dati locali presenti [V, R21@2026-09-29b]. Dopo T22: 226 verdi (più 6 di test_us_c4_1_acceptance.py), 15 deselezionati, 33.56 s [V, R23@2026-09-29b]
+
+Stack e comandi → "Test slow: 14 (9 di C1, 5 di C2). Ultimo esito: 13 verdi e 1 rosso per il risultato noto test_acceptance_calibrated_phi_zero_within_mc_interval; pytest -m slow dura circa 117 s [V, R14@2026-09-28; non rieseguiti dopo]" →
+Test slow: 15 (9 di C1, 5 di C2, 1 di C4). I 14 di C1 e C2 all'ultimo esito: 13 verdi e 1 rosso per il risultato noto test_acceptance_calibrated_phi_zero_within_mc_interval, circa 117 s [V, R14@2026-09-28; non rieseguiti dopo]. Quello di C4, test_elo_fits_matches_data_recalibration, è verde in 119.09 s [V, R23@2026-09-29b]
+
+Stack e comandi → (nuova riga, dopo "Esperimento C3.2: …") →
+Esperimento C4.1: .\.venv\Scripts\python.exe scripts/us_c4_1_elo_walkforward.py dalla radice, con data/raw/E0/ presente, circa 49 s. Due esecuzioni danno CSV identici, SHA256 92716bc7e6aa6a7b798370a09d1b31b33b0c0a49311bf35cd810f7975489f282 [V, R23@2026-09-29b]
+
+Moduli e responsabilità → "src/shk/ contiene 18 moduli applicativi (6 in kelly, 4 in stats, 4 in data, 2 in market, 2 in model) più 6 __init__.py […]" →
+src/shk/ contiene 19 moduli applicativi (6 in kelly, 4 in stats, 4 in data, 2 in market, 3 in model) più 6 __init__.py [V, R1@2026-09-29b, R11, R19 e R23@2026-09-29b; conteggio ricalcolato dal supervisore]
+
+Moduli e responsabilità → (nuove righe, dopo quelle di src/shk/model/elo_predictor.py) →
+src/shk/model/elo_fit.py — funzioni:
+- derive_fit_schedule(cfg) → dict dalla stagione del fit a {"training": […], "validation": […]}, derivato da SplitConfig;
+- calibrate_all_fits(df, schedule) → dict dalla stagione del fit a un risultato con success, message, nit, nfev, duration_seconds, k, h, nu, c, log_loss_train, log_loss_train_baseline, n_train_matches, is_on_boundary;
+- parse_season_start_year, pubblica: duplica _parse_season_start_year di elo_predictor.py.
+Tipi e costanti: EloFitParams (NamedTuple: k, h, nu, c); ELO_FITS; WALKFORWARD_CSV_COLUMNS (15 colonne); limiti, punto iniziale e opzioni di Nelder-Mead; griglie dei profili.
+[V, R23@2026-09-29b per l'uso; D per le firme esatte e per i nomi delle costanti non citati nei comandi]
+src/shk/model/elo_fit.py — ELO_FITS, congelato il 2026-09-29 [V, R23@2026-09-29b; coincide con la ricalibrazione entro rel_tol 1e-9]:
+- "2000-01": K = 10.318224689650037, h = 125.54022316884253, ν = 0.8062246331085681, c = 0.2657894736842105;
+- "2010-11": K = 9.934776455088759, h = 127.87791672140764, ν = 0.8775613268630023, c = 0.2789473684210526;
+- "2020-21": K = 7.928543266007228, h = 78.033626101627, ν = 0.7603760315281511, c = 0.25877192982456143.
+scripts/us_c4_1_elo_walkforward.py — run_experiment(): dati solo con load_by_role; CSV di 9 500 righe e 15 colonne (per fit: prima training, poi validation); PNG a due pannelli con i profili della log-loss di training in K e in h, calcolati da ELO_FITS [V, R23@2026-09-29b; D per i dettagli]
+
+Moduli e responsabilità → "tests/ — 19 moduli: … test_elo_predictor, test_us_c1_1_acceptance, … [V, R1, R11 e R19@2026-09-29b]" →
+tests/ — 20 moduli: test_kelly_core, test_simulate, test_estimation, test_staking, test_metrics, test_anova, test_timeseries, test_calibration, test_data_loading, test_coverage, test_split, test_devig, test_leakage, test_elo, test_elo_predictor, test_us_c1_1_acceptance, test_us_c1_2_acceptance, test_us_c2_acceptance, test_us_c3_2_acceptance, test_us_c4_1_acceptance [V, R1, R11, R19 e R23@2026-09-29b]
+
+Moduli e responsabilità → (nuova riga, dopo quella di tests/test_elo_predictor.py) →
+tests/test_us_c4_1_acceptance.py — 7 test:
+- veloci: test_calibration_training_only_synthetic, test_calibration_objective_matches_count_real_data, test_csv_validation_leakage_and_uniqueness, test_versioned_csv_schema_and_probabilities, test_recomputed_predictions_match_csv;
+- slow: test_elo_fits_matches_data_recalibration (119.09 s).
+I test sui dati reali si saltano senza CSV; nessun test esegue lo script.
+[V, R23@2026-09-29b]
+
+Moduli e responsabilità → "Classi del pacchetto: … più la classe interna _EloTracker di src/shk/model/elo_predictor.py [V, R21@2026-09-29b]; nessun'altra [D]" →
+Classi del pacchetto: Scenario, StakingMoments, OneWayAnovaResult, RejectionResult, PhiStreams, ColumnClassification, SplitConfig, TestSetLockedError, LeakageError [V, R1@2026-09-29b], EloFitParams [V, R23@2026-09-29b], più la classe interna _EloTracker di src/shk/model/elo_predictor.py [V, R21@2026-09-29b]; nessun'altra [D]
+
+Flussi principali → (nuove righe, dopo quelle del previsore Elo di T21) →
+Esperimento C4.1, calibrazione espansiva Nelder-Mead [V, R23@2026-09-29b; c e durate ricalcolati dal supervisore]:
+- tutti i fit con success = True, nessun parametro su un limite;
+- nit/nfev 103/185, 158/284, 107/194; durate 14.80, 49.59, 52.54 s, in tutto 116.93 s;
+- partite di training 380, 760, 1 140; pareggi 101, 212, 295, cioè 111 nel 2010-11 e 83 nel 2020-21.
+Esperimento C4.1, log-loss (Davidson / baseline a pareggio costante) [V, R23@2026-09-29b]:
+- fit 2000-01: training 1.008189 / 1.014931; validazione (3 040 partite) 0.973761 / 0.976755;
+- fit 2010-11: training 1.008987 / 1.015189; validazione (3 420) 0.983832 / 0.990144;
+- fit 2020-21: training 1.020937 / 1.024782; validazione (760) 0.983300 / 0.987629.
+Frequenza del pareggio in validazione: 0.255263, 0.241228, 0.230263.
+Media dei rating a inizio stagione, con i parametri di ciascun fit: 1500 nel 1993-94 e nel 1994-95; dal 1995-96 fra 1502.3 e 1524.9, con il massimo nel 2022-23 [V, R23@2026-09-29b; tabella in .agent/report/T22.md]
+
+Convenzioni da rispettare → "Parametri condivisi fra script e test in un modulo di libreria importato da entrambi: scenarios.py per C1.2, false_rejection.py per C2, coverage.py e divergence.py (con split.toml) per C3. C1.1 è l'eccezione storica [V, R1@2026-09-29b]" →
+Parametri condivisi fra script e test in un modulo di libreria importato da entrambi: scenarios.py per C1.2, false_rejection.py per C2, coverage.py e divergence.py (con split.toml) per C3, elo_fit.py per C4.1. C1.1 è l'eccezione storica [V, R1@2026-09-29b e R23@2026-09-29b]
+
+Convenzioni da rispettare → "- file di S4: src/shk/model/elo.py [V, R11@2026-09-29b, Select-String]; src/shk/model/elo_predictor.py [V, R19@2026-09-29b, prima del secondo correttivo di T21; D dopo]." →
+- file di S4: src/shk/model/elo.py [V, R11@2026-09-29b, Select-String]; src/shk/model/elo_predictor.py [V, R19@2026-09-29b, prima del secondo correttivo di T21; D dopo]; src/shk/model/elo_fit.py [V, R23@2026-09-29b, Select-String].
+
+Zone fragili da non toccare senza avviso → (nuove righe, in fondo) →
+ELO_FITS in src/shk/model/elo_fit.py è congelato e non si modifica: T23 e T24 lo vietano esplicitamente. Una modifica a elo.py o elo_predictor.py che cambia le previsioni rende ELO_FITS e results/us_c4_1_elo_walkforward.csv incoerenti col codice: vanno ricalibrati e rigenerati, e lo segnalano test_recomputed_predictions_match_csv (in locale) e il test slow di ricalibrazione [D]
+Rieseguire scripts/us_c4_1_elo_walkforward.py sovrascrive CSV e PNG versionati; dura circa 49 s [V, R23@2026-09-29b]
+
+Ultimo aggiornamento → "R21@2026-09-29b — task di scrittura chiusi dopo la mappa del 2026-09-29b: T20, T21" →
+R23@2026-09-29b — task di scrittura chiusi dopo la mappa del 2026-09-29b: T20, T21, T22
