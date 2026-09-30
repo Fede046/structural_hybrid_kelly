@@ -18,9 +18,11 @@ from shk.model.elo_fit import ELO_FITS, derive_fit_schedule
 from shk.model.residuals import compute_model_residuals
 from shk.stats.drift import (
     ADWIN_DELTA,
+    MATCHDAY_SIZE,
     PAGE_HINKLEY_DELTA,
     PAGE_HINKLEY_THRESHOLD,
     calibrate_drift_detectors,
+    compute_matchday_z_scores,
     run_drift_detector,
     select_best_candidate,
 )
@@ -162,6 +164,90 @@ def test_select_best_candidate_pure_rule():
 # ---------------------------------------------------------------------------
 # Test sui Dati Reali E0 (saltati se non presenti)
 # ---------------------------------------------------------------------------
+
+
+def test_compute_matchday_z_scores_hand_calculated():
+    """Verifica che lo Z per giornata coincida con il calcolo analitico a mano entro 1e-12."""
+    # Blocco 1: 10 elementi da 1.1 a 2.0 (media 1.55)
+    b1 = np.linspace(1.1, 2.0, 10)
+    # Blocco 2: 10 elementi tutti a 0.5 (media 0.5)
+    b2 = np.full(10, 0.5)
+    series = np.concatenate([b1, b2])
+
+    mu = 1.0
+    sigma = 0.5
+    # Z1 = (1.55 - 1.0) / (0.5 / sqrt(10)) = 0.55 * sqrt(10) / 0.5 = 1.1 * sqrt(10)
+    expected_z1 = 1.1 * np.sqrt(10)
+    # Z2 = (0.5 - 1.0) / (0.5 / sqrt(10)) = -0.5 / (0.5 / sqrt(10)) = -sqrt(10)
+    expected_z2 = -np.sqrt(10)
+
+    z_scores = compute_matchday_z_scores(series, mu=mu, sigma=sigma, matchday_size=10)
+    assert len(z_scores) == 2
+    assert z_scores.dtype == np.float64
+    np.testing.assert_allclose(z_scores, [expected_z1, expected_z2], atol=1e-12, rtol=1e-12)
+
+
+def test_compute_matchday_z_scores_exact_zero():
+    """Verifica che un blocco con media esattamente uguale a mu dia Z pari a 0.0."""
+    series = np.full(30, 1.25)
+    z_scores = compute_matchday_z_scores(series, mu=1.25, sigma=0.8, matchday_size=10)
+    assert len(z_scores) == 3
+    np.testing.assert_allclose(z_scores, np.zeros(3), atol=1e-12)
+
+
+def test_compute_matchday_z_scores_validations():
+    """Verifica le eccezioni TypeError e ValueError su argomenti invalidi."""
+    valid_series = np.ones(20, dtype=np.float64)
+
+    # series non ndarray
+    with pytest.raises(TypeError, match="series must be a np.ndarray"):
+        compute_matchday_z_scores([1.0] * 20, mu=1.0, sigma=0.5)  # type: ignore
+
+    # series booleana o non numerica
+    with pytest.raises(TypeError, match="numeric dtype"):
+        compute_matchday_z_scores(np.ones(20, dtype=bool), mu=1.0, sigma=0.5)
+
+    # series non 1D
+    with pytest.raises(ValueError, match="1D"):
+        compute_matchday_z_scores(np.ones((2, 10)), mu=1.0, sigma=0.5)
+
+    # series vuota
+    with pytest.raises(ValueError, match="empty"):
+        compute_matchday_z_scores(np.array([], dtype=np.float64), mu=1.0, sigma=0.5)
+
+    # lunghezza non multiplo di matchday_size
+    with pytest.raises(ValueError, match="multiple of matchday_size"):
+        compute_matchday_z_scores(np.ones(25), mu=1.0, sigma=0.5, matchday_size=10)
+
+    # valori non finiti
+    nan_series = np.ones(20)
+    nan_series[5] = np.nan
+    with pytest.raises(ValueError, match="non-finite"):
+        compute_matchday_z_scores(nan_series, mu=1.0, sigma=0.5)
+
+    # mu non float / bool
+    with pytest.raises(TypeError, match="mu must be a real number"):
+        compute_matchday_z_scores(valid_series, mu=True, sigma=0.5)  # type: ignore
+    with pytest.raises(ValueError, match="mu must be finite"):
+        compute_matchday_z_scores(valid_series, mu=float("inf"), sigma=0.5)
+
+    # sigma non float / bool / non positivo / non finito
+    with pytest.raises(TypeError, match="sigma must be a real number"):
+        compute_matchday_z_scores(valid_series, mu=1.0, sigma=False)  # type: ignore
+    with pytest.raises(ValueError, match="sigma must be strictly positive"):
+        compute_matchday_z_scores(valid_series, mu=1.0, sigma=0.0)
+    with pytest.raises(ValueError, match="sigma must be strictly positive"):
+        compute_matchday_z_scores(valid_series, mu=1.0, sigma=-0.5)
+    with pytest.raises(ValueError, match="sigma must be finite"):
+        compute_matchday_z_scores(valid_series, mu=1.0, sigma=float("nan"))
+
+    # matchday_size invalido
+    with pytest.raises(TypeError, match="matchday_size must be an integer"):
+        compute_matchday_z_scores(valid_series, mu=1.0, sigma=0.5, matchday_size=True)  # type: ignore
+    with pytest.raises(TypeError, match="matchday_size must be an integer"):
+        compute_matchday_z_scores(valid_series, mu=1.0, sigma=0.5, matchday_size=10.0)  # type: ignore
+    with pytest.raises(ValueError, match="matchday_size must be positive"):
+        compute_matchday_z_scores(valid_series, mu=1.0, sigma=0.5, matchday_size=0)
 
 
 @pytest.fixture(scope="module")

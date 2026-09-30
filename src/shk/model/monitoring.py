@@ -5,16 +5,23 @@ dei 22 scenari (3 di training e 19 di validazione), la funzione di estrazione de
 dai residui del Modulo 1 e la funzione di generazione dei record per il file CSV.
 """
 
-from collections.abc import Collection
+from collections.abc import Collection, Mapping
 from typing import Final, NamedTuple
 
 import numpy as np
 import pandas as pd
+from scipy.stats import norm
 
 from shk.model.elo_fit import parse_season_start_year
-from shk.stats.drift import detector_params, run_drift_detector
+from shk.stats.drift import (
+    MATCHDAY_SIZE,
+    compute_matchday_z_scores,
+    detector_params,
+    run_drift_detector,
+)
+from shk.stats.false_rejection import ALPHA
 
-# Schema delle 12 colonne in snake_case prescritte per il CSV dei detector
+# Schema delle 12 colonne in snake_case prescritte per il CSV dei detector (C5.1)
 DRIFT_DETECTOR_CSV_COLUMNS: Final[tuple[str, ...]] = (
     "row_type",
     "season",
@@ -28,6 +35,24 @@ DRIFT_DETECTOR_CSV_COLUMNS: Final[tuple[str, ...]] = (
     "home_team",
     "away_team",
     "n_alarms",
+)
+
+# Schema delle 14 colonne in snake_case prescritte per il CSV dello Z-test (C5.2 e C5.3)
+DAILY_Z_TEST_CSV_COLUMNS: Final[tuple[str, ...]] = (
+    "row_type",
+    "season",
+    "fit_through",
+    "method",
+    "block_length",
+    "threshold",
+    "matchday",
+    "z",
+    "alarm",
+    "n_alarms",
+    "expected_alarms",
+    "mean_alarms",
+    "n_resamples",
+    "exceedance_rate",
 )
 
 # Numero atteso di partite per stagione
@@ -44,6 +69,15 @@ class ScenarioSeries(NamedTuple):
     date: tuple[str, ...]
     home_team: tuple[str, ...]
     away_team: tuple[str, ...]
+
+
+class TrainingBaselineStats(NamedTuple):
+    """Statistiche di baseline calcolate sulle partite di training di un fit."""
+
+    fit_through: str
+    n_matches: int
+    mu: float
+    sigma: float
 
 
 def extract_scenario_series(
@@ -238,3 +272,265 @@ def generate_drift_detector_records(
     """Estrae le serie di scenario dai residui e produce i record completi per il CSV."""
     series_list = extract_scenario_series(df_residuals, schedule, expected_matches=expected_matches)
     return build_drift_records(series_list)
+
+
+def compute_training_baseline_stats(
+    df_residuals: pd.DataFrame,
+    schedule: dict[str, dict[str, list[str]]] | None = None,
+) -> dict[str, TrainingBaselineStats]:
+    """Calcola mu e sigma (ddof=1) per ciascun fit sulle rispettive partite di training.
+
+    Parametri
+    ---------
+    df_residuals : pd.DataFrame
+        DataFrame dei residui prodotto da compute_model_residuals, contenente almeno
+        le colonne 'role', 'fit_through' e 'log_loss'.
+    schedule : dict[str, dict[str, list[str]]] | None, opzionale
+        Schema dei fit da cui estrarre i nomi dei fit di training. Se None, i fit
+        vengono ricavati dai valori unici della colonna 'fit_through' con role == 'training'.
+
+    Restituisce
+    -----------
+    dict[str, TrainingBaselineStats]
+        Dizionario mappante il nome del fit (es. '2000-01') alle sue statistiche
+        di baseline (fit_through, n_matches, mu, sigma).
+
+    Solleva
+    -------
+    TypeError
+        Se df_residuals non è un pd.DataFrame o schedule non è un dict / None.
+    ValueError
+        Se mancano colonne richieste o se per un fit ci sono meno di 2 partite di training.
+    """
+    if not isinstance(df_residuals, pd.DataFrame):
+        raise TypeError(f"df_residuals must be a pd.DataFrame, got {type(df_residuals).__name__}")
+    if schedule is not None and not isinstance(schedule, dict):
+        raise TypeError(f"schedule must be a dict or None, got {type(schedule).__name__}")
+
+    required_cols = {"role", "fit_through", "log_loss"}
+    missing = required_cols - set(df_residuals.columns)
+    if missing:
+        raise ValueError(f"df_residuals missing required columns: {sorted(missing)}")
+
+    if schedule is not None:
+        fit_keys = sorted(schedule.keys(), key=parse_season_start_year)
+    else:
+        train_fits = df_residuals[df_residuals["role"] == "training"]["fit_through"].unique()
+        fit_keys = sorted(train_fits, key=parse_season_start_year)
+
+    stats_dict: dict[str, TrainingBaselineStats] = {}
+    for fit_k in fit_keys:
+        sub = df_residuals[
+            (df_residuals["role"] == "training")
+            & (df_residuals["fit_through"] == fit_k)
+        ]
+        n_matches = len(sub)
+        if n_matches < 2:
+            raise ValueError(
+                f"Fit '{fit_k}' has {n_matches} training matches, minimum required is 2"
+            )
+
+        mu_val = float(sub["log_loss"].mean())
+        sigma_val = float(sub["log_loss"].std(ddof=1))
+        stats_dict[fit_k] = TrainingBaselineStats(
+            fit_through=fit_k,
+            n_matches=n_matches,
+            mu=mu_val,
+            sigma=sigma_val,
+        )
+
+    return stats_dict
+
+
+def build_daily_z_test_records(
+    validation_series: Collection[ScenarioSeries],
+    baseline_stats: Mapping[str, TrainingBaselineStats],
+    alpha: float = ALPHA,
+    matchday_size: int = MATCHDAY_SIZE,
+    detectors: tuple[str, ...] = ("adwin", "page_hinkley"),
+) -> list[dict[str, str | int | float]]:
+    """Costruisce le righe 'matchday', 'summary' e 'overall' per il monitoraggio Z-test.
+
+    Parametri
+    ---------
+    validation_series : Collection[ScenarioSeries]
+        Serie temporali delle stagioni di validazione (es. 19 stagioni).
+    baseline_stats : Mapping[str, TrainingBaselineStats]
+        Mappatura fit_through -> TrainingBaselineStats calcolate sul training.
+    alpha : float, opzionale
+        Livello nominale di significatività (default ALPHA = 0.05).
+    matchday_size : int, opzionale
+        Numero di partite per giornata (default MATCHDAY_SIZE = 10).
+    detectors : tuple[str, ...], opzionale
+        Nomi dei detector da eseguire a confronto (default ('adwin', 'page_hinkley')).
+
+    Restituisce
+    -----------
+    list[dict[str, str | int | float]]
+        Lista di dizionari conformi alle colonne di DAILY_Z_TEST_CSV_COLUMNS.
+
+    Solleva
+    -------
+    TypeError
+        Se gli argomenti non sono dei tipi attesi.
+    ValueError
+        Se baseline_stats non contiene le statistiche per uno dei fit richiesti,
+        o se una serie non appartiene al ruolo 'validation'.
+    """
+    if not isinstance(validation_series, Collection):
+        raise TypeError(
+            f"validation_series must be a Collection, got {type(validation_series).__name__}"
+        )
+    if not isinstance(baseline_stats, Mapping):
+        raise TypeError(
+            f"baseline_stats must be a Mapping, got {type(baseline_stats).__name__}"
+        )
+    if isinstance(alpha, bool) or not isinstance(alpha, (int, float)):
+        raise TypeError(f"alpha must be a float, got {type(alpha).__name__}")
+    if alpha <= 0.0 or alpha >= 1.0:
+        raise ValueError(f"alpha must be in (0, 1), got {alpha}")
+
+    # Calcolo soglia nominale z_{1 - alpha/2}
+    threshold = float(norm.ppf(1.0 - float(alpha) / 2.0))
+    # Allarmi attesi per stagione di 38 giornate
+    expected_per_season = 38.0 * float(alpha)
+
+    records: list[dict[str, str | int | float]] = []
+
+    # Tracciamento allarmi per metodo su ciascuna stagione di validazione
+    method_season_alarms: dict[str, list[int]] = {
+        "z_nominal": [],
+        "adwin": [],
+        "page_hinkley": [],
+    }
+
+    for s in validation_series:
+        if s.role != "validation":
+            raise ValueError(
+                f"Expected series with role 'validation', got '{s.role}' for season '{s.season}'"
+            )
+        if s.fit_through not in baseline_stats:
+            raise ValueError(f"Missing baseline stats for fit '{s.fit_through}'")
+
+        b_stat = baseline_stats[s.fit_through]
+        z_scores = compute_matchday_z_scores(
+            s.log_loss,
+            mu=b_stat.mu,
+            sigma=b_stat.sigma,
+            matchday_size=matchday_size,
+        )
+
+        # 1. Righe "matchday" per z_nominal
+        z_alarm_count = 0
+        for m_idx, z_val in enumerate(z_scores, start=1):
+            alarm_flag = 1 if abs(float(z_val)) > threshold else 0
+            if alarm_flag == 1:
+                z_alarm_count += 1
+
+            records.append({
+                "row_type": "matchday",
+                "season": s.season,
+                "fit_through": s.fit_through,
+                "method": "z_nominal",
+                "block_length": "",
+                "threshold": threshold,
+                "matchday": m_idx,
+                "z": float(z_val),
+                "alarm": alarm_flag,
+                "n_alarms": "",
+                "expected_alarms": "",
+                "mean_alarms": "",
+                "n_resamples": "",
+                "exceedance_rate": "",
+            })
+
+        method_season_alarms["z_nominal"].append(z_alarm_count)
+
+        # 2. Righe "summary" per la stagione (z_nominal, adwin, page_hinkley)
+        # 2a. z_nominal
+        records.append({
+            "row_type": "summary",
+            "season": s.season,
+            "fit_through": s.fit_through,
+            "method": "z_nominal",
+            "block_length": "",
+            "threshold": threshold,
+            "matchday": "",
+            "z": "",
+            "alarm": "",
+            "n_alarms": z_alarm_count,
+            "expected_alarms": expected_per_season,
+            "mean_alarms": "",
+            "n_resamples": "",
+            "exceedance_rate": "",
+        })
+
+        # 2b. detectors (adwin, page_hinkley)
+        for det_name in detectors:
+            params = detector_params(det_name)
+            alarm_indices = run_drift_detector(s.log_loss, det_name, params)
+            det_count = int(len(alarm_indices))
+            method_season_alarms[det_name].append(det_count)
+
+            records.append({
+                "row_type": "summary",
+                "season": s.season,
+                "fit_through": s.fit_through,
+                "method": det_name,
+                "block_length": "",
+                "threshold": "",
+                "matchday": "",
+                "z": "",
+                "alarm": "",
+                "n_alarms": det_count,
+                "expected_alarms": expected_per_season,
+                "mean_alarms": "",
+                "n_resamples": "",
+                "exceedance_rate": "",
+            })
+
+    # 3. Righe "overall" (una per ciascun metodo sulle 19 stagioni di validazione)
+    n_seasons = len(validation_series)
+    all_methods = ("z_nominal",) + tuple(detectors)
+    for method in all_methods:
+        tot_alarms = sum(method_season_alarms[method])
+        mean_alarms = float(tot_alarms) / float(n_seasons) if n_seasons > 0 else 0.0
+        thresh_val = threshold if method == "z_nominal" else ""
+
+        records.append({
+            "row_type": "overall",
+            "season": "",
+            "fit_through": "",
+            "method": method,
+            "block_length": "",
+            "threshold": thresh_val,
+            "matchday": "",
+            "z": "",
+            "alarm": "",
+            "n_alarms": tot_alarms,
+            "expected_alarms": expected_per_season,
+            "mean_alarms": mean_alarms,
+            "n_resamples": "",
+            "exceedance_rate": "",
+        })
+
+    return records
+
+
+def generate_daily_z_test_records(
+    df_residuals: pd.DataFrame,
+    schedule: dict[str, dict[str, list[str]]],
+    expected_matches: int = EXPECTED_MATCHES_PER_SEASON,
+    alpha: float = ALPHA,
+    matchday_size: int = MATCHDAY_SIZE,
+) -> list[dict[str, str | int | float]]:
+    """Estrae le serie di validazione dai residui e genera i record per il CSV di C5.2."""
+    all_series = extract_scenario_series(df_residuals, schedule, expected_matches=expected_matches)
+    val_series = [s for s in all_series if s.role == "validation"]
+    baseline_stats = compute_training_baseline_stats(df_residuals, schedule=schedule)
+    return build_daily_z_test_records(
+        validation_series=val_series,
+        baseline_stats=baseline_stats,
+        alpha=alpha,
+        matchday_size=matchday_size,
+    )

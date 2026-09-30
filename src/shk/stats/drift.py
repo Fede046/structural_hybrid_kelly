@@ -15,6 +15,9 @@ from river.drift import ADWIN, PageHinkley
 # Target di allarmi per stagione (38 partite x alpha 0.05)
 TARGET_ALARMS_PER_SEASON: Final[float] = 1.9
 
+# Numero di partite per giornata (blocco contiguo)
+MATCHDAY_SIZE: Final[int] = 10
+
 # ---------------------------------------------------------------------------
 # Griglia e parametri di default congelati da river 0.26.1
 # ---------------------------------------------------------------------------
@@ -362,3 +365,81 @@ def calibrate_drift_detectors(
     best_ph, df_ph = calibrate_page_hinkley(series_2000, series_2010)
     df_combined = pd.concat([df_adwin, df_ph], ignore_index=True)
     return best_adwin, best_ph, df_combined
+
+
+def compute_matchday_z_scores(
+    series: np.ndarray,
+    mu: float,
+    sigma: float,
+    matchday_size: int = MATCHDAY_SIZE,
+) -> np.ndarray:
+    """Calcola lo Z-test per ciascun blocco contiguo (giornata) di partite.
+
+    Per ciascun blocco g di lunghezza matchday_size (default 10 partite):
+        Z_g = (media(log_loss_g) - mu) / (sigma / sqrt(matchday_size))
+
+    Parametri
+    ---------
+    series : np.ndarray
+        Array 1D contenente la sequenza di log-loss (es. 380 partite di una stagione).
+    mu : float
+        Media di riferimento delle partite di training del fit.
+    sigma : float
+        Deviazione standard campionaria (ddof=1) del training del fit.
+    matchday_size : int, opzionale
+        Numero di partite per blocco contiguo (default MATCHDAY_SIZE = 10).
+
+    Restituisce
+    -----------
+    np.ndarray
+        Array 1D di float64 contenente i valori di Z per ciascuna giornata (lunghezza N // matchday_size).
+
+    Solleva
+    -------
+    TypeError
+        Se series non è un np.ndarray numerico, se mu o sigma non sono numeri reali
+        (escludendo i booleani), o se matchday_size non è un intero nativo (escludendo bool).
+    ValueError
+        Se series non è 1D, se la lunghezza non è un multiplo positivo di matchday_size,
+        se mu o sigma contengono valori non finiti, se sigma <= 0, o se matchday_size <= 0.
+    """
+    if isinstance(matchday_size, bool) or not isinstance(matchday_size, (int, np.integer)):
+        raise TypeError(f"matchday_size must be an integer, got {type(matchday_size).__name__}")
+    if matchday_size <= 0:
+        raise ValueError(f"matchday_size must be positive, got {matchday_size}")
+
+    if not isinstance(series, np.ndarray):
+        raise TypeError(f"series must be a np.ndarray, got {type(series).__name__}")
+    if series.dtype == bool or not np.issubdtype(series.dtype, np.number):
+        raise TypeError(f"series must have a numeric dtype, got {series.dtype}")
+    if series.ndim != 1:
+        raise ValueError(f"series must be 1D, got ndim={series.ndim}")
+    if len(series) == 0:
+        raise ValueError("series must not be empty")
+    if len(series) % matchday_size != 0:
+        raise ValueError(
+            f"series length ({len(series)}) must be a positive multiple of matchday_size ({matchday_size})"
+        )
+    if not np.all(np.isfinite(series)):
+        raise ValueError("series contains non-finite values (NaN or Inf)")
+
+    if isinstance(mu, bool) or not isinstance(mu, (int, float, np.floating, np.integer)):
+        raise TypeError(f"mu must be a real number, got {type(mu).__name__}")
+    if not np.isfinite(mu):
+        raise ValueError(f"mu must be finite, got {mu}")
+
+    if isinstance(sigma, bool) or not isinstance(sigma, (int, float, np.floating, np.integer)):
+        raise TypeError(f"sigma must be a real number, got {type(sigma).__name__}")
+    if not np.isfinite(sigma):
+        raise ValueError(f"sigma must be finite, got {sigma}")
+    if sigma <= 0.0:
+        raise ValueError(f"sigma must be strictly positive, got {sigma}")
+
+    mu_val = float(mu)
+    sigma_val = float(sigma)
+    blocks = series.reshape(-1, matchday_size)
+    block_means = blocks.mean(axis=1)
+    denom = sigma_val / np.sqrt(matchday_size)
+    z_scores = (block_means - mu_val) / denom
+
+    return np.asarray(z_scores, dtype=np.float64)

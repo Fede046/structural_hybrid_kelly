@@ -591,3 +591,47 @@ Zone fragili → nella riga "CSV versionati legati ai test:", primo punto, aggiu
 
 Ultimo aggiornamento →
 "R9@2026-09-29c — task di scrittura chiusi dopo la mappa del 2026-09-29c: T26, T27, T28"
+
+
+---
+
+Stato repo → (sostituisce la riga "Su C5: 350ec52 …")
+"Su C5: e0d2396 "Add C5.1 drift detector monitoring" sopra 350ec52, 1ba1bb2 e 27cf7a4, con working tree pulito prima di T29 [V, R10@2026-09-29c]. Dopo T29 risultano modificati src/shk/stats/drift.py, src/shk/model/monitoring.py e tests/test_drift.py, e non tracciati scripts/us_c5_2_daily_z_test.py, results/us_c5_2_daily_z_test.csv, thesis/figures/us_c5_2_daily_z_test.png, tests/test_us_c5_2_acceptance.py e .agent/report/T29.md; stato dei commit successivi non noto [D, era V R11@2026-09-29c]"
+
+Stack e comandi →
+"Suite veloce locale, con i dati locali presenti: dopo T28 272 verdi, 15 deselezionati, 48.31 s [V, R8@2026-09-29c]; sono i 248 … e gli 8 di test_us_c5_1_acceptance.py. …"
+→ "Suite veloce locale, con i dati locali presenti: dopo T29 284 verdi, 15 deselezionati, 52.41 s [V, R11@2026-09-29c]; sono i 248 di dopo T25 [V, R33@2026-09-29b] più i 9 di test_residuals.py, i 10 di test_drift.py, gli 8 di test_us_c5_1_acceptance.py e i 9 di test_us_c5_2_acceptance.py. …" (resto invariato)
+
+Stack e comandi → Esperimenti, nuovo punto in coda:
+"- C5.2 us_c5_2_daily_z_test.py: SHA256 015645CF5029EE57A32C036657B3C69259D629722B600E5A71078BD26760A6F5, stabile su due esecuzioni [V, R11@2026-09-29c]; durata non misurata [D]."
+
+Moduli e responsabilità → riga di drift.py, aggiungi un punto:
+"- MATCHDAY_SIZE = 10; compute_matchday_z_scores(series, mu, sigma, matchday_size=MATCHDAY_SIZE) → Z per blocco contiguo, (media − mu)/(sigma/√matchday_size); ValueError per lunghezza non multipla positiva di matchday_size, sigma ≤ 0 o valori non finiti [V, R11@2026-09-29c; D per i dettagli delle validazioni]"
+
+Moduli e responsabilità → riga di monitoring.py, aggiungi in coda:
+"; per C5.2: DAILY_Z_TEST_CSV_COLUMNS (14 colonne: row_type, season, fit_through, method, block_length, threshold, matchday, z, alarm, n_alarms, expected_alarms, mean_alarms, n_resamples, exceedance_rate), TrainingBaselineStats (fit_through, n_matches, mu, sigma), compute_training_baseline_stats(df_residuals, schedule=None) (μ_f e σ_f con ddof = 1 su tutte le righe di training del fit; ValueError sotto 2 righe), build_daily_z_test_records(validation_series, baseline_stats, alpha=ALPHA, matchday_size=MATCHDAY_SIZE), generate_daily_z_test_records [V, R11@2026-09-29c; D per i dettagli interni]"
+
+Moduli e responsabilità →
+"scripts/ — nove script …" → "scripts/ — dieci script, ognuno con run_experiment() senza parametri [V, R1@2026-09-29c, R8 e R11@2026-09-29c]:"; aggiungi in coda all'elenco "us_c5_2_daily_z_test.py".
+
+Moduli e responsabilità → tests/
+"tests/ — 27 moduli; …" → "tests/ — 28 moduli; nessun conftest.py [V, R3, R4, R6, R8 e R11@2026-09-29c]:"; nel punto "- accettazione: …" aggiungi test_us_c5_2_acceptance.
+
+Moduli e responsabilità → Contenuto dei moduli di test (2/2):
+nella voce di test_drift.py sostituisci "7 test veloci, 4.69 s. 5 sintetici" con "10 test veloci, 4.43 s. 8 sintetici (compresi Z contro il calcolo a mano entro 1e-12, Z nullo per blocchi con media μ e validazioni di compute_matchday_z_scores)" [V, R11@2026-09-29c]; poi aggiungi la voce:
+"- test_us_c5_2_acceptance.py: 9 test veloci, 4.70 s. 3 sintetici (baseline, struttura dei record, coerenza fra matchday, summary e overall); 5 sul CSV versionato e sulla figura che girano anche senza dati (schema, conteggi per row_type, nessuna riga 2023-24, conteggi dei detector uguali al CSV di C5.1, esistenza del PNG); 1 di ricalcolo dai dati reali, saltato senza dati [V, R11@2026-09-29c]"
+
+Moduli e responsabilità → Persistenza, primo punto: aggiungi "us_c5_2_daily_z_test (14, 782)".
+
+Flussi principali → (nuova riga, dopo l'esperimento C5.1)
+"Esperimento C5.2 (T29), Z-test per matchday sulle 19 stagioni di validazione [V, R11@2026-09-29c]:
+- baseline (n, μ_f, σ_f): 2000-01 380, 1.00818933, 0.41019487; 2010-11 760, 1.00898737, 0.42054310; 2020-21 1 140, 1.02093662, 0.38389378;
+- soglia nominale 1.959963984540054;
+- allarmi z_nominal: 53 in totale (media 2.789 per stagione; 20 con Z > 0, 33 con Z < 0), da 0 (2012-13) a 5 (2008-09, 2022-23) per stagione;
+- sulle stesse stagioni: ADWIN 0 allarmi, Page-Hinkley 20 (media 1.053)."
+
+Zone fragili → riga "CSV versionati legati ai test:", primo punto: aggiungi C5.2 all'elenco dei CSV confrontati con il codice. Aggiungi poi un punto:
+"- test_us_c5_2_acceptance.py confronta i conteggi dei detector nel CSV di C5.2 con il CSV di C5.1: rigenerarne uno solo li fa divergere [V, R11@2026-09-29c]."
+
+Ultimo aggiornamento →
+"R11@2026-09-29c — task di scrittura chiusi dopo la mappa del 2026-09-29c: T26, T27, T28, T29"
