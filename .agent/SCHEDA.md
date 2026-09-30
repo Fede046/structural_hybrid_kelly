@@ -496,3 +496,52 @@ Convenzioni da rispettare → Test, aggiungi un punto:
 Ultimo aggiornamento →
 "R1@2026-09-29c — task di scrittura chiusi dopo la mappa del 2026-09-29c: nessuno"
 → "R4@2026-09-29c — task di scrittura chiusi dopo la mappa del 2026-09-29c: T26"
+
+
+
+---
+
+Stato repo → (sostituisce la riga "Dopo T26: …")
+"Su C5: 1ba1bb2 "Add model residual log-loss series" sopra 27cf7a4, con working tree pulito prima di T27 [V, R5@2026-09-29c]. Dopo T27 risultano modificato pyproject.toml e non tracciati src/shk/stats/drift.py, tests/test_drift.py e .agent/report/T27.md; stato dei commit successivi non noto [D, era V R6@2026-09-29c]"
+
+Stack e comandi →
+"Dipendenze runtime: numpy, scipy, matplotlib, pandas. Dipendenze dev: pytest. Nessun vincolo di versione. river non è fra le dipendenze [V, R1@2026-09-29c]. Se river sia installato nel venv non è verificato [D]"
+→ "Dipendenze runtime: numpy, scipy, matplotlib, pandas, river. Dipendenze dev: pytest. Nessun vincolo di versione [V, R1@2026-09-29c e R6@2026-09-29c per river]. Nel venv: river 0.26.1 e narwhals 2.26.0, installati con pip il 2026-09-30 senza modifiche alle altre dipendenze [V, R6@2026-09-29c]. uv.lock non aggiornato per river [D]"
+
+Stack e comandi →
+"Suite veloce locale, con i dati locali presenti: dopo T26 257 verdi, 15 deselezionati, 45.36 s [V, R3@2026-09-29c]; sono i 248 …"
+→ "Suite veloce locale, con i dati locali presenti: dopo T27 264 verdi, 15 deselezionati, 49.73 s [V, R6@2026-09-29c]; sono i 248 di dopo T25 [V, R33@2026-09-29b] più i 9 di test_residuals.py e i 7 di test_drift.py. I 248 sono …" (resto invariato)
+
+Moduli e responsabilità →
+"src/shk/ contiene 22 moduli applicativi (6 in kelly, 4 in stats, 4 in data, 2 in market, 6 in model) più 6 __init__.py […]. Nessun modulo di drift detection […]"
+→ "src/shk/ contiene 23 moduli applicativi (6 in kelly, 5 in stats, 4 in data, 2 in market, 6 in model) più 6 __init__.py [V, R1@2026-09-29c più residuals.py, R4, e drift.py, R6@2026-09-29c]"
+
+Moduli e responsabilità → (nuova riga, dopo le righe di calibration.py)
+"src/shk/stats/drift.py — importa ADWIN e PageHinkley da river.drift [V, R6@2026-09-29c]:
+- run_drift_detector(series, detector, params) → ndarray int64 degli indici base 0 con drift_detected; detector "adwin" o "page_hinkley"; istanza nuova a ogni chiamata; params=None → default di river;
+- calibrate_drift_detectors(serie_a, serie_b) → (parametri ADWIN, parametri Page-Hinkley, tabella della griglia); regola: min |10·(a + b) − 38|, poi meno allarmi totali, poi ordine della griglia;
+- costanti: TARGET_ALARMS_PER_SEASON = 1.9, griglie ADWIN (9 delta) e Page-Hinkley (3 delta × 6 threshold), ADWIN_DELTA = 0.002, PAGE_HINKLEY_DELTA = 0.05, PAGE_HINKLEY_THRESHOLD = 5.0.
+Che gli altri parametri (clock, max_buckets, min_window_length, grace_period; min_instances, alpha, mode) siano congelati come costanti e passati in modo esplicito non è verificato [D]"
+
+Moduli e responsabilità → tests/
+"tests/ — 25 moduli; nessun conftest.py […]" → "tests/ — 26 moduli; nessun conftest.py [V, R3, R4 e R6@2026-09-29c]"; nel punto "- unitari: …" aggiungi test_drift.
+
+Moduli e responsabilità → Contenuto dei moduli di test (2/2), nuova voce in coda:
+"- test_drift.py: 7 test veloci, 4.69 s. 5 sintetici (salto di media con i default di river e seed 20260930, intervallo degli indici, ripetibilità, validazioni, regola di scelta); 2 sui dati reali, saltati senza dati (i parametri ricalcolati coincidono con quelli congelati; conteggi riprodotti) [V, R6@2026-09-29c]"
+
+Flussi principali → (nuova riga, dopo la serie di log-loss di T26)
+"Taratura dei detector (T27), river 0.26.1, sulle serie di training 2000-01 (fit 2000-01) e 2010-11 (fit 2010-11), 380 partite ciascuna [V, R6@2026-09-29c]:
+- ADWIN: 0 allarmi su entrambe le stagioni per tutti i 9 delta; scelto delta 0.002 per l'ordine della griglia;
+- Page-Hinkley: scelto delta 0.05, threshold 5.0, con 1 e 1 allarmi (media 1.0); le combinazioni con threshold 1 o 2 danno da 7 a 12 allarmi per stagione, quelle con threshold ≥ 20 nessuno;
+- salto sintetico con i default: ADWIN all'indice 223, Page-Hinkley al 210, nessuno prima del salto."
+
+Zone fragili → (nuova riga)
+"river è senza vincolo di versione e la CI installa l'ultima: i conteggi di allarmi di T27 e dei task che li usano dipendono dall'implementazione di river 0.26.1 [V la versione, R6@2026-09-29c; D l'effetto di altre versioni]"
+
+Punti ancora incerti → sostituisci la voce "Dipendenze e river." e i suoi punti con:
+"Dipendenze e river.
+- river è in pyproject.toml senza vincolo e installato nel venv (0.26.1) [V, R6@2026-09-29c].
+- Resta aperto: aggiornare uv.lock, e se mettere un vincolo di versione a river; verificare che la CI installi river e resti verde."
+
+Ultimo aggiornamento →
+"R6@2026-09-29c — task di scrittura chiusi dopo la mappa del 2026-09-29c: T26, T27"
