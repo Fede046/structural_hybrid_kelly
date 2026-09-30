@@ -52,6 +52,52 @@ PAGE_HINKLEY_DELTA: Final[float] = 0.05
 PAGE_HINKLEY_THRESHOLD: Final[float] = 5.0
 
 
+def detector_params(detector: str) -> dict[str, float | int | str]:
+    """Restituisce una nuova copia dei parametri congelati per il detector specificato.
+
+    Parametri
+    ---------
+    detector : str
+        Nome del detector: 'adwin' oppure 'page_hinkley'.
+
+    Restituisce
+    -----------
+    dict[str, float | int | str]
+        Dizionario con tutti i parametri necessari per inizializzare il detector river.
+
+    Solleva
+    -------
+    TypeError
+        Se detector non è una stringa.
+    ValueError
+        Se detector non è 'adwin' né 'page_hinkley'.
+    """
+    if not isinstance(detector, str):
+        raise TypeError(f"detector must be a str, got {type(detector).__name__}")
+
+    d_lower = detector.strip().lower()
+    if d_lower == "adwin":
+        return {
+            "delta": ADWIN_DELTA,
+            "clock": ADWIN_DEFAULT_CLOCK,
+            "max_buckets": ADWIN_DEFAULT_MAX_BUCKETS,
+            "min_window_length": ADWIN_DEFAULT_MIN_WINDOW_LENGTH,
+            "grace_period": ADWIN_DEFAULT_GRACE_PERIOD,
+        }
+    elif d_lower == "page_hinkley":
+        return {
+            "min_instances": PAGE_HINKLEY_DEFAULT_MIN_INSTANCES,
+            "delta": PAGE_HINKLEY_DELTA,
+            "threshold": PAGE_HINKLEY_THRESHOLD,
+            "alpha": PAGE_HINKLEY_DEFAULT_ALPHA,
+            "mode": PAGE_HINKLEY_DEFAULT_MODE,
+        }
+    else:
+        raise ValueError(
+            f"Unknown detector: {detector!r}, expected 'adwin' or 'page_hinkley'"
+        )
+
+
 def run_drift_detector(
     series: np.ndarray,
     detector: str,

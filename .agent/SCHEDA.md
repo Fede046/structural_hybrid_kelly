@@ -545,3 +545,49 @@ Punti ancora incerti → sostituisci la voce "Dipendenze e river." e i suoi punt
 
 Ultimo aggiornamento →
 "R6@2026-09-29c — task di scrittura chiusi dopo la mappa del 2026-09-29c: T26, T27"
+
+---
+Stato repo → (sostituisce la riga "Su C5: 1ba1bb2 …")
+"Su C5: 350ec52 "Add drift detection with ADWIN and Page-Hinkley" sopra 1ba1bb2 e 27cf7a4, con working tree pulito prima di T28 [V, R7@2026-09-29c]. Dopo T28 risultano modificato src/shk/stats/drift.py e non tracciati src/shk/model/monitoring.py, scripts/us_c5_1_drift_detectors.py, tests/test_us_c5_1_acceptance.py, results/us_c5_1_drift_detectors.csv, thesis/figures/us_c5_1_drift_detectors.png e .agent/report/T28.md; stato dei commit successivi non noto [D, era V R9@2026-09-29c]"
+
+Stack e comandi →
+"Suite veloce locale, con i dati locali presenti: dopo T27 264 verdi, 15 deselezionati, 49.73 s [V, R6@2026-09-29c]; sono i 248 di dopo T25 […] più i 9 di test_residuals.py e i 7 di test_drift.py. …"
+→ "Suite veloce locale, con i dati locali presenti: dopo T28 272 verdi, 15 deselezionati, 48.31 s [V, R8@2026-09-29c]; sono i 248 di dopo T25 [V, R33@2026-09-29b] più i 9 di test_residuals.py, i 7 di test_drift.py e gli 8 di test_us_c5_1_acceptance.py. …" (resto invariato)
+
+Stack e comandi → Esperimenti, nuovo punto in coda:
+"- C5.1 us_c5_1_drift_detectors.py: SHA256 3D132F6FFC8A20365208A2041DC4270AEEBA289FBF5407630E6CAA92F8B20A96, stabile su due esecuzioni [V, R8@2026-09-29c]; durata non misurata [D]."
+
+Moduli e responsabilità →
+"src/shk/ contiene 23 moduli applicativi (6 in kelly, 5 in stats, 4 in data, 2 in market, 6 in model) più 6 __init__.py […]"
+→ "src/shk/ contiene 24 moduli applicativi (6 in kelly, 5 in stats, 4 in data, 2 in market, 7 in model) più 6 __init__.py [V, R1@2026-09-29c più residuals.py R4, drift.py R6 e monitoring.py R9@2026-09-29c]"
+
+Moduli e responsabilità → nella riga di drift.py, sostituisci l'ultima frase ("Che gli altri parametri … non è verificato [D]") con:
+"Anche i parametri non tarati sono costanti: ADWIN_DEFAULT_DELTA, ADWIN_DEFAULT_CLOCK = 32, ADWIN_DEFAULT_MAX_BUCKETS = 5, ADWIN_DEFAULT_MIN_WINDOW_LENGTH = 5, ADWIN_DEFAULT_GRACE_PERIOD = 10; PAGE_HINKLEY_DEFAULT_MIN_INSTANCES = 30, PAGE_HINKLEY_DEFAULT_DELTA, PAGE_HINKLEY_DEFAULT_THRESHOLD, PAGE_HINKLEY_DEFAULT_ALPHA = 1 − 0.0001, PAGE_HINKLEY_DEFAULT_MODE = "both". Con params fornito, le chiavi mancanti si prendono da queste costanti e tutto si passa in modo esplicito; con params=None si istanzia ADWIN() o PageHinkley() coi default di river [V, R7@2026-09-29c]. detector_params(detector) restituisce a ogni chiamata un dict nuovo con i parametri congelati; ValueError per un nome sconosciuto [V, R8@2026-09-29c]"
+
+Moduli e responsabilità → (nuova riga, dopo residuals.py)
+"src/shk/model/monitoring.py — DRIFT_DETECTOR_CSV_COLUMNS (12 colonne: row_type, season, role, fit_through, detector, alarm_number, match_index, matchday, date, home_team, away_team, n_alarms); ScenarioSeries (NamedTuple: season, role, fit_through, log_loss, date, home_team, away_team); extract_scenario_series (22 serie di 380 partite in ordine cronologico di stagione: le tre di training dal fit omonimo, le 19 di validazione dal loro fit; ValueError se una serie non ha 380 partite); build_drift_records; generate_drift_detector_records, con i parametri da detector_params [V, R8@2026-09-29c; D per i dettagli interni]"
+
+Moduli e responsabilità →
+"scripts/ — otto script, ognuno con run_experiment() senza parametri [V, R1@2026-09-29c]:" → "scripts/ — nove script, ognuno con run_experiment() senza parametri [V, R1@2026-09-29c e R8@2026-09-29c]:"; aggiungi in coda all'elenco "us_c5_1_drift_detectors.py".
+
+Moduli e responsabilità → tests/
+"tests/ — 26 moduli; …" → "tests/ — 27 moduli; nessun conftest.py [V, R3, R4, R6 e R8@2026-09-29c]:"; nel punto "- accettazione: …" aggiungi test_us_c5_1_acceptance.
+
+Moduli e responsabilità → Contenuto dei moduli di test (2/2), nuova voce in coda:
+"- test_us_c5_1_acceptance.py: 8 test veloci. 4 sintetici (schema, matchday, stringhe vuote, parametri presi da detector_params con monkeypatch); 3 sul CSV versionato che girano anche senza dati (schema, 44 righe summary, coerenza alarm/summary e matchday, nessuna riga 2023-24); 1 di ricalcolo dai dati reali con confronto esatto, saltato senza dati, 3.66 s [V, R8 e R9@2026-09-29c]"
+
+Moduli e responsabilità → Persistenza, primo punto: aggiungi "us_c5_1_drift_detectors (12, 66)" all'elenco dei CSV versionati.
+
+Flussi principali → (nuova riga, dopo la taratura dei detector)
+"Esperimento C5.1 (T28), 22 stagioni di 380 partite (3 di training, 19 di validazione) [V, R9@2026-09-29c]:
+- ADWIN: 0 allarmi su tutte le 22 stagioni, compreso il 2020-21;
+- Page-Hinkley: 22 allarmi, 2 in training (2000-01 alla matchday 8, 2010-11 alla 25, nessuno nel 2020-21) e 20 in validazione su 12 stagioni; da 0 a 3 allarmi per stagione; nessun allarme nel 2002-03, 2007-08, 2012-13, 2013-14, 2017-18, 2019-20, 2022-23."
+
+Convenzioni da rispettare → (nuova riga, dopo "Nomi: scripts/us_<story>_<nome>.py …")
+"Colonne dei CSV in snake_case e in inglese (date, home_team, away_team, come in C4.1); il blocco di 10 partite si chiama matchday [V, R9@2026-09-29c; decisione del programmatore 2026-09-30]"
+
+Zone fragili → nella riga "CSV versionati legati ai test:", primo punto, aggiungi C5.1 all'elenco dei CSV confrontati con il codice (ricalcolo esatto dai dati reali solo in locale). Aggiungi poi un punto:
+"- una modifica a residuals.py, drift.py o monitoring.py che cambia serie, parametri o record richiede di rieseguire scripts/us_c5_1_drift_detectors.py [D]."
+
+Ultimo aggiornamento →
+"R9@2026-09-29c — task di scrittura chiusi dopo la mappa del 2026-09-29c: T26, T27, T28"
