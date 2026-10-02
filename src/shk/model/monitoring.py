@@ -15,11 +15,16 @@ from scipy.stats import norm
 from shk.model.elo_fit import parse_season_start_year
 from shk.stats.drift import (
     MATCHDAY_SIZE,
+    N_VERIFICATION_RESAMPLES,
+    SEED_C5,
+    calibrate_matchday_z_threshold,
     compute_matchday_z_scores,
     detector_params,
     run_drift_detector,
+    spawn_c5_generators,
+    verify_matchday_z_thresholds,
 )
-from shk.stats.false_rejection import ALPHA
+from shk.stats.false_rejection import ALPHA, BLOCK_LENGTHS, N_BOOT
 
 # Schema delle 12 colonne in snake_case prescritte per il CSV dei detector (C5.1)
 DRIFT_DETECTOR_CSV_COLUMNS: Final[tuple[str, ...]] = (
@@ -348,8 +353,10 @@ def build_daily_z_test_records(
     alpha: float = ALPHA,
     matchday_size: int = MATCHDAY_SIZE,
     detectors: tuple[str, ...] = ("adwin", "page_hinkley"),
+    training_series: Mapping[str, np.ndarray] | None = None,
+    seed: int = SEED_C5,
 ) -> list[dict[str, str | int | float]]:
-    """Costruisce le righe 'matchday', 'summary' e 'overall' per il monitoraggio Z-test.
+    """Costruisce le righe 'matchday', 'summary', 'overall' e 'verification' per il monitoraggio Z-test.
 
     Parametri
     ---------
@@ -363,6 +370,12 @@ def build_daily_z_test_records(
         Numero di partite per giornata (default MATCHDAY_SIZE = 10).
     detectors : tuple[str, ...], opzionale
         Nomi dei detector da eseguire a confronto (default ('adwin', 'page_hinkley')).
+    training_series : Mapping[str, np.ndarray] | None, opzionale
+        Mappatura fit_through -> array 1D di log-loss del training per ciascun fit.
+        Se presente, esegue la calibrazione e verifica per ciascuna L in BLOCK_LENGTHS
+        e produce le righe 'summary' ed 'overall' per z_block_bootstrap e le righe 'verification'.
+    seed : int, opzionale
+        Seme master per lo spawn dei generatori di calibrazione e verifica (default SEED_C5 = 20260929).
 
     Restituisce
     -----------
@@ -385,15 +398,64 @@ def build_daily_z_test_records(
         raise TypeError(
             f"baseline_stats must be a Mapping, got {type(baseline_stats).__name__}"
         )
-    if isinstance(alpha, bool) or not isinstance(alpha, (int, float)):
+    if training_series is not None and not isinstance(training_series, Mapping):
+        raise TypeError(
+            f"training_series must be a Mapping or None, got {type(training_series).__name__}"
+        )
+    if isinstance(alpha, bool) or not isinstance(alpha, (int, float, np.floating)):
         raise TypeError(f"alpha must be a float, got {type(alpha).__name__}")
     if alpha <= 0.0 or alpha >= 1.0:
         raise ValueError(f"alpha must be in (0, 1), got {alpha}")
+    if isinstance(matchday_size, bool) or not isinstance(matchday_size, (int, np.integer)):
+        raise TypeError(f"matchday_size must be an integer, got {type(matchday_size).__name__}")
+    if matchday_size <= 0:
+        raise ValueError(f"matchday_size must be positive, got {matchday_size}")
 
     # Calcolo soglia nominale z_{1 - alpha/2}
     threshold = float(norm.ppf(1.0 - float(alpha) / 2.0))
     # Allarmi attesi per stagione di 38 giornate
     expected_per_season = 38.0 * float(alpha)
+
+    # Calibrazione e verifica per block bootstrap se training_series è fornito
+    calib_thresholds: dict[tuple[str, int], float] = {}
+    verif_rates: dict[tuple[str, int], tuple[float, float]] = {}
+    ordered_fits: list[str] = []
+
+    if training_series is not None:
+        ordered_fits = sorted(training_series.keys(), key=parse_season_start_year)
+        n_fits = len(ordered_fits)
+        if n_fits > 0:
+            rng_matrix = spawn_c5_generators(seed=seed, n_fits=n_fits)
+            for f_idx, fit_k in enumerate(ordered_fits):
+                if fit_k not in baseline_stats:
+                    raise ValueError(f"Missing baseline stats for training fit '{fit_k}'")
+                b_stat_tr = baseline_stats[fit_k]
+                tr_losses = training_series[fit_k]
+                for l_idx, block_len in enumerate(BLOCK_LENGTHS):
+                    calib_rng, verif_rng = rng_matrix[f_idx][l_idx]
+                    c_thresh = calibrate_matchday_z_threshold(
+                        training_log_loss=tr_losses,
+                        mu=b_stat_tr.mu,
+                        sigma=b_stat_tr.sigma,
+                        block_length=block_len,
+                        rng=calib_rng,
+                        n_boot=N_BOOT,
+                        alpha=alpha,
+                        matchday_size=matchday_size,
+                    )
+                    calib_thresholds[(fit_k, block_len)] = c_thresh
+                    c_rate, nom_rate = verify_matchday_z_thresholds(
+                        training_log_loss=tr_losses,
+                        mu=b_stat_tr.mu,
+                        sigma=b_stat_tr.sigma,
+                        block_length=block_len,
+                        calibrated_threshold=c_thresh,
+                        nominal_threshold=threshold,
+                        rng=verif_rng,
+                        n_resamples=N_VERIFICATION_RESAMPLES,
+                        matchday_size=matchday_size,
+                    )
+                    verif_rates[(fit_k, block_len)] = (c_rate, nom_rate)
 
     records: list[dict[str, str | int | float]] = []
 
@@ -403,6 +465,7 @@ def build_daily_z_test_records(
         "adwin": [],
         "page_hinkley": [],
     }
+    bootstrap_season_alarms: dict[int, list[int]] = {l_val: [] for l_val in BLOCK_LENGTHS}
 
     for s in validation_series:
         if s.role != "validation":
@@ -489,7 +552,31 @@ def build_daily_z_test_records(
                 "exceedance_rate": "",
             })
 
-    # 3. Righe "overall" (una per ciascun metodo sulle 19 stagioni di validazione)
+        # 2c. z_block_bootstrap per ciascuna lunghezza L
+        if training_series is not None:
+            for block_len in BLOCK_LENGTHS:
+                c_thresh = calib_thresholds[(s.fit_through, block_len)]
+                boot_alarms = int(np.sum(np.abs(z_scores) > c_thresh))
+                bootstrap_season_alarms[block_len].append(boot_alarms)
+
+                records.append({
+                    "row_type": "summary",
+                    "season": s.season,
+                    "fit_through": s.fit_through,
+                    "method": "z_block_bootstrap",
+                    "block_length": block_len,
+                    "threshold": c_thresh,
+                    "matchday": "",
+                    "z": "",
+                    "alarm": "",
+                    "n_alarms": boot_alarms,
+                    "expected_alarms": expected_per_season,
+                    "mean_alarms": "",
+                    "n_resamples": "",
+                    "exceedance_rate": "",
+                })
+
+    # 3. Righe "overall" sulle 19 stagioni di validazione
     n_seasons = len(validation_series)
     all_methods = ("z_nominal",) + tuple(detectors)
     for method in all_methods:
@@ -514,6 +601,70 @@ def build_daily_z_test_records(
             "exceedance_rate": "",
         })
 
+    if training_series is not None:
+        for block_len in BLOCK_LENGTHS:
+            tot_boot = sum(bootstrap_season_alarms[block_len])
+            mean_boot = float(tot_boot) / float(n_seasons) if n_seasons > 0 else 0.0
+
+            records.append({
+                "row_type": "overall",
+                "season": "",
+                "fit_through": "",
+                "method": "z_block_bootstrap",
+                "block_length": block_len,
+                "threshold": "",
+                "matchday": "",
+                "z": "",
+                "alarm": "",
+                "n_alarms": tot_boot,
+                "expected_alarms": expected_per_season,
+                "mean_alarms": mean_boot,
+                "n_resamples": "",
+                "exceedance_rate": "",
+            })
+
+        # 4. Righe "verification" (ordinate per fit cronologico, poi per L, poi metodo)
+        for fit_k in ordered_fits:
+            for block_len in BLOCK_LENGTHS:
+                c_thresh = calib_thresholds[(fit_k, block_len)]
+                c_rate, nom_rate = verif_rates[(fit_k, block_len)]
+
+                # 4a. z_block_bootstrap con soglia calibrata
+                records.append({
+                    "row_type": "verification",
+                    "season": "",
+                    "fit_through": fit_k,
+                    "method": "z_block_bootstrap",
+                    "block_length": block_len,
+                    "threshold": c_thresh,
+                    "matchday": "",
+                    "z": "",
+                    "alarm": "",
+                    "n_alarms": "",
+                    "expected_alarms": "",
+                    "mean_alarms": "",
+                    "n_resamples": N_VERIFICATION_RESAMPLES,
+                    "exceedance_rate": c_rate,
+                })
+
+                # 4b. z_nominal con soglia nominale
+                records.append({
+                    "row_type": "verification",
+                    "season": "",
+                    "fit_through": fit_k,
+                    "method": "z_nominal",
+                    "block_length": block_len,
+                    "threshold": threshold,
+                    "matchday": "",
+                    "z": "",
+                    "alarm": "",
+                    "n_alarms": "",
+                    "expected_alarms": "",
+                    "mean_alarms": "",
+                    "n_resamples": N_VERIFICATION_RESAMPLES,
+                    "exceedance_rate": nom_rate,
+                })
+
     return records
 
 
@@ -523,14 +674,27 @@ def generate_daily_z_test_records(
     expected_matches: int = EXPECTED_MATCHES_PER_SEASON,
     alpha: float = ALPHA,
     matchday_size: int = MATCHDAY_SIZE,
+    seed: int = SEED_C5,
 ) -> list[dict[str, str | int | float]]:
-    """Estrae le serie di validazione dai residui e genera i record per il CSV di C5.2."""
+    """Estrae le serie dai residui e genera i record completi per il CSV di C5.2."""
     all_series = extract_scenario_series(df_residuals, schedule, expected_matches=expected_matches)
     val_series = [s for s in all_series if s.role == "validation"]
     baseline_stats = compute_training_baseline_stats(df_residuals, schedule=schedule)
+
+    fit_keys = sorted(schedule.keys(), key=parse_season_start_year)
+    training_series: dict[str, np.ndarray] = {}
+    for fit_k in fit_keys:
+        sub_tr = df_residuals[
+            (df_residuals["role"] == "training")
+            & (df_residuals["fit_through"] == fit_k)
+        ].sort_values("Date", kind="stable")
+        training_series[fit_k] = sub_tr["log_loss"].to_numpy(dtype=np.float64)
+
     return build_daily_z_test_records(
         validation_series=val_series,
         baseline_stats=baseline_stats,
         alpha=alpha,
         matchday_size=matchday_size,
+        training_series=training_series,
+        seed=seed,
     )

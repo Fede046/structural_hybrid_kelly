@@ -19,13 +19,20 @@ from shk.model.residuals import compute_model_residuals
 from shk.stats.drift import (
     ADWIN_DELTA,
     MATCHDAY_SIZE,
+    N_VERIFICATION_RESAMPLES,
     PAGE_HINKLEY_DELTA,
     PAGE_HINKLEY_THRESHOLD,
+    SEED_C5,
     calibrate_drift_detectors,
+    calibrate_matchday_z_threshold,
     compute_matchday_z_scores,
+    compute_resampled_matchday_abs_z,
     run_drift_detector,
     select_best_candidate,
+    spawn_c5_generators,
+    verify_matchday_z_thresholds,
 )
+from shk.stats.false_rejection import ALPHA, BLOCK_LENGTHS
 
 
 def _has_real_data() -> bool:
@@ -326,3 +333,183 @@ def test_real_data_alarm_counts_reproducible(real_data_calibration):
     )
     assert len(alarms_ph_2000) == 1
     assert len(alarms_ph_2010) == 1
+
+
+# ---------------------------------------------------------------------------
+# Test Unitari Sintetici per Calibrazione e Verifica Z-Test (Task 30)
+# ---------------------------------------------------------------------------
+
+
+def test_compute_resampled_matchday_abs_z_synthetic_hand_calc():
+    """Verifica il calcolo analitico a mano di |Z| su input 1D entro 1e-12."""
+    # 10 elementi da 1.1 a 2.0 (media 1.55)
+    b1 = np.linspace(1.1, 2.0, 10)
+    mu = 1.0
+    sigma = 0.5
+    # Z = (1.55 - 1.0) / (0.5 / sqrt(10)) = 0.55 * sqrt(10) / 0.5 = 1.1 * sqrt(10)
+    expected_abs_z = float(abs(1.1 * np.sqrt(10)))
+
+    val_1d = compute_resampled_matchday_abs_z(b1, mu=mu, sigma=sigma, matchday_size=10)
+    assert isinstance(val_1d, float)
+    np.testing.assert_allclose(val_1d, expected_abs_z, atol=1e-12, rtol=1e-12)
+
+
+def test_compute_resampled_matchday_abs_z_vectorized_matches_1d():
+    """Verifica che la valutazione vettorizzata 2D coincida esattamente con le chiamate riga per riga 1D."""
+    rng = np.random.default_rng(20261002)
+    b_size = 15
+    n_obs = 30
+    batch_2d = rng.normal(loc=1.0, scale=0.4, size=(b_size, n_obs))
+    mu = 1.02
+    sigma = 0.38
+
+    # Chiamata 2D vettorizzata
+    res_2d = compute_resampled_matchday_abs_z(batch_2d, mu=mu, sigma=sigma, matchday_size=10)
+    assert isinstance(res_2d, np.ndarray)
+    assert res_2d.shape == (b_size,)
+    assert res_2d.dtype == np.float64
+
+    # Chiamate 1D singole
+    res_1d_list = [
+        compute_resampled_matchday_abs_z(batch_2d[i], mu=mu, sigma=sigma, matchday_size=10)
+        for i in range(b_size)
+    ]
+    np.testing.assert_allclose(res_2d, res_1d_list, atol=1e-12, rtol=1e-12)
+
+
+def test_compute_resampled_matchday_abs_z_validations():
+    """Verifica le eccezioni difensive TypeError e ValueError di compute_resampled_matchday_abs_z."""
+    valid_1d = np.ones(15, dtype=np.float64)
+
+    # Argomento resampled_data non ndarray
+    with pytest.raises(TypeError, match="resampled_data must be a np.ndarray"):
+        compute_resampled_matchday_abs_z([1.0] * 15, mu=1.0, sigma=0.5)  # type: ignore
+
+    # Dtype booleano o non numerico
+    with pytest.raises(TypeError, match="real numeric dtype"):
+        compute_resampled_matchday_abs_z(np.ones(15, dtype=bool), mu=1.0, sigma=0.5)
+
+    # ndim diverso da 1 o 2 (es. 0D o 3D)
+    with pytest.raises(ValueError, match="1D or 2D"):
+        compute_resampled_matchday_abs_z(np.array(1.0), mu=1.0, sigma=0.5)
+    with pytest.raises(ValueError, match="1D or 2D"):
+        compute_resampled_matchday_abs_z(np.ones((2, 2, 10)), mu=1.0, sigma=0.5)
+
+    # Dimensione temporale minore di matchday_size
+    with pytest.raises(ValueError, match="smaller than matchday_size"):
+        compute_resampled_matchday_abs_z(np.ones(8), mu=1.0, sigma=0.5, matchday_size=10)
+    with pytest.raises(ValueError, match="smaller than matchday_size"):
+        compute_resampled_matchday_abs_z(np.ones((5, 8)), mu=1.0, sigma=0.5, matchday_size=10)
+
+    # Valori non finiti
+    nan_arr = np.ones(15)
+    nan_arr[2] = np.nan
+    with pytest.raises(ValueError, match="non-finite"):
+        compute_resampled_matchday_abs_z(nan_arr, mu=1.0, sigma=0.5)
+
+    # mu non float / non finito
+    with pytest.raises(TypeError, match="mu must be a real number"):
+        compute_resampled_matchday_abs_z(valid_1d, mu=True, sigma=0.5)  # type: ignore
+    with pytest.raises(ValueError, match="mu must be finite"):
+        compute_resampled_matchday_abs_z(valid_1d, mu=float("inf"), sigma=0.5)
+
+    # sigma non float / non positivo / non finito
+    with pytest.raises(TypeError, match="sigma must be a real number"):
+        compute_resampled_matchday_abs_z(valid_1d, mu=1.0, sigma=False)  # type: ignore
+    with pytest.raises(ValueError, match="sigma must be strictly positive"):
+        compute_resampled_matchday_abs_z(valid_1d, mu=1.0, sigma=0.0)
+    with pytest.raises(ValueError, match="sigma must be strictly positive"):
+        compute_resampled_matchday_abs_z(valid_1d, mu=1.0, sigma=-0.5)
+    with pytest.raises(ValueError, match="sigma must be finite"):
+        compute_resampled_matchday_abs_z(valid_1d, mu=1.0, sigma=float("nan"))
+
+    # matchday_size invalido
+    with pytest.raises(TypeError, match="matchday_size must be an integer"):
+        compute_resampled_matchday_abs_z(valid_1d, mu=1.0, sigma=0.5, matchday_size=True)  # type: ignore
+    with pytest.raises(TypeError, match="matchday_size must be an integer"):
+        compute_resampled_matchday_abs_z(valid_1d, mu=1.0, sigma=0.5, matchday_size=10.0)  # type: ignore
+    with pytest.raises(ValueError, match="matchday_size must be strictly positive"):
+        compute_resampled_matchday_abs_z(valid_1d, mu=1.0, sigma=0.5, matchday_size=0)
+
+
+def test_calibrate_and_verify_matchday_z_threshold_synthetic():
+    """Verifica calibrazione e verifica su serie sintetica deterministica."""
+    rng = np.random.default_rng(42)
+    synth_loss = rng.normal(loc=1.0, scale=0.3, size=80)
+    mu = float(np.mean(synth_loss))
+    sigma = float(np.std(synth_loss, ddof=1))
+
+    calib_rng = np.random.default_rng(101)
+    thresh = calibrate_matchday_z_threshold(
+        training_log_loss=synth_loss,
+        mu=mu,
+        sigma=sigma,
+        block_length=7,
+        rng=calib_rng,
+        n_boot=100,
+        alpha=0.05,
+        matchday_size=10,
+    )
+    assert isinstance(thresh, float)
+    assert np.isfinite(thresh)
+    assert thresh > 0.0
+
+    # Verifica TypeError su rng non Generator
+    with pytest.raises(TypeError, match="np.random.Generator"):
+        calibrate_matchday_z_threshold(synth_loss, mu, sigma, 7, rng="not_an_rng")  # type: ignore
+
+    verif_rng = np.random.default_rng(102)
+    c_rate, nom_rate = verify_matchday_z_thresholds(
+        training_log_loss=synth_loss,
+        mu=mu,
+        sigma=sigma,
+        block_length=7,
+        calibrated_threshold=thresh,
+        nominal_threshold=1.96,
+        rng=verif_rng,
+        n_resamples=100,
+        matchday_size=10,
+    )
+    assert isinstance(c_rate, float)
+    assert isinstance(nom_rate, float)
+    assert 0.0 <= c_rate <= 1.0
+    assert 0.0 <= nom_rate <= 1.0
+
+    # Validazioni su verify_matchday_z_thresholds
+    with pytest.raises(TypeError, match="np.random.Generator"):
+        verify_matchday_z_thresholds(synth_loss, mu, sigma, 7, thresh, 1.96, rng=None)  # type: ignore
+    with pytest.raises(ValueError, match="calibrated_threshold must be non-negative"):
+        verify_matchday_z_thresholds(synth_loss, mu, sigma, 7, -1.0, 1.96, rng=verif_rng)
+    with pytest.raises(ValueError, match="nominal_threshold must be non-negative"):
+        verify_matchday_z_thresholds(synth_loss, mu, sigma, 7, thresh, -1.96, rng=verif_rng)
+    with pytest.raises(ValueError, match="n_resamples must be at least 1"):
+        verify_matchday_z_thresholds(synth_loss, mu, sigma, 7, thresh, 1.96, rng=verif_rng, n_resamples=0)
+
+
+def test_spawn_c5_generators_structure_and_validations():
+    """Verifica che spawn_c5_generators generi la struttura annidata corretta e le relative validazioni."""
+    generators = spawn_c5_generators(seed=SEED_C5, n_fits=3)
+    assert isinstance(generators, tuple)
+    assert len(generators) == 3
+
+    for fit_tuple in generators:
+        assert isinstance(fit_tuple, tuple)
+        assert len(fit_tuple) == len(BLOCK_LENGTHS)
+        for l_pair in fit_tuple:
+            assert isinstance(l_pair, tuple)
+            assert len(l_pair) == 2
+            c_rng, v_rng = l_pair
+            assert isinstance(c_rng, np.random.Generator)
+            assert isinstance(v_rng, np.random.Generator)
+            # Indipendenza dei flussi: estrazioni diverse
+            val_c = c_rng.uniform()
+            val_v = v_rng.uniform()
+            assert val_c != val_v
+
+    # Validazioni
+    with pytest.raises(TypeError, match="seed must be an integer"):
+        spawn_c5_generators(seed=True)  # type: ignore
+    with pytest.raises(TypeError, match="n_fits must be an integer"):
+        spawn_c5_generators(n_fits=1.5)  # type: ignore
+    with pytest.raises(ValueError, match="n_fits must be at least 1"):
+        spawn_c5_generators(n_fits=0)

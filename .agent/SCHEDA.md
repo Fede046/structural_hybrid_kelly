@@ -635,3 +635,40 @@ Zone fragili → riga "CSV versionati legati ai test:", primo punto: aggiungi C5
 
 Ultimo aggiornamento →
 "R11@2026-09-29c — task di scrittura chiusi dopo la mappa del 2026-09-29c: T26, T27, T28, T29"
+
+---
+
+Stato repo → (sostituisce la riga "Su C5: e0d2396 …")
+"Su C5: 03bf28e "Add daily matchday Z-test (US-C5.2) and reporting" sopra e0d2396, 350ec52, 1ba1bb2 e 27cf7a4, con working tree pulito prima di T30 [V, R12@2026-09-29c]. Dopo T30 risultano modificati src/shk/stats/drift.py, src/shk/model/monitoring.py, scripts/us_c5_2_daily_z_test.py, tests/test_drift.py, tests/test_us_c5_2_acceptance.py, results/us_c5_2_daily_z_test.csv e thesis/figures/us_c5_2_daily_z_test.png, e non tracciato .agent/report/T30.md; stato dei commit successivi non noto [D, era V R13@2026-09-29c]"
+
+Stack e comandi →
+"Suite veloce locale, con i dati locali presenti: dopo T29 284 verdi, 15 deselezionati, 52.41 s [V, R11@2026-09-29c]; sono i 248 di dopo T25 […] più i 9 di test_residuals.py, i 10 di test_drift.py, gli 8 di test_us_c5_1_acceptance.py e i 9 di test_us_c5_2_acceptance.py. …"
+→ "Suite veloce locale, con i dati locali presenti: dopo T30 291 verdi, 15 deselezionati, 56.23 s [V, R13@2026-09-29c]; sono i 248 di dopo T25 [V, R33@2026-09-29b] più i 9 di test_residuals.py, gli 8 di test_us_c5_1_acceptance.py e i 26 di test_drift.py e test_us_c5_2_acceptance.py insieme [V la somma, R13; D la ripartizione 15 + 11]. …" (resto invariato)
+
+Stack e comandi → Esperimenti, punto C5.2:
+"- C5.2 us_c5_2_daily_z_test.py: SHA256 015645CF…A6F5, stabile su due esecuzioni [V, R11@2026-09-29c]; …"
+→ "- C5.2 us_c5_2_daily_z_test.py: dopo T30 SHA256 1D73D255ABF1BE782D6C0B8B004A13E989B6D27E99723DF3F7DADF0A34B3F20B, stabile su due esecuzioni [V, R13@2026-09-29c]; durata non misurata [D]."
+
+Moduli e responsabilità → riga di drift.py, aggiungi un punto:
+"- per C5.2 calibrato: importa ALPHA, BLOCK_LENGTHS e N_BOOT da false_rejection.py; SEED_C5 = 20260929, N_VERIFICATION_RESAMPLES = 1000; compute_resampled_matchday_abs_z (|Z| delle prime MATCHDAY_SIZE posizioni; 1D → float, 2D (B, n) → (B,)); calibrate_matchday_z_threshold(training_log_loss, mu, sigma, block_length, rng, n_boot=N_BOOT, alpha=ALPHA, …) tramite calibrate_threshold; verify_matchday_z_thresholds(…, calibrated_threshold, nominal_threshold, rng, n_resamples=N_VERIFICATION_RESAMPLES, …) → (tasso calibrato, tasso nominale); spawn_c5_generators(seed=SEED_C5, n_fits=3) → [fit][L] → (rng di calibrazione, rng di verifica). rng sempre obbligatorio [V, R13@2026-09-29c; D per i dettagli interni]"
+
+Moduli e responsabilità → riga di monitoring.py, aggiungi in coda:
+"; per C5.2 calibrato, build_daily_z_test_records e generate_daily_z_test_records calibrano e verificano per fit (in ordine cronologico) e L, e aggiungono le righe "summary" e "overall" z_block_bootstrap e le righe "verification" [V, R13@2026-09-29c; D per le firme esatte]"
+
+Moduli e responsabilità → Contenuto dei moduli di test (2/2), voce di test_us_c5_2_acceptance.py, aggiungi in coda:
+"Dopo T30 conta, insieme a test_drift.py, 26 test; in più: allarmi calibrati ricalcolati dagli z e dalle soglie del CSV, soglie di summary uguali a quelle di verification, nove tassi di verifica calibrati nell'intervallo di monte_carlo_interval_99(), conteggi 722 / 114 / 6 / 18 [V, R13@2026-09-29c]"
+
+Moduli e responsabilità → Persistenza, primo punto: "us_c5_2_daily_z_test (14, 782)" → "us_c5_2_daily_z_test (14, 860)".
+
+Flussi principali → (nuova riga, dopo l'esperimento C5.2)
+"C5.2 con soglia calibrata (T30): moving block bootstrap della serie di training del fit, B = 999, statistica |Z| delle prime 10 posizioni [V, R13@2026-09-29c]:
+- soglie per L = 7 / 20 / 40: fit 2000-01 1.7728 / 2.1309 / 2.1309; fit 2010-11 2.0132 / 2.0207 / 2.0341; fit 2020-21 1.8680 / 2.0318 / 2.0924; nominale 1.9600;
+- tassi di verifica su 1000 ricampionamenti con soglia calibrata fra 0.038 e 0.065, tutti nell'intervallo al 99%; con soglia nominale fra 0.045 e 0.076;
+- allarmi sulle 19 stagioni di validazione: L = 7 61 (media 3.211), L = 20 43 (2.263), L = 40 43 (2.263), contro 53 (2.789) dello Z nominale.
+Con L ≥ 10 le prime 10 posizioni vengono da un solo blocco: la distribuzione bootstrap è quella delle |Z| delle finestre contigue di 10 partite della serie di training, un insieme discreto. Per questo, nel fit 2000-01, L = 20 e L = 40 danno la stessa soglia [D, ragionamento del supervisore]."
+
+Punti ancora incerti → voce "Imposizione di H₀ prima del block bootstrap …", riga "- Blocca: …":
+→ "- Blocca: la chiusura di T12; la correzione della docstring di calibration.py; la scelta di L per C5.2, C6.4 e C8. La calibrazione dello Z di C5.2 è fatta (T30) ricampionando la serie di training del fit, senza imporre H₀ sulla stagione sotto test [V, R13@2026-09-29c]."
+
+Ultimo aggiornamento →
+"R13@2026-09-29c — task di scrittura chiusi dopo la mappa del 2026-09-29c: T26, T27, T28, T29, T30"

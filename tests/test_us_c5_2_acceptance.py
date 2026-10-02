@@ -31,6 +31,7 @@ from shk.model.monitoring import (
     generate_daily_z_test_records,
 )
 from shk.model.residuals import compute_model_residuals
+from shk.stats.false_rejection import ALPHA, BLOCK_LENGTHS, monte_carlo_interval_99
 
 
 def _has_real_data() -> bool:
@@ -160,14 +161,15 @@ def test_synthetic_records_schema_and_types():
     records = generate_daily_z_test_records(df, schedule)
 
     # 2 stagioni di validazione x 38 giornate = 76 matchday
-    # 2 stagioni x 3 metodi = 6 summary
-    # 3 overall
-    assert len(records) == 76 + 6 + 3
+    # 2 stagioni x (3 metodi + 3 L) = 12 summary
+    # 3 metodi nominali + 3 L = 6 overall
+    # 1 fit x 3 L x 2 metodi = 6 verification
+    assert len(records) == 76 + 12 + 6 + 6
 
     for r in records:
         assert tuple(r.keys()) == DAILY_Z_TEST_CSV_COLUMNS
         row_type = r["row_type"]
-        assert row_type in ("matchday", "summary", "overall")
+        assert row_type in ("matchday", "summary", "overall", "verification")
 
         if row_type == "matchday":
             assert r["method"] == "z_nominal"
@@ -183,8 +185,7 @@ def test_synthetic_records_schema_and_types():
             assert r["n_resamples"] == ""
             assert r["exceedance_rate"] == ""
         elif row_type == "summary":
-            assert r["method"] in ("z_nominal", "adwin", "page_hinkley")
-            assert r["block_length"] == ""
+            assert r["method"] in ("z_nominal", "adwin", "page_hinkley", "z_block_bootstrap")
             assert r["matchday"] == ""
             assert r["z"] == ""
             assert r["alarm"] == ""
@@ -195,14 +196,18 @@ def test_synthetic_records_schema_and_types():
             assert r["n_resamples"] == ""
             assert r["exceedance_rate"] == ""
             if r["method"] == "z_nominal":
+                assert r["block_length"] == ""
+                assert isinstance(r["threshold"], float)
+            elif r["method"] == "z_block_bootstrap":
+                assert int(r["block_length"]) in BLOCK_LENGTHS
                 assert isinstance(r["threshold"], float)
             else:
+                assert r["block_length"] == ""
                 assert r["threshold"] == ""
-        else:  # overall
+        elif row_type == "overall":
             assert r["season"] == ""
             assert r["fit_through"] == ""
-            assert r["method"] in ("z_nominal", "adwin", "page_hinkley")
-            assert r["block_length"] == ""
+            assert r["method"] in ("z_nominal", "adwin", "page_hinkley", "z_block_bootstrap")
             assert r["matchday"] == ""
             assert r["z"] == ""
             assert r["alarm"] == ""
@@ -212,6 +217,30 @@ def test_synthetic_records_schema_and_types():
             assert isinstance(r["mean_alarms"], float)
             assert r["n_resamples"] == ""
             assert r["exceedance_rate"] == ""
+            if r["method"] == "z_nominal":
+                assert r["block_length"] == ""
+                assert isinstance(r["threshold"], float)
+            elif r["method"] == "z_block_bootstrap":
+                assert int(r["block_length"]) in BLOCK_LENGTHS
+                assert r["threshold"] == ""
+            else:
+                assert r["block_length"] == ""
+                assert r["threshold"] == ""
+        else:  # verification
+            assert r["season"] == ""
+            assert r["fit_through"] in ("2000-01", "2010-11", "2020-21")
+            assert r["method"] in ("z_block_bootstrap", "z_nominal")
+            assert int(r["block_length"]) in BLOCK_LENGTHS
+            assert isinstance(r["threshold"], float)
+            assert r["matchday"] == ""
+            assert r["z"] == ""
+            assert r["alarm"] == ""
+            assert r["n_alarms"] == ""
+            assert r["expected_alarms"] == ""
+            assert r["mean_alarms"] == ""
+            assert int(r["n_resamples"]) == 1000
+            assert isinstance(r["exceedance_rate"], float)
+            assert 0.0 <= float(r["exceedance_rate"]) <= 1.0
 
 
 def test_synthetic_records_alarms_coherence():
@@ -263,7 +292,7 @@ def test_versioned_csv_schema_and_columns():
 
 
 def test_versioned_csv_counts_and_structure():
-    """Verifica il conteggio righe (722 matchday, 57 summary, 3 overall) e la conformità dello Z-test."""
+    """Verifica il conteggio righe (722 matchday, 114 summary, 6 overall, 18 verification) e la conformità dello Z-test."""
     csv_path = _get_csv_path()
     with open(csv_path, mode="r", encoding="utf-8") as f:
         rows = list(csv.DictReader(f))
@@ -275,15 +304,18 @@ def test_versioned_csv_counts_and_structure():
     matchday_rows = [r for r in rows if r["row_type"] == "matchday"]
     summary_rows = [r for r in rows if r["row_type"] == "summary"]
     overall_rows = [r for r in rows if r["row_type"] == "overall"]
+    verification_rows = [r for r in rows if r["row_type"] == "verification"]
 
     # 19 stagioni di validazione x 38 giornate = 722
     assert len(matchday_rows) == 722
-    # 19 stagioni x 3 metodi = 57
-    assert len(summary_rows) == 57
-    # 3 metodi in overall
-    assert len(overall_rows) == 3
+    # 19 stagioni x (3 metodi nominali + 3 L) = 114
+    assert len(summary_rows) == 114
+    # 3 metodi nominali + 3 L = 6 overall
+    assert len(overall_rows) == 6
+    # 3 fit x 3 L x 2 metodi = 18 verification
+    assert len(verification_rows) == 18
     # Totale righe dati
-    assert len(rows) == 782
+    assert len(rows) == 860
 
     # Verifica proprietà righe matchday
     for r in matchday_rows:
@@ -329,7 +361,7 @@ def test_versioned_csv_alarms_match_c5_1():
 
 
 def test_versioned_csv_overall_coherence():
-    """Verifica che le 3 righe overall abbiano somme e medie coerenti con le 19 righe summary."""
+    """Verifica che le 6 righe overall abbiano somme e medie coerenti con le 19 righe summary."""
     csv_path = _get_csv_path()
     with open(csv_path, mode="r", encoding="utf-8") as f:
         rows = list(csv.DictReader(f))
@@ -337,16 +369,93 @@ def test_versioned_csv_overall_coherence():
     summary_rows = [r for r in rows if r["row_type"] == "summary"]
     overall_rows = [r for r in rows if r["row_type"] == "overall"]
 
-    assert len(overall_rows) == 3
-    overall_by_method = {r["method"]: r for r in overall_rows}
+    assert len(overall_rows) == 6
 
+    # 1. Metodi nominali e detector
     for met in ("z_nominal", "adwin", "page_hinkley"):
-        assert met in overall_by_method
-        ov = overall_by_method[met]
+        ov = next(r for r in overall_rows if r["method"] == met)
         sum_alarms = sum(int(r["n_alarms"]) for r in summary_rows if r["method"] == met)
         assert int(ov["n_alarms"]) == sum_alarms
         np.testing.assert_allclose(float(ov["mean_alarms"]), sum_alarms / 19.0, atol=1e-12)
         np.testing.assert_allclose(float(ov["expected_alarms"]), 1.9, atol=1e-12)
+
+    # 2. z_block_bootstrap per ciascuna L in BLOCK_LENGTHS
+    for block_len in BLOCK_LENGTHS:
+        ov = next(
+            r for r in overall_rows
+            if r["method"] == "z_block_bootstrap" and int(r["block_length"]) == block_len
+        )
+        sum_alarms = sum(
+            int(r["n_alarms"])
+            for r in summary_rows
+            if r["method"] == "z_block_bootstrap" and int(r["block_length"]) == block_len
+        )
+        assert int(ov["n_alarms"]) == sum_alarms
+        np.testing.assert_allclose(float(ov["mean_alarms"]), sum_alarms / 19.0, atol=1e-12)
+        np.testing.assert_allclose(float(ov["expected_alarms"]), 1.9, atol=1e-12)
+
+
+def test_versioned_csv_calibrated_alarms_match_thresholds():
+    """Ricalcola gli n_alarms calibrati dagli z delle righe matchday e verifica la concordanza delle soglie."""
+    csv_path = _get_csv_path()
+    with open(csv_path, mode="r", encoding="utf-8") as f:
+        rows = list(csv.DictReader(f))
+
+    matchday_rows = [r for r in rows if r["row_type"] == "matchday"]
+    summary_rows = [r for r in rows if r["row_type"] == "summary"]
+    verif_rows = [
+        r for r in rows
+        if r["row_type"] == "verification" and r["method"] == "z_block_bootstrap"
+    ]
+
+    # Controllo correzione 4: threshold di ogni summary z_block_bootstrap coincide
+    # con quella della riga verification z_block_bootstrap con stesso fit_through e block_length
+    verif_thresh_map = {
+        (r["fit_through"], int(r["block_length"])): float(r["threshold"])
+        for r in verif_rows
+    }
+    assert len(verif_thresh_map) == 9
+
+    # Raggruppamento matchday z_scores per stagione
+    z_by_season: dict[str, list[float]] = {}
+    for r in matchday_rows:
+        z_by_season.setdefault(r["season"], []).append(float(r["z"]))
+
+    for s_row in summary_rows:
+        if s_row["method"] == "z_block_bootstrap":
+            fit_k = s_row["fit_through"]
+            b_len = int(s_row["block_length"])
+            sum_thresh = float(s_row["threshold"])
+            verif_thresh = verif_thresh_map[(fit_k, b_len)]
+            np.testing.assert_allclose(sum_thresh, verif_thresh, atol=1e-12)
+
+            season = s_row["season"]
+            z_scores = z_by_season[season]
+            assert len(z_scores) == 38
+            recomputed_alarms = sum(1 for z_val in z_scores if abs(z_val) > sum_thresh)
+            assert int(s_row["n_alarms"]) == recomputed_alarms
+
+
+def test_versioned_csv_verification_rates_within_mc_interval():
+    """Verifica che tutti i tassi di verifica con soglia calibrata cadano nell'intervallo Monte Carlo al 99%."""
+    csv_path = _get_csv_path()
+    with open(csv_path, mode="r", encoding="utf-8") as f:
+        rows = list(csv.DictReader(f))
+
+    verif_rows = [
+        r for r in rows
+        if r["row_type"] == "verification" and r["method"] == "z_block_bootstrap"
+    ]
+    assert len(verif_rows) == 9
+
+    lower_99, upper_99 = monte_carlo_interval_99(alpha=ALPHA, n_series=1000)
+
+    for r in verif_rows:
+        rate = float(r["exceedance_rate"])
+        assert lower_99 <= rate <= upper_99, (
+            f"Tasso di verifica {rate} per fit={r['fit_through']}, L={r['block_length']} "
+            f"fuori dall'intervallo al 99% [{lower_99}, {upper_99}]"
+        )
 
 
 def test_figure_file_exists():
@@ -387,8 +496,8 @@ def test_real_data_recomputation_matches_csv():
     recomputed_records = generate_daily_z_test_records(df_residuals, schedule)
     assert len(recomputed_records) == len(saved_rows)
 
-    float_cols = {"threshold", "z", "expected_alarms", "mean_alarms"}
-    int_cols = {"matchday", "alarm", "n_alarms"}
+    float_cols = {"threshold", "z", "expected_alarms", "mean_alarms", "exceedance_rate"}
+    int_cols = {"matchday", "alarm", "n_alarms", "n_resamples"}
 
     for idx, (rec, saved) in enumerate(zip(recomputed_records, saved_rows, strict=True)):
         for col in DAILY_Z_TEST_CSV_COLUMNS:
