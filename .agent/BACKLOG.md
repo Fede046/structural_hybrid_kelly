@@ -39,8 +39,17 @@ Ultimo task: T32
 - ĝ = LL(q) − LL(p), misurato solo sulle stagioni di validazione, contro due serie di q (scelta del supervisore su delega, da confermare): b365_prematch (B365H/D/A) sulle 19 stagioni di validazione e pinnacle_closing (PSCH/D/A) sulle 10 stagioni di validazione dal 2012-13. Modello e tre metodi di de-vigging sulle stesse partite; esclusioni contate per causa. Esito informativo: nessun parametro, filtro o metodo si cambia in funzione di ĝ — S4, 2026-09-29
 - Ricalibrazione con lo stesso schema espansivo: one-vs-rest per esito, isotonica e Platt entrambe riportate senza scelta nel codice, limite a [1e-6, 1 − 1e-6] e rinormalizzazione (scelta del supervisore); reliability su 10 bin e Brier multiclasse sulla serie b365_prematch — S4, 2026-09-29
 - Un test sui dati reali che supera 60 s si marca slow e si dichiara nel report — S4, 2026-09-29
-- S5 in una sola chat di esecuzione fino a T32, in deroga alla regola dei cinque task, per decisione del programmatore; la chat successiva dovrà rimappare (contatore a 7) — S5, 2026-09-30
-- Nei CSV di S5 il blocco di 10 partite si chiama matchday (colonna e valore di row_type), non giornata, per la convenzione dell'inglese negli identificatori; le etichette delle figure restano in italiano — S5, 2026-09-30
+- Modulo 1 in versione raw per S5, senza ricalibrazione (scelta del supervisore su delega, da confermare) — S5, 2026-09-29
+- Serie di S5: log-loss per partita −ln p̂(esito realizzato) delle previsioni walk-forward con ELO_FITS, da compute_model_residuals (src/shk/model/residuals.py); le partite di uno scenario di training j vengono dal fit che termina in j, quelle di validazione dal fit delle stagioni di training strettamente anteriori — S5, 2026-09-29
+- Scenari di S5: i tre di training (2000-01, 2010-11, 2020-21) e le 19 stagioni di validazione; il 2023-24 dopo lo sblocco del test (US-C8.2). Scelta del supervisore su delega, da confermare — S5, 2026-09-29
+- Matchday: blocco contiguo di 10 partite nell'ordine cronologico stabile della stagione, 38 per stagione. Nei CSV si chiama matchday (colonna e valore di row_type), non giornata, per la convenzione dell'inglese negli identificatori; colonne dei CSV in snake_case; etichette delle figure in italiano — S5, 2026-09-30
+- Z-test per matchday: Z = (media della log-loss delle 10 partite − μ_f)/(σ_f/√10), con μ_f e σ_f (ddof = 1) su tutte le partite di training del fit f che prevede la stagione; allarme nominale se |Z| supera strettamente norm.ppf(1 − α/2), con α = ALPHA di false_rejection.py; atteso 1.9 allarmi per stagione — S5, 2026-09-29
+- Soglia calibrata dello Z (scelta del supervisore su delega, da confermare): moving block bootstrap della serie di training del fit, che definisce μ_f e σ_f, quindi H₀ per costruzione; statistica |Z| delle prime 10 posizioni; B = 999, L ∈ {7, 20, 40}, α = 0.05; seed SEED_C5 = 20260929, con SeedSequence(SEED_C5).spawn(3) per fit, spawn(3) per L e spawn(2) per calibrazione e verifica; verifica su 1000 ricampionamenti indipendenti nell'intervallo al 99%. calibration.py e false_rejection.py non si modificano — S5, 2026-09-29
+- Detector: ADWIN e PageHinkley importati da river, non reimplementati; un'istanza nuova per stagione, alimentata con la log-loss di tutte le partite in ordine cronologico. Parametri scelti su griglia fissata prima dei risultati (ADWIN delta ∈ {0.002, 0.005, 0.01, 0.02, 0.05, 0.1, 0.2, 0.5, 0.8}; Page-Hinkley delta ∈ {0.005, 0.01, 0.05} × threshold ∈ {1, 2, 5, 10, 20, 50}): vince la combinazione con media degli allarmi su 2000-01 e 2010-11 più vicina a 1.9, distanza |10·(a + b) − 38|, a parità meno allarmi e poi ordine della griglia; 2020-21 escluso dalla taratura. Congelati in drift.py: ADWIN delta 0.002; Page-Hinkley delta 0.05, threshold 5.0; gli altri parametri congelati coi default di river 0.26.1 e sempre passati in modo esplicito — S5, 2026-09-30
+- river fra le dipendenze runtime di pyproject.toml senza vincolo di versione, come pandas; uv.lock lo aggiorna a mano il programmatore — S5, 2026-09-29
+- Collocazione del codice: funzioni pure su array in src/shk/stats/drift.py e in src/shk/kelly/; funzioni sui DataFrame del Modulo 1 e costruzione dei CSV in src/shk/model/monitoring.py; src/shk/kelly/ non importa da shk.model né da shk.data — S5, 2026-09-30
+- Motore su quote reali (src/shk/kelly/backtest.py): riceve per partita data, frazione, quota ed esito, anche le partite senza puntata (frazione 0); per data L ← L + ln(1 + Σ f_i·r_i), con r_i = o_i − 1 se vinta e −1 se persa; bankroll 1 a inizio stagione; ValueError per frazioni fuori da [0, 1), somma di una data ≥ 1, date non ordinate, quote non finite o ≤ 1; non riceve p né p̂ — S5, 2026-09-30
+- Baseline D (scelte del supervisore su delega, da confermare): al più una puntata per partita, sull'esito con p̂·o − 1 massimo se > 0 (a parità nell'ordine H, D, A), con frazione kelly_staking(p̂, o − 1, λ_j) e quote B365 pre-partita non de-viggate; λ_j = 0.25·κ^(allarmi su partite con Date strettamente anteriore); κ ∈ {0, 0.25, 0.5, 0.75, 1} scelto per detector massimizzando la somma della log-ricchezza finale di 2010-11 e 2020-21, a parità esatta dei float il più grande; 2000-01 escluso perché senza B365. Congelati in staking.py: KAPPA_ADWIN = KAPPA_PAGE_HINKLEY = 1.0. Il detector dice quando, non quanto né di che tipo — S5, 2026-09-30
 
 ## Story chiuse
 ### S1 — C1 Simulatore Kelly: motore riusabile ed errore di stima — chiusa il 2026-09-27
@@ -137,6 +146,7 @@ Resta aperto:
 - La decisione sullo scenario di training 2000-01 senza B365 resta aperta (S3). In C4 non ha bloccato: ĝ si misura solo sulla validazione.
 
 ### Resta al programmatore per S4
+- Fatto: rimappatura del progetto il 2026-09-29 a 27cf7a4; C4 portato in main come 27cf7a4, con T20–T25.
 - Confermare o cambiare le scelte fatte dal supervisore su delega il 2026-09-29:
   - q con serie principale B365 pre-partita e seconda serie Pinnacle chiusura dal 2012-13;
   - calibrazione espansiva di K, h, ν e della ricalibrazione;
@@ -145,12 +155,68 @@ Resta aperto:
 - Correggere o dichiarare la tabella di Davidson delle note 2.8 §3.3: è calcolata con 10^(ΔR/200), mentre il modello usa la scala 400 del punteggio atteso.
 - US-C4.2, esito informativo: scrivere l'introduzione della tesi in base al segno di ĝ, negativo in tutti i casi, dichiarandolo in apertura e non nei limiti (note 2.4 §6).
 - Dichiarare in tesi: il mapping Davidson e la sensibilità rispetto alla baseline a pareggio costante; la regola per le neopromosse; lo schema espansivo degli iperparametri.
-- US-C4.3: decidere se serve una ricalibrazione e quale adottare, isotonica o Platt, da congelare. Log-loss di validazione raw / Platt / isotonica: 0.9795 / 0.9823 / 1.0139 su B365, 0.9812 / 0.9809 / 0.9914 su Pinnacle.
-- Decidere sull'accesso dell'agente ai file fuori dal repository: lasciarlo com'è, oppure limitarne i permessi alla cartella del progetto e aggiungere il divieto alle "Convenzioni del progetto" di .agent/PROTOCOLLO.md. Controllare che le 50 righe della cronologia di PowerShell lette in T24 non contenessero credenziali.
+- US-C4.3: decidere se serve una ricalibrazione e quale adottare, isotonica o Platt, da congelare. Log-loss di validazione raw / Platt / isotonica: 0.9795 / 0.9823 / 1.0139 su B365, 0.9812 / 0.9809 / 0.9914 su Pinnacle. In S5 si è usato raw su delega.
+- Decidere sull'accesso dell'agente ai file fuori dal repository: lasciarlo com'è, oppure limitarne i permessi alla cartella del progetto e aggiungere il divieto alle "Convenzioni del progetto" di .agent/PROTOCOLLO.md. Controllare che le 50 righe della cronologia di PowerShell lette in T24 non contenessero credenziali. La violazione si è ripetuta in S5.
 - Decidere se aggiungere alle "Convenzioni del progetto" di .agent/PROTOCOLLO.md la regola "ogni valore numerico del report viene da un comando elencato".
-- Rimappare il progetto prima della prossima story: dopo la mappa del 2026-09-29b sono stati chiusi cinque task di scrittura.
-- Committare codice, CSV e figure di T24 (T20–T23 sono in 7f8e928, 4710045, 15b2204, d329766), verificare la CI al primo push del branch C4 e portare C4 in main.
-- Committare T25 (T20–T24 sono in 7f8e928, 4710045, 15b2204, d329766, dc9d8f2), verificare che la CI del branch C4 sia verde e portare C4 in main. Con la CI verde, cambiare lo stato di T25 da "in corso: manca la verifica della CI" a "fatto".
+- Verificare la CI su main dopo 27cf7a4 e, se è verde, cambiare lo stato di T25 da "in corso: manca la verifica della CI" a "fatto".
+
+### S5 — C5 Drift detector standard: ADWIN e Page-Hinkley, Z-test per matchday, Baseline D — chiusa il 2026-09-30
+Esito: unisce US-C5.1, US-C5.2 e US-C5.3. Sette task (T26–T32), tutti chiusi con i criteri coperti da test, in una sola chat sul branch C5, in deroga alla regola dei cinque per decisione del programmatore. Suite veloce 248 → 317 verde (69 test nuovi); suite slow invariata (15, nessun test slow aggiunto, non rieseguita). Risultati in results/us_c5_1_drift_detectors.csv, results/us_c5_2_daily_z_test.csv, results/us_c5_3_baseline_d.csv e nelle tre figure omonime in thesis/figures/; valori misurati nei report .agent/report/T26.md … T32.md, ricalcolati in modo indipendente dal supervisore dove numerici. Dopo la mappa del 2026-09-29c sono stati chiusi sette task di scrittura: la prossima chat deve rimappare.
+Note di esecuzione:
+- un correttivo in T28 (totali del report non prodotti da comandi). Valori o comandi non prodotti da un comando anche in R2, R8 e R12 e nei comandi abbreviati dei report di T31 e T32, intercettati dal supervisore;
+- l'agente ha letto i log della piattaforma fuori dal repository in R2 (messaggio troncato di 277 byte) e in R14 (senza dichiararlo, con il messaggio integro); ha letto più volte sezioni del backlog fuori dal task. Nessun file scritto fuori scope, nessun comando git vietato;
+- i messaggi lunghi arrivano troncati in coda: da T27 i messaggi all'agente terminano con una riga di controllo;
+- river 0.26.1 installato nel .venv dopo un dry-run che non toccava le altre dipendenze.
+- T26 — Serie di log-loss per partita del Modulo 1 — fatto — file: src/shk/model/residuals.py, tests/test_residuals.py
+- T27 — ADWIN e Page-Hinkley da river, tarati sul training — fatto — file: pyproject.toml, src/shk/stats/drift.py, tests/test_drift.py
+- T28 — Allarmi di ADWIN e Page-Hinkley su ogni scenario, US-C5.1 — fatto — file: src/shk/stats/drift.py, src/shk/model/monitoring.py, scripts/us_c5_1_drift_detectors.py, tests/test_us_c5_1_acceptance.py, results/us_c5_1_drift_detectors.csv, thesis/figures/us_c5_1_drift_detectors.png
+- T29 — Z-test per matchday con soglia nominale e confronto con ADWIN e Page-Hinkley, US-C5.2 — fatto — file: src/shk/stats/drift.py, src/shk/model/monitoring.py, tests/test_drift.py, scripts/us_c5_2_daily_z_test.py, tests/test_us_c5_2_acceptance.py, results/us_c5_2_daily_z_test.csv, thesis/figures/us_c5_2_daily_z_test.png
+- T30 — Soglia dello Z-test calibrata per block bootstrap, US-C5.2 — fatto — file: src/shk/stats/drift.py, src/shk/model/monitoring.py, scripts/us_c5_2_daily_z_test.py, tests/test_drift.py, tests/test_us_c5_2_acceptance.py, results/us_c5_2_daily_z_test.csv, thesis/figures/us_c5_2_daily_z_test.png
+- T31 — Motore su quote reali e regola della Baseline D, con κ calibrato sul training, US-C5.3 — fatto — file: src/shk/kelly/backtest.py, src/shk/kelly/staking.py, src/shk/model/monitoring.py, tests/test_backtest.py, tests/test_staking.py, tests/test_us_c5_3_acceptance.py
+- T32 — Esecuzione appaiata della Baseline D sulle stagioni di validazione, US-C5.3 — fatto — file: src/shk/model/monitoring.py, scripts/us_c5_3_baseline_d.py, tests/test_us_c5_3_acceptance.py, results/us_c5_3_baseline_d.csv, thesis/figures/us_c5_3_baseline_d.png
+
+Risultati principali:
+- Serie del Modulo 1 raw (T26): 9 500 righe (training 380 / 760 / 1 140 per fit, validazione 3 040 / 3 420 / 760); log-loss medie uguali a quelle di C4.1 entro 4.1e-7.
+- Taratura dei detector (T27), river 0.26.1: ADWIN 0 allarmi su 2000-01 e 2010-11 per tutti i 9 delta, scelto 0.002 per l'ordine della griglia; Page-Hinkley scelto delta 0.05, threshold 5.0, con 1 allarme per stagione (media 1.0 contro il target 1.9).
+- C5.1 (T28), 22 stagioni: ADWIN 0 allarmi ovunque, compreso il 2020-21; Page-Hinkley 22 allarmi, 2 in training (nessuno nel 2020-21) e 20 in validazione su 12 stagioni.
+- C5.2 (T29), 19 stagioni di validazione: baseline μ_f 1.00819 / 1.00899 / 1.02094, σ_f 0.410 / 0.421 / 0.384; Z nominale 53 allarmi (media 2.789 per stagione contro 1.9; 20 con Z > 0, 33 con Z < 0); ADWIN 0; Page-Hinkley 20 (media 1.053).
+- C5.2 calibrato (T30): soglie da 1.773 a 2.131 contro 1.960 nominale; tassi di verifica con soglia calibrata fra 0.038 e 0.065, tutti nell'intervallo al 99%, con soglia nominale fra 0.045 e 0.076; allarmi calibrati 61 (L = 7), 43 (L = 20), 43 (L = 40). Con L ≥ 10 la distribuzione bootstrap si riduce alle finestre contigue di 10 partite del training: nel fit 2000-01 L = 20 e L = 40 danno la stessa soglia.
+- κ della Baseline D (T31) su 2010-11 e 2020-21: κ = 1 per entrambi i detector (ADWIN per parità su tutta la griglia, Page-Hinkley massimo stretto); quarto-Kelly 0.2108 nel 2010-11 e −0.0756 nel 2020-21.
+- C5.3 (T32), 19 stagioni di validazione: D-ADWIN e D-Page-Hinkley coincidono col riferimento in ogni stagione; riferimento con log-ricchezza totale −10.580 su 6 234 puntate, positiva solo nel 2005-06 e nel 2008-09; drawdown massimo per stagione da 0.375 a 0.774.
+
+Resta aperto:
+- Taratura di ADWIN: con la griglia fissata e questa serie non scatta mai. Alternative: dichiararlo in tesi; rivedere griglia, serie o target in una chat di backlog, con criteri scritti prima.
+- κ della Baseline D: κ = 1 per entrambi i detector rende la Baseline D identica al quarto-Kelly senza detector, e la figura di C5.3 mostra differenze tutte nulle. La calibrazione usa stagioni in campione per il Modulo 1. Alternative: dichiararlo in tesi; rivedere griglia, stagioni od obiettivo di κ, ed eventualmente il contenuto della figura, in una chat di backlog.
+- US-C5.1 sul 2023-24, dopo lo sblocco del test.
+- Il salto dei test di ricalcolo senza dati è verificato leggendo il codice (T26) o dai report, non da un'esecuzione in CI.
+- Imprecisioni nei report, lasciati come sono: indice e data del primo allarme di Page-Hinkley nel 2000-01 discordi fra R8 e R9 (stessa matchday 8); comandi abbreviati nei report T31 e T32; figura di C5.3 descritta a due pannelli. Fanno fede i valori riportati qui e nella scheda.
+
+### Fuori scope di S5
+- Esecuzione dei detector e della Baseline D sul 2023-24, possibile solo dopo lo sblocco del test (US-C8.2); la variante literature del 2023-24, non ricostruibile da football-data.
+- Architettura ad agenti a classi e agenti A, B ed E (US-C6.1, US-C6.2); molti seed e intervalli per block bootstrap (US-C8.3).
+- Il seguito di T12 e la correzione della docstring di calibration.py, che restano nella story S2.
+- CUSUM, EWMA, DDM ed EDDM; Bonferroni, Šidák e la soglia sul massimo dei 38 Z, cioè il controllo della FWER (note 1.4 §5).
+- La baseline esterna, cioè il log-score differenziale contro il mercato, come criterio di arresto (note 1.4 §6.3).
+- Precision e recall dei detector rispetto a date di drift note, e la mappatura scenario → tipo di drift (note 2.7 §6.4).
+- Kelly simultaneo sui tre esiti dell'1X2, il ritorno di λ al valore iniziale dopo un allarme, una durata della riduzione come secondo parametro.
+- Il Modulo 1 ricalibrato (Platt o isotonica) come serie alternativa.
+
+### Resta al programmatore per S5
+- Confermare o cambiare le scelte fatte dal supervisore su delega il 2026-09-29:
+  - Modulo 1 raw;
+  - scenari di ora = 3 di training più 19 di validazione, con il 2023-24 dopo lo sblocco;
+  - calibrazione dello Z sulla serie di training del fit;
+  - taratura dei detector su 1.9 allarmi per stagione su 2000-01 e 2010-11, con il 2020-21 escluso;
+  - Baseline D: un esito per partita, λ di partenza 0.25, κ moltiplicativo a ogni allarme, griglia e obiettivo di κ, 2000-01 escluso dalla calibrazione.
+- Decidere sulla taratura di ADWIN e sul κ della Baseline D (vedi "Resta aperto").
+- US-C5.1: saper rispondere a "perché ANOVA e non ADWIN?" coi numeri di T28, T29 e T30: ADWIN 0 allarmi, Z nominale 53, Z calibrato 61, 43 e 43 sulle 19 stagioni.
+- US-C5.2: scegliere quale L adottare per lo Z calibrato, insieme alla scelta rimandata in S2 per C6.4 e C8.
+- US-C5.3: scrivere in tesi che il detector dice quando, non quanto né di che tipo, e che κ è un iperparametro fisso uguale per ogni allarme.
+- Eseguire US-C5.1 sul 2023-24 dopo lo sblocco del test.
+- Aggiornare uv.lock dopo l'aggiunta di river, e decidere se mettergli un vincolo di versione.
+- Decidere sui permessi dell'agente e sulla regola dei valori del report in .agent/PROTOCOLLO.md (vedi S4).
+- Committare codice, CSV e figure di T26–T32; verificare al primo push di C5 che la CI installi river, resti verde e salti i test di ricalcolo senza dati; portare C5 in main.
+- Rimappare il progetto prima della prossima story: dopo la mappa del 2026-09-29c sono stati chiusi sette task di scrittura.
 
 ## Story S2 — C2 ANOVA a mano, autocorrelazione e calibrazione per block bootstrap — aperta il 2026-09-28, T12 da rivedere
 Esito: unisce US-C2.1, US-C2.2 e US-C2.3. T8–T11 chiusi con tutti i criteri coperti da test; T12 fermo sul criterio 2; T13 corregge i test del CSV per la CI. Suite veloce 109 verde; suite slow 14, di cui 1 rossa per il risultato noto di T12. Risultati in results/us_c2_anova_autocorrelation.csv (12 righe nominali definitive + 12 calibrate) e thesis/figures/us_c2_anova_autocorrelation.png (pannelli A e B); valori misurati nei report .agent/report/T8.md … T12.md, riprodotti in modo indipendente dal supervisore.
@@ -179,7 +245,7 @@ Resta aperto:
 - Calibrazione per contiguous_38 e random_2.
 - Stationary bootstrap (Politis–Romano) e scelta automatica della lunghezza dei blocchi (Politis–White).
 - Errori standard HAC / Newey–West e correzione per n_eff.
-- Applicazione della calibrazione a Z-test, DiD e Breusch-Pagan: spetta a C5.2, C6.4 e C8, che riusano src/shk/stats/calibration.py.
+- Applicazione della calibrazione a Z-test, DiD e Breusch-Pagan: spetta a C5.2, C6.4 e C8, che riusano src/shk/stats/calibration.py. Per lo Z-test di C5.2 è fatta in T30, ricampionando la serie di training del fit.
 - Intervalli di confidenza di η² per block bootstrap (C8).
 - Gestore canonico delle dipendenze (pip contro uv).
 
@@ -190,448 +256,3 @@ Resta aperto:
 - Scegliere quale L adottare nelle story che riusano la calibrazione (C5.2, C6.4, C8) e scrivere in tesi il limite misurato del rimedio: rimandato a dopo il seguito di T12.
 - Committare CSV e PNG generati dai Task 10 e 12, e la correzione dei test di T13.
 - Verificare che la CI torni verde al primo push dopo T13.
-
-## Story S5 — C5 Drift detector standard: ADWIN e Page-Hinkley, Z-test per giornata, Baseline D
-Aperta il 2026-09-29.
-
-**Interpretazione:** far girare ADWIN e Page-Hinkley di river sulla log-loss per partita del Modulo 1, tarati sul training, e registrare quando scattano su ogni scenario; misurare i falsi allarmi dello Z-test per giornata, con soglia nominale e con soglia calibrata per block bootstrap, accanto a quelli dei due detector; costruire la Baseline D, Kelly frazionario che riduce la frazione a ogni allarme con κ calibrato sul training e congelato, ed eseguirla in modo appaiato. Unisce US-C5.1, US-C5.2 e US-C5.3 in una sola story di sette task (T26–T32), per decisione del programmatore del 2026-09-29, in deroga alla regola dei cinque.
-
-**Assunzioni fatte:**
-- Scelte del supervisore su delega, da confermare: le tre domande del 2026-09-29 sono rimaste senza risposta e il programmatore ha chiesto di procedere.
-  - Modulo 1 in versione raw, senza ricalibrazione: è la migliore su B365 per log-loss, Brier e ĝ [V, R29@2026-09-29b].
-  - "Cinque scenari": ora i tre scenari di training (2000-01, 2010-11, 2020-21) e, in più, le 19 stagioni di validazione. Il 2023-24 resta un criterio aperto, da eseguire dopo lo sblocco del test (US-C8.2); la variante literature non è ricostruibile da football-data (fuori scope di S3).
-  - Soglia calibrata dello Z-test: moving block bootstrap della serie di log-loss di training del fit, cioè della serie che definisce la baseline dello Z. H₀ vale per costruzione, perché si ricampiona il riferimento e non la stagione sotto test: il problema di T12 non si presenta [D, ragionamento del supervisore]. src/shk/stats/calibration.py si riusa senza modificarlo; il seguito di T12 resta nella story S2.
-- Serie: log-loss per partita, −ln p̂(esito realizzato), delle previsioni walk-forward con ELO_FITS. Le partite di uno scenario di training j si prendono dal fit che termina in j (lo stesso di C4.1, con gli iperparametri stimati anche su j); le partite di validazione dal fit delle stagioni di training strettamente anteriori (decisione S4).
-- Giornata: blocco contiguo di 10 partite nell'ordine cronologico stabile della stagione (decisione S2, disegno contiguous_38). Tutte le stagioni usate hanno 380 partite, cioè 38 giornate [V, R10@2026-09-29].
-- Z-test per giornata: Z = (media della log-loss delle 10 partite − μ_f) / (σ_f / √10), con μ_f e σ_f (ddof = 1) calcolate sulle partite di training del fit f che prevede la stagione; allarme nominale se |Z| > z_0.975 (α = 0.05); atteso nominale 38 × 0.05 = 1.9 allarmi per stagione.
-- "Stagione senza drift noto": ciascuna delle 19 stagioni di validazione, con conteggio per stagione e media; nessuna stagione viene scelta dopo averne visto l'esito.
-- Detector: un'istanza nuova per ogni stagione, alimentata nell'ordine cronologico con la log-loss di tutte le partite; un allarme è un aggiornamento in cui river segnala drift. Parametri scelti su una griglia fissata nel testo di T27, prima dei risultati: vince la combinazione il cui numero medio di allarmi su 2000-01 e 2010-11 è più vicino a 1.9, cioè allo stesso tasso di falsi allarmi dello Z nominale (note 1.9 §10). Il 2020-21 resta fuori dalla taratura perché ha un drift noto (COVID).
-- river fra le dipendenze runtime di pyproject.toml senza vincolo di versione, come pandas (decisione S3); uv.lock lo aggiorna a mano il programmatore.
-- Baseline D (scelte del supervisore su delega, da confermare):
-  - per ogni partita si punta al più su un esito, quello con p̂·o − 1 massimo se positivo, con frazione kelly_staking(p̂, o − 1, λ_t); quote B365 pre-partita non de-viggate; p̂ del Modulo 1 raw;
-  - λ_t vale 0.25 a inizio stagione (quarto-Kelly, decisione S1) ed è moltiplicato per κ a ogni allarme; un allarme su una partita della data d cambia λ solo per le partite con Date > d (stessa regola dell'anti-leakage di S3);
-  - bankroll 1 a inizio di ogni stagione; le puntate della stessa data si decidono sul bankroll di inizio data e si regolano insieme;
-  - κ ∈ {0, 0.25, 0.5, 0.75, 1}, scelto per ciascun detector massimizzando la somma della log-ricchezza finale di 2010-11 e 2020-21; a parità vince il κ più grande. κ = 1 coincide col quarto-Kelly senza detector;
-  - il 2000-01 non entra nella calibrazione di κ perché non ha B365 [V, R14@2026-09-29]. La scheda dice "C5 non usa le quote di training": per US-C5.3 non vale;
-  - esecuzione appaiata, per ora, fra D-ADWIN, D-Page-Hinkley e il riferimento κ = 1, sulle 19 stagioni di validazione; gli agenti A, B ed E arrivano con C6.
-- Nessun task di sola ricognizione: ogni voce [D] riguarda un solo task e sta nella sua riga "Da verificare prima di iniziare", per decisione del programmatore sul numero di task.
-- Fatti [V] su cui non si fa verificare nulla: ELO_FITS congelato [V, R23@2026-09-29b]; split congelato, read_split_config e load_by_role [V, R26@2026-09-29 e R1@2026-09-29c]; log-loss di C4.1 e C4.2 [V, R23 e R26@2026-09-29b]; firme di calibration.py [V, R12@2026-09-28 e R1@2026-09-29c]; costanti di false_rejection.py [V, R13 e R14@2026-09-28].
-
-**Domande aperte:** nessuna bloccante. Le scelte su delega qui sopra vanno confermate dal programmatore.
-
-### Task 26 — Serie di log-loss per partita del Modulo 1
-Stato: fatto
-
-Obiettivo: una funzione di libreria in src/shk/model/residuals.py restituisce la log-loss per partita del Modulo 1 raw, per le partite di training di ciascun fit e per le stagioni di validazione, in ordine cronologico stabile, e riproduce le log-loss medie di C4.1.
-
-Dipende da: nessuno.
-
-Contesto:
-- Modulo 1 Elo con parametri congelati in ELO_FITS (src/shk/model/elo_fit.py), fit "2000-01", "2010-11", "2020-21" [V, R23@2026-09-29b]. derive_fit_schedule(training, validation) dà per ogni fit le stagioni di training ≤ j e le stagioni di validazione che prevede [V, R1@2026-09-29c]: il fit 2000-01 prevede dal 2002-03 al 2009-10, il 2010-11 dal 2011-12 al 2019-20, il 2020-21 il 2021-22 e il 2022-23 [D, dai conteggi di C4.1].
-- src/shk/model/scoring.py: compute_log_loss (puntuale), generate_validation_predictions(df, fits, schedule) alla riga 218, che chiama predict_elo_fast con i parametri di ciascun fit [V, R1@2026-09-29c].
-- src/shk/model/elo_fit.py: compute_training_log_loss → (loss, preds) [V, R1@2026-09-29c]. src/shk/model/recalibration.py: generate_fit_training_predictions alle righe 322-337 [V l'esistenza, R1@2026-09-29c; D il comportamento].
-- Probabilità del Modulo 1: matrici (N, 3) in ordine H, D, A, righe a somma 1, previsioni walk-forward prima dell'aggiornamento della stessa data [V, R1@2026-09-29c]. Le metriche di scoring.py non usano eps: una probabilità ≤ 0 per l'esito realizzato dà ValueError [D].
-- Dati reali solo con read_split_config e load_by_role ("history", "training", "validation") di src/shk/data/split.py, come negli script C4 [V, R1@2026-09-29c]. Il ruolo "test" è bloccato e non si legge.
-- Valori di riferimento, riportati con sei decimali [V, R23 e R26@2026-09-29b]: log-loss media di training 1.008189 (fit 2000-01, 380 partite), 1.008987 (fit 2010-11, 760), 1.020937 (fit 2020-21, 1 140); di validazione 0.973761 (3 040), 0.983832 (3 420), 0.983300 (760); sulle 7 220 partite di validazione insieme 0.979536.
-- results/us_c4_1_elo_walkforward.csv ha 15 colonne e 9 500 righe [V, R1@2026-09-29c]; che siano le 2 280 righe di training dei tre fit più le 7 220 di validazione è dedotto dal conteggio [D].
-
-Da verificare prima di iniziare:
-- che cosa restituiscono compute_training_log_loss e generate_fit_training_predictions (colonne, ordine, fit di appartenenza), e se una delle due dà già le previsioni di training per partita;
-- quali colonne restituisce generate_validation_predictions e da quale colonna si ricava l'esito realizzato;
-- il contenuto di results/us_c4_1_elo_walkforward.csv, solo in lettura.
-
-Passi richiesti:
-1. Verificare le voci qui sopra leggendo il codice, senza eseguire nulla, e riportarle nel piano.
-2. Proporre il piano: nome e firma della funzione, colonne restituite, funzioni esistenti riusate.
-3. Creare src/shk/model/residuals.py con una funzione che, dati i dati caricati e lo schedule, restituisce un DataFrame con almeno le colonne season, Date, HomeTeam, AwayTeam, fit_through, role ("training" o "validation"), p_home, p_draw, p_away, FTR e log_loss = −ln della probabilità dell'esito realizzato. Una partita di training compare una volta per ogni fit che la include. Righe ordinate per fit, ruolo e ordine cronologico stabile.
-4. Validazioni in apertura di funzione.
-5. Scrivere tests/test_residuals.py: test sintetici (colonne, ordine, log_loss uguale a −ln p calcolato a mano su poche righe, validazioni) e test sui dati reali contro i valori di riferimento, saltati senza dati.
-6. Eseguire la suite veloce.
-
-Vincoli:
-- Non modificare elo.py, elo_predictor.py, elo_fit.py, scoring.py, recalibration.py: una modifica che cambia previsioni o metriche rende incoerenti ELO_FITS e i CSV di C4. Non modificare calibration.py, false_rejection.py né config/split.toml.
-- Modulo 1 in versione raw: nessuna ricalibrazione.
-- Nessun commit e nessuna operazione git che modifichi lo stato del repository: i commit li fa il programmatore a mano.
-- Commenti e docstring in italiano; identificatori, messaggi delle eccezioni e nomi dei test in inglese. Non è un'incoerenza: è la convenzione.
-- Rispettare le eventuali convenzioni aggiuntive della sezione "Convenzioni del progetto" di .agent/PROTOCOLLO.md.
-- Prima di scrivere codice, proporre il piano e fare le domande necessarie; nessun comando Python prima dell'approvazione del piano.
-- Ogni comando Python con .\.venv\Scripts\python.exe dalla radice del repository.
-- Codice: type hints completi; docstring in stile NumPy (Parametri / Restituisce / Solleva); TypeError per i tipi e ValueError per i valori, in apertura di funzione; interi bool o float → TypeError; nessun try:, print( o logging in src/ e scripts/.
-- Dati reali solo con read_split_config e load_by_role; load_all_seasons non si usa; il ruolo "test" non si legge.
-- Test sui dati reali saltati con motivo esplicito tramite _has_real_data o una condizione equivalente su DEFAULT_DATA_DIR; marcati slow se superano 60 s, e dichiarati nel report.
-- Non leggere né scrivere file fuori dal repository.
-- A fine task, scrivere il report in .agent/report/T26.md, unico file di .agent/ che si può toccare, con in sezioni distinte: percorsi dei file modificati, creati o rimossi; esito di ciascun criterio di accettazione; valori misurati; deviazioni dal piano; cose non fatte; comandi eseguiti. Fatti e valori senza giudizi; interpretazioni solo in una sezione a parte, e solo se richieste. Ogni valore numerico del report viene da un comando elencato.
-
-Criteri di accettazione:
-- Sui dati reali, righe di training per fit 380, 760 e 1 140, e righe di validazione 3 040, 3 420 e 760.
-- Log-loss media per fit e ruolo uguale ai valori di riferimento entro 5e-7 (i riferimenti hanno sei decimali); sulle 7 220 righe di validazione 0.979536 entro 5e-7.
-- log_loss finita e positiva su tutte le righe; ordine cronologico stabile per fit e ruolo.
-- Nessuna lettura del ruolo "test"; il test di guardia di tests/test_split.py resta verde.
-- Test sintetici verdi anche senza dati; test sui dati reali saltati con motivo esplicito senza dati; suite veloce tutta verde.
-
-Esito: 2026-09-30 — file toccati: src/shk/model/residuals.py, tests/test_residuals.py (entrambi creati; nessun file esistente modificato). Funzione compute_model_residuals(df, schedule, fits=None), con fits=None → ELO_FITS; costante RESIDUALS_COLUMNS; 11 colonne in ordine fit_through, role, season, Date, HomeTeam, AwayTeam, p_home, p_draw, p_away, FTR, log_loss; Date col dtype di df. Previsioni di training dalle preds di compute_training_log_loss, di validazione da generate_validation_predictions (fit_through da schedule); FTR con align_predictions_with_odds; log_loss con compute_log_loss. 9 test: 5 sintetici; 4 sui dati reali, tramite una fixture scope="module" che senza CSV chiama pytest.skip("Real data in data/raw/E0 not available"). _has_real_data è definita localmente, come negli altri moduli di test; tests/conftest.py non esiste. Deviazioni: alla prima esecuzione i 5 test sintetici fallivano (EloFitParams istanziato senza c); corretti, e le assegnazioni di colonna in residuals.py sono state riscritte con .assign su copie per eliminare dei PerformanceWarning. In ricognizione (R2) l'agente ha letto due log della piattaforma fuori dal repository (C:\Users\malse\.gemini\antigravity\brain\…\transcript.jsonl e transcript_full.jsonl), perché il messaggio gli era arrivato troncato di 277 byte; da allora nessuna lettura esterna. Non fatto: nessuno; il salto dei test senza dati è verificato leggendo il codice, e in esecuzione lo verificherà la CI. Valori misurati: righe di training 380 / 760 / 1 140, di validazione 3 040 / 3 420 / 760, totale 9 500; log-loss media di training 1.00818933 / 1.00898737 / 1.02093662, di validazione 0.97376082 / 0.98383215 / 0.98330012, aggregata 0.97953559 (scarto massimo dai riferimenti 4.1e-7); media di training uguale alla loss di compute_training_log_loss entro 1e-12; compute_model_residuals sui dati reali 1.70 s; suite veloce 257 verdi, 15 deselezionati, 45.36 s. Report: .agent/report/T26.md.
-
-### Task 27 — ADWIN e Page-Hinkley da river, tarati sul training
-Stato: fatto
-
-Obiettivo: src/shk/stats/drift.py esegue ADWIN e Page-Hinkley importati da river su una serie di log-loss e ne restituisce gli allarmi; i parametri dei due detector sono scelti sul training con la griglia e la regola fissate qui, e congelati in costanti.
-
-Dipende da: T26.
-
-Contesto:
-- river non è fra le dipendenze di pyproject.toml [V, R1@2026-09-29c]; se sia installato nel .venv non è verificato [D]. Le dipendenze non hanno vincoli di versione, pyproject.toml è la fonte di verità e la CI installa con pip install -e ".[dev]" ignorando uv.lock [V, R1@2026-09-29c].
-- In src/shk/ non c'è nessun modulo di drift detection [D, dall'elenco dei moduli di R1@2026-09-29c]. Il codice statistico sta in src/shk/stats/ (decisione S2); src/shk/stats/__init__.py contiene solo una docstring [V, R5@2026-09-28].
-- La log-loss per partita la dà la funzione di T26 in src/shk/model/residuals.py.
-- Target della taratura: 1.9 = 38 × 0.05, gli allarmi attesi in una stagione dallo Z-test nominale per giornata.
-
-Da verificare prima di iniziare:
-- se river è installato nel .venv e in quale versione;
-- nella versione installata: nomi delle classi (river.drift.ADWIN, river.drift.PageHinkley), parametri e valori di default, metodo di aggiornamento e attributo che segnala il drift, parametro mode di PageHinkley e suo default;
-- l'esito di T26: nome della funzione e colonne restituite.
-
-Passi richiesti:
-1. Verificare le voci qui sopra e riportare versione e API nel piano.
-2. Proporre il piano, compresa l'eventuale installazione di river nel .venv con .\.venv\Scripts\python.exe -m pip, da eseguire solo dopo l'approvazione.
-3. Aggiungere river alle dipendenze runtime di pyproject.toml, senza vincolo di versione. Non toccare uv.lock.
-4. Creare src/shk/stats/drift.py con una funzione che esegue un detector su una serie 1D, con un'istanza nuova a ogni chiamata, e restituisce gli indici (base 0) degli aggiornamenti in cui river segnala drift.
-5. Griglia, fissata qui e non modificabile: ADWIN con delta ∈ {0.002, 0.005, 0.01, 0.02, 0.05, 0.1, 0.2, 0.5, 0.8} e gli altri parametri al default; Page-Hinkley con delta ∈ {0.005, 0.01, 0.05} per threshold ∈ {1, 2, 5, 10, 20, 50} e gli altri parametri al default della versione installata, da riportare nel report.
-6. Taratura: per ogni combinazione, contare gli allarmi sulla log-loss delle partite della stagione 2000-01 (fit 2000-01) e della stagione 2010-11 (fit 2010-11, solo le partite di quella stagione), con un'istanza nuova per stagione. Scegliere, per ciascun detector, la combinazione con media dei due conteggi più vicina a 1.9; a parità, quella con meno allarmi totali; poi la prima nell'ordine della griglia.
-7. Congelare in costanti di drift.py la griglia, il target e i parametri scelti.
-8. Scrivere tests/test_drift.py:
-   - sintetici: serie stazionaria contro serie con salto di media di 5 deviazioni standard a metà, con i parametri di default di river, e almeno un allarme dopo il salto; indici in [0, n); due chiamate sulla stessa serie danno lo stesso risultato; validazioni;
-   - sui dati reali: la taratura ricalcolata dà i parametri congelati; saltato senza dati, slow se supera 60 s.
-9. Eseguire la suite veloce.
-
-Vincoli:
-- ADWIN e Page-Hinkley si importano da river e non si reimplementano.
-- Griglia, target e regola di scelta non si cambiano dopo aver visto i risultati.
-- In questo task non si fanno girare i detector sul 2020-21, sulle stagioni di validazione né sul 2023-24.
-- Non modificare i moduli di src/shk/model/ né calibration.py, false_rejection.py e config/split.toml.
-- Nessun commit e nessuna operazione git che modifichi lo stato del repository: i commit li fa il programmatore a mano.
-- Commenti e docstring in italiano; identificatori, messaggi delle eccezioni e nomi dei test in inglese. Non è un'incoerenza: è la convenzione.
-- Rispettare le eventuali convenzioni aggiuntive della sezione "Convenzioni del progetto" di .agent/PROTOCOLLO.md.
-- Prima di scrivere codice, proporre il piano e fare le domande necessarie; nessun comando Python prima dell'approvazione del piano.
-- Ogni comando Python con .\.venv\Scripts\python.exe dalla radice del repository.
-- Codice: type hints completi; docstring in stile NumPy (Parametri / Restituisce / Solleva); TypeError per i tipi e ValueError per i valori, in apertura di funzione; interi bool o float → TypeError; nessun try:, print( o logging in src/ e scripts/.
-- Dati reali solo con read_split_config e load_by_role; load_all_seasons non si usa; il ruolo "test" non si legge.
-- Test sui dati reali saltati con motivo esplicito tramite _has_real_data o una condizione equivalente su DEFAULT_DATA_DIR; marcati slow se superano 60 s, e dichiarati nel report.
-- Non leggere né scrivere file fuori dal repository.
-- A fine task, scrivere il report in .agent/report/T27.md, unico file di .agent/ che si può toccare, con in sezioni distinte: percorsi dei file modificati, creati o rimossi; esito di ciascun criterio di accettazione; valori misurati; deviazioni dal piano; cose non fatte; comandi eseguiti. Fatti e valori senza giudizi; interpretazioni solo in una sezione a parte, e solo se richieste. Ogni valore numerico del report viene da un comando elencato.
-
-Criteri di accettazione:
-- river è in pyproject.toml senza vincolo di versione; drift.py importa ADWIN e PageHinkley da river; nessuna reimplementazione.
-- Il test sintetico col salto di media dà almeno un allarme dopo il salto per entrambi i detector.
-- I parametri congelati coincidono con la taratura ricalcolata sui dati reali (test saltato senza dati).
-- Il report contiene la tabella completa della griglia, con gli allarmi per combinazione su 2000-01 e su 2010-11, e i default della versione di river installata.
-- Suite veloce tutta verde.
-
-Da misurare e riportare, senza farlo tornare: allarmi per combinazione e stagione; media e distanza da 1.9 delle combinazioni scelte. Se nessuna combinazione si avvicina a 1.9, per esempio zero allarmi ovunque, lo si riporta così: la griglia non si allarga.
-
-Esito: 2026-09-30 — file toccati: pyproject.toml (aggiunto river, senza vincolo), src/shk/stats/drift.py e tests/test_drift.py (creati). river 0.26.1 installato nel .venv con pip, insieme a narwhals 2.26.0 (il dry-run non prevedeva modifiche ad altre dipendenze); uv.lock non toccato. drift.py: run_drift_detector(series, detector, params) → indici base 0 (ndarray int64), con istanza nuova a ogni chiamata; con params=None usa i default di river; calibrate_drift_detectors(serie 2000-01, serie 2010-11) → parametri scelti e tabella della griglia; regola di scelta con distanza intera |10·(a + b) − 38|, poi meno allarmi totali, poi ordine della griglia. Parametri congelati: ADWIN_DELTA = 0.002; PAGE_HINKLEY_DELTA = 0.05, PAGE_HINKLEY_THRESHOLD = 5.0. Default di river 0.26.1: ADWIN delta 0.002, clock 32, max_buckets 5, min_window_length 5, grace_period 10; PageHinkley min_instances 30, delta 0.005, threshold 50.0, alpha 0.9999, mode "both". Taratura eseguita con un comando python -c elencato nel report, senza file in scripts/. Deviazioni: alla prima esecuzione i 2 test sui dati reali erano in errore per un import di pandas mancante nel modulo di test; corretto. Da verificare in T28: se gli altri parametri dei detector sono passati in modo esplicito come costanti, come chiesto all'approvazione del piano; il report non lo dice. Valori misurati: ADWIN 0 allarmi su 2000-01 e su 2010-11 per tutti i 9 delta della griglia (media 0, distanza 1.9); Page-Hinkley scelto (0.05, 5.0), 1 allarme su 2000-01 e 1 su 2010-11 (media 1.0, distanza 0.9); tabella completa nel report. Salto sintetico con i default di river, seed 20260930: ADWIN allarme all'indice 223, Page-Hinkley al 210, nessuno prima del salto. tests/test_drift.py: 7 test (5 sintetici, 2 sui dati reali) in 4.69 s; suite veloce 264 verdi, 15 deselezionati, 49.73 s. Report: .agent/report/T27.md.
-
-### Task 28 — Allarmi di ADWIN e Page-Hinkley su ogni scenario, US-C5.1
-Stato: fatto
-
-Obiettivo: lo script scripts/us_c5_1_drift_detectors.py registra quando scattano i due detector tarati, su ciascuno scenario di training e su ciascuna stagione di validazione, in results/us_c5_1_drift_detectors.csv e thesis/figures/us_c5_1_drift_detectors.png.
-
-Dipende da: T26, T27.
-
-Contesto:
-- Serie di log-loss per partita da src/shk/model/residuals.py (T26); detector e parametri congelati da src/shk/stats/drift.py (T27).
-- Scenari: 2000-01, 2010-11 e 2020-21, ciascuno con le partite della sola stagione prese dal fit che termina in quella stagione; 19 stagioni di validazione, ciascuna col fit che la prevede. Ogni stagione ha 380 partite [V, R10@2026-09-29].
-- Gli script C4 leggono lo split con read_split_config e i dati con load_by_role [V, R1@2026-09-29c].
-- Rieseguire uno script sovrascrive CSV e PNG versionati [V, R1@2026-09-28].
-
-Da verificare prima di iniziare: l'esito di T26 e T27, cioè nomi di funzioni e costanti.
-
-Passi richiesti:
-1. Proporre il piano: colonne del CSV, pannelli della figura.
-2. Scrivere lo script con run_experiment(): per ogni stagione e per ogni detector, un'istanza nuova con i parametri congelati, alimentata con la log-loss di tutte le partite della stagione in ordine cronologico.
-3. CSV con una colonna row_type:
-   - righe "alarm", una per allarme, con season, role, fit_through, detector, alarm_number (progressivo nella stagione), match_index (base 0 nella stagione), giornata (match_index // 10 + 1), Date, HomeTeam, AwayTeam;
-   - righe "summary", una per stagione e detector, con n_alarms anche quando è zero;
-   - stringa vuota dove un campo non si applica.
-4. PNG: per i tre scenari di training, log-loss media per giornata con gli allarmi dei due detector marcati; etichette in italiano.
-5. Scrivere tests/test_us_c5_1_acceptance.py: schema del CSV; righe di riepilogo per 22 stagioni × 2 detector; coerenza fra righe di allarme e riepilogo; giornata coerente con match_index; parametri importati da drift.py; ricalcolo dai dati reali uguale al CSV (confronto esatto su interi e stringhe), saltato senza dati.
-6. Eseguire lo script due volte e confrontare lo SHA256 del CSV.
-7. Eseguire la suite veloce.
-
-Vincoli:
-- I parametri dei detector vengono solo dalle costanti di T27 e non si cambiano.
-- Il 2023-24 non si legge.
-- Script: matplotlib.use("Agg") prima di pyplot; run_experiment() senza parametri, chiamata dal blocco __main__; nessun argomento da riga di comando; CSV con csv.DictWriter, open(mode="w", newline="", encoding="utf-8"), float nativi e stringa vuota dove non applicabile; PNG con plt.tight_layout() e savefig(dpi=150); parametri condivisi fra script e test in un modulo di libreria.
-- Non modificare i moduli di src/shk/model/ né calibration.py, false_rejection.py e config/split.toml.
-- Nessun commit e nessuna operazione git che modifichi lo stato del repository: i commit li fa il programmatore a mano.
-- Commenti e docstring in italiano; identificatori, messaggi delle eccezioni e nomi dei test in inglese. Non è un'incoerenza: è la convenzione.
-- Rispettare le eventuali convenzioni aggiuntive della sezione "Convenzioni del progetto" di .agent/PROTOCOLLO.md.
-- Prima di scrivere codice, proporre il piano e fare le domande necessarie; nessun comando Python prima dell'approvazione del piano.
-- Ogni comando Python con .\.venv\Scripts\python.exe dalla radice del repository.
-- Codice: type hints completi; docstring in stile NumPy (Parametri / Restituisce / Solleva); TypeError per i tipi e ValueError per i valori, in apertura di funzione; interi bool o float → TypeError; nessun try:, print( o logging in src/ e scripts/.
-- Dati reali solo con read_split_config e load_by_role; load_all_seasons non si usa; il ruolo "test" non si legge.
-- Test sui dati reali saltati con motivo esplicito tramite _has_real_data o una condizione equivalente su DEFAULT_DATA_DIR; marcati slow se superano 60 s, e dichiarati nel report.
-- Non leggere né scrivere file fuori dal repository.
-- A fine task, scrivere il report in .agent/report/T28.md, unico file di .agent/ che si può toccare, con in sezioni distinte: percorsi dei file modificati, creati o rimossi; esito di ciascun criterio di accettazione; valori misurati; deviazioni dal piano; cose non fatte; comandi eseguiti. Fatti e valori senza giudizi; interpretazioni solo in una sezione a parte, e solo se richieste. Ogni valore numerico del report viene da un comando elencato.
-
-Criteri di accettazione:
-- CSV e PNG generati; righe di riepilogo per 22 stagioni (3 di training e 19 di validazione) × 2 detector.
-- Per ogni allarme sono registrati stagione, detector, indice della partita, giornata e data.
-- Il ricalcolo dai dati reali coincide col CSV (test verde in locale, saltato senza dati).
-- CSV identico su due esecuzioni (SHA256).
-- Nessuna lettura del 2023-24.
-- Suite veloce tutta verde.
-
-Da misurare e riportare, senza farlo tornare: numero di allarmi e giornata del primo allarme per stagione e detector, in particolare sul 2020-21. Nessun parametro si cambia in funzione di questi numeri.
-
-Esito: 2026-09-30 — file toccati: src/shk/stats/drift.py (aggiunta detector_params), src/shk/model/monitoring.py, scripts/us_c5_1_drift_detectors.py, tests/test_us_c5_1_acceptance.py, results/us_c5_1_drift_detectors.csv, thesis/figures/us_c5_1_drift_detectors.png. Deviazioni, decise all'approvazione del piano: le funzioni sui DataFrame (ScenarioSeries, extract_scenario_series, build_drift_records, generate_drift_detector_records, DRIFT_DETECTOR_CSV_COLUMNS) stanno in src/shk/model/monitoring.py, così drift.py resta con funzioni pure su array; colonne del CSV in snake_case (row_type, season, role, fit_through, detector, alarm_number, match_index, matchday, date, home_team, away_team, n_alarms), con matchday al posto di giornata (decisione del 2026-09-30). Correttivo 1: i totali del primo report (20 allarmi, 13 stagioni, 64 righe) non venivano da comandi; sostituiti con valori ottenuti da un comando. L'agente ha letto le sezioni dei task successivi del backlog senza modificarle. Non fatto: nessuno. Valori misurati: CSV di 66 righe (22 "alarm", 44 "summary"), SHA256 3D132F6FFC8A20365208A2041DC4270AEEBA289FBF5407630E6CAA92F8B20A96 identico su due esecuzioni. ADWIN: 0 allarmi su tutte le 22 stagioni. Page-Hinkley: 22 allarmi, 2 in training e 20 in validazione; 14 stagioni con allarmi, 8 senza. Page-Hinkley in training: 2000-01 1 (prima matchday 8), 2010-11 1 (25), 2020-21 0. Page-Hinkley in validazione, allarmi (prima matchday): 2003-04 1 (35), 2004-05 1 (12), 2005-06 2 (7), 2006-07 1 (38), 2008-09 3 (14), 2009-10 2 (5), 2011-12 2 (7), 2014-15 2 (7), 2015-16 2 (12), 2016-17 1 (17), 2018-19 2 (19), 2021-22 1 (16); 0 nel 2002-03, 2007-08, 2012-13, 2013-14, 2017-18, 2019-20, 2022-23. Su 2000-01 e 2010-11 i conteggi coincidono con la taratura di T27. Test: 8 (4 sintetici, 3 sul CSV versionato che girano anche senza dati, 1 di ricalcolo dai dati reali in 3.66 s); suite veloce 272 verdi, 15 deselezionati, 48.31 s. Report: .agent/report/T28.md.
-
-### Task 29 — Z-test per giornata con soglia nominale e confronto con ADWIN e Page-Hinkley, US-C5.2
-Stato: fatto
-
-Obiettivo: src/shk/stats/drift.py calcola lo Z-test per giornata, e lo script scripts/us_c5_2_daily_z_test.py riporta per ciascuna delle 19 stagioni di validazione gli allarmi dello Z nominale, di ADWIN e di Page-Hinkley, accanto agli 1.9 attesi, in results/us_c5_2_daily_z_test.csv e thesis/figures/us_c5_2_daily_z_test.png.
-
-Dipende da: T26, T27.
-
-Contesto:
-- Z della giornata g della stagione s: Z = (media della log-loss delle 10 partite di g − μ_f) / (σ_f / √10), con μ_f e σ_f (ddof = 1) sulla log-loss delle partite di training del fit f che prevede s. Giornata = blocco contiguo di 10 partite nell'ordine cronologico stabile; 38 giornate per stagione.
-- Allarme nominale se |Z| > z_0.975, con α = 0.05. ALPHA = 0.05 è definita in src/shk/stats/false_rejection.py [V, R13@2026-09-28] e si importa di lì.
-- Serie da src/shk/model/residuals.py (T26), con role "training" e "validation"; detector e parametri congelati da src/shk/stats/drift.py (T27).
-- Log-loss media di validazione 0.979536 contro medie di training da 1.008189 a 1.020937 [V, R23 e R26@2026-09-29b].
-- T30 aggiungerà a questo CSV le righe dello Z con soglia calibrata, per L ∈ {7, 20, 40}.
-
-Da verificare prima di iniziare: l'esito di T26 e T27, cioè nomi di funzioni e costanti.
-
-Passi richiesti:
-1. Proporre il piano: firma della funzione, colonne del CSV, pannelli della figura.
-2. Aggiungere a drift.py una funzione che, data la log-loss di una stagione con μ_f e σ_f, restituisce i 38 valori di Z; ValueError se la lunghezza non è un multiplo positivo di 10.
-3. Scrivere lo script con run_experiment(): per ogni stagione di validazione, i 38 Z e gli allarmi nominali, più gli allarmi di ADWIN e Page-Hinkley con i parametri congelati sulla stessa stagione.
-4. CSV con colonne che reggano anche le righe di T30, almeno: row_type, season, fit_through, method (z_nominal, adwin, page_hinkley), block_length (vuota per ora), threshold, giornata, z, alarm, n_alarms, expected_alarms. Righe "giornata" per lo Z e righe "summary" per stagione e metodo, più un riepilogo sulle 19 stagioni con la media.
-5. PNG: allarmi per stagione e per metodo, con una linea a 1.9; etichette in italiano.
-6. Test:
-   - sintetici in tests/test_drift.py: Z di una piccola serie uguale al calcolo a mano entro 1e-12; validazioni;
-   - di accettazione in tests/test_us_c5_2_acceptance.py: schema, 19 stagioni × 38 giornate, coerenza fra giornate e riepiloghi, ricalcolo dai dati reali entro 1e-12 sui float e confronto esatto sul resto, saltato senza dati.
-7. Eseguire lo script due volte e confrontare lo SHA256 del CSV; eseguire la suite veloce.
-
-Vincoli:
-- Definizione di Z, baseline e soglia nominale non si cambiano in funzione dei conteggi.
-- I parametri dei detector vengono solo dalle costanti di T27.
-- Il 2023-24 non si legge.
-- Script: matplotlib.use("Agg") prima di pyplot; run_experiment() senza parametri, chiamata dal blocco __main__; nessun argomento da riga di comando; CSV con csv.DictWriter, open(mode="w", newline="", encoding="utf-8"), float nativi e stringa vuota dove non applicabile; PNG con plt.tight_layout() e savefig(dpi=150); parametri condivisi fra script e test in un modulo di libreria.
-- Non modificare i moduli di src/shk/model/ né calibration.py, false_rejection.py e config/split.toml.
-- Nessun commit e nessuna operazione git che modifichi lo stato del repository: i commit li fa il programmatore a mano.
-- Commenti e docstring in italiano; identificatori, messaggi delle eccezioni e nomi dei test in inglese. Non è un'incoerenza: è la convenzione.
-- Rispettare le eventuali convenzioni aggiuntive della sezione "Convenzioni del progetto" di .agent/PROTOCOLLO.md.
-- Prima di scrivere codice, proporre il piano e fare le domande necessarie; nessun comando Python prima dell'approvazione del piano.
-- Ogni comando Python con .\.venv\Scripts\python.exe dalla radice del repository.
-- Codice: type hints completi; docstring in stile NumPy (Parametri / Restituisce / Solleva); TypeError per i tipi e ValueError per i valori, in apertura di funzione; interi bool o float → TypeError; nessun try:, print( o logging in src/ e scripts/.
-- Dati reali solo con read_split_config e load_by_role; load_all_seasons non si usa; il ruolo "test" non si legge.
-- Test sui dati reali saltati con motivo esplicito tramite _has_real_data o una condizione equivalente su DEFAULT_DATA_DIR; marcati slow se superano 60 s, e dichiarati nel report.
-- Non leggere né scrivere file fuori dal repository.
-- A fine task, scrivere il report in .agent/report/T29.md, unico file di .agent/ che si può toccare, con in sezioni distinte: percorsi dei file modificati, creati o rimossi; esito di ciascun criterio di accettazione; valori misurati; deviazioni dal piano; cose non fatte; comandi eseguiti. Fatti e valori senza giudizi; interpretazioni solo in una sezione a parte, e solo se richieste. Ogni valore numerico del report viene da un comando elencato.
-
-Criteri di accettazione:
-- Z calcolato giornata per giornata su ciascuna delle 19 stagioni di validazione, 38 giornate per stagione.
-- Lo Z di una serie sintetica coincide col calcolo a mano entro 1e-12.
-- Il CSV riporta gli allarmi nominali per stagione e la media sulle 19 stagioni, accanto a 1.9.
-- Il CSV riporta gli allarmi di ADWIN e Page-Hinkley sulle stesse stagioni, con i parametri congelati.
-- Ricalcolo verde in locale e saltato senza dati; CSV identico su due esecuzioni (SHA256); suite veloce tutta verde.
-
-Da misurare e riportare, senza farlo tornare: allarmi per stagione e per metodo; medie sulle 19 stagioni; quanti allarmi Z hanno Z > 0 e quanti Z < 0.
-
-Esito: 2026-09-30 — file toccati: src/shk/stats/drift.py (MATCHDAY_SIZE = 10, compute_matchday_z_scores), src/shk/model/monitoring.py (DAILY_Z_TEST_CSV_COLUMNS, TrainingBaselineStats, compute_training_baseline_stats, build_daily_z_test_records, generate_daily_z_test_records), tests/test_drift.py (3 test in più), scripts/us_c5_2_daily_z_test.py, results/us_c5_2_daily_z_test.csv, thesis/figures/us_c5_2_daily_z_test.png, tests/test_us_c5_2_acceptance.py. CSV con 14 colonne in snake_case, pensate anche per T30: row_type, season, fit_through, method, block_length, threshold, matchday, z, alarm, n_alarms, expected_alarms, mean_alarms, n_resamples, exceedance_rate; righe "matchday" al posto di "giornata" (decisione del 2026-09-30) e righe "overall" per il riepilogo sulle 19 stagioni. Soglia norm.ppf(1 − ALPHA/2), con ALPHA da false_rejection.py; allarme se |Z| supera strettamente la soglia. Deviazioni: compute_training_baseline_stats ha schedule opzionale (con None prende i fit dalle righe di training) e dà ValueError solo per meno di 2 righe di training; i conteggi attesi sono verificati nei test. Controlli vincolanti superati: μ_f uguale alle medie di training di T26 entro 5e-9; conteggi di ADWIN e Page-Hinkley uguali a C5.1 su 38 coppie. Non fatto: nessuno; il salto del ricalcolo senza dati lo verificherà la CI. Valori misurati: baseline dei fit (n, μ_f, σ_f) 2000-01 380, 1.00818933, 0.41019487; 2010-11 760, 1.00898737, 0.42054310; 2020-21 1 140, 1.02093662, 0.38389378. Soglia 1.959963984540054. CSV di 782 righe (722 "matchday", 57 "summary", 3 "overall"), SHA256 015645CF5029EE57A32C036657B3C69259D629722B600E5A71078BD26760A6F5 identico su due esecuzioni. Allarmi sulle 19 stagioni: z_nominal 53 (media 2.789; 20 con Z > 0, 33 con Z < 0), ADWIN 0, Page-Hinkley 20 (media 1.053). z_nominal per stagione: 2002-03 2, 2003-04 3, 2004-05 3, 2005-06 3, 2006-07 2, 2007-08 3, 2008-09 5, 2009-10 4, 2011-12 3, 2012-13 0, 2013-14 2, 2014-15 3, 2015-16 4, 2016-17 1, 2017-18 1, 2018-19 4, 2019-20 2, 2021-22 3, 2022-23 5. Test: tests/test_drift.py 10 in 4.43 s; test_us_c5_2_acceptance.py 9 (3 sintetici, 5 sul CSV versionato e sulla figura che girano anche senza dati, 1 di ricalcolo) in 4.70 s; suite veloce 284 verdi, 15 deselezionati, 52.41 s. Report: .agent/report/T29.md.
-
-### Task 30 — Soglia dello Z-test calibrata per block bootstrap, US-C5.2
-Stato: fatto
-
-Obiettivo: per ogni fit e ogni L ∈ {7, 20, 40}, la soglia di |Z| per giornata è calibrata per moving block bootstrap della serie di training del fit; il tasso di falsi allarmi con quella soglia è verificato su ricampionamenti indipendenti; il CSV di C5.2 riporta anche gli allarmi con soglia calibrata sulle 19 stagioni di validazione.
-
-Dipende da: T29.
-
-Contesto:
-- src/shk/stats/calibration.py [V, R12@2026-09-28 e firme R1@2026-09-29c]:
-  - moving_block_indices(n, block_length, n_boot, rng) → int64 (n_boot, n);
-  - compute_order_statistic_index(b, alpha) → ⌈(1 − α)(b + 1)⌉;
-  - calibrate_threshold(data, statistic, block_length, n_boot, alpha, rng, vectorized=False) → float; la statistica deve restituire float64 (n_boot,) finita, altrimenti ValueError.
-  La docstring del modulo è contraddittoria nello schema (a) [V]: non si tocca in questo task.
-- Decisioni S2: B = 999; L ∈ {7, 20, 40}, tutte riportate; soglia = statistica d'ordine ⌈(1 − α)(B + 1)⌉, cioè la 950-esima; allarme se la statistica supera strettamente la soglia; intervallo Monte Carlo al 99% su 1000 prove [0.0322, 0.0678], estremi inclusi, dato da monte_carlo_interval_99 in src/shk/stats/false_rejection.py [V, R13@2026-09-28].
-- Qui H₀ vale per costruzione: si ricampiona la serie di training che definisce μ_f e σ_f, non la stagione sotto test. Il problema di T12, una soglia calibrata sulla serie sotto test senza imporre H₀, non si presenta [D, ragionamento del supervisore].
-- Serie di training dei fit: 380, 760 e 1 140 partite (T26). Z, μ_f, σ_f, giornate, CSV e script: da T29.
-
-Da verificare prima di iniziare:
-- l'esito di T29: colonne del CSV, nomi di funzioni e costanti;
-- come calibrate_threshold chiama la statistica in modalità vectorized, cioè forma dell'argomento e forma attesa del risultato.
-
-Passi richiesti:
-1. Proporre il piano, compreso lo schema dei seed: SEED_C5 = 20260929 in drift.py; SeedSequence(SEED_C5).spawn in un figlio per fit, diviso in un generatore per L per la calibrazione e uno per i ricampionamenti di verifica.
-2. Statistica: |Z| della prima giornata, cioè delle prime 10 posizioni, di ogni serie ricampionata, con μ_f e σ_f della serie di training originale.
-3. Calibrare la soglia per ogni fit e L con calibrate_threshold, B = 999, α = 0.05.
-4. Verifica: 1000 ricampionamenti nuovi per ogni fit e L, con un generatore separato, e tasso di |Z| > soglia calibrata. Sugli stessi ricampionamenti, anche il tasso con la soglia nominale z_0.975.
-5. Applicare le soglie calibrate alle 19 stagioni di validazione, ciascuna con la soglia del fit che la prevede. Aggiungere al CSV di T29 le righe con method = z_block_bootstrap e block_length valorizzata, e le righe di verifica. Aggiornare il PNG.
-6. Test: unitari su dati sintetici per la statistica e l'uso della calibrazione; di accettazione: schema, righe attese, tasso di verifica nell'intervallo, ricalcolo dai dati reali entro 1e-12 sui float, saltato senza dati.
-7. Eseguire lo script due volte e confrontare lo SHA256 del CSV; eseguire la suite veloce, e la suite slow se si aggiunge un test slow.
-
-Vincoli:
-- calibration.py e false_rejection.py non si modificano.
-- L, B, α, SEED_C5 e la statistica sono fissati prima dei risultati.
-- Le stagioni di validazione non entrano nella calibrazione.
-- test_acceptance_calibrated_phi_zero_within_mc_interval resta rosso per il risultato noto di T12: non si tocca.
-- Script: matplotlib.use("Agg") prima di pyplot; run_experiment() senza parametri, chiamata dal blocco __main__; nessun argomento da riga di comando; CSV con csv.DictWriter, open(mode="w", newline="", encoding="utf-8"), float nativi e stringa vuota dove non applicabile; PNG con plt.tight_layout() e savefig(dpi=150); parametri condivisi fra script e test in un modulo di libreria.
-- Non modificare i moduli di src/shk/model/ né config/split.toml.
-- Nessun commit e nessuna operazione git che modifichi lo stato del repository: i commit li fa il programmatore a mano.
-- Commenti e docstring in italiano; identificatori, messaggi delle eccezioni e nomi dei test in inglese. Non è un'incoerenza: è la convenzione.
-- Rispettare le eventuali convenzioni aggiuntive della sezione "Convenzioni del progetto" di .agent/PROTOCOLLO.md.
-- Prima di scrivere codice, proporre il piano e fare le domande necessarie; nessun comando Python prima dell'approvazione del piano.
-- Ogni comando Python con .\.venv\Scripts\python.exe dalla radice del repository.
-- Codice: type hints completi; docstring in stile NumPy (Parametri / Restituisce / Solleva); TypeError per i tipi e ValueError per i valori, in apertura di funzione; interi bool o float → TypeError; RNG passato come argomento, flussi indipendenti con SeedSequence.spawn; nessun try:, print( o logging in src/ e scripts/.
-- Dati reali solo con read_split_config e load_by_role; load_all_seasons non si usa; il ruolo "test" non si legge.
-- Test sui dati reali saltati con motivo esplicito tramite _has_real_data o una condizione equivalente su DEFAULT_DATA_DIR; marcati slow se superano 60 s, e dichiarati nel report.
-- Non leggere né scrivere file fuori dal repository.
-- A fine task, scrivere il report in .agent/report/T30.md, unico file di .agent/ che si può toccare, con in sezioni distinte: percorsi dei file modificati, creati o rimossi; esito di ciascun criterio di accettazione; valori misurati; deviazioni dal piano; cose non fatte; comandi eseguiti. Fatti e valori senza giudizi; interpretazioni solo in una sezione a parte, e solo se richieste. Ogni valore numerico del report viene da un comando elencato.
-
-Criteri di accettazione:
-- Soglia calibrata per ciascuno dei 3 fit e delle 3 L, riportata nel CSV.
-- Per ogni fit e L, il tasso di |Z| > soglia calibrata sui 1000 ricampionamenti di verifica sta nell'intervallo al 99% [0.0322, 0.0678], estremi inclusi. Se non ci sta, si indaga e si riporta; non si cambiano L, B, seed né statistica.
-- Il CSV riporta gli allarmi con soglia calibrata per stagione di validazione e per L, accanto agli allarmi nominali, di ADWIN, di Page-Hinkley e a 1.9.
-- Ricalcolo verde in locale e saltato senza dati; CSV identico su due esecuzioni (SHA256); suite veloce tutta verde.
-
-Da misurare e riportare, senza farlo tornare: le nove soglie; il tasso con soglia nominale sui ricampionamenti di verifica; gli allarmi con soglia calibrata per stagione e L e la loro media sulle 19 stagioni. Lo scarto da 1.9 sulle stagioni di validazione è un risultato.
-
-Esito: 2026-09-30 — file toccati: src/shk/stats/drift.py, src/shk/model/monitoring.py, scripts/us_c5_2_daily_z_test.py, tests/test_drift.py, tests/test_us_c5_2_acceptance.py, results/us_c5_2_daily_z_test.csv, thesis/figures/us_c5_2_daily_z_test.png. drift.py, solo funzioni pure: SEED_C5 = 20260929, N_VERIFICATION_RESAMPLES = 1000; ALPHA, BLOCK_LENGTHS e N_BOOT importati da false_rejection.py; compute_resampled_matchday_abs_z (1D o vettorizzata), calibrate_matchday_z_threshold e verify_matchday_z_thresholds con rng obbligatorio; spawn_c5_generators(seed, n_fits=3) → [fit][L] → (calibrazione, verifica), come SeedSequence(SEED_C5).spawn(3), poi spawn(3) per L, poi spawn(2). Il ciclo su fit (in ordine cronologico) e L e la costruzione delle righe sono in monitoring.py. CSV con 78 righe in più: 57 "summary" e 3 "overall" con method z_block_bootstrap, e 18 "verification" (fit × L × {z_block_bootstrap, z_nominal}); nessuna riga "matchday" in più, perché gli allarmi calibrati si ricavano dagli z già presenti. PNG a due pannelli, 2 × 1. Deviazioni: nessuna rispetto al piano corretto. In ricognizione (R12) l'agente ha letto sezioni del backlog diverse dal task e ha riportato come [V] un estremo dell'intervallo al 99% non ottenuto da comandi; corretto in esecuzione. L'elenco dei comandi del report non riporta un primo controllo dell'intervallo. Non fatto: nessuno; nessun test slow aggiunto; il salto del ricalcolo senza dati lo verificherà la CI. Valori misurati: soglia nominale 1.959963984540054. Soglie calibrate per L = 7 / 20 / 40: fit 2000-01 1.7727537232475736 / 2.1309028007875455 / 2.1309028007875455; fit 2010-11 2.013160834913348 / 2.020712432704076 / 2.0340729949388936; fit 2020-21 1.8679966575266214 / 2.031803052124637 / 2.0923845424869083. Intervallo al 99% [0.0322461452073078, 0.0677538547926922]. Tassi di verifica con soglia calibrata / nominale, per L = 7, 20, 40: fit 2000-01 0.065/0.045, 0.047/0.076, 0.049/0.070; fit 2010-11 0.041/0.048, 0.041/0.050, 0.041/0.047; fit 2020-21 0.060/0.047, 0.045/0.049, 0.038/0.055. Allarmi calibrati sulle 19 stagioni: L = 7 61 (media 3.211), L = 20 43 (2.263), L = 40 43 (2.263); per stagione nel report. CSV di 860 righe (722 "matchday", 114 "summary", 6 "overall", 18 "verification"), SHA256 1D73D255ABF1BE782D6C0B8B004A13E989B6D27E99723DF3F7DADF0A34B3F20B identico su due esecuzioni. Test: test_drift.py e test_us_c5_2_acceptance.py 26 in 7.17 s; suite veloce 291 verdi, 15 deselezionati, 56.23 s. Report: .agent/report/T30.md.
-
-### Task 31 — Motore su quote reali e regola della Baseline D, con κ calibrato sul training, US-C5.3
-Stato: fatto
-
-Obiettivo: esistono un motore che calcola la log-ricchezza di una stagione da frazioni, quote ed esiti reali, e la regola della Baseline D; κ è calibrato per ADWIN e per Page-Hinkley su 2010-11 e 2020-21 e congelato in costanti.
-
-Dipende da: T26, T27.
-
-Contesto:
-- Decisione S1: il motore riceve le frazioni dall'esterno e non conosce p né p̂; ogni regola di staking sta in src/shk/kelly/staking.py; le regole non limitano la frazione sotto 1, una frazione ≥ 1 la rifiuta il motore. λ fisso di riferimento: quarto-Kelly, 0.25.
-- kelly_staking(p_hat, b, lam=1.0) in staking.py [V, R1@2026-09-29c]; formula lam·max(0, (b·p_hat − (1 − p_hat))/b) [D]; supporto per array [D].
-- simulate_growth(outcomes, fractions, b) in simulate.py lavora su scommesse binarie con esiti simulati (M, T) [V, R1@2026-09-29c]: non serve per quote diverse a ogni partita [D].
-- max_drawdown in src/shk/kelly/metrics.py lavora su traiettorie di log-ricchezza (M, T+1) [V, R1@2026-09-28].
-- Quote: B365H, B365D, B365A pre-partita, assenti fino al 2001-02 e quindi nel 2000-01, complete dal 2002-03 [V, R14@2026-09-29]. align_predictions_with_odds(df_preds, df_raw) in scoring.py unisce su season, Date, HomeTeam, AwayTeam, con ValueError per chiavi mancanti o duplicate [V, R26 e R27@2026-09-29b].
-- Regola della Baseline D (scelta del supervisore su delega):
-  - per partita al più una puntata, sull'esito con p̂·o − 1 massimo se positivo, con frazione kelly_staking(p̂, o − 1, λ_t), dove p̂ è la probabilità raw del Modulo 1 e o la quota B365 di quell'esito;
-  - λ_t = 0.25 a inizio stagione, moltiplicato per κ a ogni allarme; un allarme su una partita della data d vale dalle partite con Date > d;
-  - detector nuovo a ogni stagione, alimentato con la log-loss di tutte le partite, puntate o no, con i parametri congelati di T27;
-  - bankroll 1 a inizio stagione; le puntate della stessa data si decidono sul bankroll di inizio data e si regolano insieme: B ← B·(1 + Σ f_i·r_i), con r_i = o_i − 1 se vinta e −1 se persa.
-- Calibrazione: κ ∈ {0, 0.25, 0.5, 0.75, 1}; per ciascun detector si sceglie il κ che massimizza la somma della log-ricchezza finale di 2010-11 (fit 2010-11) e 2020-21 (fit 2020-21), e a parità il più grande. κ = 1 coincide col quarto-Kelly senza detector. Il 2000-01 non entra perché non ha B365.
-
-Da verificare prima di iniziare:
-- se kelly_staking accetta array e che formula applica;
-- se align_predictions_with_odds funziona sulle partite di training delle stagioni 2010-11 e 2020-21;
-- l'esito di T26 e T27.
-
-Passi richiesti:
-1. Proporre il piano: firme, posizione delle costanti, forma dell'output del motore.
-2. Creare src/shk/kelly/backtest.py con il motore. Riceve per ogni partita data, frazione, quota dell'esito puntato ed esito vinto o perso, e restituisce la log-ricchezza dopo ogni data, partendo da 0. ValueError per frazioni fuori da [0, 1), somma delle frazioni di una data ≥ 1, date non ordinate, quote non finite o ≤ 1. Non riceve p né p̂.
-3. Aggiungere a staking.py, senza modificare le funzioni esistenti, la scelta dell'esito e della frazione per partita e la regola λ_t descritta nel contesto.
-4. Calibrare κ come descritto nel contesto e congelare in costanti BASE_LAMBDA = 0.25, la griglia di κ e il κ scelto per ciascun detector.
-5. Nella docstring della regola, scrivere che il detector dice quando, non quanto né di che tipo: κ è un iperparametro fisso, uguale per ogni allarme.
-6. Test:
-   - tests/test_backtest.py, sintetici: log-ricchezza a mano su poche partite, puntate della stessa data regolate insieme, validazioni;
-   - tests/test_staking.py: scelta dell'esito; un allarme della data d non cambia le frazioni della data d e le cambia dalla data successiva; con κ = 1 le frazioni coincidono col quarto-Kelly senza detector;
-   - sui dati reali: la calibrazione ricalcolata dà i κ congelati; saltato senza dati, slow se supera 60 s.
-7. Eseguire la suite veloce.
-
-Vincoli:
-- Il 2000-01, le stagioni di validazione e il 2023-24 non entrano in questo task.
-- Griglia di κ, λ di partenza, obiettivo e regola di parità non si cambiano dopo aver visto i risultati.
-- Non modificare simulate.py né le funzioni esistenti di staking.py (solo aggiunte), i moduli di src/shk/model/, calibration.py, false_rejection.py, config/split.toml.
-- Nessun commit e nessuna operazione git che modifichi lo stato del repository: i commit li fa il programmatore a mano.
-- Commenti e docstring in italiano; identificatori, messaggi delle eccezioni e nomi dei test in inglese. Non è un'incoerenza: è la convenzione.
-- Rispettare le eventuali convenzioni aggiuntive della sezione "Convenzioni del progetto" di .agent/PROTOCOLLO.md.
-- Prima di scrivere codice, proporre il piano e fare le domande necessarie; nessun comando Python prima dell'approvazione del piano.
-- Ogni comando Python con .\.venv\Scripts\python.exe dalla radice del repository.
-- Codice: type hints completi; docstring in stile NumPy (Parametri / Restituisce / Solleva); TypeError per i tipi e ValueError per i valori, in apertura di funzione; interi bool o float → TypeError; vettorizzazione NumPy dove possibile; nessun try:, print( o logging in src/ e scripts/.
-- Dati reali solo con read_split_config e load_by_role; load_all_seasons non si usa; il ruolo "test" non si legge.
-- Test sui dati reali saltati con motivo esplicito tramite _has_real_data o una condizione equivalente su DEFAULT_DATA_DIR; marcati slow se superano 60 s, e dichiarati nel report.
-- Non leggere né scrivere file fuori dal repository.
-- A fine task, scrivere il report in .agent/report/T31.md, unico file di .agent/ che si può toccare, con in sezioni distinte: percorsi dei file modificati, creati o rimossi; esito di ciascun criterio di accettazione; valori misurati; deviazioni dal piano; cose non fatte; comandi eseguiti. Fatti e valori senza giudizi; interpretazioni solo in una sezione a parte, e solo se richieste. Ogni valore numerico del report viene da un comando elencato.
-
-Criteri di accettazione:
-- Il motore riproduce la log-ricchezza di un caso sintetico calcolata a mano entro 1e-12, solleva gli errori previsti e non riceve p né p̂.
-- Un allarme della data d cambia λ solo dalle date successive (test).
-- Con κ = 1 le frazioni coincidono col quarto-Kelly senza detector (test).
-- I κ congelati per ADWIN e Page-Hinkley coincidono con la calibrazione ricalcolata sui dati reali (test saltato senza dati).
-- La docstring della regola dice che il detector indica quando, non quanto né di che tipo.
-- Il report contiene la tabella della log-ricchezza finale per κ, detector e stagione.
-- Suite veloce tutta verde.
-
-Da misurare e riportare, senza farlo tornare: log-ricchezza finale per κ, detector e stagione; κ scelti; numero di puntate e di allarmi per stagione. Se il κ scelto è 0 o 1, lo si riporta così: griglia e obiettivo non cambiano.
-
-Esito: 2026-09-30 — file toccati: src/shk/kelly/backtest.py (creato), src/shk/kelly/staking.py (solo aggiunte), src/shk/model/monitoring.py, tests/test_backtest.py (creato), tests/test_staking.py, tests/test_us_c5_3_acceptance.py (creato). Motore backtest_log_wealth(dates, fractions, odds, won), solo np.ndarray con dtype controllato → BacktestResult(dates, log_wealth), con log_wealth di lunghezza pari alle date distinte + 1 e valore iniziale 0; non riceve p né p̂. In staking.py: BASE_LAMBDA = 0.25, KAPPA_GRID = (0.0, 0.25, 0.5, 0.75, 1.0), KAPPA_ADWIN = 1.0, KAPPA_PAGE_HINKLEY = 1.0, BaselineDBets, compute_adaptive_lambda (λ_j = BASE_LAMBDA·κ^(allarmi con Date strettamente anteriore)), select_baseline_d_bets (argmax di p̂·o − 1, parità nell'ordine H, D, A, frazione con kelly_staking chiamata una partita alla volta, perché b e lam sono solo scalari). In monitoring.py: BaselineDSeasonInput, assemble_baseline_d_season_input, calibrate_baseline_d_kappa → KappaCalibrationResult(chosen_kappas, table); a parità esatta dei float vince il κ più grande. src/shk/kelly/ non importa da shk.model né da shk.data. Deviazioni: dopo un primo fallimento per tolleranza, un test sintetico di test_staking.py è stato corretto cambiando i valori in ingresso (numeri esatti in binario). Il report abbrevia due comandi python -c, che sono per intero nel registro. In ricognizione (R14) l'agente ha letto i log della piattaforma fuori dal repository (transcript.jsonl, transcript_full.jsonl) senza dichiararlo, per un sommario di sistema che segnalava un troncamento; il messaggio era integro. Non fatto: nessuno. Controlli: allarmi su 2010-11 e 2020-21 uguali a C5.1 (ADWIN 0 e 0, Page-Hinkley 1 e 0); nessun ValueError del motore sui dati reali. Valori misurati, log-ricchezza finale per κ = 0 / 0.25 / 0.5 / 0.75 / 1: ADWIN 2010-11 0.21081329 per tutti i κ, 2020-21 −0.07555935 per tutti i κ; Page-Hinkley 2010-11 −0.01652596 / 0.04951780 / 0.10926844 / 0.16296354 / 0.21081329, 2020-21 −0.07555935 per tutti i κ. Somme: ADWIN 0.13525393 per tutti i κ; Page-Hinkley −0.09208532 / −0.02604155 / 0.03370909 / 0.08740419 / 0.13525393. κ scelti: ADWIN 1.0 (parità su tutta la griglia), Page-Hinkley 1.0 (massimo stretto). Puntate con κ = 1: 317 nel 2010-11, 343 nel 2020-21; con κ = 0 Page-Hinkley 206 nel 2010-11. Test: test_backtest.py 7, test_staking.py 18, test_us_c5_3_acceptance.py 6; suite veloce 312 verdi, 15 deselezionati, 53.57 s. Report: .agent/report/T31.md.
-
-### Task 32 — Esecuzione appaiata della Baseline D sulle stagioni di validazione, US-C5.3
-Stato: da fare
-
-Obiettivo: lo script scripts/us_c5_3_baseline_d.py esegue il quarto-Kelly senza detector (κ = 1), D-ADWIN e D-Page-Hinkley sulla stessa sequenza di partite, quote, previsioni ed esiti delle 19 stagioni di validazione, con i parametri congelati, e scrive results/us_c5_3_baseline_d.csv e thesis/figures/us_c5_3_baseline_d.png.
-
-Dipende da: T31.
-
-Contesto:
-- Motore in src/shk/kelly/backtest.py, regola della Baseline D e costanti (BASE_LAMBDA = 0.25, κ congelati) da T31; parametri dei detector da src/shk/stats/drift.py (T27); log-loss e probabilità da src/shk/model/residuals.py (T26).
-- Ogni stagione di validazione si prevede col fit delle stagioni di training strettamente anteriori (decisione S4); B365 pre-partita completa in tutte le 19 stagioni [V, R14@2026-09-29].
-- Bankroll 1 a inizio di ogni stagione; detector nuovo a ogni stagione.
-- max_drawdown in src/shk/kelly/metrics.py su traiettorie di log-ricchezza (M, T+1) [V, R1@2026-09-28].
-
-Da verificare prima di iniziare: l'esito di T31, cioè firme, costanti e forma dell'output del motore.
-
-Passi richiesti:
-1. Proporre il piano: colonne del CSV, pannelli della figura.
-2. Scrivere lo script con run_experiment(): per ogni stagione, costruire una sola volta gli input (partite, date, probabilità, quote, esiti, log-loss) e passarli identici ai tre agenti.
-3. CSV: una riga per stagione e agente con season, fit_through, agent, kappa, final_log_wealth, n_bets, n_alarms (vuota per il riferimento), max_drawdown; più una riga per agente con la somma della log-ricchezza finale sulle 19 stagioni.
-4. PNG: differenza appaiata di log-ricchezza finale fra D-ADWIN e riferimento e fra D-Page-Hinkley e riferimento, per stagione; etichette in italiano.
-5. Scrivere tests/test_us_c5_3_acceptance.py: un test che verifica che i tre agenti ricevono input identici; schema del CSV; κ importati dalle costanti; con κ = 1 la Baseline D coincide col riferimento su dati sintetici; ricalcolo dai dati reali entro 1e-12 sui float e confronto esatto sul resto, saltato senza dati.
-6. Eseguire lo script due volte e confrontare lo SHA256 del CSV; eseguire la suite veloce.
-
-Vincoli:
-- κ, λ di partenza e parametri dei detector vengono solo dalle costanti di T27 e T31; nessun parametro si cambia guardando le stagioni di validazione.
-- Il 2023-24 non si legge.
-- Script: matplotlib.use("Agg") prima di pyplot; run_experiment() senza parametri, chiamata dal blocco __main__; nessun argomento da riga di comando; CSV con csv.DictWriter, open(mode="w", newline="", encoding="utf-8"), float nativi e stringa vuota dove non applicabile; PNG con plt.tight_layout() e savefig(dpi=150); parametri condivisi fra script e test in un modulo di libreria.
-- Non modificare i moduli di src/shk/model/ né calibration.py, false_rejection.py e config/split.toml.
-- Nessun commit e nessuna operazione git che modifichi lo stato del repository: i commit li fa il programmatore a mano.
-- Commenti e docstring in italiano; identificatori, messaggi delle eccezioni e nomi dei test in inglese. Non è un'incoerenza: è la convenzione.
-- Rispettare le eventuali convenzioni aggiuntive della sezione "Convenzioni del progetto" di .agent/PROTOCOLLO.md.
-- Prima di scrivere codice, proporre il piano e fare le domande necessarie; nessun comando Python prima dell'approvazione del piano.
-- Ogni comando Python con .\.venv\Scripts\python.exe dalla radice del repository.
-- Codice: type hints completi; docstring in stile NumPy (Parametri / Restituisce / Solleva); TypeError per i tipi e ValueError per i valori, in apertura di funzione; interi bool o float → TypeError; nessun try:, print( o logging in src/ e scripts/.
-- Dati reali solo con read_split_config e load_by_role; load_all_seasons non si usa; il ruolo "test" non si legge.
-- Test sui dati reali saltati con motivo esplicito tramite _has_real_data o una condizione equivalente su DEFAULT_DATA_DIR; marcati slow se superano 60 s, e dichiarati nel report.
-- Non leggere né scrivere file fuori dal repository.
-- A fine task, scrivere il report in .agent/report/T32.md, unico file di .agent/ che si può toccare, con in sezioni distinte: percorsi dei file modificati, creati o rimossi; esito di ciascun criterio di accettazione; valori misurati; deviazioni dal piano; cose non fatte; comandi eseguiti. Fatti e valori senza giudizi; interpretazioni solo in una sezione a parte, e solo se richieste. Ogni valore numerico del report viene da un comando elencato.
-
-Criteri di accettazione:
-- I tre agenti girano sulle 19 stagioni di validazione e il test sugli input identici è verde.
-- CSV e PNG generati, con una riga per stagione e agente e le somme sulle 19 stagioni.
-- Con κ = 1 la Baseline D coincide col riferimento (test sintetico).
-- Ricalcolo verde in locale e saltato senza dati; CSV identico su due esecuzioni (SHA256); suite veloce tutta verde.
-
-Da misurare e riportare, senza farlo tornare: log-ricchezza finale per stagione e agente; differenze appaiate D − riferimento per stagione e in totale; numero di puntate e di allarmi; drawdown massimo. Nessun parametro si cambia in funzione di questi numeri.
-
-Esito: —
-
-### Fuori scope di S5
-- Esecuzione dei detector e della Baseline D sul 2023-24, possibile solo dopo lo sblocco del test (US-C8.2); la variante literature del 2023-24, non ricostruibile da football-data.
-- Architettura ad agenti a classi e agenti A, B ed E (US-C6.1, US-C6.2); molti seed e intervalli per block bootstrap (US-C8.3).
-- Il seguito di T12 e la correzione della docstring di calibration.py, che restano nella story S2.
-- CUSUM, EWMA, DDM ed EDDM; Bonferroni, Šidák e la soglia sul massimo dei 38 Z, cioè il controllo della FWER (note 1.4 §5).
-- La baseline esterna, cioè il log-score differenziale contro il mercato, come criterio di arresto (note 1.4 §6.3).
-- Precision e recall dei detector rispetto a date di drift note, e la mappatura scenario → tipo di drift (note 2.7 §6.4).
-- Kelly simultaneo sui tre esiti dell'1X2, il ritorno di λ al valore iniziale dopo un allarme, una durata della riduzione come secondo parametro.
-- Il Modulo 1 ricalibrato (Platt o isotonica) come serie alternativa.
-
-### Resta al programmatore per S5
-- Confermare o cambiare le scelte fatte dal supervisore su delega il 2026-09-29:
-  - Modulo 1 raw;
-  - scenari di ora = 3 di training più 19 di validazione, con il 2023-24 dopo lo sblocco;
-  - calibrazione dello Z sulla serie di training del fit;
-  - taratura dei detector su 1.9 allarmi per stagione su 2000-01 e 2010-11, con il 2020-21 escluso;
-  - Baseline D: un esito per partita, λ di partenza 0.25, κ moltiplicativo a ogni allarme, griglia e obiettivo di κ, 2000-01 escluso dalla calibrazione.
-- US-C5.1: saper rispondere a "perché ANOVA e non ADWIN?" coi numeri di T28, T29 e T30.
-- US-C5.2: scegliere quale L adottare per lo Z calibrato, insieme alla scelta rimandata in S2 per C6.4 e C8.
-- US-C5.3: scrivere in tesi che il detector dice quando, non quanto né di che tipo, e che κ è un iperparametro fisso uguale per ogni allarme.
-- Eseguire US-C5.1 sul 2023-24 dopo lo sblocco del test.
-- Aggiornare uv.lock dopo l'aggiunta di river e verificare che la CI installi river e resti verde.
-- Committare codice, CSV e figure di T26–T32.
-
