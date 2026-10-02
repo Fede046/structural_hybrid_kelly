@@ -672,3 +672,55 @@ Punti ancora incerti → voce "Imposizione di H₀ prima del block bootstrap …
 
 Ultimo aggiornamento →
 "R13@2026-09-29c — task di scrittura chiusi dopo la mappa del 2026-09-29c: T26, T27, T28, T29, T30"
+
+---
+
+Stato repo → (sostituisce la riga "Su C5: 03bf28e …")
+"Su C5: a216010 "Calibrate Z-test via block bootstrap (T30)" sopra 03bf28e, e0d2396, 350ec52, 1ba1bb2 e 27cf7a4, con working tree pulito prima di T31 [V, R14@2026-09-29c]. Dopo T31 risultano modificati src/shk/kelly/staking.py, src/shk/model/monitoring.py e tests/test_staking.py, e non tracciati src/shk/kelly/backtest.py, tests/test_backtest.py, tests/test_us_c5_3_acceptance.py e .agent/report/T31.md; stato dei commit successivi non noto [D, era V R15@2026-09-29c]"
+
+Stack e comandi →
+"Suite veloce locale, con i dati locali presenti: dopo T30 291 verdi, 15 deselezionati, 56.23 s […]"
+→ "Suite veloce locale, con i dati locali presenti: dopo T31 312 verdi, 15 deselezionati, 53.57 s [V, R15@2026-09-29c]; rispetto a T30: 7 di test_backtest.py, 6 di test_us_c5_3_acceptance.py, gli altri in test_staking.py (18 dopo T31). …" (resto invariato)
+
+Moduli e responsabilità →
+"src/shk/ contiene 24 moduli applicativi (6 in kelly, 5 in stats, 4 in data, 2 in market, 7 in model) …"
+→ "src/shk/ contiene 25 moduli applicativi (7 in kelly, 5 in stats, 4 in data, 2 in market, 7 in model) più 6 __init__.py [V, R1@2026-09-29c più residuals.py R4, drift.py R6, monitoring.py R9 e backtest.py R15@2026-09-29c]. src/shk/data contiene coverage.py, loading.py, split.py, walkforward.py [V, R15@2026-09-29c]"
+
+Moduli e responsabilità →
+"src/shk/kelly/staking.py — formule [D, era V R8 e R14@2026-09-27]:" con il punto su kelly_staking
+→ "src/shk/kelly/staking.py — formule [V, R14@2026-09-29c per kelly_staking; D il resto, era V R8 e R14@2026-09-27]:
+- kelly_staking = lam·max(0, (b·p_hat − (1 − p_hat))/b); p_hat scalare o array in [0, 1]; b e lam solo scalari (math.isfinite), b > 0, lam ≥ 0 finito;" (il punto su plugin_staking resta invariato)
+
+Moduli e responsabilità → (nuova riga, dopo quelle di staking.py)
+"src/shk/kelly/staking.py — aggiunte di T31 per la Baseline D: BASE_LAMBDA = 0.25, KAPPA_GRID = (0.0, 0.25, 0.5, 0.75, 1.0), KAPPA_ADWIN = 1.0, KAPPA_PAGE_HINKLEY = 1.0; BaselineDBets; compute_adaptive_lambda(match_dates, alarm_dates, kappa, base_lambda) → λ_j = base_lambda·κ^(allarmi con Date strettamente anteriore); select_baseline_d_bets(probs, odds, lambdas) → esito con p̂·o − 1 massimo (parità nell'ordine H, D, A), quota, frazione kelly_staking solo se il massimo è > 0. La docstring dice che il detector indica quando, non quanto né di che tipo [V, R15@2026-09-29c; D per i dettagli interni]"
+
+Moduli e responsabilità → (nuova riga)
+"src/shk/kelly/backtest.py — BacktestResult(dates, log_wealth); backtest_log_wealth(dates datetime64, fractions, odds, won bool), solo np.ndarray → log-ricchezza dopo ogni data distinta, con 0 iniziale; per data L ← L + ln(1 + Σ f_i·r_i); ValueError per frazioni fuori da [0, 1), somma di una data ≥ 1, date non ordinate, quote non finite o ≤ 1; non riceve p né p̂; nessun import da shk.model né da shk.data [V, R15@2026-09-29c; D l'assenza di import, nessuna ricerca]"
+
+Moduli e responsabilità → riga di monitoring.py, aggiungi in coda:
+"; per C5.3: BaselineDSeasonInput (season, dates, probs (380, 3), odds (380, 3) da B365H/D/A, ftr, log_loss), assemble_baseline_d_season_input(df_residuals, df_raw, season, fit_through, role="training"), calibrate_baseline_d_kappa(df_residuals, df_raw, …) → KappaCalibrationResult(chosen_kappas, table) [V, R15@2026-09-29c; D per le firme esatte]"
+
+Moduli e responsabilità → riga di src/shk/model/scoring.py su align_predictions_with_odds, aggiungi:
+"; tiene tutte le colonne di df_preds e aggiunge da df_raw solo quelle mancanti (MATCH_KEYS esclusi), senza suffissi; merge inner, ValueError se le righe unite sono meno di df_preds; ordina per Date stabile [V, R14@2026-09-29c]"
+
+Moduli e responsabilità → tests/
+"tests/ — 28 moduli; …" → "tests/ — 30 moduli; nessun conftest.py [V, R3, R4, R6, R8, R11 e R15@2026-09-29c]:"; aggiungi test_backtest agli unitari e test_us_c5_3_acceptance all'accettazione.
+
+Moduli e responsabilità → Contenuto dei moduli di test (2/2), nuove voci in coda:
+"- test_backtest.py: 7 test sintetici del motore (calcolo a mano, regolazione simultanea per data, frazioni nulle, forma dell'output, validazioni, interfaccia senza p) [V, R15@2026-09-29c].
+- test_staking.py: 18 test dopo T31, con quelli della Baseline D (esito, parità, ritardo dell'allarme, κ = 1, κ = 0, docstring) [V, R15@2026-09-29c].
+- test_us_c5_3_acceptance.py: 6 test, compresi parità fra κ su dati sintetici e κ congelati uguali alla calibrazione sui dati reali (saltato senza dati) [V, R15@2026-09-29c]."
+
+Flussi principali → (nuova riga, dopo C5.2 con soglia calibrata)
+"Calibrazione di κ della Baseline D (T31), quarto-Kelly con quote B365 non de-viggate, su 2010-11 (fit 2010-11) e 2020-21 (fit 2020-21) [V, R15@2026-09-29c]:
+- allarmi uguali a C5.1: 2010-11 ADWIN 0 e Page-Hinkley 1; 2020-21 entrambi 0;
+- log-ricchezza finale con κ = 1 (uguale al quarto-Kelly senza detector): 2010-11 0.21081329 (317 puntate su 380), 2020-21 −0.07555935 (343 puntate), somma 0.13525393;
+- ADWIN: la stessa somma per tutti i κ → κ = 1 per la regola di parità;
+- Page-Hinkley: somma da −0.09208532 (κ = 0, 206 puntate nel 2010-11) a 0.13525393 (κ = 1), crescente in κ → κ = 1.
+Le stagioni di calibrazione sono di training dei fit che le prevedono: i parametri Elo sono stimati anche su quelle partite [V, decisione S4]."
+
+Zone fragili → (nuova riga)
+"KAPPA_ADWIN e KAPPA_PAGE_HINKLEY = 1.0: con κ = 1 la Baseline D coincide col quarto-Kelly senza detector, qualunque sia il numero di allarmi [V, R15@2026-09-29c]. Una modifica a residuals.py, drift.py, ai parametri dei detector o alla regola richiede di ricalcolare la calibrazione; lo segnala in locale test_frozen_kappas_match_real_data_calibration [D]"
+
+Ultimo aggiornamento →
+"R15@2026-09-29c — task di scrittura chiusi dopo la mappa del 2026-09-29c: T26, T27, T28, T29, T30, T31"

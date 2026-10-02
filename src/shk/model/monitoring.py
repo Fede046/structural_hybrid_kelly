@@ -5,14 +5,23 @@ dei 22 scenari (3 di training e 19 di validazione), la funzione di estrazione de
 dai residui del Modulo 1 e la funzione di generazione dei record per il file CSV.
 """
 
-from collections.abc import Collection, Mapping
+from collections.abc import Collection, Mapping, Sequence
 from typing import Final, NamedTuple
 
 import numpy as np
 import pandas as pd
 from scipy.stats import norm
 
+from shk.kelly.backtest import BacktestResult, backtest_log_wealth
+from shk.kelly.staking import (
+    BASE_LAMBDA,
+    KAPPA_GRID,
+    BaselineDBets,
+    compute_adaptive_lambda,
+    select_baseline_d_bets,
+)
 from shk.model.elo_fit import parse_season_start_year
+from shk.model.scoring import align_predictions_with_odds
 from shk.stats.drift import (
     MATCHDAY_SIZE,
     N_VERIFICATION_RESAMPLES,
@@ -698,3 +707,286 @@ def generate_daily_z_test_records(
         training_series=training_series,
         seed=seed,
     )
+
+
+# --- Funzioni di calibrazione e backtest per la Baseline D (Task 31 / US-C5.3) ---
+
+class BaselineDSeasonInput(NamedTuple):
+    """Input completi di una stagione per il backtest della Baseline D.
+
+    Attributi
+    ---------
+    season : str
+        Stagione di riferimento.
+    dates : np.ndarray
+        Array 1D datetime64 contenente le date di ciascuna partita.
+    probs : np.ndarray
+        Array 2D float64 di forma (N, 3) con le probabilità stimate [p_home, p_draw, p_away].
+    odds : np.ndarray
+        Array 2D float64 di forma (N, 3) con le quote decimali [B365H, B365D, B365A].
+    ftr : np.ndarray
+        Array 1D contenente l'esito reale della partita ('H', 'D', 'A').
+    log_loss : np.ndarray
+        Array 1D float64 contenente la serie di log-loss del modello.
+    """
+
+    season: str
+    dates: np.ndarray
+    probs: np.ndarray
+    odds: np.ndarray
+    ftr: np.ndarray
+    log_loss: np.ndarray
+
+
+class KappaCalibrationRow(NamedTuple):
+    """Riga dettagliata della tabella di calibrazione di kappa per la Baseline D.
+
+    Attributi
+    ---------
+    detector : str
+        Nome del detector ('adwin' o 'page_hinkley').
+    kappa : float
+        Valore del moltiplicatore kappa testato.
+    season : str
+        Stagione di training valutata ('2010-11' o '2020-21').
+    final_log_wealth : float
+        Log-ricchezza finale della stagione ottenuta dal motore di backtest.
+    n_bets : int
+        Numero di partite in cui è stata piazzata una scommessa (frazione > 0).
+    n_alarms : int
+        Numero di allarmi rilevati dal detector nella stagione.
+    """
+
+    detector: str
+    kappa: float
+    season: str
+    final_log_wealth: float
+    n_bets: int
+    n_alarms: int
+
+
+class KappaCalibrationResult(NamedTuple):
+    """Risultato complessivo della calibrazione di kappa per la Baseline D.
+
+    Attributi
+    ---------
+    chosen_kappas : dict[str, float]
+        Dizionario avente come chiavi i detector ('adwin', 'page_hinkley') e come valori
+        i kappa ottimali scelti (che massimizzano la somma della log-ricchezza finale).
+    table : tuple[KappaCalibrationRow, ...]
+        Tupla contenente le righe dettagliate di ciascuna combinazione (detector, kappa, stagione).
+    """
+
+    chosen_kappas: dict[str, float]
+    table: tuple[KappaCalibrationRow, ...]
+
+
+def assemble_baseline_d_season_input(
+    df_residuals: pd.DataFrame,
+    df_raw: pd.DataFrame,
+    season: str,
+    fit_through: str,
+    role: str = "training",
+    expected_matches: int = EXPECTED_MATCHES_PER_SEASON,
+) -> BaselineDSeasonInput:
+    """Assembla gli input completi di una stagione per il backtest della Baseline D.
+
+    Estrae le previsioni del modello, le allinea alle quote B365 pre-partita dai dati grezzi
+    e restituisce matrici e array ordinati stabilmente per data cronologica.
+
+    Parametri
+    ---------
+    df_residuals : pd.DataFrame
+        DataFrame dei residui prodotto da compute_model_residuals.
+    df_raw : pd.DataFrame
+        DataFrame grezzo o consolidato contenente le quote B365.
+    season : str
+        Stagione da estrarre (es. '2010-11').
+    fit_through : str
+        Fit temporale associato (es. '2010-11').
+    role : str, opzionale
+        Ruolo delle partite ('training' o 'validation', default 'training').
+    expected_matches : int, opzionale
+        Numero atteso di partite nella stagione (default 380).
+
+    Restituisce
+    -----------
+    BaselineDSeasonInput
+        NamedTuple con le informazioni complete della stagione (season, dates, probs, odds, ftr, log_loss).
+
+    Solleva
+    -------
+    TypeError
+        Se df_residuals o df_raw non sono pd.DataFrame, o se season/fit_through/role non sono str.
+    ValueError
+        Se le righe estratte o allineate non corrispondono a expected_matches o se mancano quote B365.
+    """
+    if not isinstance(df_residuals, pd.DataFrame):
+        raise TypeError(f"df_residuals must be a pd.DataFrame, got {type(df_residuals).__name__}")
+    if not isinstance(df_raw, pd.DataFrame):
+        raise TypeError(f"df_raw must be a pd.DataFrame, got {type(df_raw).__name__}")
+    if not isinstance(season, str):
+        raise TypeError(f"season must be a str, got {type(season).__name__}")
+    if not isinstance(fit_through, str):
+        raise TypeError(f"fit_through must be a str, got {type(fit_through).__name__}")
+    if not isinstance(role, str):
+        raise TypeError(f"role must be a str, got {type(role).__name__}")
+
+    sub = df_residuals[
+        (df_residuals["role"] == role)
+        & (df_residuals["fit_through"] == fit_through)
+        & (df_residuals["season"] == season)
+    ].copy()
+
+    if len(sub) != expected_matches:
+        raise ValueError(
+            f"Expected {expected_matches} matches for season {season} (fit {fit_through}, role {role}), "
+            f"got {len(sub)}"
+        )
+
+    sub = sub.sort_values("Date", kind="stable").reset_index(drop=True)
+
+    merged = align_predictions_with_odds(sub, df_raw)
+    if len(merged) != expected_matches:
+        raise ValueError(
+            f"Aligned matches count {len(merged)} differs from expected {expected_matches}"
+        )
+    merged = merged.sort_values("Date", kind="stable").reset_index(drop=True)
+
+    odds_cols = ["B365H", "B365D", "B365A"]
+    for c in odds_cols:
+        if c not in merged.columns:
+            raise ValueError(f"Merged dataframe missing required odds column '{c}'")
+
+    dates = pd.to_datetime(merged["Date"]).to_numpy(dtype="datetime64[ns]")
+    probs = merged[["p_home", "p_draw", "p_away"]].to_numpy(dtype=np.float64)
+    odds = merged[odds_cols].to_numpy(dtype=np.float64)
+    ftr = merged["FTR"].to_numpy(dtype=object)
+    log_loss = merged["log_loss"].to_numpy(dtype=np.float64)
+
+    return BaselineDSeasonInput(
+        season=season,
+        dates=dates,
+        probs=probs,
+        odds=odds,
+        ftr=ftr,
+        log_loss=log_loss,
+    )
+
+
+def calibrate_baseline_d_kappa(
+    df_residuals: pd.DataFrame,
+    df_raw: pd.DataFrame,
+    detectors: Sequence[str] = ("adwin", "page_hinkley"),
+    calibration_seasons: Sequence[str] = ("2010-11", "2020-21"),
+    kappa_grid: Sequence[float] = KAPPA_GRID,
+    base_lambda: float = BASE_LAMBDA,
+) -> KappaCalibrationResult:
+    """Calibra kappa per ciascun detector sulle stagioni di training (2010-11 e 2020-21).
+
+    Massimizza la somma delle log-ricchezze finali sulle stagioni di training considerate.
+    A parità esatta di float, vince il kappa più grande:
+        max(kappa_grid, key=lambda k: (total_log_wealth[k], k))
+
+    Parametri
+    ---------
+    df_residuals : pd.DataFrame
+        DataFrame dei residui prodotto da compute_model_residuals.
+    df_raw : pd.DataFrame
+        DataFrame grezzo o consolidato contenente le quote B365.
+    detectors : Sequence[str], opzionale
+        Nomi dei detector da calibrare (default: 'adwin', 'page_hinkley').
+    calibration_seasons : Sequence[str], opzionale
+        Stagioni di training per la calibrazione (default: '2010-11', '2020-21').
+    kappa_grid : Sequence[float], opzionale
+        Griglia di valori candidati per kappa (default KAPPA_GRID).
+    base_lambda : float, opzionale
+        Frazione di Kelly iniziale (default BASE_LAMBDA = 0.25).
+
+    Restituisce
+    -----------
+    KappaCalibrationResult
+        NamedTuple contenente:
+        - chosen_kappas: dict[str, float] con il kappa ottimale per ciascun detector;
+        - table: tuple[KappaCalibrationRow, ...] con i risultati dettagliati per riga
+          (detector, kappa, season, final_log_wealth, n_bets, n_alarms).
+    """
+    if not isinstance(df_residuals, pd.DataFrame):
+        raise TypeError(f"df_residuals must be a pd.DataFrame, got {type(df_residuals).__name__}")
+    if not isinstance(df_raw, pd.DataFrame):
+        raise TypeError(f"df_raw must be a pd.DataFrame, got {type(df_raw).__name__}")
+
+    # Assemblaggio degli input per ciascuna stagione di calibrazione
+    season_inputs: dict[str, BaselineDSeasonInput] = {}
+    for s in calibration_seasons:
+        season_inputs[s] = assemble_baseline_d_season_input(
+            df_residuals=df_residuals,
+            df_raw=df_raw,
+            season=s,
+            fit_through=s,
+            role="training",
+        )
+
+    rows: list[KappaCalibrationRow] = []
+    chosen_kappas: dict[str, float] = {}
+
+    for det in detectors:
+        # Calcolo allarmi per ciascuna stagione
+        # Gli allarmi si calcolano con run_drift_detector e detector_params sulla log-loss
+        params = detector_params(det)
+        season_alarms: dict[str, np.ndarray] = {}
+        for s in calibration_seasons:
+            inp = season_inputs[s]
+            alarm_indices = run_drift_detector(inp.log_loss, det, params)
+            season_alarms[s] = inp.dates[alarm_indices]
+
+        # Valutazione su ciascun kappa della griglia
+        total_wealth_by_kappa: dict[float, float] = {}
+        for k in kappa_grid:
+            k_float = float(k)
+            season_wealths: list[float] = []
+
+            for s in calibration_seasons:
+                inp = season_inputs[s]
+                alarm_dates = season_alarms[s]
+                lambdas = compute_adaptive_lambda(
+                    inp.dates,
+                    alarm_dates,
+                    kappa=k_float,
+                    base_lambda=base_lambda,
+                )
+                bets = select_baseline_d_bets(inp.probs, inp.odds, lambdas)
+                won = (inp.ftr == bets.outcomes)
+                backtest_res = backtest_log_wealth(
+                    inp.dates,
+                    bets.fractions,
+                    bets.odds,
+                    won,
+                )
+                final_lw = float(backtest_res.log_wealth[-1])
+                n_bets = int(np.sum(bets.fractions > 0.0))
+                n_alarms = len(alarm_dates)
+
+                rows.append(
+                    KappaCalibrationRow(
+                        detector=det,
+                        kappa=k_float,
+                        season=s,
+                        final_log_wealth=final_lw,
+                        n_bets=n_bets,
+                        n_alarms=n_alarms,
+                    )
+                )
+                season_wealths.append(final_lw)
+
+            total_wealth_by_kappa[k_float] = sum(season_wealths)
+
+        # Regola di parità: a parità di somma esatta vince il kappa più grande
+        best_k = max(kappa_grid, key=lambda k: (total_wealth_by_kappa[float(k)], float(k)))
+        chosen_kappas[det] = float(best_k)
+
+    return KappaCalibrationResult(
+        chosen_kappas=chosen_kappas,
+        table=tuple(rows),
+    )
+
