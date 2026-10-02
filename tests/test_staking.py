@@ -5,9 +5,14 @@ import pytest
 
 from shk.kelly.core import kelly_fraction
 from shk.kelly.staking import (
+    BASE_LAMBDA,
+    KAPPA_GRID,
+    BaselineDBets,
     StakingMoments,
+    compute_adaptive_lambda,
     kelly_staking,
     plugin_staking,
+    select_baseline_d_bets,
     staking_moments,
 )
 
@@ -263,5 +268,145 @@ def test_plugin_staking_validation_errors():
         plugin_staking(1.1, 1.0, 0.0283)
     with pytest.raises(ValueError):
         plugin_staking(np.array([0.60, np.nan]), 1.0, 0.0283)
+
+
+# --- Test per la regola della Baseline D (Task 31 / US-C5.3) ---
+
+def test_select_baseline_d_bets_positive_edge():
+    """Verifica la selezione dell'esito con EV massimo positivo e il calcolo della frazione."""
+    probs = np.array([
+        [0.60, 0.25, 0.15],  # EV: H = 0.60*2.0 - 1 = 0.20; D = 0.25*3.0 - 1 = -0.25; A = 0.15*4.0 - 1 = -0.40
+        [0.20, 0.50, 0.30],  # EV: H = 0.20*3.0 - 1 = -0.40; D = 0.50*2.5 - 1 = 0.25; A = 0.30*3.0 - 1 = -0.10
+    ], dtype=np.float64)
+    odds = np.array([
+        [2.00, 3.00, 4.00],
+        [3.00, 2.50, 3.00],
+    ], dtype=np.float64)
+    lambdas = np.array([0.25, 0.50], dtype=np.float64)
+
+    bets = select_baseline_d_bets(probs, odds, lambdas)
+
+    assert isinstance(bets, BaselineDBets)
+    assert list(bets.outcomes) == ["H", "D"]
+    np.testing.assert_allclose(bets.odds, [2.00, 2.50])
+
+    # Per partita 0: p = 0.60, b = 1.0, lam = 0.25 -> kelly_staking(0.60, 1.0, 0.25) = 0.25 * 0.20 = 0.05
+    expected_f0 = kelly_staking(0.60, 1.0, lam=0.25)
+    # Per partita 1: p = 0.50, b = 1.5, lam = 0.50 -> kelly_staking(0.50, 1.5, 0.50)
+    expected_f1 = kelly_staking(0.50, 1.5, lam=0.50)
+
+    np.testing.assert_allclose(bets.fractions, [expected_f0, expected_f1], atol=1e-12)
+
+
+def test_select_baseline_d_bets_negative_or_zero_edge():
+    """Verifica che con edge negativo o nullo la frazione sia esattamente 0.0."""
+    # Tutte quote egee negative
+    probs = np.array([[0.30, 0.30, 0.40]], dtype=np.float64)
+    odds = np.array([[2.00, 2.00, 2.00]], dtype=np.float64)
+    # EV: 0.6 - 1 = -0.4, 0.6 - 1 = -0.4, 0.8 - 1 = -0.2 (max è A con -0.2 <= 0)
+    lambdas = np.array([0.25], dtype=np.float64)
+
+    bets = select_baseline_d_bets(probs, odds, lambdas)
+    assert bets.outcomes[0] == "A"
+    assert bets.odds[0] == 2.00
+    assert bets.fractions[0] == 0.0
+
+
+def test_select_baseline_d_bets_tie_breaking_synthetic():
+    """Verifica sintetica della regola di parità tra esiti: a parità di EV vince H > D > A."""
+    # Caso 1: EV_H == EV_D = 0.25 esatto > EV_A
+    probs_1 = np.array([[0.50, 0.25, 0.125]], dtype=np.float64)
+    odds_1 = np.array([[2.50, 5.00, 2.00]], dtype=np.float64)
+    # EV_H = 0.50*2.5 - 1 = 0.25; EV_D = 0.25*5.0 - 1 = 0.25; EV_A = 0.125*2.0 - 1 = -0.75
+    bets_1 = select_baseline_d_bets(probs_1, odds_1, np.array([0.25]))
+    assert bets_1.outcomes[0] == "H"
+    assert bets_1.odds[0] == 2.50
+
+    # Caso 2: EV_D == EV_A = 0.25 esatto > EV_H
+    probs_2 = np.array([[0.125, 0.50, 0.25]], dtype=np.float64)
+    odds_2 = np.array([[2.00, 2.50, 5.00]], dtype=np.float64)
+    # EV_H = -0.75; EV_D = 0.25; EV_A = 0.25
+    bets_2 = select_baseline_d_bets(probs_2, odds_2, np.array([0.25]))
+    assert bets_2.outcomes[0] == "D"
+    assert bets_2.odds[0] == 2.50
+
+    # Caso 3: EV_H == EV_D == EV_A = 0.25 esatto
+    probs_3 = np.array([[0.50, 0.50, 0.50]], dtype=np.float64)
+    odds_3 = np.array([[2.50, 2.50, 2.50]], dtype=np.float64)
+    bets_3 = select_baseline_d_bets(probs_3, odds_3, np.array([0.25]))
+    assert bets_3.outcomes[0] == "H"
+    assert bets_3.odds[0] == 2.50
+
+
+def test_adaptive_lambda_alarm_timing():
+    """Verifica che un allarme alla data d modifichi lambda solo dalle date successive (Date > d)."""
+    match_dates = np.array([
+        "2010-09-01",  # prima dell'allarme -> lambda = 0.25
+        "2010-09-10",  # data dell'allarme -> lambda = 0.25 (stessa data, non anteriore)
+        "2010-09-10",  # altra partita stessa data -> lambda = 0.25
+        "2010-09-11",  # data successiva -> lambda = 0.25 * kappa
+        "2010-09-15",  # data successiva -> lambda = 0.25 * kappa
+    ], dtype="datetime64[D]")
+
+    alarm_dates = np.array(["2010-09-10"], dtype="datetime64[D]")
+    kappa = 0.50
+
+    lambdas = compute_adaptive_lambda(match_dates, alarm_dates, kappa=kappa, base_lambda=0.25)
+
+    assert lambdas[0] == pytest.approx(0.25)
+    assert lambdas[1] == pytest.approx(0.25)
+    assert lambdas[2] == pytest.approx(0.25)
+    assert lambdas[3] == pytest.approx(0.25 * 0.50)
+    assert lambdas[4] == pytest.approx(0.25 * 0.50)
+
+
+def test_adaptive_lambda_multiple_alarms_accumulate():
+    """Verifica che allarmi multipli si accumulino come kappa^k per partite successive."""
+    match_dates = np.array([
+        "2010-09-01",  # k = 0 -> 0.25
+        "2010-09-11",  # k = 1 -> 0.25 * 0.5
+        "2010-09-21",  # k = 2 -> 0.25 * 0.25
+    ], dtype="datetime64[D]")
+
+    alarm_dates = np.array(["2010-09-05", "2010-09-15"], dtype="datetime64[D]")
+    kappa = 0.50
+
+    lambdas = compute_adaptive_lambda(match_dates, alarm_dates, kappa=kappa, base_lambda=0.25)
+    expected = [0.25, 0.25 * 0.5, 0.25 * 0.25]
+    np.testing.assert_allclose(lambdas, expected)
+
+
+def test_adaptive_lambda_kappa_one_matches_quarter_kelly():
+    """Con kappa = 1.0 le frazioni e lambda coincidono costantemente con quarto-Kelly senza detector."""
+    match_dates = np.array(["2010-09-01", "2010-09-10", "2010-09-20"], dtype="datetime64[D]")
+    alarm_dates = np.array(["2010-09-05", "2010-09-15"], dtype="datetime64[D]")
+
+    lambdas = compute_adaptive_lambda(match_dates, alarm_dates, kappa=1.0, base_lambda=0.25)
+    np.testing.assert_allclose(lambdas, np.full(3, 0.25))
+
+    probs = np.array([[0.60, 0.20, 0.20]] * 3, dtype=np.float64)
+    odds = np.array([[2.00, 3.00, 3.00]] * 3, dtype=np.float64)
+
+    bets_adaptive = select_baseline_d_bets(probs, odds, lambdas)
+    expected_f = kelly_staking(0.60, 1.0, lam=0.25)
+    np.testing.assert_allclose(bets_adaptive.fractions, np.full(3, expected_f))
+
+
+def test_adaptive_lambda_zero_kappa():
+    """Con kappa = 0.0 dopo il primo allarme lambda scende a 0.0 esatto per le date successive."""
+    match_dates = np.array(["2010-09-01", "2010-09-10"], dtype="datetime64[D]")
+    alarm_dates = np.array(["2010-09-05"], dtype="datetime64[D]")
+
+    lambdas = compute_adaptive_lambda(match_dates, alarm_dates, kappa=0.0, base_lambda=0.25)
+    assert lambdas[0] == pytest.approx(0.25)
+    assert lambdas[1] == pytest.approx(0.0)
+
+
+def test_baseline_d_rule_docstring_content():
+    """Verifica che la docstring di select_baseline_d_bets contenga il testo prescritto."""
+    doc = select_baseline_d_bets.__doc__
+    assert doc is not None
+    assert "Il detector dice quando, non quanto né di che tipo" in doc
+    assert "iperparametro fisso" in doc
 
 

@@ -1,5 +1,5 @@
 # Backlog
-Ultimo task: T24
+Ultimo task: T32
 
 ## Decisioni in vigore
 - Scenario base: p = 0.60, b = 1.0 (quota 2.00), T = 1000, M = 10000, lo stesso di C1.1 — S1, 2026-09-27
@@ -39,6 +39,17 @@ Ultimo task: T24
 - ĝ = LL(q) − LL(p), misurato solo sulle stagioni di validazione, contro due serie di q (scelta del supervisore su delega, da confermare): b365_prematch (B365H/D/A) sulle 19 stagioni di validazione e pinnacle_closing (PSCH/D/A) sulle 10 stagioni di validazione dal 2012-13. Modello e tre metodi di de-vigging sulle stesse partite; esclusioni contate per causa. Esito informativo: nessun parametro, filtro o metodo si cambia in funzione di ĝ — S4, 2026-09-29
 - Ricalibrazione con lo stesso schema espansivo: one-vs-rest per esito, isotonica e Platt entrambe riportate senza scelta nel codice, limite a [1e-6, 1 − 1e-6] e rinormalizzazione (scelta del supervisore); reliability su 10 bin e Brier multiclasse sulla serie b365_prematch — S4, 2026-09-29
 - Un test sui dati reali che supera 60 s si marca slow e si dichiara nel report — S4, 2026-09-29
+- Modulo 1 in versione raw per S5, senza ricalibrazione (scelta del supervisore su delega, da confermare) — S5, 2026-09-29
+- Serie di S5: log-loss per partita −ln p̂(esito realizzato) delle previsioni walk-forward con ELO_FITS, da compute_model_residuals (src/shk/model/residuals.py); le partite di uno scenario di training j vengono dal fit che termina in j, quelle di validazione dal fit delle stagioni di training strettamente anteriori — S5, 2026-09-29
+- Scenari di S5: i tre di training (2000-01, 2010-11, 2020-21) e le 19 stagioni di validazione; il 2023-24 dopo lo sblocco del test (US-C8.2). Scelta del supervisore su delega, da confermare — S5, 2026-09-29
+- Matchday: blocco contiguo di 10 partite nell'ordine cronologico stabile della stagione, 38 per stagione. Nei CSV si chiama matchday (colonna e valore di row_type), non giornata, per la convenzione dell'inglese negli identificatori; colonne dei CSV in snake_case; etichette delle figure in italiano — S5, 2026-09-30
+- Z-test per matchday: Z = (media della log-loss delle 10 partite − μ_f)/(σ_f/√10), con μ_f e σ_f (ddof = 1) su tutte le partite di training del fit f che prevede la stagione; allarme nominale se |Z| supera strettamente norm.ppf(1 − α/2), con α = ALPHA di false_rejection.py; atteso 1.9 allarmi per stagione — S5, 2026-09-29
+- Soglia calibrata dello Z (scelta del supervisore su delega, da confermare): moving block bootstrap della serie di training del fit, che definisce μ_f e σ_f, quindi H₀ per costruzione; statistica |Z| delle prime 10 posizioni; B = 999, L ∈ {7, 20, 40}, α = 0.05; seed SEED_C5 = 20260929, con SeedSequence(SEED_C5).spawn(3) per fit, spawn(3) per L e spawn(2) per calibrazione e verifica; verifica su 1000 ricampionamenti indipendenti nell'intervallo al 99%. calibration.py e false_rejection.py non si modificano — S5, 2026-09-29
+- Detector: ADWIN e PageHinkley importati da river, non reimplementati; un'istanza nuova per stagione, alimentata con la log-loss di tutte le partite in ordine cronologico. Parametri scelti su griglia fissata prima dei risultati (ADWIN delta ∈ {0.002, 0.005, 0.01, 0.02, 0.05, 0.1, 0.2, 0.5, 0.8}; Page-Hinkley delta ∈ {0.005, 0.01, 0.05} × threshold ∈ {1, 2, 5, 10, 20, 50}): vince la combinazione con media degli allarmi su 2000-01 e 2010-11 più vicina a 1.9, distanza |10·(a + b) − 38|, a parità meno allarmi e poi ordine della griglia; 2020-21 escluso dalla taratura. Congelati in drift.py: ADWIN delta 0.002; Page-Hinkley delta 0.05, threshold 5.0; gli altri parametri congelati coi default di river 0.26.1 e sempre passati in modo esplicito — S5, 2026-09-30
+- river fra le dipendenze runtime di pyproject.toml senza vincolo di versione, come pandas; uv.lock lo aggiorna a mano il programmatore — S5, 2026-09-29
+- Collocazione del codice: funzioni pure su array in src/shk/stats/drift.py e in src/shk/kelly/; funzioni sui DataFrame del Modulo 1 e costruzione dei CSV in src/shk/model/monitoring.py; src/shk/kelly/ non importa da shk.model né da shk.data — S5, 2026-09-30
+- Motore su quote reali (src/shk/kelly/backtest.py): riceve per partita data, frazione, quota ed esito, anche le partite senza puntata (frazione 0); per data L ← L + ln(1 + Σ f_i·r_i), con r_i = o_i − 1 se vinta e −1 se persa; bankroll 1 a inizio stagione; ValueError per frazioni fuori da [0, 1), somma di una data ≥ 1, date non ordinate, quote non finite o ≤ 1; non riceve p né p̂ — S5, 2026-09-30
+- Baseline D (scelte del supervisore su delega, da confermare): al più una puntata per partita, sull'esito con p̂·o − 1 massimo se > 0 (a parità nell'ordine H, D, A), con frazione kelly_staking(p̂, o − 1, λ_j) e quote B365 pre-partita non de-viggate; λ_j = 0.25·κ^(allarmi su partite con Date strettamente anteriore); κ ∈ {0, 0.25, 0.5, 0.75, 1} scelto per detector massimizzando la somma della log-ricchezza finale di 2010-11 e 2020-21, a parità esatta dei float il più grande; 2000-01 escluso perché senza B365. Congelati in staking.py: KAPPA_ADWIN = KAPPA_PAGE_HINKLEY = 1.0. Il detector dice quando, non quanto né di che tipo — S5, 2026-09-30
 
 ## Story chiuse
 ### S1 — C1 Simulatore Kelly: motore riusabile ed errore di stima — chiusa il 2026-09-27
@@ -135,6 +146,7 @@ Resta aperto:
 - La decisione sullo scenario di training 2000-01 senza B365 resta aperta (S3). In C4 non ha bloccato: ĝ si misura solo sulla validazione.
 
 ### Resta al programmatore per S4
+- Fatto: rimappatura del progetto il 2026-09-29 a 27cf7a4; C4 portato in main come 27cf7a4, con T20–T25.
 - Confermare o cambiare le scelte fatte dal supervisore su delega il 2026-09-29:
   - q con serie principale B365 pre-partita e seconda serie Pinnacle chiusura dal 2012-13;
   - calibrazione espansiva di K, h, ν e della ricalibrazione;
@@ -143,12 +155,68 @@ Resta aperto:
 - Correggere o dichiarare la tabella di Davidson delle note 2.8 §3.3: è calcolata con 10^(ΔR/200), mentre il modello usa la scala 400 del punteggio atteso.
 - US-C4.2, esito informativo: scrivere l'introduzione della tesi in base al segno di ĝ, negativo in tutti i casi, dichiarandolo in apertura e non nei limiti (note 2.4 §6).
 - Dichiarare in tesi: il mapping Davidson e la sensibilità rispetto alla baseline a pareggio costante; la regola per le neopromosse; lo schema espansivo degli iperparametri.
-- US-C4.3: decidere se serve una ricalibrazione e quale adottare, isotonica o Platt, da congelare. Log-loss di validazione raw / Platt / isotonica: 0.9795 / 0.9823 / 1.0139 su B365, 0.9812 / 0.9809 / 0.9914 su Pinnacle.
-- Decidere sull'accesso dell'agente ai file fuori dal repository: lasciarlo com'è, oppure limitarne i permessi alla cartella del progetto e aggiungere il divieto alle "Convenzioni del progetto" di .agent/PROTOCOLLO.md. Controllare che le 50 righe della cronologia di PowerShell lette in T24 non contenessero credenziali.
+- US-C4.3: decidere se serve una ricalibrazione e quale adottare, isotonica o Platt, da congelare. Log-loss di validazione raw / Platt / isotonica: 0.9795 / 0.9823 / 1.0139 su B365, 0.9812 / 0.9809 / 0.9914 su Pinnacle. In S5 si è usato raw su delega.
+- Decidere sull'accesso dell'agente ai file fuori dal repository: lasciarlo com'è, oppure limitarne i permessi alla cartella del progetto e aggiungere il divieto alle "Convenzioni del progetto" di .agent/PROTOCOLLO.md. Controllare che le 50 righe della cronologia di PowerShell lette in T24 non contenessero credenziali. La violazione si è ripetuta in S5.
 - Decidere se aggiungere alle "Convenzioni del progetto" di .agent/PROTOCOLLO.md la regola "ogni valore numerico del report viene da un comando elencato".
-- Rimappare il progetto prima della prossima story: dopo la mappa del 2026-09-29b sono stati chiusi cinque task di scrittura.
-- Committare codice, CSV e figure di T24 (T20–T23 sono in 7f8e928, 4710045, 15b2204, d329766), verificare la CI al primo push del branch C4 e portare C4 in main.
-- Committare T25 (T20–T24 sono in 7f8e928, 4710045, 15b2204, d329766, dc9d8f2), verificare che la CI del branch C4 sia verde e portare C4 in main. Con la CI verde, cambiare lo stato di T25 da "in corso: manca la verifica della CI" a "fatto".
+- Verificare la CI su main dopo 27cf7a4 e, se è verde, cambiare lo stato di T25 da "in corso: manca la verifica della CI" a "fatto".
+
+### S5 — C5 Drift detector standard: ADWIN e Page-Hinkley, Z-test per matchday, Baseline D — chiusa il 2026-09-30
+Esito: unisce US-C5.1, US-C5.2 e US-C5.3. Sette task (T26–T32), tutti chiusi con i criteri coperti da test, in una sola chat sul branch C5, in deroga alla regola dei cinque per decisione del programmatore. Suite veloce 248 → 317 verde (69 test nuovi); suite slow invariata (15, nessun test slow aggiunto, non rieseguita). Risultati in results/us_c5_1_drift_detectors.csv, results/us_c5_2_daily_z_test.csv, results/us_c5_3_baseline_d.csv e nelle tre figure omonime in thesis/figures/; valori misurati nei report .agent/report/T26.md … T32.md, ricalcolati in modo indipendente dal supervisore dove numerici. Dopo la mappa del 2026-09-29c sono stati chiusi sette task di scrittura: la prossima chat deve rimappare.
+Note di esecuzione:
+- un correttivo in T28 (totali del report non prodotti da comandi). Valori o comandi non prodotti da un comando anche in R2, R8 e R12 e nei comandi abbreviati dei report di T31 e T32, intercettati dal supervisore;
+- l'agente ha letto i log della piattaforma fuori dal repository in R2 (messaggio troncato di 277 byte) e in R14 (senza dichiararlo, con il messaggio integro); ha letto più volte sezioni del backlog fuori dal task. Nessun file scritto fuori scope, nessun comando git vietato;
+- i messaggi lunghi arrivano troncati in coda: da T27 i messaggi all'agente terminano con una riga di controllo;
+- river 0.26.1 installato nel .venv dopo un dry-run che non toccava le altre dipendenze.
+- T26 — Serie di log-loss per partita del Modulo 1 — fatto — file: src/shk/model/residuals.py, tests/test_residuals.py
+- T27 — ADWIN e Page-Hinkley da river, tarati sul training — fatto — file: pyproject.toml, src/shk/stats/drift.py, tests/test_drift.py
+- T28 — Allarmi di ADWIN e Page-Hinkley su ogni scenario, US-C5.1 — fatto — file: src/shk/stats/drift.py, src/shk/model/monitoring.py, scripts/us_c5_1_drift_detectors.py, tests/test_us_c5_1_acceptance.py, results/us_c5_1_drift_detectors.csv, thesis/figures/us_c5_1_drift_detectors.png
+- T29 — Z-test per matchday con soglia nominale e confronto con ADWIN e Page-Hinkley, US-C5.2 — fatto — file: src/shk/stats/drift.py, src/shk/model/monitoring.py, tests/test_drift.py, scripts/us_c5_2_daily_z_test.py, tests/test_us_c5_2_acceptance.py, results/us_c5_2_daily_z_test.csv, thesis/figures/us_c5_2_daily_z_test.png
+- T30 — Soglia dello Z-test calibrata per block bootstrap, US-C5.2 — fatto — file: src/shk/stats/drift.py, src/shk/model/monitoring.py, scripts/us_c5_2_daily_z_test.py, tests/test_drift.py, tests/test_us_c5_2_acceptance.py, results/us_c5_2_daily_z_test.csv, thesis/figures/us_c5_2_daily_z_test.png
+- T31 — Motore su quote reali e regola della Baseline D, con κ calibrato sul training, US-C5.3 — fatto — file: src/shk/kelly/backtest.py, src/shk/kelly/staking.py, src/shk/model/monitoring.py, tests/test_backtest.py, tests/test_staking.py, tests/test_us_c5_3_acceptance.py
+- T32 — Esecuzione appaiata della Baseline D sulle stagioni di validazione, US-C5.3 — fatto — file: src/shk/model/monitoring.py, scripts/us_c5_3_baseline_d.py, tests/test_us_c5_3_acceptance.py, results/us_c5_3_baseline_d.csv, thesis/figures/us_c5_3_baseline_d.png
+
+Risultati principali:
+- Serie del Modulo 1 raw (T26): 9 500 righe (training 380 / 760 / 1 140 per fit, validazione 3 040 / 3 420 / 760); log-loss medie uguali a quelle di C4.1 entro 4.1e-7.
+- Taratura dei detector (T27), river 0.26.1: ADWIN 0 allarmi su 2000-01 e 2010-11 per tutti i 9 delta, scelto 0.002 per l'ordine della griglia; Page-Hinkley scelto delta 0.05, threshold 5.0, con 1 allarme per stagione (media 1.0 contro il target 1.9).
+- C5.1 (T28), 22 stagioni: ADWIN 0 allarmi ovunque, compreso il 2020-21; Page-Hinkley 22 allarmi, 2 in training (nessuno nel 2020-21) e 20 in validazione su 12 stagioni.
+- C5.2 (T29), 19 stagioni di validazione: baseline μ_f 1.00819 / 1.00899 / 1.02094, σ_f 0.410 / 0.421 / 0.384; Z nominale 53 allarmi (media 2.789 per stagione contro 1.9; 20 con Z > 0, 33 con Z < 0); ADWIN 0; Page-Hinkley 20 (media 1.053).
+- C5.2 calibrato (T30): soglie da 1.773 a 2.131 contro 1.960 nominale; tassi di verifica con soglia calibrata fra 0.038 e 0.065, tutti nell'intervallo al 99%, con soglia nominale fra 0.045 e 0.076; allarmi calibrati 61 (L = 7), 43 (L = 20), 43 (L = 40). Con L ≥ 10 la distribuzione bootstrap si riduce alle finestre contigue di 10 partite del training: nel fit 2000-01 L = 20 e L = 40 danno la stessa soglia.
+- κ della Baseline D (T31) su 2010-11 e 2020-21: κ = 1 per entrambi i detector (ADWIN per parità su tutta la griglia, Page-Hinkley massimo stretto); quarto-Kelly 0.2108 nel 2010-11 e −0.0756 nel 2020-21.
+- C5.3 (T32), 19 stagioni di validazione: D-ADWIN e D-Page-Hinkley coincidono col riferimento in ogni stagione; riferimento con log-ricchezza totale −10.580 su 6 234 puntate, positiva solo nel 2005-06 e nel 2008-09; drawdown massimo per stagione da 0.375 a 0.774.
+
+Resta aperto:
+- Taratura di ADWIN: con la griglia fissata e questa serie non scatta mai. Alternative: dichiararlo in tesi; rivedere griglia, serie o target in una chat di backlog, con criteri scritti prima.
+- κ della Baseline D: κ = 1 per entrambi i detector rende la Baseline D identica al quarto-Kelly senza detector, e la figura di C5.3 mostra differenze tutte nulle. La calibrazione usa stagioni in campione per il Modulo 1. Alternative: dichiararlo in tesi; rivedere griglia, stagioni od obiettivo di κ, ed eventualmente il contenuto della figura, in una chat di backlog.
+- US-C5.1 sul 2023-24, dopo lo sblocco del test.
+- Il salto dei test di ricalcolo senza dati è verificato leggendo il codice (T26) o dai report, non da un'esecuzione in CI.
+- Imprecisioni nei report, lasciati come sono: indice e data del primo allarme di Page-Hinkley nel 2000-01 discordi fra R8 e R9 (stessa matchday 8); comandi abbreviati nei report T31 e T32; figura di C5.3 descritta a due pannelli. Fanno fede i valori riportati qui e nella scheda.
+
+### Fuori scope di S5
+- Esecuzione dei detector e della Baseline D sul 2023-24, possibile solo dopo lo sblocco del test (US-C8.2); la variante literature del 2023-24, non ricostruibile da football-data.
+- Architettura ad agenti a classi e agenti A, B ed E (US-C6.1, US-C6.2); molti seed e intervalli per block bootstrap (US-C8.3).
+- Il seguito di T12 e la correzione della docstring di calibration.py, che restano nella story S2.
+- CUSUM, EWMA, DDM ed EDDM; Bonferroni, Šidák e la soglia sul massimo dei 38 Z, cioè il controllo della FWER (note 1.4 §5).
+- La baseline esterna, cioè il log-score differenziale contro il mercato, come criterio di arresto (note 1.4 §6.3).
+- Precision e recall dei detector rispetto a date di drift note, e la mappatura scenario → tipo di drift (note 2.7 §6.4).
+- Kelly simultaneo sui tre esiti dell'1X2, il ritorno di λ al valore iniziale dopo un allarme, una durata della riduzione come secondo parametro.
+- Il Modulo 1 ricalibrato (Platt o isotonica) come serie alternativa.
+
+### Resta al programmatore per S5
+- Confermare o cambiare le scelte fatte dal supervisore su delega il 2026-09-29:
+  - Modulo 1 raw;
+  - scenari di ora = 3 di training più 19 di validazione, con il 2023-24 dopo lo sblocco;
+  - calibrazione dello Z sulla serie di training del fit;
+  - taratura dei detector su 1.9 allarmi per stagione su 2000-01 e 2010-11, con il 2020-21 escluso;
+  - Baseline D: un esito per partita, λ di partenza 0.25, κ moltiplicativo a ogni allarme, griglia e obiettivo di κ, 2000-01 escluso dalla calibrazione.
+- Decidere sulla taratura di ADWIN e sul κ della Baseline D (vedi "Resta aperto").
+- US-C5.1: saper rispondere a "perché ANOVA e non ADWIN?" coi numeri di T28, T29 e T30: ADWIN 0 allarmi, Z nominale 53, Z calibrato 61, 43 e 43 sulle 19 stagioni.
+- US-C5.2: scegliere quale L adottare per lo Z calibrato, insieme alla scelta rimandata in S2 per C6.4 e C8.
+- US-C5.3: scrivere in tesi che il detector dice quando, non quanto né di che tipo, e che κ è un iperparametro fisso uguale per ogni allarme.
+- Eseguire US-C5.1 sul 2023-24 dopo lo sblocco del test.
+- Aggiornare uv.lock dopo l'aggiunta di river, e decidere se mettergli un vincolo di versione.
+- Decidere sui permessi dell'agente e sulla regola dei valori del report in .agent/PROTOCOLLO.md (vedi S4).
+- Committare codice, CSV e figure di T26–T32; verificare al primo push di C5 che la CI installi river, resti verde e salti i test di ricalcolo senza dati; portare C5 in main.
+- Rimappare il progetto prima della prossima story: dopo la mappa del 2026-09-29c sono stati chiusi sette task di scrittura.
 
 ## Story S2 — C2 ANOVA a mano, autocorrelazione e calibrazione per block bootstrap — aperta il 2026-09-28, T12 da rivedere
 Esito: unisce US-C2.1, US-C2.2 e US-C2.3. T8–T11 chiusi con tutti i criteri coperti da test; T12 fermo sul criterio 2; T13 corregge i test del CSV per la CI. Suite veloce 109 verde; suite slow 14, di cui 1 rossa per il risultato noto di T12. Risultati in results/us_c2_anova_autocorrelation.csv (12 righe nominali definitive + 12 calibrate) e thesis/figures/us_c2_anova_autocorrelation.png (pannelli A e B); valori misurati nei report .agent/report/T8.md … T12.md, riprodotti in modo indipendente dal supervisore.
@@ -177,7 +245,7 @@ Resta aperto:
 - Calibrazione per contiguous_38 e random_2.
 - Stationary bootstrap (Politis–Romano) e scelta automatica della lunghezza dei blocchi (Politis–White).
 - Errori standard HAC / Newey–West e correzione per n_eff.
-- Applicazione della calibrazione a Z-test, DiD e Breusch-Pagan: spetta a C5.2, C6.4 e C8, che riusano src/shk/stats/calibration.py.
+- Applicazione della calibrazione a Z-test, DiD e Breusch-Pagan: spetta a C5.2, C6.4 e C8, che riusano src/shk/stats/calibration.py. Per lo Z-test di C5.2 è fatta in T30, ricampionando la serie di training del fit.
 - Intervalli di confidenza di η² per block bootstrap (C8).
 - Gestore canonico delle dipendenze (pip contro uv).
 

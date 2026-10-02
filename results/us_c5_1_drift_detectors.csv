@@ -1,0 +1,67 @@
+row_type,season,role,fit_through,detector,alarm_number,match_index,matchday,date,home_team,away_team,n_alarms
+summary,2000-01,training,2000-01,adwin,,,,,,,0
+alarm,2000-01,training,2000-01,page_hinkley,1,71,8,2000-09-30,Everton,Ipswich,
+summary,2000-01,training,2000-01,page_hinkley,,,,,,,1
+summary,2002-03,validation,2000-01,adwin,,,,,,,0
+summary,2002-03,validation,2000-01,page_hinkley,,,,,,,0
+summary,2003-04,validation,2000-01,adwin,,,,,,,0
+alarm,2003-04,validation,2000-01,page_hinkley,1,345,35,2004-04-25,Leeds,Portsmouth,
+summary,2003-04,validation,2000-01,page_hinkley,,,,,,,1
+summary,2004-05,validation,2000-01,adwin,,,,,,,0
+alarm,2004-05,validation,2000-01,page_hinkley,1,118,12,2004-11-07,Newcastle,Fulham,
+summary,2004-05,validation,2000-01,page_hinkley,,,,,,,1
+summary,2005-06,validation,2000-01,adwin,,,,,,,0
+alarm,2005-06,validation,2000-01,page_hinkley,1,64,7,2005-09-25,Middlesbrough,Sunderland,
+alarm,2005-06,validation,2000-01,page_hinkley,2,228,23,2006-02-01,Arsenal,West Ham,
+summary,2005-06,validation,2000-01,page_hinkley,,,,,,,2
+summary,2006-07,validation,2000-01,adwin,,,,,,,0
+alarm,2006-07,validation,2000-01,page_hinkley,1,374,38,2007-05-13,Man United,West Ham,
+summary,2006-07,validation,2000-01,page_hinkley,,,,,,,1
+summary,2007-08,validation,2000-01,adwin,,,,,,,0
+summary,2007-08,validation,2000-01,page_hinkley,,,,,,,0
+summary,2008-09,validation,2000-01,adwin,,,,,,,0
+alarm,2008-09,validation,2000-01,page_hinkley,1,134,14,2008-11-22,Portsmouth,Hull,
+alarm,2008-09,validation,2000-01,page_hinkley,2,210,22,2009-01-17,Hull,Arsenal,
+alarm,2008-09,validation,2000-01,page_hinkley,3,342,35,2009-05-02,Portsmouth,Arsenal,
+summary,2008-09,validation,2000-01,page_hinkley,,,,,,,3
+summary,2009-10,validation,2000-01,adwin,,,,,,,0
+alarm,2009-10,validation,2000-01,page_hinkley,1,47,5,2009-09-19,Aston Villa,Portsmouth,
+alarm,2009-10,validation,2000-01,page_hinkley,2,266,27,2010-02-27,Bolton,Wolves,
+summary,2009-10,validation,2000-01,page_hinkley,,,,,,,2
+summary,2010-11,training,2010-11,adwin,,,,,,,0
+alarm,2010-11,training,2010-11,page_hinkley,1,246,25,2011-02-05,Man City,West Brom,
+summary,2010-11,training,2010-11,page_hinkley,,,,,,,1
+summary,2011-12,validation,2010-11,adwin,,,,,,,0
+alarm,2011-12,validation,2010-11,page_hinkley,1,69,7,2011-10-15,Chelsea,Everton,
+alarm,2011-12,validation,2010-11,page_hinkley,2,186,19,2011-12-31,Swansea,Tottenham,
+summary,2011-12,validation,2010-11,page_hinkley,,,,,,,2
+summary,2012-13,validation,2010-11,adwin,,,,,,,0
+summary,2012-13,validation,2010-11,page_hinkley,,,,,,,0
+summary,2013-14,validation,2010-11,adwin,,,,,,,0
+summary,2013-14,validation,2010-11,page_hinkley,,,,,,,0
+summary,2014-15,validation,2010-11,adwin,,,,,,,0
+alarm,2014-15,validation,2010-11,page_hinkley,1,68,7,2014-10-05,Tottenham,Southampton,
+alarm,2014-15,validation,2010-11,page_hinkley,2,304,31,2015-04-04,Swansea,Hull,
+summary,2014-15,validation,2010-11,page_hinkley,,,,,,,2
+summary,2015-16,validation,2010-11,adwin,,,,,,,0
+alarm,2015-16,validation,2010-11,page_hinkley,1,112,12,2015-11-07,Man United,West Brom,
+alarm,2015-16,validation,2010-11,page_hinkley,2,192,20,2016-01-02,Man United,Swansea,
+summary,2015-16,validation,2010-11,page_hinkley,,,,,,,2
+summary,2016-17,validation,2010-11,adwin,,,,,,,0
+alarm,2016-17,validation,2010-11,page_hinkley,1,168,17,2016-12-18,Tottenham,Burnley,
+summary,2016-17,validation,2010-11,page_hinkley,,,,,,,1
+summary,2017-18,validation,2010-11,adwin,,,,,,,0
+summary,2017-18,validation,2010-11,page_hinkley,,,,,,,0
+summary,2018-19,validation,2010-11,adwin,,,,,,,0
+alarm,2018-19,validation,2010-11,page_hinkley,1,182,19,2018-12-26,Crystal Palace,Cardiff,
+alarm,2018-19,validation,2010-11,page_hinkley,2,362,37,2019-05-04,Cardiff,Crystal Palace,
+summary,2018-19,validation,2010-11,page_hinkley,,,,,,,2
+summary,2019-20,validation,2010-11,adwin,,,,,,,0
+summary,2019-20,validation,2010-11,page_hinkley,,,,,,,0
+summary,2020-21,training,2020-21,adwin,,,,,,,0
+summary,2020-21,training,2020-21,page_hinkley,,,,,,,0
+summary,2021-22,validation,2020-21,adwin,,,,,,,0
+alarm,2021-22,validation,2020-21,page_hinkley,1,154,16,2021-12-11,Norwich,Man United,
+summary,2021-22,validation,2020-21,page_hinkley,,,,,,,1
+summary,2022-23,validation,2020-21,adwin,,,,,,,0
+summary,2022-23,validation,2020-21,page_hinkley,,,,,,,0
