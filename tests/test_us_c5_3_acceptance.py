@@ -11,6 +11,7 @@ Verifica:
 - Test sintetico: regola di parità fra esiti (H > D > A) e regola di parità fra kappa (vince il più grande).
 """
 
+import csv
 import inspect
 import math
 from pathlib import Path
@@ -20,6 +21,7 @@ import pytest
 
 from shk.data.loading import DEFAULT_DATA_DIR
 from shk.data.split import load_by_role, read_split_config
+import shk.model.monitoring as monitoring_module
 from shk.kelly.backtest import BacktestResult, backtest_log_wealth
 from shk.kelly.staking import (
     BASE_LAMBDA,
@@ -32,8 +34,14 @@ from shk.kelly.staking import (
 )
 from shk.model.elo_fit import ELO_FITS, derive_fit_schedule
 from shk.model.monitoring import (
+    BASELINE_D_CSV_COLUMNS,
+    BaselineDSeasonInput,
+    BaselineDValidationSeasonData,
     KappaCalibrationResult,
+    build_baseline_d_season_data,
     calibrate_baseline_d_kappa,
+    evaluate_baseline_d_agents,
+    generate_baseline_d_records,
 )
 from shk.model.residuals import compute_model_residuals
 
@@ -151,3 +159,197 @@ def test_frozen_kappas_match_real_data_calibration():
     assert isinstance(res, KappaCalibrationResult)
     assert res.chosen_kappas["adwin"] == KAPPA_ADWIN
     assert res.chosen_kappas["page_hinkley"] == KAPPA_PAGE_HINKLEY
+
+
+# --- Nuovi test di accettazione per Task 32 (US-C5.3) ---
+
+def _create_synthetic_validation_season_data() -> BaselineDValidationSeasonData:
+    """Crea una BaselineDValidationSeasonData sintetica per i test unitari."""
+    n_matches = 10
+    dates = np.array([f"2015-09-{i+1:02d}" for i in range(n_matches)], dtype="datetime64[D]")
+    probs = np.full((n_matches, 3), [0.55, 0.25, 0.20], dtype=np.float64)
+    odds = np.full((n_matches, 3), [2.00, 3.20, 4.00], dtype=np.float64)
+    ftr = np.array(["H", "D", "A", "H", "H", "D", "A", "H", "H", "D"], dtype=object)
+    log_loss = np.full(n_matches, 0.65, dtype=np.float64)
+
+    season_input = BaselineDSeasonInput(
+        season="2015-16",
+        dates=dates,
+        probs=probs,
+        odds=odds,
+        ftr=ftr,
+        log_loss=log_loss,
+    )
+
+    adwin_alarms = np.array(["2015-09-03"], dtype="datetime64[D]")
+    ph_alarms = np.array(["2015-09-03", "2015-09-07"], dtype="datetime64[D]")
+
+    return BaselineDValidationSeasonData(
+        season="2015-16",
+        fit_through="2010-11",
+        season_input=season_input,
+        adwin_alarm_dates=adwin_alarms,
+        page_hinkley_alarm_dates=ph_alarms,
+    )
+
+
+def test_identical_inputs_across_agents_synthetic(monkeypatch: pytest.MonkeyPatch):
+    """Verifica che i tre agenti ricevano dates, odds e won identici per una stagione."""
+    s_data = _create_synthetic_validation_season_data()
+
+    calls: list[dict[str, np.ndarray]] = []
+    original_backtest = backtest_log_wealth
+
+    def spy_backtest(dates: np.ndarray, fractions: np.ndarray, odds: np.ndarray, won: np.ndarray) -> BacktestResult:
+        calls.append({
+            "dates": dates.copy(),
+            "odds": odds.copy(),
+            "won": won.copy(),
+        })
+        return original_backtest(dates, fractions, odds, won)
+
+    import shk.model.monitoring as mon_mod
+    monkeypatch.setattr(mon_mod, "backtest_log_wealth", spy_backtest)
+
+    results = evaluate_baseline_d_agents(s_data)
+    assert len(results) == 3
+    assert len(calls) == 3
+
+    # Confronto bit-a-bit degli input passati a backtest_log_wealth fra i 3 agenti
+    ref_call = calls[0]
+    for agent_call in calls[1:]:
+        np.testing.assert_array_equal(agent_call["dates"], ref_call["dates"])
+        np.testing.assert_array_equal(agent_call["odds"], ref_call["odds"])
+        np.testing.assert_array_equal(agent_call["won"], ref_call["won"])
+
+
+def test_baseline_d_matches_reference_with_kappa_one_synthetic():
+    """Verifica che con kappa = 1.0 la Baseline D coincida col riferimento anche con allarmi."""
+    s_data = _create_synthetic_validation_season_data()
+    ref_res, adw_res, ph_res = evaluate_baseline_d_agents(
+        s_data,
+        base_lambda=0.25,
+        kappa_adwin=1.0,
+        kappa_page_hinkley=1.0,
+    )
+
+    # final_log_wealth identica
+    assert ref_res.final_log_wealth == pytest.approx(adw_res.final_log_wealth, abs=1e-12)
+    assert ref_res.final_log_wealth == pytest.approx(ph_res.final_log_wealth, abs=1e-12)
+
+    # frazioni e numero di puntate identici
+    assert ref_res.n_bets == adw_res.n_bets == ph_res.n_bets
+    np.testing.assert_allclose(ref_res.bets.fractions, adw_res.bets.fractions, atol=1e-12)
+    np.testing.assert_allclose(ref_res.bets.fractions, ph_res.bets.fractions, atol=1e-12)
+
+    # max_drawdown identico
+    assert ref_res.max_drawdown == pytest.approx(adw_res.max_drawdown, abs=1e-12)
+    assert ref_res.max_drawdown == pytest.approx(ph_res.max_drawdown, abs=1e-12)
+
+
+def test_kappas_imported_from_staking_constants():
+    """Verifica che le funzioni in monitoring.py importino e usino i kappa congelati."""
+    sig_eval = inspect.signature(evaluate_baseline_d_agents)
+    assert sig_eval.parameters["kappa_adwin"].default == KAPPA_ADWIN
+    assert sig_eval.parameters["kappa_page_hinkley"].default == KAPPA_PAGE_HINKLEY
+
+    sig_gen = inspect.signature(generate_baseline_d_records)
+    assert sig_gen.parameters["kappa_adwin"].default == KAPPA_ADWIN
+    assert sig_gen.parameters["kappa_page_hinkley"].default == KAPPA_PAGE_HINKLEY
+
+
+def test_versioned_csv_schema_counts_and_totals():
+    """Verifica lo schema del CSV versionato, i conteggi (57 season + 3 total) e le somme."""
+    repo_root = Path(__file__).resolve().parents[1]
+    csv_path = repo_root / "results" / "us_c5_3_baseline_d.csv"
+    assert csv_path.exists(), f"File CSV non trovato: {csv_path}"
+
+    with open(csv_path, mode="r", encoding="utf-8") as f:
+        reader = csv.DictReader(f)
+        assert reader.fieldnames == list(BASELINE_D_CSV_COLUMNS)
+        rows = list(reader)
+
+    assert len(rows) == 60
+
+    season_rows = [r for r in rows if r["row_type"] == "season"]
+    total_rows = [r for r in rows if r["row_type"] == "total"]
+    assert len(season_rows) == 57
+    assert len(total_rows) == 3
+
+    # Ordine degli agenti per stagione
+    expected_agents = ["reference", "d_adwin", "d_page_hinkley"]
+    seasons_seen = []
+    for i in range(0, 57, 3):
+        group = season_rows[i:i+3]
+        s = group[0]["season"]
+        seasons_seen.append(s)
+        assert [r["agent"] for r in group] == expected_agents
+        assert all(r["season"] == s for r in group)
+        assert all(r["max_drawdown"] != "" for r in group)
+
+    assert len(set(seasons_seen)) == 19
+
+    # Controllo righe total
+    assert [r["agent"] for r in total_rows] == expected_agents
+    for tot_row in total_rows:
+        ag = tot_row["agent"]
+        assert tot_row["season"] == ""
+        assert tot_row["fit_through"] == ""
+        assert tot_row["max_drawdown"] == ""
+
+        # Somma log-wealth sulle 19 stagioni
+        expected_lw_sum = sum(float(r["final_log_wealth"]) for r in season_rows if r["agent"] == ag)
+        assert float(tot_row["final_log_wealth"]) == pytest.approx(expected_lw_sum, abs=1e-12)
+
+        # Somma n_bets sulle 19 stagioni
+        expected_bets_sum = sum(int(r["n_bets"]) for r in season_rows if r["agent"] == ag)
+        assert int(tot_row["n_bets"]) == expected_bets_sum
+
+        # Allarmi
+        if ag == "reference":
+            assert tot_row["n_alarms"] == ""
+        else:
+            expected_alarms_sum = sum(int(r["n_alarms"]) for r in season_rows if r["agent"] == ag)
+            assert int(tot_row["n_alarms"]) == expected_alarms_sum
+
+
+def test_real_data_recomputation_matches_versioned_csv():
+    """Verifica che il ricalcolo dai dati reali coincida con il CSV versionato."""
+    if not _has_real_data():
+        pytest.skip("Dati reali non presenti sul filesystem")
+
+    repo_root = Path(__file__).resolve().parents[1]
+    csv_path = repo_root / "results" / "us_c5_3_baseline_d.csv"
+    assert csv_path.exists(), f"File CSV non trovato: {csv_path}"
+
+    with open(csv_path, mode="r", encoding="utf-8") as f:
+        csv_rows = list(csv.DictReader(f))
+
+    cfg = read_split_config()
+    df_hist = load_by_role("history")
+    df_train = load_by_role("training")
+    df_val = load_by_role("validation")
+    df = pd.concat([df_hist, df_train, df_val], ignore_index=True).sort_values("Date", kind="stable").reset_index(drop=True)
+    schedule = derive_fit_schedule(cfg)
+    df_residuals = compute_model_residuals(df, schedule, ELO_FITS)
+
+    recomputed = generate_baseline_d_records(df_residuals, df, schedule)
+    assert len(recomputed) == len(csv_rows)
+
+    float_cols = {"final_log_wealth", "max_drawdown"}
+    for i, (rec, csv_r) in enumerate(zip(recomputed, csv_rows, strict=True)):
+        for col in BASELINE_D_CSV_COLUMNS:
+            val_rec = rec[col]
+            val_csv = csv_r[col]
+            if col in float_cols:
+                if val_csv == "":
+                    assert str(val_rec) == ""
+                else:
+                    assert float(val_rec) == pytest.approx(float(val_csv), abs=1e-12), (
+                        f"Discrepanza float riga {i}, colonna '{col}': {val_rec} vs {val_csv}"
+                    )
+            else:
+                assert str(val_rec) == str(val_csv), (
+                    f"Discrepanza testo riga {i}, colonna '{col}': '{val_rec}' vs '{val_csv}'"
+                )
+
