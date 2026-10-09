@@ -256,3 +256,12 @@ Resta aperto:
 - Scegliere quale L adottare nelle story che riusano la calibrazione (C5.2, C6.4, C8) e scrivere in tesi il limite misurato del rimedio: rimandato a dopo il seguito di T12.
 - Committare CSV e PNG generati dai Task 10 e 12, e la correzione dei test di T13.
 - Verificare che la CI torni verde al primo push dopo T13.
+
+
+---
+
+- T33 — Classe base degli agenti e regole di staking A, B, E, US-C6.1 — fatto — file: src/shk/kelly/agents.py, tests/test_agents.py. Suite veloce 317 → 380 verdi (63 nuovi), 15 deselezionati. Equivalenza esatta con select_baseline_d_bets per λ = 1.0, 0.25, 0.10. Sola lettura con viste di copie non scrivibili, aggirabile solo da .base. Report: .agent/report/T33.md
+---
+
+- T34 — Ambiente passo-passo: floor, puntata obbligatoria, rovina, esecuzione appaiata, US-C6.1 e US-C6.2 — fatto — file: src/shk/kelly/environment.py, tests/test_environment.py. Suite veloce 380 → 401 verdi (21 nuovi), 15 deselezionati. Run di riferimento (120 date, 3 partite per data, M = 10 000, 4 agenti, F > 0) in 1.39 s. Report: .agent/report/T34.md
+  Note di esecuzione: correttivo sul report (comandi mancanti, fra cui una prima esecuzione fallita di test_c05_fallback_and_minimum_stake_agent, corretta cambiando solo i dati sintetici del test).
