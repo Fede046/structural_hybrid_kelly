@@ -1,5 +1,5 @@
 # Backlog
-Ultimo task: T32
+Ultimo task: T37
 
 ## Decisioni in vigore
 - Scenario base: p = 0.60, b = 1.0 (quota 2.00), T = 1000, M = 10000, lo stesso di C1.1 — S1, 2026-09-27
@@ -50,6 +50,18 @@ Ultimo task: T32
 - Collocazione del codice: funzioni pure su array in src/shk/stats/drift.py e in src/shk/kelly/; funzioni sui DataFrame del Modulo 1 e costruzione dei CSV in src/shk/model/monitoring.py; src/shk/kelly/ non importa da shk.model né da shk.data — S5, 2026-09-30
 - Motore su quote reali (src/shk/kelly/backtest.py): riceve per partita data, frazione, quota ed esito, anche le partite senza puntata (frazione 0); per data L ← L + ln(1 + Σ f_i·r_i), con r_i = o_i − 1 se vinta e −1 se persa; bankroll 1 a inizio stagione; ValueError per frazioni fuori da [0, 1), somma di una data ≥ 1, date non ordinate, quote non finite o ≤ 1; non riceve p né p̂ — S5, 2026-09-30
 - Baseline D (scelte del supervisore su delega, da confermare): al più una puntata per partita, sull'esito con p̂·o − 1 massimo se > 0 (a parità nell'ordine H, D, A), con frazione kelly_staking(p̂, o − 1, λ_j) e quote B365 pre-partita non de-viggate; λ_j = 0.25·κ^(allarmi su partite con Date strettamente anteriore); κ ∈ {0, 0.25, 0.5, 0.75, 1} scelto per detector massimizzando la somma della log-ricchezza finale di 2010-11 e 2020-21, a parità esatta dei float il più grande; 2000-01 escluso perché senza B365. Congelati in staking.py: KAPPA_ADWIN = KAPPA_PAGE_HINKLEY = 1.0. Il detector dice quando, non quanto né di che tipo — S5, 2026-09-30
+- Story S6 = US-C6.1–C6.4 in sette task: T33–T37 (C6.1–C6.3) nella prima chat; rimappatura; T38–T39 (C6.4) nella seconda — S6, 2026-10-09
+- Agenti in src/shk/kelly/agents.py: classe astratta Agent con decide(view) comune (selezione per partita come la Baseline D di C5.3; ripiego sulla coppia partita-esito con EV stimato massimo della data) e regola astratta stake_fractions; FractionalKellyAgent (A λ = 1.0; B λ = 0.25 e 0.10) e MinimumStakeAgent (E, frazioni nulle). Una sottoclasse ridefinisce solo __init__ e stake_fractions (TypeError altrimenti); previsioni, quote e argomenti di stake_fractions in sola lettura (viste non scrivibili di copie non scrivibili). Il bankroll non entra negli agenti — S6, 2026-10-09
+- La puntata obbligatoria vale per data (Date), l'analogo del matchday di KellyBench (circa 103 date per stagione di validazione); "matchday" nel codice resta il blocco di 10 partite di S5 — S6, 2026-10-09
+- Ambiente (src/shk/kelly/environment.py) con puntata minima F ≥ 0 in unità del bankroll iniziale. F = 0: nessun floor e nessuna puntata obbligatoria. F > 0: ogni puntata piazzata vale almeno F, anche quelle volontarie (il quarter-Kelly "floored" di GLM-5); se l'agente non punta, una puntata da F sul ripiego. Le puntate della data si piazzano in ordine di EV stimato decrescente finché la somma resta ≤ W; le altre si scartano e si contano. Rovina, assorbente, se a inizio data W = 0, oppure F > 0 e W < F (stretto). decide si chiama per ogni agente a ogni data, anche se rovinato; una sola DateView per data, la stessa per tutti. Scelta del supervisore su delega, da confermare — S6, 2026-10-09
+- Configurazioni: B0 = £220 con F = £0.01 (B0/F = 22 000, principale) e F = £1 (B0/F = 220), più F = 0; costanti in src/shk/model/paired_backtest.py (CONFIGURATIONS). Valori dalle note 2.9 §0 e 3.4 §1.1 e §10, non dal codice dell'ambiente: da confermare — S6, 2026-10-09
+- Dati reali in C6: 19 stagioni di validazione, Modulo 1 raw, quote B365 pre-partita non de-viggate, bankroll 1 a inizio stagione, input da assemble_baseline_d_season_input (monitoring.py non si modifica). B 0.25 con F = 0 riproduce il riferimento di C5.3 entro 1e-12 su ogni stagione. La Baseline D resta fuori da C6 (con κ = 1 coincide con B 0.25) — S6, 2026-10-09
+- Metriche di C6.2, su stagioni o repliche: mediana di B_T; drawdown massimo per traiettoria (wealth_max_drawdown); tempo di recupero = date dal minimo del drawdown massimo al primo ritorno al picco che lo precede, censurato se non avviene (wealth_recovery_time); tasso di rovina; SD di ln B_T (ddof = 1) sulle traiettorie non rovinate, col loro numero — S6, 2026-10-09
+- Baseline E e paper: il ROI di E per stagione di validazione si confronta col −4.1% del paper (e col −5.1% dedotto in nota 3.4 §9) solo come indicazione; il confronto sul 2023-24 dopo lo sblocco del test — S6, 2026-10-09
+- SEED_C6 = 20261009 in src/shk/kelly/floor.py; SeedSequence(SEED_C6).spawn(2): figlio 0 a T36, diviso con spawn(3) negli esperimenti A, B, C (C con spawn(3), un figlio per configurazione); figlio 1 a T37, diviso con spawn(19), uno per stagione di validazione in ordine cronologico — S6, 2026-10-09
+- Floor sintetico (T36): stesso ambiente su un calendario a una partita per data; configurazione principale della nota 2.9 §5.1 (o = 2.5, EV vero −0.02, edge stimato +0.03, λ = 0.25); f*, f, B1, B2 derivati a runtime da kelly_staking e floor_thresholds; M = 10 000 (C: 1 000, orizzonte ⌈2·limite⌉, ⌈10·limite⌉ per la configurazione b); confronto con la nota con tolleranza Monte Carlo a due campioni al 99% — S6, 2026-10-09
+- Floor nella configurazione reale (T37): esiti estratti dalle q proporzionali di B365, per cui l'EV vero è 1/S − 1 su ogni esito; M = 1 000 per stagione; soglie di drawdown θ = 0.5 e θ = 0.1, cioè P(min W ≤ θ) — S6, 2026-10-09
+- Messaggi all'agente da T34: ogni comando si riporta per intero, nell'ordine reale e con l'esito; un output perso si dichiara perso; vietate le letture fuori dal repository (compresi log e trascrizioni della piattaforma) e i comandi git che mostrano il contenuto di .agent/; nessun print negli script, il tempo si misura dall'esterno — S6, 2026-10-09
 
 ## Story chiuse
 ### S1 — C1 Simulatore Kelly: motore riusabile ed errore di stima — chiusa il 2026-09-27
@@ -156,7 +168,7 @@ Resta aperto:
 - US-C4.2, esito informativo: scrivere l'introduzione della tesi in base al segno di ĝ, negativo in tutti i casi, dichiarandolo in apertura e non nei limiti (note 2.4 §6).
 - Dichiarare in tesi: il mapping Davidson e la sensibilità rispetto alla baseline a pareggio costante; la regola per le neopromosse; lo schema espansivo degli iperparametri.
 - US-C4.3: decidere se serve una ricalibrazione e quale adottare, isotonica o Platt, da congelare. Log-loss di validazione raw / Platt / isotonica: 0.9795 / 0.9823 / 1.0139 su B365, 0.9812 / 0.9809 / 0.9914 su Pinnacle. In S5 si è usato raw su delega.
-- Decidere sull'accesso dell'agente ai file fuori dal repository: lasciarlo com'è, oppure limitarne i permessi alla cartella del progetto e aggiungere il divieto alle "Convenzioni del progetto" di .agent/PROTOCOLLO.md. Controllare che le 50 righe della cronologia di PowerShell lette in T24 non contenessero credenziali. La violazione si è ripetuta in S5.
+- Decidere sull'accesso dell'agente ai file fuori dal repository: lasciarlo com'è, oppure limitarne i permessi alla cartella del progetto e aggiungere il divieto alle "Convenzioni del progetto" di .agent/PROTOCOLLO.md. Controllare che le 50 righe della cronologia di PowerShell lette in T24 non contenessero credenziali. La violazione si è ripetuta in S5 e in S6.
 - Decidere se aggiungere alle "Convenzioni del progetto" di .agent/PROTOCOLLO.md la regola "ogni valore numerico del report viene da un comando elencato".
 - Verificare la CI su main dopo 27cf7a4 e, se è verde, cambiare lo stato di T25 da "in corso: manca la verifica della CI" a "fatto".
 
@@ -186,7 +198,7 @@ Risultati principali:
 
 Resta aperto:
 - Taratura di ADWIN: con la griglia fissata e questa serie non scatta mai. Alternative: dichiararlo in tesi; rivedere griglia, serie o target in una chat di backlog, con criteri scritti prima.
-- κ della Baseline D: κ = 1 per entrambi i detector rende la Baseline D identica al quarto-Kelly senza detector, e la figura di C5.3 mostra differenze tutte nulle. La calibrazione usa stagioni in campione per il Modulo 1. Alternative: dichiararlo in tesi; rivedere griglia, stagioni od obiettivo di κ, ed eventualmente il contenuto della figura, in una chat di backlog.
+- κ della Baseline D: κ = 1 per entrambi i detector rende la Baseline D identica al quarto-Kelly senza detector, e la figura di C5.3 mostra differenze tutte nulle. La calibrazione usa stagioni in campione per il Modulo 1. Alternative: dichiararlo in tesi; rivedere griglia, stagioni od obiettivo di κ, ed eventualmente il contenuto della figura, in una chat di backlog. In S6 la Baseline D è rimasta fuori da C6.
 - US-C5.1 sul 2023-24, dopo lo sblocco del test.
 - Il salto dei test di ricalcolo senza dati è verificato leggendo il codice (T26) o dai report, non da un'esecuzione in CI.
 - Imprecisioni nei report, lasciati come sono: indice e data del primo allarme di Page-Hinkley nel 2000-01 discordi fra R8 e R9 (stessa matchday 8); comandi abbreviati nei report T31 e T32; figura di C5.3 descritta a due pannelli. Fanno fede i valori riportati qui e nella scheda.
@@ -202,6 +214,7 @@ Resta aperto:
 - Il Modulo 1 ricalibrato (Platt o isotonica) come serie alternativa.
 
 ### Resta al programmatore per S5
+- Fatto: C5 portato in main come 736f5cd (2026-10-02); rimappatura del 2026-10-07 (R1) e scheda aggiornata (R2–R6).
 - Confermare o cambiare le scelte fatte dal supervisore su delega il 2026-09-29:
   - Modulo 1 raw;
   - scenari di ora = 3 di training più 19 di validazione, con il 2023-24 dopo lo sblocco;
@@ -215,8 +228,7 @@ Resta aperto:
 - Eseguire US-C5.1 sul 2023-24 dopo lo sblocco del test.
 - Aggiornare uv.lock dopo l'aggiunta di river, e decidere se mettergli un vincolo di versione.
 - Decidere sui permessi dell'agente e sulla regola dei valori del report in .agent/PROTOCOLLO.md (vedi S4).
-- Committare codice, CSV e figure di T26–T32; verificare al primo push di C5 che la CI installi river, resti verde e salti i test di ricalcolo senza dati; portare C5 in main.
-- Rimappare il progetto prima della prossima story: dopo la mappa del 2026-09-29c sono stati chiusi sette task di scrittura.
+- Verificare l'esito della CI su 736f5cd: installazione di river, suite verde, salto dei test di ricalcolo senza dati.
 
 ## Story S2 — C2 ANOVA a mano, autocorrelazione e calibrazione per block bootstrap — aperta il 2026-09-28, T12 da rivedere
 Esito: unisce US-C2.1, US-C2.2 e US-C2.3. T8–T11 chiusi con tutti i criteri coperti da test; T12 fermo sul criterio 2; T13 corregge i test del CSV per la CI. Suite veloce 109 verde; suite slow 14, di cui 1 rossa per il risultato noto di T12. Risultati in results/us_c2_anova_autocorrelation.csv (12 righe nominali definitive + 12 calibrate) e thesis/figures/us_c2_anova_autocorrelation.png (pannelli A e B); valori misurati nei report .agent/report/T8.md … T12.md, riprodotti in modo indipendente dal supervisore.
@@ -257,11 +269,66 @@ Resta aperto:
 - Committare CSV e PNG generati dai Task 10 e 12, e la correzione dei test di T13.
 - Verificare che la CI torni verde al primo push dopo T13.
 
+## Story S6 — C6 Backtest appaiato, test del floor ed eteroschedasticità — aperta il 2026-10-09, C6.1–C6.3 fatte, C6.4 da fare
+Esito parziale: unisce US-C6.1, US-C6.2, US-C6.3 e US-C6.4. Prima chat chiusa con T33–T37, tutti con i criteri coperti da test, sul branch C6. Resta C6.4 (T38–T39) per la seconda chat, dopo la rimappatura. Suite veloce 317 → 434 verde (117 test nuovi); deselezionati 15 → 16 (un test slow nuovo, il ricalcolo di T36 in circa 157 s). Risultati in results/us_c6_2_paired_backtest.csv, results/us_c6_3_floor_synthetic.csv, results/us_c6_3_floor_real_config.csv e nelle figure omonime in thesis/figures/; valori misurati nei report .agent/report/T33.md … T37.md, controllati dal supervisore per coerenza interna, con C5.3 e con le note.
+Note di esecuzione:
+- T33–T34 committati in 6851ccf ("T33-T34") sul branch C6; T35–T37 da committare.
+- Correttivi: T34 (report incompleto: una prima esecuzione fallita di test_c05_fallback_and_minimum_stake_agent, corretta cambiando solo i dati sintetici del test, e altri comandi non elencati); T35 (test di ricalcolo da 14.6 s marcato slow contro la convenzione; comandi abbreviati); T36 (17 repliche censurate escluse dalla media nell'esperimento C(b); print nello script; letture non dichiarate).
+- Letture fuori perimetro: nel correttivo di T35 otto comandi hanno letto la trascrizione della piattaforma (C:/Users/malse/.gemini/antigravity/brain/…/transcript.jsonl), non dichiarati nel report; in T36 git diff .agent/BACKLOG.md e tests/test_us_c6_2_acceptance.py, dichiarati solo nel correttivo; in T34 SCHEDA.md letta per intero due volte (dichiarato). Più report hanno dichiarato il rispetto dei divieti mentre il log mostrava il contrario.
+- Imprecisioni nei report, lasciati come sono: T35 cita i comandi 26 e 30 al posto di 27 e 31 per il rapporto 100 dei ROI di E; T37 trascrive il comando 12 abbreviato, non elenca le modifiche ai file e contiene un tentativo con poetry, fuori dalla convenzione del venv. Fanno fede i valori riportati qui.
+- Errore del supervisore: date delle decisioni S6 e SEED_C6 inizialmente 2026-10-07 e 20261007, corretti in 2026-10-09 e 20261009 prima che il seed fosse usato.
+- T33 — Classe base degli agenti e regole di staking A, B, E, US-C6.1 — fatto — file: src/shk/kelly/agents.py, tests/test_agents.py. Suite veloce 317 → 380 (63 nuovi). Equivalenza esatta con select_baseline_d_bets per λ = 1.0, 0.25, 0.10 su 240 viste. Report: .agent/report/T33.md
+- T34 — Ambiente passo-passo: floor, puntata obbligatoria, rovina, esecuzione appaiata, US-C6.1 e US-C6.2 — fatto — file: src/shk/kelly/environment.py, tests/test_environment.py. Suite veloce 380 → 401 (21 nuovi). Run di riferimento (120 date, 3 partite per data, M = 10 000, 4 agenti, F > 0) in 1.39 s. Report: .agent/report/T34.md
+- T35 — A, B ed E sulle 19 stagioni di validazione, con le metriche di percorso, US-C6.2 — fatto — file: src/shk/kelly/metrics.py, tests/test_metrics.py, src/shk/model/paired_backtest.py, scripts/us_c6_2_paired_backtest.py, tests/test_us_c6_2_acceptance.py, results/us_c6_2_paired_backtest.csv, thesis/figures/us_c6_2_paired_backtest.png. Suite veloce 401 → 412; script 15.9 s. Report: .agent/report/T35.md
+- T36 — Test del floor su calendario sintetico e soglie di §2.9, US-C6.3 — fatto — file: src/shk/kelly/floor.py, tests/test_floor.py, scripts/us_c6_3_floor_synthetic.py, tests/test_us_c6_3_acceptance.py, results/us_c6_3_floor_synthetic.csv, thesis/figures/us_c6_3_floor_synthetic.png. Suite veloce 412 → 426, un test slow nuovo (ricalcolo, 157 s); script 167 s. Righe A e B invariate dopo il correttivo (SHA256 73d7bebbbde129e37884c56054d18fd0e8bcec62aed7846548676b55192d0a59). Report: .agent/report/T36.md
+- T37 — Floor nella configurazione reale, Monte Carlo sul calendario di validazione, US-C6.3 — fatto — file: src/shk/model/floor_real_config.py, scripts/us_c6_3_floor_real_config.py, tests/test_us_c6_3_real_acceptance.py, results/us_c6_3_floor_real_config.csv, thesis/figures/us_c6_3_floor_real_config.png. Suite veloce 426 → 434; script 25.4 s; ricalcolo 19.7 s, nella suite veloce. Report: .agent/report/T37.md
+- T38 — Breusch-Pagan (Koenker) e White a mano, controllo di HAC su anova_lm, US-C6.4 — da fare (seconda chat)
+- T39 — Eteroschedasticità dei residui del Modulo 1 con soglie calibrate, US-C6.4 — da fare (seconda chat)
 
----
+Risultati principali:
+- C6.1 (T33–T34): gli agenti sono sottoclassi che ridefiniscono solo stake_fractions; un agente definito in un test gira senza toccare l'ambiente; tutti gli agenti ricevono a ogni data lo stesso oggetto DateView. Con F = 0 l'ambiente riproduce backtest_log_wealth entro 1e-12; con e senza floor le traiettorie coincidono finché ogni puntata desiderata supera F.
+- C6.2 (T35), 19 stagioni di validazione con esiti reali:
+  - B_0.25 con F = 0 riproduce C5.3 (−10.580, 6 234 puntate); con F = 0 vale n_bets(A) + n_dropped(A) = n_bets(B) in ogni stagione (A scarta 28 puntate);
+  - ricchezza finale mediana con F = 0: A 0.0016, B_0.25 0.598, B_0.10 0.839;
+  - rovina di A: 0, 4 e 14 stagioni su 19 con F = 0, £0.01, £1; B mai in rovina;
+  - con F = £1, il 41% delle puntate di B_0.10 è alzato al floor (2 608 su 6 333) e la sua log-ricchezza totale scende di 0.521 (da −2.981 a −3.502), contro 0.085 per B_0.25;
+  - E: 1 963 date sulle 19 stagioni; ROI mediano −0.0076% con £0.01 e −0.76% con £1; rapporto fra i due esattamente 100 per stagione (scarto 6.8e-11), perché la puntata è fissa.
+- C6.3 sintetico (T36):
+  - senza floor la rovina è esattamente 0 in ogni esperimento;
+  - partenza 50F con floor: 0.180%, 8.050%, 35.670% a 150, 400, 1000 scommesse, contro 0.149%, 7.616%, 35.760% della nota, tutti entro la tolleranza; partenza 1000F: 0 (3 repliche su 10 000 sotto B1);
+  - B1/F = 200, B2/F = 25; traiettorie con e senza floor identiche fino alla prima data sotto B1, poi puntata F > f·W;
+  - sweep, agente prudente con EV −2%, rovina a 1000 scommesse: 89.1% a B0/F = 10, 59.6% a 31.6, 3.3% a 100, 0 da 220 in su;
+  - tempo di rovina (media su 1 000 repliche, nessuna censura): (a) 2 481 contro un limite di 32 986, 13.3× (mediana 1 427); (b) 689 contro 914, 1.33×; (c) 1 991 contro 4 097, 2.06×.
+- C6.3 configurazione reale (T37), 19 000 traiettorie per agente e configurazione, esiti dalle q proporzionali di B365:
+  - rovina con F = 0: 0 per tutti; con £0.01: solo A, 17.92% [17.20%, 18.63%]; con £1: A 68.97% [68.10%, 69.83%], B_0.25 0.49% [0.36%, 0.63%] (94 repliche), B_0.10 0 (minimo di W 0.159);
+  - il floor si attiva: con £1 in tutte le repliche di B (puntate alzate: 22.9% per B_0.25, 40.9% per B_0.10); con £0.01 nel 44–77% delle repliche, ma su meno del 5% delle puntate;
+  - ricchezza finale mediana con F = 0: A 0.0057, B_0.25 0.584, B_0.10 0.852, vicine a quelle con esiti reali di T35;
+  - controllo della verità: il ROI medio di E vale −0.0237% con £0.01 e −2.37% con £1, contro −0.0239% e −2.39% analitici, entro 2.576 errori standard in ogni stagione; nessuna replica con W_T = 0.
 
-- T33 — Classe base degli agenti e regole di staking A, B, E, US-C6.1 — fatto — file: src/shk/kelly/agents.py, tests/test_agents.py. Suite veloce 317 → 380 verdi (63 nuovi), 15 deselezionati. Equivalenza esatta con select_baseline_d_bets per λ = 1.0, 0.25, 0.10. Sola lettura con viste di copie non scrivibili, aggirabile solo da .base. Report: .agent/report/T33.md
----
+Resta aperto:
+- C6.4 (T38–T39), da specificare all'inizio della seconda chat: statsmodels nell'extra dev; definizione di y, X, z (proposta: log-loss per partita ~ 1 + entropia di p̂ + posizione nella stagione); soglie calibrate col block bootstrap della serie di training del fit come in C5.2; scelta di L. Controllo HAC/anova_lm già provato dal supervisore con statsmodels 0.15.0, AR(1) con φ = 0.7 e due metà da 190: typ=1 ignora l'HAC (F 4.772 come l'OLS), typ=2 e typ=3 lo usano (F 1.515 = Wald HAC) e ricavano sum_sq dall'F (2.505 invece di 7.889). Il criterio va misurato nel venv, tipo per tipo.
+- Con F = 0 la rovina per assorbimento è impossibile per costruzione: il rischio si legge su P(min W ≤ θ) (T37) e sul drawdown.
+- Floor applicato anche alle puntate volontarie: la variante "salta le puntate sotto F" non è implementata.
+- A con p̂ = 1 darebbe ValueError (frazione 1.0); col Modulo 1 non accade.
 
-- T34 — Ambiente passo-passo: floor, puntata obbligatoria, rovina, esecuzione appaiata, US-C6.1 e US-C6.2 — fatto — file: src/shk/kelly/environment.py, tests/test_environment.py. Suite veloce 380 → 401 verdi (21 nuovi), 15 deselezionati. Run di riferimento (120 date, 3 partite per data, M = 10 000, 4 agenti, F > 0) in 1.39 s. Report: .agent/report/T34.md
-  Note di esecuzione: correttivo sul report (comandi mancanti, fra cui una prima esecuzione fallita di test_c05_fallback_and_minimum_stake_agent, corretta cambiando solo i dati sintetici del test).
+### Fuori scope di S6 (provvisorio)
+- L'Agente C e la Baseline D negli esperimenti di C6.
+- Kelly congiunto sui tre esiti dell'1X2 e fra partite della stessa data.
+- La variante dell'ambiente che salta le puntate sotto F.
+- La validazione incrociata con l'endpoint OpenReward e la lettura di B0 e F dal codice dell'ambiente.
+- Il 2023-24, bloccato fino a US-C8.2.
+- Molti seed e intervalli per block bootstrap sulle metriche di C6.2 (US-C8.3).
+- Il tasso di crescita certo-equivalente g_CE(γ) (note 2.5 §9.1).
+- Goldfeld-Quandt e ARCH-LM (note 1.8 §4.4–4.5).
+- Il costo della conformità alla puntata obbligatoria per l'Agente C (note 2.9 §7).
+
+### Resta al programmatore per S6
+- Confermare o cambiare le scelte fatte dal supervisore su delega in S6: semantica del floor (anche sulle puntate volontarie, rovina con W < F stretto, scarto per EV stimato oltre W); B0 = £220 con F = £0.01 principale e £1 secondario, dalle note e non dal codice dell'ambiente; D fuori da C6; E confrontata col paper solo come indicazione; esiti di T37 dalle q proporzionali; θ = 0.5 e 0.1.
+- Decidere i permessi dell'agente: in S6 tre letture fuori perimetro (trascrizione della piattaforma in T35, diff del backlog e un test in T36) e report che dichiaravano il contrario. Controllare che cosa contiene la cartella C:/Users/malse/.gemini/antigravity/brain letta in T35.
+- Committare T35–T37 sul branch C6 (T33–T34 sono in 6851ccf).
+- Correggere la nota 2.9 §6.2: il tempo simulato 1 427 della configurazione (a) è una mediana; la media è circa 2 481 e l'accelerazione circa 13×, non 23×.
+- US-C6.1, Definition of Done: saper spiegare perché una classe base è preferibile a sei funzioni separate (controesempio nel repository: i tre agenti cablati in evaluate_baseline_d_agents e generate_baseline_d_records di monitoring.py).
+- US-C6.2: in tesi, la Baseline E confrontata col −4.1% del paper solo come indicazione (E permanente a £0.01: −0.008% mediano per stagione); il confronto sullo stesso 2023-24 dopo lo sblocco.
+- US-C6.3, esito informativo, da scrivere in tesi: senza floor la rovina è esattamente 0, sia sul calendario sintetico sia su quello reale; con floor diventa positiva per A (17.9% a £0.01, 69.0% a £1) e per B_0.25 a £1 (0.49%). B_0.10 non va in rovina in una stagione, ma il floor gli costa più log-ricchezza che a B_0.25 (T35: −0.521 contro −0.085 a £1). Riportare anche il 13× del tempo di rovina e la transizione dello sweep fra B0/F 31.6 e 100.
+- Rimappare il progetto prima della seconda chat: dopo la mappa del 2026-10-07 sono stati chiusi cinque task di scrittura.
+- Verificare la CI del branch C6 al primo push.
