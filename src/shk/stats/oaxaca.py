@@ -323,7 +323,7 @@ class ThreeFoldBatch(NamedTuple):
     valid: np.ndarray
 
 
-def _batch_ols(design: np.ndarray, y: np.ndarray) -> tuple[np.ndarray, np.ndarray]:
+def ols_qr_batch(design: np.ndarray, y: np.ndarray) -> tuple[np.ndarray, np.ndarray]:
     """OLS in lotto via QR: coefficienti (B, p) e maschera dei disegni a rango pieno."""
     q_mat, r_mat = np.linalg.qr(design)
     diag = np.abs(np.diagonal(r_mat, axis1=1, axis2=2))
@@ -360,8 +360,8 @@ def three_fold_batch(
     ones_b = np.ones(x_b.shape[:2] + (1,))
     design_a = np.concatenate([ones_a, x_a.astype(np.float64)], axis=2)
     design_b = np.concatenate([ones_b, x_b.astype(np.float64)], axis=2)
-    beta_a, valid_a = _batch_ols(design_a, y_a.astype(np.float64))
-    beta_b, valid_b = _batch_ols(design_b, y_b.astype(np.float64))
+    beta_a, valid_a = ols_qr_batch(design_a, y_a.astype(np.float64))
+    beta_b, valid_b = ols_qr_batch(design_b, y_b.astype(np.float64))
     xbar_a = design_a.mean(axis=1)
     xbar_b = design_b.mean(axis=1)
     dx = xbar_b - xbar_a

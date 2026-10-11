@@ -161,6 +161,32 @@ def run_drift_detector(
     if not np.all(np.isfinite(series)):
         raise ValueError("series contains non-finite values (NaN or Inf)")
 
+    det_obj = make_drift_detector(detector, params)
+
+    alarms: list[int] = []
+    for i, val in enumerate(series):
+        det_obj.update(float(val))
+        if det_obj.drift_detected:
+            alarms.append(i)
+
+    return np.array(alarms, dtype=np.int64)
+
+
+def make_drift_detector(detector: str, params: Mapping[str, Any] | None = None) -> ADWIN | PageHinkley:
+    """Istanza nuova di ADWIN o PageHinkley di river con i parametri dati (T50).
+
+    È la costruzione usata da run_drift_detector, estratta perché un agente con stato
+    possa alimentare il detector un'osservazione alla volta. Con params=None valgono i
+    default di river; i parametri assenti da params prendono i default congelati in
+    ADWIN_DEFAULT_* e PAGE_HINKLEY_DEFAULT_*.
+
+    Solleva
+    -------
+    TypeError
+        Se detector non è una stringa o params non è un Mapping o None.
+    ValueError
+        Se detector non è 'adwin' o 'page_hinkley', o params contiene chiavi sconosciute.
+    """
     if not isinstance(detector, str):
         raise TypeError(f"detector must be a str, got {type(detector).__name__}")
 
@@ -204,14 +230,7 @@ def run_drift_detector(
                 alpha=float(params.get("alpha", PAGE_HINKLEY_DEFAULT_ALPHA)),
                 mode=str(params.get("mode", PAGE_HINKLEY_DEFAULT_MODE)),
             )
-
-    alarms: list[int] = []
-    for i, val in enumerate(series):
-        det_obj.update(float(val))
-        if det_obj.drift_detected:
-            alarms.append(i)
-
-    return np.array(alarms, dtype=np.int64)
+    return det_obj
 
 
 def select_best_candidate(candidates: list[dict[str, Any]]) -> dict[str, Any]:
