@@ -18,6 +18,7 @@ dependencies = [
 [project.optional-dependencies]
 dev = [
     "pytest",
+    "statsmodels",
 ]
 
 [tool.hatch.build.targets.wheel]

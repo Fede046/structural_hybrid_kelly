@@ -10,6 +10,8 @@ from shk.kelly.metrics import (
     mean_final_wealth,
     max_drawdown,
     fraction_below_start,
+    wealth_max_drawdown,
+    wealth_recovery_time,
 )
 
 
@@ -103,4 +105,101 @@ def test_metrics_error_conditions():
         max_drawdown(paths_no_steps)
     with pytest.raises(ValueError):
         fraction_below_start(paths_no_steps)
+
+
+def test_wealth_max_drawdown_and_recovery_handcrafted() -> None:
+    """Verifica wealth_max_drawdown e wealth_recovery_time su casi noti scritti a mano."""
+    # Caso 1: [1, 1.2, 0.6, 0.9, 1.2, 1.0] -> max drawdown 0.5 a t*=2, picco 1.2, recupero a t=4 (tempo 2, recovered True)
+    w1 = np.array([[1.0, 1.2, 0.6, 0.9, 1.2, 1.0]], dtype=np.float64)
+    dd1 = wealth_max_drawdown(w1)
+    np.testing.assert_allclose(dd1, [0.5], atol=1e-12)
+    t1, rec1 = wealth_recovery_time(w1)
+    np.testing.assert_array_equal(t1, [2])
+    np.testing.assert_array_equal(rec1, [True])
+
+    # Caso 2: senza recupero [1.0, 1.2, 0.6, 0.9, 1.0] -> max drawdown 0.5 a t*=2, non recupera (tempo -1, recovered False)
+    w2 = np.array([[1.0, 1.2, 0.6, 0.9, 1.0]], dtype=np.float64)
+    dd2 = wealth_max_drawdown(w2)
+    np.testing.assert_allclose(dd2, [0.5], atol=1e-12)
+    t2, rec2 = wealth_recovery_time(w2)
+    np.testing.assert_array_equal(t2, [-1])
+    np.testing.assert_array_equal(rec2, [False])
+
+    # Caso 3: monotono [1.0, 1.1, 1.2, 1.5] -> drawdown 0.0, tempo 0, recovered True
+    w3 = np.array([[1.0, 1.1, 1.2, 1.5]], dtype=np.float64)
+    dd3 = wealth_max_drawdown(w3)
+    np.testing.assert_allclose(dd3, [0.0], atol=1e-12)
+    t3, rec3 = wealth_recovery_time(w3)
+    np.testing.assert_array_equal(t3, [0])
+    np.testing.assert_array_equal(rec3, [True])
+
+    # Caso 4: con W = 0 [1.0, 0.5, 0.0, 0.0] -> drawdown 1.0, tempo -1, recovered False
+    w4 = np.array([[1.0, 0.5, 0.0, 0.0]], dtype=np.float64)
+    dd4 = wealth_max_drawdown(w4)
+    np.testing.assert_allclose(dd4, [1.0], atol=1e-12)
+    t4, rec4 = wealth_recovery_time(w4)
+    np.testing.assert_array_equal(t4, [-1])
+    np.testing.assert_array_equal(rec4, [False])
+
+
+def test_wealth_metrics_validation() -> None:
+    """Verifica le validazioni di tipo e valore per wealth_max_drawdown e wealth_recovery_time."""
+    # Tipo non ndarray
+    with pytest.raises(TypeError, match="wealth must be a numpy.ndarray"):
+        wealth_max_drawdown([[1.0, 1.2], [1.0, 0.8]])  # type: ignore[arg-type]
+    with pytest.raises(TypeError, match="wealth must be a numpy.ndarray"):
+        wealth_recovery_time([[1.0, 1.2], [1.0, 0.8]])  # type: ignore[arg-type]
+
+    # Dtype non numerico reale
+    with pytest.raises(TypeError, match="wealth must have a real numeric dtype"):
+        wealth_max_drawdown(np.array([[True, False], [True, True]]))
+    with pytest.raises(TypeError, match="wealth must have a real numeric dtype"):
+        wealth_recovery_time(np.array([["1.0", "1.2"], ["1.0", "0.8"]]))
+
+    # Dimensioni non 2D
+    with pytest.raises(ValueError, match="wealth must be a 2D array"):
+        wealth_max_drawdown(np.array([1.0, 1.2]))
+    with pytest.raises(ValueError, match="wealth must be a 2D array"):
+        wealth_recovery_time(np.ones((2, 2, 2)))
+
+    # Meno di 2 colonne
+    with pytest.raises(ValueError, match="wealth must have at least 2 columns"):
+        wealth_max_drawdown(np.array([[1.0], [2.0]]))
+    with pytest.raises(ValueError, match="wealth must have at least 2 columns"):
+        wealth_recovery_time(np.array([[1.0], [2.0]]))
+
+    # Valori non finiti
+    with pytest.raises(ValueError, match="wealth must contain only finite values"):
+        wealth_max_drawdown(np.array([[1.0, np.nan], [1.0, 2.0]]))
+    with pytest.raises(ValueError, match="wealth must contain only finite values"):
+        wealth_recovery_time(np.array([[1.0, np.inf], [1.0, 2.0]]))
+
+    # Valori negativi
+    with pytest.raises(ValueError, match="wealth values must be non-negative"):
+        wealth_max_drawdown(np.array([[1.0, -0.1], [1.0, 2.0]]))
+    with pytest.raises(ValueError, match="wealth values must be non-negative"):
+        wealth_recovery_time(np.array([[1.0, -0.5], [1.0, 2.0]]))
+
+    # Colonna 0 <= 0
+    with pytest.raises(ValueError, match="Initial wealth \\(column 0\\) must be strictly positive"):
+        wealth_max_drawdown(np.array([[0.0, 1.0], [1.0, 2.0]]))
+    with pytest.raises(ValueError, match="Initial wealth \\(column 0\\) must be strictly positive"):
+        wealth_recovery_time(np.array([[0.0, 1.0], [1.0, 2.0]]))
+
+
+def test_wealth_max_drawdown_matches_log_max_drawdown() -> None:
+    """Verifica che wealth_max_drawdown coincida entro 1e-12 con max_drawdown(np.log(wealth))."""
+    rng = np.random.default_rng(20261009)
+    # 20 traiettorie positive di lunghezza 30 con W0 = 1.0
+    m_paths = 20
+    d_steps = 30
+    log_increments = rng.normal(loc=0.01, scale=0.05, size=(m_paths, d_steps))
+    log_wealth = np.hstack([np.zeros((m_paths, 1)), np.cumsum(log_increments, axis=1)])
+    wealth = np.exp(log_wealth)
+
+    w_dd = wealth_max_drawdown(wealth)
+    log_dd = max_drawdown(log_wealth)
+
+    np.testing.assert_allclose(w_dd, log_dd, rtol=1e-12, atol=1e-12)
+
 

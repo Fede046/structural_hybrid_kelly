@@ -176,3 +176,136 @@ def fraction_below_start(paths: np.ndarray) -> float:
 
     return float(np.mean(paths_arr[:, -1] < paths_arr[:, 0]))
 
+
+def _validate_wealth_matrix(wealth: np.ndarray) -> np.ndarray:
+    """Valida la matrice delle traiettorie di ricchezza in livelli.
+
+    Parametri
+    ---------
+    wealth : np.ndarray
+        Matrice candidata di ricchezza di shape (M, D + 1).
+
+    Restituisce
+    -----------
+    np.ndarray
+        Array validato con dtype float64.
+
+    Solleva
+    -------
+    TypeError
+        Se wealth non è un np.ndarray o non ha dtype numerico reale.
+    ValueError
+        Se wealth non è 2D, ha meno di 2 colonne, contiene valori non finiti,
+        valori negativi, o valori iniziali non strettamente positivi (colonna 0 <= 0).
+    """
+    if not isinstance(wealth, np.ndarray):
+        raise TypeError(f"wealth must be a numpy.ndarray, got {type(wealth).__name__}")
+    if wealth.dtype == np.bool_ or not (
+        np.issubdtype(wealth.dtype, np.integer) or np.issubdtype(wealth.dtype, np.floating)
+    ):
+        raise TypeError(f"wealth must have a real numeric dtype, got {wealth.dtype}")
+    if wealth.ndim != 2:
+        raise ValueError(f"wealth must be a 2D array, got {wealth.ndim}D")
+    if wealth.shape[1] < 2:
+        raise ValueError(f"wealth must have at least 2 columns (D >= 1), got shape {wealth.shape}")
+    if not np.all(np.isfinite(wealth)):
+        raise ValueError("wealth must contain only finite values")
+    if np.any(wealth < 0.0):
+        raise ValueError("wealth values must be non-negative")
+    if np.any(wealth[:, 0] <= 0.0):
+        raise ValueError("Initial wealth (column 0) must be strictly positive")
+    return np.asarray(wealth, dtype=np.float64)
+
+
+def wealth_max_drawdown(wealth: np.ndarray) -> np.ndarray:
+    """Calcola il massimo drawdown relativo in livelli di ricchezza per ciascuna traiettoria.
+
+    Per ciascuna traiettoria determina il massimo calo relativo rispetto al picco storico:
+        P_t = max_{0 <= s <= t} W_s
+        DD(t) = 1 - W_t / P_t
+        max_dd = max_t DD(t)
+
+    Parametri
+    ---------
+    wealth : np.ndarray
+        Matrice di ricchezza di shape (M, D + 1) con valori >= 0 e colonna 0 > 0.
+
+    Restituisce
+    -----------
+    np.ndarray
+        Array float64 unidimensionale di shape (M,) con il massimo drawdown relativo in [0, 1].
+
+    Solleva
+    -------
+    TypeError
+        Se wealth non è un np.ndarray o non ha un dtype numerico reale.
+    ValueError
+        Se wealth non è 2D, ha meno di 2 colonne, contiene valori non finiti,
+        valori negativi o valori iniziali non strettamente positivi.
+    """
+    w = _validate_wealth_matrix(wealth)
+    running_max = np.maximum.accumulate(w, axis=1)
+    drawdowns = 1.0 - w / running_max
+    return np.max(drawdowns, axis=1)
+
+
+def wealth_recovery_time(wealth: np.ndarray) -> tuple[np.ndarray, np.ndarray]:
+    """Calcola il tempo di recupero dal massimo drawdown e l'indicatore di avvenuto recupero.
+
+    t* è il primo indice temporale in cui il drawdown raggiunge il valore massimo;
+    P è il picco storico raggiunto nell'intervallo [0, t*].
+    Il tempo di recupero è il numero di passi t - t* dove t è il primo indice t > t*
+    tale che W_t >= P.
+    Se il drawdown massimo è pari a 0, il tempo è 0 e recovered è True.
+    Se il livello P non viene mai recuperato dopo t*, il tempo vale -1 e recovered è False.
+
+    Parametri
+    ---------
+    wealth : np.ndarray
+        Matrice di ricchezza di shape (M, D + 1) con valori >= 0 e colonna 0 > 0.
+
+    Restituisce
+    -----------
+    tuple[np.ndarray, np.ndarray]
+        Tupla (times, recovered) dove:
+        - times è un array int64 (M,) dei tempi di recupero (-1 se non recuperato, 0 se drawdown nullo);
+        - recovered è un array bool (M,) che indica se la traiettoria ha recuperato il picco.
+
+    Solleva
+    -------
+    TypeError
+        Se wealth non è un np.ndarray o non ha un dtype numerico reale.
+    ValueError
+        Se wealth non è 2D, ha meno di 2 colonne, contiene valori non finiti,
+        valori negativi o valori iniziali non strettamente positivi.
+    """
+    w = _validate_wealth_matrix(wealth)
+    m_count, _ = w.shape
+    times = np.full(m_count, -1, dtype=np.int64)
+    recovered = np.zeros(m_count, dtype=np.bool_)
+
+    running_max = np.maximum.accumulate(w, axis=1)
+    drawdowns = 1.0 - w / running_max
+
+    for i in range(m_count):
+        row_dd = drawdowns[i]
+        max_dd = float(np.max(row_dd))
+        if max_dd == 0.0:
+            times[i] = 0
+            recovered[i] = True
+            continue
+
+        t_star = int(np.argmax(row_dd))
+        p_peak = float(running_max[i, t_star])
+
+        rec_indices = np.flatnonzero(w[i, t_star + 1 :] >= p_peak)
+        if rec_indices.size > 0:
+            t_first_rec = int(rec_indices[0]) + t_star + 1
+            times[i] = t_first_rec - t_star
+            recovered[i] = True
+        else:
+            times[i] = -1
+            recovered[i] = False
+
+    return times, recovered
+
