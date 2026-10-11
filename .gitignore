@@ -28,6 +28,6 @@ Thumbs.db
 data/raw/*
 !data/raw/.gitkeep
 
-# Agent state files
-.agent/
-
+# Agent files
+.agent/*
+!.agent/.gitkeep
