@@ -95,3 +95,7 @@ Ogni risposta di Cline dentro una sessione è numerata `R1`, `R2`, … Nella cha
 - Non riprendere una chat vecchia "perché tanto ha già il contesto": il contesto che ha è invecchiato, ed è la fonte di errore più frequente.
 - Non scrivere "avanti" senza aver applicato i blocchi, né dopo aver toccato il codice a mano senza dirlo.
 - Non far scrivere a Cline in `.agent/`, a parte `MAPPA.md` in mappatura e `report/T<N>.md` in esecuzione.
+
+
+- il report ha la sezione Scelte fatte
+- docs/note si legge in sola lettura
