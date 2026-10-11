@@ -11,8 +11,10 @@ from shk.data.loading import DEFAULT_DATA_DIR
 from shk.data.split import load_by_role, read_split_config
 from shk.model.elo_fit import ELO_FITS, derive_fit_schedule
 from shk.model.scoring import (
+    ALL_DEVIG_METHODS,
     CSV_COLUMNS,
     DEVIG_METHODS,
+    EXTRA_DEVIG_METHODS,
     SERIES_NAMES,
     align_predictions_with_odds,
     compute_g_hat,
@@ -32,7 +34,7 @@ def _has_real_data() -> bool:
 
 
 def test_csv_schema_and_summary_structure():
-    """Verifica colonne, 6 righe di summary e relazione esatta g_hat = LL(q) - LL(p)."""
+    """Verifica colonne, 10 righe di summary (6 di T23 e 4 di T43) e g_hat = LL(q) - LL(p)."""
     assert CSV_PATH.exists(), f"File {CSV_PATH} not found"
 
     with open(CSV_PATH, mode="r", encoding="utf-8") as f:
@@ -43,11 +45,12 @@ def test_csv_schema_and_summary_structure():
     df = pd.read_csv(CSV_PATH, dtype=str)
     df_sum = df[df["level"] == "summary"]
 
-    assert len(df_sum) == 6, f"Expected 6 summary rows, got {len(df_sum)}"
+    assert len(df_sum) == 10, f"Expected 10 summary rows, got {len(df_sum)}"
 
+    # Prima le 6 righe di T23, poi Shin e odds ratio accodati (T43)
     expected_pairs = [
         (s, m) for s in SERIES_NAMES for m in DEVIG_METHODS
-    ]
+    ] + [(s, m) for s in SERIES_NAMES for m in EXTRA_DEVIG_METHODS]
     actual_pairs = list(zip(df_sum["series"], df_sum["method"]))
     assert actual_pairs == expected_pairs, f"Order mismatch: {actual_pairs} vs {expected_pairs}"
 
@@ -79,7 +82,7 @@ def test_csv_cumulative_consistency():
     df_cum = df[df["level"] == "cumulative"]
 
     for series_name in SERIES_NAMES:
-        for method in DEVIG_METHODS:
+        for method in ALL_DEVIG_METHODS:
             sum_row = df_sum[(df_sum["series"] == series_name) & (df_sum["method"] == method)].iloc[0]
             n_used = int(sum_row["matches_used"])
             expected_g_hat = float(sum_row["g_hat"])
@@ -131,6 +134,7 @@ def test_recalculation_from_real_data_matches_csv():
         assert eval_data.missing_odds == 0
         assert eval_data.invalid_odds == 0
         assert eval_data.additive_inapplicable == 0
+        assert eval_data.shin_inapplicable == 0
         assert eval_data.matches_excluded == 0
 
         if series_name == "b365_prematch":
@@ -144,9 +148,11 @@ def test_recalculation_from_real_data_matches_csv():
             "proportional": eval_data.q_proportional,
             "additive": eval_data.q_additive,
             "power": eval_data.q_power,
+            "shin": eval_data.q_shin,
+            "odds_ratio": eval_data.q_odds_ratio,
         }
 
-        for method in DEVIG_METHODS:
+        for method in ALL_DEVIG_METHODS:
             row_csv = df_sum[
                 (df_sum["series"] == series_name) & (df_sum["method"] == method)
             ].iloc[0]

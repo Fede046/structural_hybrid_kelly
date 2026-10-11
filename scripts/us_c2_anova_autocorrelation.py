@@ -4,9 +4,12 @@ Questo script misura, per phi in {0.0, 0.3, 0.5, 0.7} e per tre disegni sperimen
 (contiguous_2, contiguous_38, random_2), la quota di serie AR(1) senza alcun effetto
 di gruppo su cui la statistica F rigetta al livello nominale alpha = 0.05 (US-C2.2).
 Inoltre, per il disegno contiguous_2 e per lunghezze di blocco L in {7, 20, 40},
-misura il tasso di falso rigetto impiegando la soglia calibrata per moving block bootstrap (US-C2.3).
-I risultati vengono esportati in results/us_c2_anova_autocorrelation.csv (24 righe) e
-visualizzati nei due pannelli di thesis/figures/us_c2_anova_autocorrelation.png.
+misura il tasso di falso rigetto impiegando la soglia calibrata per moving block bootstrap (US-C2.3),
+in due varianti: sulla serie grezza, senza imporre H0 (T12), e sulla serie centrata per
+gruppo, con H0 imposta (T40).
+I risultati vengono esportati in results/us_c2_anova_autocorrelation.csv (36 righe: 12 nominali,
+12 calibrate sulla serie grezza, 12 calibrate sulla serie centrata) e visualizzati nei tre
+pannelli di thesis/figures/us_c2_anova_autocorrelation.png.
 """
 
 import os
@@ -26,6 +29,7 @@ from shk.stats.false_rejection import (
     PHI_VALUES,
     RejectionResult,
     compute_calibrated_rejection_rates,
+    compute_centered_calibrated_rejection_rates,
     compute_nominal_rejection_rates,
 )
 
@@ -34,9 +38,10 @@ def run_experiment() -> None:
     """Esegue la simulazione degli esperimenti US-C2.2 e US-C2.3 e produce CSV e figura."""
     nominal_results = compute_nominal_rejection_rates()
     calibrated_results = compute_calibrated_rejection_rates()
-    all_results = nominal_results + calibrated_results
+    centered_results = compute_centered_calibrated_rejection_rates()
+    all_results = nominal_results + calibrated_results + centered_results
 
-    # 1. Scrittura del file CSV (24 righe: 12 nominali + 12 calibrate)
+    # 1. Scrittura del file CSV (36 righe: 12 nominali + 12 calibrate + 12 calibrate centrate)
     os.makedirs("results", exist_ok=True)
     csv_path = os.path.join("results", "us_c2_anova_autocorrelation.csv")
     with open(csv_path, mode="w", newline="", encoding="utf-8") as csvfile:
@@ -45,8 +50,8 @@ def run_experiment() -> None:
         for r in all_results:
             writer.writerow(r.to_row())
 
-    # 2. Costruzione della figura a due pannelli
-    fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(14, 6))
+    # 2. Costruzione della figura a tre pannelli
+    fig, (ax1, ax2, ax3) = plt.subplots(1, 3, figsize=(20, 6), sharey=True)
 
     # Dati nominali raggruppati per disegno
     data_by_design: dict[str, list[RejectionResult]] = {d: [] for d in DESIGNS}
@@ -168,7 +173,7 @@ def run_experiment() -> None:
     ax2.set_xlabel(r"Coefficiente autoregressivo $\phi$")
     ax2.set_ylabel("Tasso di falso rigetto")
     ax2.set_title(
-        "B) Tasso di falso rigetto calibrato (moving block bootstrap)",
+        "B) Calibrato sulla serie grezza (H$_0$ non imposta)",
         loc="left",
         fontsize=11,
         fontweight="bold",
@@ -176,6 +181,59 @@ def run_experiment() -> None:
     ax2.set_xticks(list(PHI_VALUES))
     ax2.grid(True, linestyle=":", alpha=0.6)
     ax2.legend(loc="upper left", fontsize=9)
+
+    # Pannello C: Tasso di falso rigetto calibrato sulla serie centrata per gruppo vs phi
+    ax3.plot(
+        PHI_VALUES,
+        rates_cont2,
+        "o-",
+        linewidth=1.8,
+        markersize=6,
+        label=r"Nominale ($k=2$)",
+        color="tab:red",
+    )
+    for l_val in BLOCK_LENGTHS:
+        rates_l = [
+            r.rejection_rate
+            for r in centered_results
+            if r.block_length == str(l_val)
+        ]
+        fmt, col = styles.get(l_val, ("o-", "tab:blue"))
+        ax3.plot(
+            PHI_VALUES,
+            rates_l,
+            fmt,
+            linewidth=1.5,
+            markersize=5,
+            label=rf"Bootstrap centrato ($L={l_val}$)",
+            color=col,
+        )
+
+    ax3.axhline(
+        ALPHA,
+        color="black",
+        linestyle="--",
+        linewidth=1.0,
+        label=rf"Livello nominale $\alpha = {ALPHA:.2f}$",
+    )
+    ax3.axhspan(
+        mc_lower,
+        mc_upper,
+        color="gray",
+        alpha=0.2,
+        label=r"Intervallo 99% MC attorno ad $\alpha$",
+    )
+
+    ax3.set_xlabel(r"Coefficiente autoregressivo $\phi$")
+    ax3.set_title(
+        "C) Calibrato con H$_0$ imposta (serie centrata per gruppo)",
+        loc="left",
+        fontsize=11,
+        fontweight="bold",
+    )
+    ax3.set_xticks(list(PHI_VALUES))
+    ax3.grid(True, linestyle=":", alpha=0.6)
+    ax3.legend(loc="upper left", fontsize=9)
 
     plt.tight_layout()
     os.makedirs(os.path.join("thesis", "figures"), exist_ok=True)

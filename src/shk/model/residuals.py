@@ -3,18 +3,25 @@
 Fornisce la funzione compute_model_residuals che restituisce la log-loss per partita
 delle previsioni walk-forward Elo del Modulo 1 raw, sia per le partite di training
 di ciascun fit congelato sia per le rispettive stagioni di validazione assegnate.
+
+Fornisce anche load_model_residuals, la catena comune sui dati reali (split, caricamento
+per ruolo, schema dei fit, residui) che script e test nuovi usano al posto di copiarla.
 """
 
 from collections.abc import Collection
-from typing import Final
+from pathlib import Path
+from typing import Final, NamedTuple
 
 import numpy as np
 import pandas as pd
 
+from shk.data.loading import DEFAULT_DATA_DIR
+from shk.data.split import DEFAULT_SPLIT_CONFIG_PATH, load_by_role, read_split_config
 from shk.model.elo_fit import (
     ELO_FITS,
     EloFitParams,
     compute_training_log_loss,
+    derive_fit_schedule,
     parse_season_start_year,
 )
 from shk.model.scoring import (
@@ -202,3 +209,63 @@ def compute_model_residuals(
 
     # 5. Selezione e ordinamento esatto delle 11 colonne richieste
     return df_combined[list(RESIDUALS_COLUMNS)].copy()
+
+
+class ModelResidualsData(NamedTuple):
+    """Uscita della catena comune sui dati reali.
+
+    Attributi
+    ---------
+    df : pd.DataFrame
+        Partite dei ruoli history, training e validation, ordinate per Date in modo stabile.
+    schedule : dict[str, dict[str, list[str]]]
+        Schema dei fit da derive_fit_schedule sulla configurazione dello split.
+    residuals : pd.DataFrame
+        Uscita di compute_model_residuals (11 colonne di RESIDUALS_COLUMNS).
+    """
+
+    df: pd.DataFrame
+    schedule: dict[str, dict[str, list[str]]]
+    residuals: pd.DataFrame
+
+
+def load_model_residuals(
+    config_path: Path | str = DEFAULT_SPLIT_CONFIG_PATH,
+    data_dir: Path | str = DEFAULT_DATA_DIR,
+    fits: dict[str, EloFitParams] | None = None,
+) -> ModelResidualsData:
+    """Catena comune sui dati reali, per script e test nuovi (decisione del 2026-10-11).
+
+    Passi, gli stessi degli script di C5 e C6: read_split_config; load_by_role per
+    history, training e validation; concatenazione e ordinamento stabile per Date;
+    derive_fit_schedule; compute_model_residuals. Il ruolo test non si carica.
+
+    Parametri
+    ---------
+    config_path : Path o str, opzionale
+        File di configurazione dello split (default: DEFAULT_SPLIT_CONFIG_PATH).
+    data_dir : Path o str, opzionale
+        Directory dei CSV E0 (default: DEFAULT_DATA_DIR).
+    fits : dict[str, EloFitParams] o None, opzionale
+        Parametri dei fit; se None, ELO_FITS.
+
+    Restituisce
+    -----------
+    ModelResidualsData
+        DataFrame delle partite, schema dei fit e residui.
+
+    Solleva
+    -------
+    TypeError, ValueError, FileNotFoundError
+        Come read_split_config, load_by_role e compute_model_residuals.
+    """
+    cfg = read_split_config(config_path)
+    frames = [
+        load_by_role(role, config_path=config_path, data_dir=data_dir)
+        for role in ("history", "training", "validation")
+    ]
+    df = pd.concat(frames, ignore_index=True)
+    df = df.sort_values("Date", kind="stable").reset_index(drop=True)
+    schedule = derive_fit_schedule(cfg)
+    residuals = compute_model_residuals(df, schedule, fits)
+    return ModelResidualsData(df=df, schedule=schedule, residuals=residuals)

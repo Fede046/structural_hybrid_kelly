@@ -3,10 +3,13 @@
 import numpy as np
 import pytest
 
+import shk.market.devig
 from shk.market.devig import (
     devig_additive,
+    devig_odds_ratio,
     devig_power,
     devig_proportional,
+    devig_shin,
     implied_probabilities,
     overround,
 )
@@ -264,3 +267,139 @@ def test_overround_computation():
     s_minus_1 = overround(odds)
     assert s_minus_1.shape == (2,)
     assert np.allclose(s_minus_1, [0.0, 0.75 - 1.0])
+
+
+# ---------------------------------------------------------------------------
+# T43: metodi Shin e odds ratio
+# ---------------------------------------------------------------------------
+
+# Valori della nota 2.1 §7 (percentuali a 3 decimali, parametri a 4 decimali)
+NOTE_MARKETS = {
+    "7.1": ([8.0, 5.5, 1.33], 0.0301, [10.880, 16.457, 72.663], 0.8749, [11.110, 16.278, 72.612]),
+    "7.2": ([1.67, 2.2], 0.0534, [57.213, 42.787], 0.8967, [57.234, 42.766]),
+    "7.3": ([2.08, 3.45, 3.55], 0.0262, [46.167, 27.320, 26.514], 0.9227, [46.072, 27.358, 26.570]),
+    "7.4": ([1.25, 6.00, 11.0], 0.0300, [77.455, 14.983, 7.563], 0.8583, [77.444, 14.652, 7.905]),
+}
+
+
+@pytest.mark.parametrize("market", sorted(NOTE_MARKETS))
+def test_shin_and_odds_ratio_note_examples(market):
+    """Gli esempi della nota 2.1 §7 si riproducono alla precisione con cui la nota li riporta."""
+    odds, z_ref, q_shin_ref, c_ref, q_or_ref = NOTE_MARKETS[market]
+    q_shin, z = devig_shin(np.array([odds]))
+    q_or, c = devig_odds_ratio(np.array([odds]))
+
+    # Mezza unità dell'ultima cifra riportata, più un margine di arrotondamento binario
+    assert abs(z[0] - z_ref) <= 5e-5 + 1e-12
+    assert abs(c[0] - c_ref) <= 5e-5 + 1e-12
+    np.testing.assert_array_less(np.abs(q_shin[0] * 100 - np.array(q_shin_ref)), 5e-4 + 1e-9)
+    np.testing.assert_array_less(np.abs(q_or[0] * 100 - np.array(q_or_ref)), 5e-4 + 1e-9)
+
+
+def test_shin_and_odds_ratio_random_markets_sum_to_one():
+    """Somma a 1 entro 1e-12 su 10 000 mercati casuali, con overround realistici e no."""
+    rng = np.random.default_rng(20261011)
+    # 1. Mercati con overround fra 0 e 15%: probabilità di Dirichlet con margine proporzionale
+    true_p = rng.dirichlet(np.ones(3), size=10000)
+    true_p = np.clip(true_p, 0.01, None)
+    true_p /= true_p.sum(axis=1, keepdims=True)
+    margin = 1.0 + rng.uniform(0.0, 0.15, size=(10000, 1))
+    odds = 1.0 / (true_p * margin)
+    odds = np.where(odds <= 1.0, 1.0001, odds)
+
+    q_shin, z = devig_shin(odds)
+    q_or, c = devig_odds_ratio(odds)
+    booksum = (1.0 / odds).sum(axis=1)
+    applicable = booksum >= 1.0
+    assert applicable.sum() >= 9900
+    assert np.max(np.abs(q_shin[applicable].sum(axis=1) - 1.0)) <= 1e-12
+    assert np.max(np.abs(q_or.sum(axis=1) - 1.0)) <= 1e-12
+    assert np.all((z[applicable] >= 0.0) & (z[applicable] < 1.0))
+    assert np.all(c > 0.0)
+    assert np.all((q_or > 0.0) & (q_or < 1.0))
+
+    # 2. Quote uniformi in [1.1, 10] come in test_random_markets_sum_to_one, con S < 1 inclusi
+    odds_u = np.random.default_rng(20260929).uniform(1.1, 10.0, size=(10000, 3))
+    q_shin_u, z_u = devig_shin(odds_u)
+    q_or_u, c_u = devig_odds_ratio(odds_u)
+    s_u = (1.0 / odds_u).sum(axis=1)
+    ok = s_u >= 1.0
+    assert np.max(np.abs(q_shin_u[ok].sum(axis=1) - 1.0)) <= 1e-12
+    assert np.all(np.isnan(q_shin_u[~ok])) and np.all(np.isnan(z_u[~ok]))
+    assert np.max(np.abs(q_or_u.sum(axis=1) - 1.0)) <= 1e-12
+    assert np.all(c_u[s_u < 1.0] > 1.0) and np.all(c_u[s_u > 1.0] < 1.0)
+
+
+def test_shin_and_odds_ratio_no_overround_returns_implied():
+    """Mercato senza overround (S = 1): q = pi, z = 0 e c = 1."""
+    m = np.array([[2.0, 4.0, 4.0], [4.0, 2.0, 4.0]])
+    pi = implied_probabilities(m)
+    assert np.all(pi.sum(axis=1) == 1.0)
+    q_shin, z = devig_shin(m)
+    q_or, c = devig_odds_ratio(m)
+    np.testing.assert_array_equal(q_shin, pi)
+    np.testing.assert_array_equal(q_or, pi)
+    np.testing.assert_array_equal(z, [0.0, 0.0])
+    np.testing.assert_array_equal(c, [1.0, 1.0])
+
+    m2 = np.array([[2.0, 2.0]])
+    np.testing.assert_array_equal(devig_shin(m2)[0], implied_probabilities(m2))
+    np.testing.assert_array_equal(devig_odds_ratio(m2)[0], implied_probabilities(m2))
+
+
+def test_shin_outsider_below_proportional_with_favourite_longshot():
+    """Con overround, Shin dà all'outsider una q minore del proporzionale (favourite-longshot)."""
+    m = np.array([[1.25, 6.00, 11.0], [8.0, 5.5, 1.33], [1.5, 4.2, 7.5], [2.08, 3.45, 3.55]])
+    q_prop = devig_proportional(m)
+    q_shin, _ = devig_shin(m)
+    q_or, _ = devig_odds_ratio(m)
+    outsider = np.argmax(m, axis=1)
+    favourite = np.argmin(m, axis=1)
+    rows = np.arange(m.shape[0])
+    assert np.all(q_shin[rows, outsider] < q_prop[rows, outsider])
+    assert np.all(q_shin[rows, favourite] > q_prop[rows, favourite])
+    assert np.all(q_or[rows, outsider] < q_prop[rows, outsider])
+
+
+def test_shin_and_odds_ratio_extreme_markets():
+    """Mercati estremi: convergenza entro 1e-12; S < 1 dà NaN per Shin e c > 1 per odds ratio."""
+    for m in (np.array([[1.001, 1000.0], [1.01, 30.0]]), np.array([[1.01, 100.0, 100.0]])):
+        for fn in (devig_shin, devig_odds_ratio):
+            q, param = fn(m)
+            assert np.all(np.abs(q.sum(axis=1) - 1.0) <= 1e-12)
+            assert np.all(np.isfinite(param))
+
+    # S = 0.06 e S = 0.857: mercati sotto la parità
+    m_under = np.array([[50.0, 50.0, 50.0], [3.5, 3.5, 3.5]])
+    q_shin, z = devig_shin(m_under)
+    assert np.all(np.isnan(q_shin)) and np.all(np.isnan(z))
+    q_or, c = devig_odds_ratio(m_under)
+    assert np.all(np.abs(q_or.sum(axis=1) - 1.0) <= 1e-12)
+    assert np.all(c > 1.0)
+
+
+def test_shin_and_odds_ratio_input_validation():
+    """Stesse validazioni d'ingresso degli altri metodi."""
+    for fn in (devig_shin, devig_odds_ratio):
+        with pytest.raises(TypeError, match="odds must be a numpy.ndarray"):
+            fn([[2.0, 3.0]])  # type: ignore
+        with pytest.raises(TypeError, match="real integer or floating"):
+            fn(np.array([[True, False]]))
+        with pytest.raises(ValueError, match="shape"):
+            fn(np.array([2.0, 3.0]))
+        with pytest.raises(ValueError, match="finite"):
+            fn(np.array([[np.nan, 2.0]]))
+        with pytest.raises(ValueError, match="strictly greater than 1.0"):
+            fn(np.array([[1.0, 2.0]]))
+        q, param = fn(np.array([[2, 4, 4]]))
+        assert q.dtype == np.float64 and param.shape == (1,)
+
+
+def test_shin_and_odds_ratio_runtime_error_when_unconverged(monkeypatch):
+    """Lo stesso RuntimeError di devig_power oltre 1e-12 se la bisezione non converge."""
+    monkeypatch.setattr(shk.market.devig, "MAX_BISECTION_ITERATIONS", 3)
+    m = np.array([[1.9, 3.6, 4.1]])
+    with pytest.raises(RuntimeError, match="Shin devigging solver failed to converge within tolerance 1e-12"):
+        devig_shin(m)
+    with pytest.raises(RuntimeError, match="Odds ratio devigging solver failed to converge within tolerance 1e-12"):
+        devig_odds_ratio(m)

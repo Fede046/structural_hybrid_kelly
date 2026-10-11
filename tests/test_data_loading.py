@@ -7,22 +7,23 @@ import pandas as pd
 import pytest
 
 from shk.data.loading import DEFAULT_DATA_DIR, load_all_seasons
+from shk.data.split import DEFAULT_SPLIT_CONFIG_PATH, read_split_config
 
 
 def test_load_all_seasons_invalid_type_raises():
     """Verifica che data_dir di tipo non valido sollevi TypeError."""
     with pytest.raises(TypeError, match="data_dir must be a str or pathlib.Path"):
-        load_all_seasons(data_dir=123)  # type: ignore[arg-type]
+        load_all_seasons(data_dir=123, seasons=["2000-01"])  # type: ignore[arg-type]
 
     with pytest.raises(TypeError, match="data_dir must be a str or pathlib.Path"):
-        load_all_seasons(data_dir=["invalid"])  # type: ignore[arg-type]
+        load_all_seasons(data_dir=["invalid"], seasons=["2000-01"])  # type: ignore[arg-type]
 
 
 def test_load_all_seasons_missing_directory_raises(tmp_path: Path):
     """Verifica che una directory inesistente sollevi FileNotFoundError."""
     missing_dir = tmp_path / "non_existent_dir"
     with pytest.raises(FileNotFoundError, match="Directory not found"):
-        load_all_seasons(data_dir=missing_dir)
+        load_all_seasons(data_dir=missing_dir, seasons=["2000-01"])
 
 
 def test_load_all_seasons_empty_directory_raises(tmp_path: Path):
@@ -30,7 +31,7 @@ def test_load_all_seasons_empty_directory_raises(tmp_path: Path):
     empty_dir = tmp_path / "empty_dir"
     empty_dir.mkdir()
     with pytest.raises(ValueError, match="No CSV files found in directory"):
-        load_all_seasons(data_dir=empty_dir)
+        load_all_seasons(data_dir=empty_dir, seasons=["2000-01"])
 
 
 def test_load_all_seasons_invalid_filename_raises(tmp_path: Path):
@@ -41,13 +42,13 @@ def test_load_all_seasons_invalid_filename_raises(tmp_path: Path):
     # Formato errato
     (csv_dir / "season_1.csv").write_text("Div,Date,HomeTeam,AwayTeam\nE0,10/08/01,Arsenal,Chelsea\n")
     with pytest.raises(ValueError, match="Invalid season filename format"):
-        load_all_seasons(data_dir=csv_dir)
+        load_all_seasons(data_dir=csv_dir, seasons=["1993-94"])
 
     # Anni non consecutivi (1993-95 invece di 1993-94)
     (csv_dir / "season_1.csv").unlink()
     (csv_dir / "1993-95.csv").write_text("Div,Date,HomeTeam,AwayTeam\nE0,10/08/93,Arsenal,Chelsea\n")
     with pytest.raises(ValueError, match="Season year continuity mismatch in filename"):
-        load_all_seasons(data_dir=csv_dir)
+        load_all_seasons(data_dir=csv_dir, seasons=["1993-94"])
 
 
 def test_load_all_seasons_basic_union_and_types(tmp_path: Path):
@@ -70,7 +71,7 @@ def test_load_all_seasons_basic_union_and_types(tmp_path: Path):
     )
     (csv_dir / "2001-02.csv").write_text(s2, encoding="utf-8")
 
-    df = load_all_seasons(data_dir=csv_dir)
+    df = load_all_seasons(data_dir=csv_dir, seasons=["2000-01", "2001-02"])
 
     assert len(df) == 3
     assert set(df["season"]) == {"2000-01", "2001-02"}
@@ -104,7 +105,7 @@ def test_load_all_seasons_date_formats(tmp_path: Path):
     s2 = "Div,Date,HomeTeam,AwayTeam\nE0,17/08/2002,Liverpool,Everton\n"
     (csv_dir / "2002-03.csv").write_text(s2, encoding="utf-8")
 
-    df = load_all_seasons(data_dir=csv_dir)
+    df = load_all_seasons(data_dir=csv_dir, seasons=["2001-02", "2002-03"])
 
     assert pd.api.types.is_datetime64_any_dtype(df["Date"])
     assert df.loc[df["season"] == "2001-02", "Date"].iloc[0] == pd.Timestamp("2001-08-14")
@@ -127,7 +128,7 @@ def test_load_all_seasons_discards_empty_and_comma_rows(tmp_path: Path):
     )
     (csv_dir / "2001-02.csv").write_text(content, encoding="utf-8")
 
-    df = load_all_seasons(data_dir=csv_dir)
+    df = load_all_seasons(data_dir=csv_dir, seasons=["2001-02"])
     assert len(df) == 2
     assert list(df["HomeTeam"]) == ["Arsenal", "Liverpool"]
 
@@ -146,7 +147,7 @@ def test_load_all_seasons_irregular_row_fields_trimmed_and_padded(tmp_path: Path
     )
     (csv_dir / "2001-02.csv").write_text(content, encoding="utf-8")
 
-    df = load_all_seasons(data_dir=csv_dir)
+    df = load_all_seasons(data_dir=csv_dir, seasons=["2001-02"])
     assert len(df) == 2
     assert df.loc[0, "AwayTeam"] == "Chelsea"
     assert pd.isna(df.loc[1, "AwayTeam"]) or df.loc[1, "AwayTeam"] == ""
@@ -164,7 +165,7 @@ def test_load_all_seasons_extra_non_empty_field_raises(tmp_path: Path):
     (csv_dir / "2001-02.csv").write_text(content, encoding="utf-8")
 
     with pytest.raises(ValueError, match="Row 2 in 2001-02.csv has non-empty extra fields"):
-        load_all_seasons(data_dir=csv_dir)
+        load_all_seasons(data_dir=csv_dir, seasons=["2001-02"])
 
 
 def test_load_all_seasons_unnamed_empty_column_dropped(tmp_path: Path):
@@ -179,7 +180,7 @@ def test_load_all_seasons_unnamed_empty_column_dropped(tmp_path: Path):
     )
     (csv_dir / "2001-02.csv").write_text(content, encoding="utf-8")
 
-    df = load_all_seasons(data_dir=csv_dir)
+    df = load_all_seasons(data_dir=csv_dir, seasons=["2001-02"])
     assert "Unnamed: 4" not in df.columns
     assert "" not in df.columns
     assert set(df.columns) == {"Div", "Date", "HomeTeam", "AwayTeam", "season"}
@@ -197,7 +198,7 @@ def test_load_all_seasons_unnamed_column_with_content_raises(tmp_path: Path):
     (csv_dir / "2001-02.csv").write_text(content, encoding="utf-8")
 
     with pytest.raises(ValueError, match="Unnamed column at index 4 in 2001-02.csv contains non-empty values"):
-        load_all_seasons(data_dir=csv_dir)
+        load_all_seasons(data_dir=csv_dir, seasons=["2001-02"])
 
 
 def test_load_all_seasons_utf8_bom(tmp_path: Path):
@@ -208,7 +209,7 @@ def test_load_all_seasons_utf8_bom(tmp_path: Path):
     content = b"\xef\xbb\xbfDiv,Date,HomeTeam,AwayTeam\nE0,14/08/01,Arsenal,Chelsea\n"
     (csv_dir / "2001-02.csv").write_bytes(content)
 
-    df = load_all_seasons(data_dir=csv_dir)
+    df = load_all_seasons(data_dir=csv_dir, seasons=["2001-02"])
     assert "Div" in df.columns
     assert "\ufeffDiv" not in df.columns
 
@@ -222,7 +223,7 @@ def test_load_all_seasons_cp1252_fallback_preserves_nbsp(tmp_path: Path):
     content = b"Div,Date,HomeTeam,AwayTeam,Referee\nE0,14/08/04,Arsenal,Everton,\xa0U Rennie\n"
     (csv_dir / "2004-05.csv").write_bytes(content)
 
-    df = load_all_seasons(data_dir=csv_dir)
+    df = load_all_seasons(data_dir=csv_dir, seasons=["2004-05"])
     referee_val = df.loc[0, "Referee"]
     assert "\xa0" in referee_val
     assert referee_val == "\xa0U Rennie"
@@ -241,7 +242,7 @@ def test_load_all_seasons_mixed_date_formats_raises(tmp_path: Path):
     (csv_dir / "2001-02.csv").write_text(content, encoding="utf-8")
 
     with pytest.raises(ValueError, match="Mixed, invalid, or non-conforming date formats"):
-        load_all_seasons(data_dir=csv_dir)
+        load_all_seasons(data_dir=csv_dir, seasons=["2001-02"])
 
 
 def test_load_all_seasons_date_out_of_window_raises(tmp_path: Path):
@@ -253,13 +254,13 @@ def test_load_all_seasons_date_out_of_window_raises(tmp_path: Path):
     s_early = "Div,Date,HomeTeam,AwayTeam\nE0,30/06/01,Arsenal,Chelsea\n"
     (csv_dir / "2001-02.csv").write_text(s_early, encoding="utf-8")
     with pytest.raises(ValueError, match="Date outside seasonal window"):
-        load_all_seasons(data_dir=csv_dir)
+        load_all_seasons(data_dir=csv_dir, seasons=["2001-02"])
 
     # Data successiva al 31 agosto dell'anno finale (settembre 2002 per stagione 2001-02)
     s_late = "Div,Date,HomeTeam,AwayTeam\nE0,01/09/02,Arsenal,Chelsea\n"
     (csv_dir / "2001-02.csv").write_text(s_late, encoding="utf-8")
     with pytest.raises(ValueError, match="Date outside seasonal window"):
-        load_all_seasons(data_dir=csv_dir)
+        load_all_seasons(data_dir=csv_dir, seasons=["2001-02"])
 
 
 def test_load_all_seasons_unparseable_or_missing_date_raises(tmp_path: Path):
@@ -271,13 +272,13 @@ def test_load_all_seasons_unparseable_or_missing_date_raises(tmp_path: Path):
     s_bad = "Div,Date,HomeTeam,AwayTeam\nE0,99/99/99,Arsenal,Chelsea\n"
     (csv_dir / "2001-02.csv").write_text(s_bad, encoding="utf-8")
     with pytest.raises(ValueError):
-        load_all_seasons(data_dir=csv_dir)
+        load_all_seasons(data_dir=csv_dir, seasons=["2001-02"])
 
     # Colonna Date mancante
     s_missing = "Div,HomeTeam,AwayTeam\nE0,Arsenal,Chelsea\n"
     (csv_dir / "2001-02.csv").write_text(s_missing, encoding="utf-8")
     with pytest.raises(ValueError, match="Missing 'Date' column"):
-        load_all_seasons(data_dir=csv_dir)
+        load_all_seasons(data_dir=csv_dir, seasons=["2001-02"])
 
 
 def test_load_all_seasons_two_digit_year_century_boundary(tmp_path: Path):
@@ -291,7 +292,7 @@ def test_load_all_seasons_two_digit_year_century_boundary(tmp_path: Path):
     s2 = "Div,Date,HomeTeam,AwayTeam\nE0,19/08/00,Liverpool,Everton\n"
     (csv_dir / "2000-01.csv").write_text(s2, encoding="utf-8")
 
-    df = load_all_seasons(data_dir=csv_dir)
+    df = load_all_seasons(data_dir=csv_dir, seasons=["1999-00", "2000-01"])
 
     assert df.loc[0, "season"] == "1999-00"
     assert df.loc[0, "Date"].year == 1999
@@ -301,7 +302,11 @@ def test_load_all_seasons_two_digit_year_century_boundary(tmp_path: Path):
 
 
 def test_load_all_seasons_real_data():
-    """Verifica il caricamento su file reali in DEFAULT_DATA_DIR (saltato se assenti)."""
+    """Verifica il caricamento su file reali in DEFAULT_DATA_DIR (saltato se assenti).
+
+    Con il test bloccato si caricano solo le stagioni anteriori al primo anno di test:
+    i file bloccati si individuano dal nome, senza aprirli (T41).
+    """
     if not DEFAULT_DATA_DIR.exists():
         pytest.skip(f"Directory {DEFAULT_DATA_DIR} does not exist")
 
@@ -309,10 +314,19 @@ def test_load_all_seasons_real_data():
     if not csv_files:
         pytest.skip(f"Directory {DEFAULT_DATA_DIR} contains no CSV files")
 
-    df = load_all_seasons(data_dir=DEFAULT_DATA_DIR)
+    cfg = read_split_config(DEFAULT_SPLIT_CONFIG_PATH)
+    first_test_year = min(int(s.split("-")[0]) for s in cfg.test)
+    seasons = sorted(
+        p.stem
+        for p in csv_files
+        if cfg.test_unlocked or int(p.stem.split("-")[0]) < first_test_year
+    )
+    assert seasons, "No unlocked season file found"
 
-    # Il numero di stagioni caricate deve eguagliare il numero di CSV nella directory
-    assert len(df["season"].unique()) == len(csv_files)
+    df = load_all_seasons(data_dir=DEFAULT_DATA_DIR, seasons=seasons)
+
+    # Il numero di stagioni caricate deve eguagliare il numero di stagioni non bloccate
+    assert sorted(df["season"].unique()) == seasons
 
     # Nessuna data nulla
     assert not df["Date"].isna().any()

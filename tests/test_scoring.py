@@ -208,6 +208,43 @@ def test_prepare_series_evaluation_synthetic():
     assert eval_data.q_proportional.shape == (2, 3)
     assert eval_data.q_additive.shape == (2, 3)
     assert eval_data.q_power.shape == (2, 3)
+    # T43: Shin e odds ratio sulle stesse partite, nessun mercato con S < 1
+    assert eval_data.shin_inapplicable == 0
+    assert eval_data.q_shin.shape == (2, 3)
+    assert eval_data.q_odds_ratio.shape == (2, 3)
+    assert eval_data.shin_z.shape == (2,)
+    assert eval_data.odds_ratio_c.shape == (2,)
+    assert np.all((eval_data.shin_z > 0.0) & (eval_data.shin_z < 1.0))
+    assert np.all((eval_data.odds_ratio_c > 0.0) & (eval_data.odds_ratio_c < 1.0))
+
+
+def test_prepare_series_evaluation_shin_inapplicable_is_excluded():
+    """Un mercato con booksum S < 1 si esclude per tutti i metodi e si conta a parte (T43)."""
+    df_aligned = pd.DataFrame({
+        "season": ["2015-16"] * 3,
+        "Date": pd.to_datetime(["2015-09-01", "2015-09-02", "2015-09-03"]),
+        "HomeTeam": ["TeamA", "TeamB", "TeamC"],
+        "AwayTeam": ["TeamX", "TeamY", "TeamZ"],
+        "FTR": ["H", "D", "A"],
+        "p_home": [0.5, 0.4, 0.3],
+        "p_draw": [0.3, 0.3, 0.4],
+        "p_away": [0.2, 0.3, 0.3],
+        # Partita 1: S = 1/2.2 + 1/3.6 + 1/4.4 = 0.96 < 1, additivo applicabile
+        "B365H": ["2.0", "2.2", "2.1"],
+        "B365D": ["3.2", "3.6", "3.3"],
+        "B365A": ["4.0", "4.4", "3.6"],
+    })
+    schedule = {"2010-11": {"training": ["2000-01", "2010-11"], "validation": ["2015-16"]}}
+
+    eval_data = prepare_series_evaluation(df_aligned, "b365_prematch", schedule)
+
+    assert eval_data.additive_inapplicable == 0
+    assert eval_data.shin_inapplicable == 1
+    assert eval_data.matches_excluded == 1
+    assert eval_data.matches_used == 2
+    assert list(eval_data.df_used["HomeTeam"]) == ["TeamA", "TeamC"]
+    for q in (eval_data.q_proportional, eval_data.q_shin, eval_data.q_odds_ratio):
+        assert q.shape == (2, 3)
 
 
 def test_align_predictions_key_validations():

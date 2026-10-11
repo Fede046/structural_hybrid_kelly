@@ -23,7 +23,11 @@ from shk.model.elo_fit import (
     derive_fit_schedule,
     parse_season_start_year,
 )
-from shk.model.residuals import RESIDUALS_COLUMNS, compute_model_residuals
+from shk.model.residuals import (
+    RESIDUALS_COLUMNS,
+    compute_model_residuals,
+    load_model_residuals,
+)
 
 
 def _has_real_data() -> bool:
@@ -365,3 +369,11 @@ def test_residuals_no_test_leakage(real_data_computation):
     """Verifica che la stagione di test '2023-24' non compaia in nessuna riga."""
     res = real_data_computation["df_residuals"]
     assert "2023-24" not in res["season"].values
+
+
+def test_load_model_residuals_matches_explicit_chain(real_data_computation):
+    """load_model_residuals coincide con la catena comune scritta per esteso (T42)."""
+    data = load_model_residuals()
+    pd.testing.assert_frame_equal(data.df, real_data_computation["df"])
+    assert data.schedule == real_data_computation["schedule"]
+    pd.testing.assert_frame_equal(data.residuals, real_data_computation["df_residuals"])

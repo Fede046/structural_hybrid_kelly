@@ -76,6 +76,44 @@ def find_load_all_seasons_references(source_code: str) -> list[int]:
     return sorted(lines)
 
 
+def find_unfiltered_load_all_seasons_calls(source_code: str) -> list[int]:
+    """Restituisce le righe delle chiamate a load_all_seasons senza l'argomento seasons.
+
+    Una chiamata è senza seasons se non ha la keyword seasons né un secondo argomento
+    posizionale, oppure se seasons è la costante None. Si riconoscono le chiamate per
+    nome, per attributo e tramite un alias d'importazione (import ... as ...).
+    """
+    tree = ast.parse(source_code)
+    call_names = {"load_all_seasons"}
+    for node in ast.walk(tree):
+        if isinstance(node, ast.ImportFrom):
+            for alias in node.names:
+                if alias.name == "load_all_seasons" and alias.asname:
+                    call_names.add(alias.asname)
+
+    lines: set[int] = set()
+    for node in ast.walk(tree):
+        if not isinstance(node, ast.Call):
+            continue
+        func = node.func
+        is_target = (isinstance(func, ast.Name) and func.id in call_names) or (
+            isinstance(func, ast.Attribute) and func.attr == "load_all_seasons"
+        )
+        if not is_target:
+            continue
+        seasons_arg: ast.expr | None = None
+        for kw in node.keywords:
+            if kw.arg == "seasons":
+                seasons_arg = kw.value
+        if seasons_arg is None and len(node.args) >= 2:
+            seasons_arg = node.args[1]
+        if seasons_arg is None or (
+            isinstance(seasons_arg, ast.Constant) and seasons_arg.value is None
+        ):
+            lines.add(node.lineno)
+    return sorted(lines)
+
+
 # ---------------------------------------------------------------------------
 # Test di read_split_config
 # ---------------------------------------------------------------------------
@@ -291,10 +329,10 @@ def test_variant_ii_locked_file_not_read(tmp_path: Path):
     assert len(df_train) == 1
     assert list(df_train["season"].unique()) == ["2000-01"]
 
-    # 2. Caricare senza filtro seasons tramite load_all_seasons solleva ValueError:
+    # 2. Caricare 2023-24 tramite load_all_seasons solleva ValueError:
     # prova che 2023-24.csv e' effettivamente malformato
     with pytest.raises(ValueError, match="Mixed, invalid, or non-conforming date formats"):
-        load_all_seasons(data_dir=data_dir)
+        load_all_seasons(data_dir=data_dir, seasons=["2023-24"])
 
 
 # ---------------------------------------------------------------------------
@@ -425,8 +463,49 @@ def some_func():
     assert find_load_all_seasons_references(code_docstring_and_comments) == []
 
 
+def test_guard_unfiltered_calls_synthetic():
+    """Verifica che l'analisi AST rilevi le chiamate senza seasons, anche con seasons=None."""
+    code = """
+from shk.data.loading import load_all_seasons
+from shk.data.loading import load_all_seasons as las
+import shk.data.loading as loading
+
+load_all_seasons()
+load_all_seasons(data_dir=d)
+load_all_seasons(d, seasons=None)
+loading.load_all_seasons(d)
+las(d)
+load_all_seasons(d, ["2000-01"])
+load_all_seasons(data_dir=d, seasons=["2000-01"])
+loading.load_all_seasons(seasons=selected)
+"""
+    assert find_unfiltered_load_all_seasons_calls(code) == [6, 7, 8, 9, 10]
+
+
+def test_guard_no_unfiltered_load_all_seasons_calls_in_scripts_and_tests():
+    """In scripts/ e tests/ nessuna chiamata a load_all_seasons è priva dell'argomento seasons (T41)."""
+    import warnings
+
+    repo_root = Path(__file__).resolve().parents[1]
+    violations: dict[str, list[int]] = {}
+    n_files = 0
+    with warnings.catch_warnings():
+        warnings.filterwarnings("ignore", category=SyntaxWarning)
+        for target_dir in ("scripts", "tests"):
+            for py_path in (repo_root / target_dir).rglob("*.py"):
+                n_files += 1
+                rel_path = py_path.relative_to(repo_root).as_posix()
+                source = py_path.read_text(encoding="utf-8")
+                lines = find_unfiltered_load_all_seasons_calls(source)
+                if lines:
+                    violations[rel_path] = lines
+
+    assert n_files > 0
+    assert violations == {}
+
+
 def test_guard_repository_load_all_seasons_occurrences():
-    """Verifica che nel repository load_all_seasons compaia solo nei quattro file ammessi."""
+    """Verifica che in src/ e scripts/ load_all_seasons compaia solo nei tre moduli ammessi."""
     import warnings
 
     repo_root = Path(__file__).resolve().parents[1]
@@ -434,7 +513,6 @@ def test_guard_repository_load_all_seasons_occurrences():
         "src/shk/data/loading.py",
         "src/shk/data/split.py",
         "src/shk/data/coverage.py",
-        "scripts/us_c3_1_data_coverage.py",
     }
 
     files_with_occurrences: dict[str, list[int]] = {}
@@ -448,10 +526,10 @@ def test_guard_repository_load_all_seasons_occurrences():
                 if refs:
                     files_with_occurrences[rel_path] = refs
 
-    # Solo i quattro file ammessi possono avere occorrenze
+    # Solo i tre moduli ammessi possono avere occorrenze; nessuno script ne ha (T41)
     assert set(files_with_occurrences.keys()).issubset(allowed_files)
     assert "src/shk/data/split.py" in files_with_occurrences
-    assert "scripts/us_c3_1_data_coverage.py" in files_with_occurrences
+    assert not any(path.startswith("scripts/") for path in files_with_occurrences)
 
 
 # ---------------------------------------------------------------------------
