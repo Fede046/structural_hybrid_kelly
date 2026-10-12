@@ -85,6 +85,16 @@ class SupervisorState(NamedTuple):
     out_of_support: np.ndarray | None
 
 
+class SupervisorHistory(NamedTuple):
+    """Partite già regolate delle stagioni precedenti della catena (sensibilità di T55)."""
+
+    dates: np.ndarray     # (H,) datetime64, ordinate e anteriori alla stagione
+    x: np.ndarray         # (H, k) covariate pre-partita
+    probs: np.ndarray     # (H, 3)
+    odds: np.ndarray      # (H, 3)
+    outcomes: np.ndarray  # (H,) esiti realizzati 0..2
+
+
 class Module2Supervisor:
     """Modulo 2 online per un'esecuzione dell'ambiente (vedi modulo).
 
@@ -100,11 +110,15 @@ class Module2Supervisor:
         Nomi delle k covariate; quelle che iniziano con "flag_" sono dummy.
     window : int
         W del Modulo 2.
+    history : SupervisorHistory o None, default None
+        Partite già regolate delle stagioni precedenti della catena, tutte anteriori alla
+        stagione: con None la catena è tagliata alla stagione (calibrazione T52–T54 e S10);
+        altrimenti attraversa le stagioni come nella decisione S8 (sensibilità di T55).
 
     Solleva
     -------
     ValueError
-        Se le forme non sono coerenti o le date non sono ordinate.
+        Se le forme non sono coerenti, le date non sono ordinate o la storia non è anteriore.
     """
 
     def __init__(
@@ -114,6 +128,7 @@ class Module2Supervisor:
         covariates_x: np.ndarray,
         covariate_names: Sequence[str],
         window: int,
+        history: "SupervisorHistory | None" = None,
     ) -> None:
         d = np.asarray(dates).astype("datetime64[ns]")
         x = np.asarray(covariates_x, dtype=np.float64)
@@ -124,6 +139,14 @@ class Module2Supervisor:
             raise ValueError("dates must be non-decreasing")
         if isinstance(window, bool) or not isinstance(window, (int, np.integer)) or window < len(names) + 2:
             raise ValueError(f"window must be an integer >= {len(names) + 2}, got {window}")
+        n_hist = 0
+        if history is not None:
+            h_dates = np.asarray(history.dates).astype("datetime64[ns]")
+            n_hist = h_dates.shape[0]
+            if n_hist and (np.any(h_dates[1:] < h_dates[:-1]) or (d.shape[0] and h_dates[-1] >= d[0])):
+                raise ValueError("history must be sorted and strictly earlier than the season")
+            d = np.concatenate([h_dates, d])
+            x = np.concatenate([np.asarray(history.x, dtype=np.float64).reshape(n_hist, len(names)), x])
         n = d.shape[0]
         self._season = season
         self._dates = d
@@ -139,11 +162,24 @@ class Module2Supervisor:
         self._ev_candidate = np.full(n, np.nan)
         self._observed_dates: set[np.datetime64] = set()
         self._cache: dict[np.datetime64, SupervisorState] = {}
+        if n_hist:
+            self._record(np.arange(n_hist), np.asarray(history.probs, dtype=np.float64),
+                         np.asarray(history.odds, dtype=np.float64), np.asarray(history.outcomes, dtype=np.int64))
 
     @property
     def window(self) -> int:
         """W del Modulo 2."""
         return self._window
+
+    def _record(self, rows: np.ndarray, probs: np.ndarray, odds: np.ndarray, realized: np.ndarray) -> None:
+        idx = np.arange(rows.shape[0])
+        q, _ = devig_shin(odds)
+        self._delta[rows] = np.log(probs[idx, realized]) - np.log(q[idx, realized])
+        self._p_hat[rows] = probs
+        self._q[rows] = q
+        self._outcome[rows] = realized
+        self._ev_candidate[rows] = estimated_expected_values(probs, odds).max(axis=1)
+        self._observed[rows] = True
 
     def observe(self, results: DateResults) -> None:
         """Registra gli esiti di una data regolata (una sola volta per data, M = 1)."""
@@ -155,17 +191,8 @@ class Module2Supervisor:
         rows = np.flatnonzero(self._dates == day)
         if rows.shape[0] != results.probs.shape[0]:
             raise ValueError("results do not match the season calendar of the supervisor")
-        probs = np.asarray(results.probs, dtype=np.float64)
-        odds = np.asarray(results.odds, dtype=np.float64)
-        realized = np.asarray(results.outcomes[0], dtype=np.int64)
-        idx = np.arange(rows.shape[0])
-        q, _ = devig_shin(odds)
-        self._delta[rows] = np.log(probs[idx, realized]) - np.log(q[idx, realized])
-        self._p_hat[rows] = probs
-        self._q[rows] = q
-        self._outcome[rows] = realized
-        self._ev_candidate[rows] = estimated_expected_values(probs, odds).max(axis=1)
-        self._observed[rows] = True
+        self._record(rows, np.asarray(results.probs, dtype=np.float64), np.asarray(results.odds, dtype=np.float64),
+                     np.asarray(results.outcomes[0], dtype=np.int64))
         self._observed_dates.add(day)
 
     def cutoff(self, decision_date: np.datetime64) -> np.datetime64:

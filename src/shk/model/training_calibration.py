@@ -43,7 +43,7 @@ import pandas as pd
 
 from shk.kelly.agents import Agent, DateResults
 from shk.kelly.environment import run_paired_backtest
-from shk.kelly.staking import KAPPA_GRID
+from shk.kelly.staking import BASE_LAMBDA, KAPPA_GRID
 from shk.market.devig import devig_shin
 from shk.model.agent_c import C1Agent, GradedAgent, Module2Supervisor, build_c0_agent
 from shk.model.covariate_inspection import MODULE2_WINDOWS
@@ -172,8 +172,9 @@ class SharedShin:
 class SharedShinBaselineDAgent(BaselineDAgent):
     """Baseline D con serie δ e q di Shin condivise: stesse uscite di BaselineDAgent, meno calcolo."""
 
-    def __init__(self, name: str, detector: str, params: dict, kappa: float, shin: SharedShin) -> None:
-        super().__init__(name, detector, params, kappa, series=SERIES_DELTA)
+    def __init__(self, name: str, detector: str, params: dict, kappa: float, shin: SharedShin,
+                 base_lambda: float = BASE_LAMBDA) -> None:
+        super().__init__(name, detector, params, kappa, series=SERIES_DELTA, base_lambda=base_lambda)
         self._shin = shin
 
     def _market_probs(self, results: DateResults) -> np.ndarray:
