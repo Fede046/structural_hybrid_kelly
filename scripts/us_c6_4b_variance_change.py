@@ -1,9 +1,12 @@
 """Script T44: diagnostiche della varianza nel tempo sui residui del Modulo 1 (seguito di C6.4).
 
 Scrive results/us_c6_4b_variance_change.csv e thesis/figures/us_c6_4b_variance_change.png.
+Con --module1 dixon_coles usa il Modulo 1 Dixon-Coles e scrive le uscite con il suffisso _dc,
+senza toccare quelle Elo (T60).
 """
 
 import csv
+import sys
 from pathlib import Path
 
 import matplotlib
@@ -11,6 +14,7 @@ matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 import numpy as np
 
+from shk.model.module1 import MODULE1_ELO, module1_from_argv, with_module1_suffix
 from shk.model.residuals import load_model_residuals
 from shk.model.variance_change import (
     CALIBRATED_METHODS,
@@ -29,15 +33,15 @@ STAT_LABELS = {
 }
 
 
-def run_experiment() -> None:
+def run_experiment(module1: str = MODULE1_ELO) -> None:
     """Calcola i record, scrive il CSV e la figura a tre pannelli."""
     repo_root = Path(__file__).resolve().parents[1]
-    csv_path = repo_root / "results" / "us_c6_4b_variance_change.csv"
-    png_path = repo_root / "thesis" / "figures" / "us_c6_4b_variance_change.png"
+    csv_path = with_module1_suffix(repo_root / "results" / "us_c6_4b_variance_change.csv", module1)
+    png_path = with_module1_suffix(repo_root / "thesis" / "figures" / "us_c6_4b_variance_change.png", module1)
     csv_path.parent.mkdir(parents=True, exist_ok=True)
     png_path.parent.mkdir(parents=True, exist_ok=True)
 
-    data = load_model_residuals()
+    data = load_model_residuals(module1=module1)
     records = evaluate_variance_change(data.residuals, data.schedule, seed=SEED_S7)
 
     with open(csv_path, mode="w", newline="", encoding="utf-8") as f:
@@ -100,4 +104,4 @@ def run_experiment() -> None:
 
 
 if __name__ == "__main__":
-    run_experiment()
+    run_experiment(module1_from_argv(sys.argv[1:]))

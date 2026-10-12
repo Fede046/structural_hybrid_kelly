@@ -4,9 +4,12 @@ Scenario 1 (transizioni di stagione), scenario 2 (sospensione e porte chiuse 201
 e scenario 3 (fine stagione senza e con il flag "senza obiettivi"), con intervalli al 95%
 (shk.model.known_scenarios). Scrive results/us_c7_3b_known_scenarios.csv e
 thesis/figures/us_c7_3b_known_scenarios.png.
+Con --module1 dixon_coles usa il Modulo 1 Dixon-Coles e scrive le uscite con il suffisso _dc,
+senza toccare quelle Elo (T60).
 """
 
 import csv
+import sys
 from pathlib import Path
 
 import matplotlib
@@ -24,6 +27,7 @@ from shk.model.known_scenarios import (
     add_no_objective_flag,
     evaluate_known_scenarios,
 )
+from shk.model.module1 import MODULE1_ELO, module1_from_argv, with_module1_suffix
 from shk.model.module2_data import build_module2_frame
 from shk.model.residuals import load_model_residuals
 from shk.stats.oaxaca_synthetic import SEED_S8
@@ -36,15 +40,15 @@ def _error_bars(est: np.ndarray, sel: pd.DataFrame) -> list[np.ndarray]:
     return [np.maximum(est - lower, 0.0), np.maximum(upper - est, 0.0)]
 
 
-def run_experiment() -> None:
+def run_experiment(module1: str = MODULE1_ELO) -> None:
     """Calcola gli scenari, scrive il CSV e la figura a tre pannelli."""
     repo_root = Path(__file__).resolve().parents[1]
-    csv_path = repo_root / "results" / "us_c7_3b_known_scenarios.csv"
-    png_path = repo_root / "thesis" / "figures" / "us_c7_3b_known_scenarios.png"
+    csv_path = with_module1_suffix(repo_root / "results" / "us_c7_3b_known_scenarios.csv", module1)
+    png_path = with_module1_suffix(repo_root / "thesis" / "figures" / "us_c7_3b_known_scenarios.png", module1)
     csv_path.parent.mkdir(parents=True, exist_ok=True)
     png_path.parent.mkdir(parents=True, exist_ok=True)
 
-    data = load_model_residuals()
+    data = load_model_residuals(module1=module1)
     frame = add_no_objective_flag(build_module2_frame(data), data.df)
     spec = derive_specification(frame[frame["role"] == "training"])
     records = evaluate_known_scenarios(frame, spec.covariates, seed=SEED_S8)
@@ -113,4 +117,4 @@ def run_experiment() -> None:
 
 
 if __name__ == "__main__":
-    run_experiment()
+    run_experiment(module1_from_argv(sys.argv[1:]))

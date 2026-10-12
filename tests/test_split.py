@@ -538,18 +538,29 @@ def test_guard_repository_load_all_seasons_occurrences():
 
 
 def test_real_config_split_file():
-    """Verifica che config/split.toml esista, sia valido e blocchi il test set."""
+    """Verifica che config/split.toml esista, sia valido e rispetti lo stato del test set.
+
+    Prima dello sblocco (test_unlocked = false) il test set è bloccato. Dopo lo sblocco del
+    programmatore (commit successivo al congelamento, decisione S10) test_unlocked_on è una
+    data non anteriore a frozen_on e il ruolo 'test' restituisce il solo 2023-24.
+    """
     cfg = read_split_config(DEFAULT_SPLIT_CONFIG_PATH)
     assert cfg.frozen_on == datetime.date(2026, 9, 29)
-    assert cfg.test_unlocked is False
-    assert cfg.test_unlocked_on == ""
     assert cfg.training == ("2000-01", "2010-11", "2020-21")
     assert len(cfg.validation) == 19
     assert cfg.test == ("2023-24",)
 
-    # Con test_unlocked=false, richiedere 'test' solleva TestSetLockedError
-    with pytest.raises(TestSetLockedError, match="Test set is locked"):
-        load_by_role("test", config_path=DEFAULT_SPLIT_CONFIG_PATH)
+    if cfg.test_unlocked is False:
+        assert cfg.test_unlocked_on == ""
+        # Con test_unlocked=false, richiedere 'test' solleva TestSetLockedError
+        with pytest.raises(TestSetLockedError, match="Test set is locked"):
+            load_by_role("test", config_path=DEFAULT_SPLIT_CONFIG_PATH)
+    else:
+        assert isinstance(cfg.test_unlocked_on, datetime.date)
+        assert cfg.test_unlocked_on >= cfg.frozen_on
+        if DEFAULT_DATA_DIR.exists() and list(DEFAULT_DATA_DIR.glob("*.csv")):
+            df_test = load_by_role("test", config_path=DEFAULT_SPLIT_CONFIG_PATH)
+            assert set(df_test["season"]) == {"2023-24"}
 
 
 def test_real_data_load_by_role():

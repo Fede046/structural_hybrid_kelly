@@ -6,9 +6,12 @@ partite anteriori (shk.model.module2), con intervalli al 95% a fine matchday. Sc
 results/us_c7_3_module2.csv (una riga per data x W), results/us_c7_3_module2_ci.csv e
 thesis/figures/us_c7_3_module2.png. La specificazione è quella di T46, ricavata dalle
 regole sul training (derive_specification).
+Con --module1 dixon_coles usa il Modulo 1 Dixon-Coles e scrive le uscite con il suffisso _dc,
+senza toccare quelle Elo (T60).
 """
 
 import csv
+import sys
 from pathlib import Path
 
 import matplotlib
@@ -18,22 +21,23 @@ import numpy as np
 import pandas as pd
 
 from shk.model.covariate_inspection import MODULE2_WINDOWS, derive_specification
+from shk.model.module1 import MODULE1_ELO, module1_from_argv, with_module1_suffix
 from shk.model.module2 import MODULE2_CI_COLUMNS, evaluate_module2, module2_record_columns
 from shk.model.module2_data import build_module2_frame
 from shk.model.residuals import load_model_residuals
 from shk.stats.oaxaca_synthetic import SEED_S8
 
 
-def run_experiment() -> None:
+def run_experiment(module1: str = MODULE1_ELO) -> None:
     """Calcola il Modulo 2, scrive i due CSV e la figura."""
     repo_root = Path(__file__).resolve().parents[1]
-    csv_path = repo_root / "results" / "us_c7_3_module2.csv"
-    ci_path = repo_root / "results" / "us_c7_3_module2_ci.csv"
-    png_path = repo_root / "thesis" / "figures" / "us_c7_3_module2.png"
+    csv_path = with_module1_suffix(repo_root / "results" / "us_c7_3_module2.csv", module1)
+    ci_path = with_module1_suffix(repo_root / "results" / "us_c7_3_module2_ci.csv", module1)
+    png_path = with_module1_suffix(repo_root / "thesis" / "figures" / "us_c7_3_module2.png", module1)
     csv_path.parent.mkdir(parents=True, exist_ok=True)
     png_path.parent.mkdir(parents=True, exist_ok=True)
 
-    data = load_model_residuals()
+    data = load_model_residuals(module1=module1)
     frame = build_module2_frame(data)
     spec = derive_specification(frame[frame["role"] == "training"])
     records, ci_records = evaluate_module2(frame, spec.covariates, seed=SEED_S8)
@@ -90,4 +94,4 @@ def run_experiment() -> None:
 
 
 if __name__ == "__main__":
-    run_experiment()
+    run_experiment(module1_from_argv(sys.argv[1:]))

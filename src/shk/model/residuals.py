@@ -1,11 +1,18 @@
 """Modulo per il calcolo delle serie dei residui (log-loss per partita) del Modulo 1.
 
 Fornisce la funzione compute_model_residuals che restituisce la log-loss per partita
-delle previsioni walk-forward Elo del Modulo 1 raw, sia per le partite di training
+delle previsioni walk-forward del Modulo 1 raw, sia per le partite di training
 di ciascun fit congelato sia per le rispettive stagioni di validazione assegnate.
 
 Fornisce anche load_model_residuals, la catena comune sui dati reali (split, caricamento
-per ruolo, schema dei fit, residui) che script e test nuovi usano al posto di copiarla.
+per ruolo, schema dei fit, residui) che script e test nuovi usano al posto di copiarla,
+e load_match_frame, la sua prima parte (DataFrame delle partite e schema dei fit).
+
+Il Modulo 1 è un parametro (T60, shk.model.module1): "elo" (ELO_FITS, percorso invariato)
+oppure "dixon_coles" (DC_FITS, T59). Le colonne restituite sono le stesse per entrambi.
+Con Dixon-Coles le previsioni di training e di validazione si calcolano sul DataFrame
+completo, come nella calibrazione di T59: la storia usata a ogni data è comunque solo
+quella con Date strettamente anteriore.
 """
 
 from collections.abc import Collection
@@ -24,6 +31,7 @@ from shk.model.elo_fit import (
     derive_fit_schedule,
     parse_season_start_year,
 )
+from shk.model.module1 import MODULE1_ELO, check_module1
 from shk.model.scoring import (
     MATCH_KEYS,
     align_predictions_with_odds,
@@ -94,10 +102,43 @@ def _validate_inputs(
             raise TypeError(f"'validation' in schedule['{fit_key}'] must be a non-string Collection")
 
 
+def _dixon_coles_predictions(df: pd.DataFrame, params, seasons: list[str]) -> pd.DataFrame:
+    """Previsioni walk-forward Dixon-Coles delle stagioni con (ξ, σ) del fit, sul DataFrame completo."""
+    # Import locale: dixon_coles importa module2_data, che importa questo modulo
+    from shk.model.dixon_coles import DixonColesForecaster
+
+    forecaster = DixonColesForecaster(df, params.xi, params.sigma)
+    return pd.concat([forecaster.predict_season(s) for s in seasons], ignore_index=True)
+
+
+def _dixon_coles_validation_predictions(
+    df: pd.DataFrame, fits: dict, schedule: dict[str, dict[str, list[str]]]
+) -> pd.DataFrame:
+    """Previsioni Dixon-Coles di tutte le stagioni di validazione, ciascuna con il suo fit."""
+    frames = [
+        _dixon_coles_predictions(df, fits[fit_key], list(entry["validation"]))
+        for fit_key, entry in sorted(schedule.items(), key=lambda kv: parse_season_start_year(kv[0]))
+        if entry["validation"]
+    ]
+    if not frames:
+        raise ValueError("No validation predictions were generated")
+    return pd.concat(frames, ignore_index=True).sort_values("Date", kind="stable").reset_index(drop=True)
+
+
+def default_fits(module1: str) -> dict:
+    """Parametri congelati del Modulo 1: ELO_FITS oppure DC_FITS."""
+    if check_module1(module1) == MODULE1_ELO:
+        return ELO_FITS
+    from shk.model.dixon_coles import DC_FITS
+
+    return DC_FITS
+
+
 def compute_model_residuals(
     df: pd.DataFrame,
     schedule: dict[str, dict[str, list[str]]],
     fits: dict[str, EloFitParams] | None = None,
+    module1: str = MODULE1_ELO,
 ) -> pd.DataFrame:
     """Calcola la serie di log-loss per partita del Modulo 1 raw su training e validazione.
 
@@ -113,8 +154,11 @@ def compute_model_residuals(
         per Date in modo non decrescente, con colonne identificative, quote ed esiti.
     schedule : dict[str, dict[str, list[str]]]
         Schema dei fit con le stagioni di training e di validazione per ciascun fit.
-    fits : dict[str, EloFitParams] o None, opzionale
-        Dizionario dei parametri congelati dei fit. Se None, utilizza ELO_FITS.
+    fits : dict o None, opzionale
+        Dizionario dei parametri congelati dei fit. Se None, ELO_FITS per l'Elo e DC_FITS
+        per Dixon-Coles.
+    module1 : str, opzionale
+        Identificatore del Modulo 1, "elo" (default) o "dixon_coles".
 
     Restituisce
     -----------
@@ -132,7 +176,8 @@ def compute_model_residuals(
         Se df è vuoto, privo delle colonne richieste, non ordinato per Date,
         oppure se schedule contiene fit non presenti in fits.
     """
-    effective_fits = ELO_FITS if fits is None else fits
+    is_elo = check_module1(module1) == MODULE1_ELO
+    effective_fits = default_fits(module1) if fits is None else fits
     _validate_inputs(df, schedule, effective_fits)
 
     date_dtype = df["Date"].dtype
@@ -150,7 +195,10 @@ def compute_model_residuals(
 
     df_val_aligned: pd.DataFrame | None = None
     if has_any_validation:
-        df_val_preds = generate_validation_predictions(df, effective_fits, schedule)
+        if is_elo:
+            df_val_preds = generate_validation_predictions(df, effective_fits, schedule)
+        else:
+            df_val_preds = _dixon_coles_validation_predictions(df, effective_fits, schedule)
         aligned_v = align_predictions_with_odds(df_val_preds, df).copy()
         fit_col = aligned_v["season"].map(val_season_to_fit)
         role_col = pd.Series(["validation"] * len(aligned_v), index=aligned_v.index, dtype=object)
@@ -165,19 +213,22 @@ def compute_model_residuals(
 
         # Blocco training
         if train_seasons:
-            j_year = parse_season_start_year(fit_through)
-            season_years = df["season"].map(parse_season_start_year)
-            df_sub = df[season_years <= j_year].copy().reset_index(drop=True)
-            df_gt = df_sub[df_sub["season"].isin(train_seasons)].copy().reset_index(drop=True)
+            if is_elo:
+                j_year = parse_season_start_year(fit_through)
+                season_years = df["season"].map(parse_season_start_year)
+                df_sub = df[season_years <= j_year].copy().reset_index(drop=True)
+                df_gt = df_sub[df_sub["season"].isin(train_seasons)].copy().reset_index(drop=True)
 
-            _, preds_train = compute_training_log_loss(
-                df_sub,
-                train_seasons,
-                k=params.k,
-                h=params.h,
-                nu=params.nu,
-                df_ground_truth=df_gt,
-            )
+                _, preds_train = compute_training_log_loss(
+                    df_sub,
+                    train_seasons,
+                    k=params.k,
+                    h=params.h,
+                    nu=params.nu,
+                    df_ground_truth=df_gt,
+                )
+            else:
+                preds_train = _dixon_coles_predictions(df, params, train_seasons)
 
             aligned_t = align_predictions_with_odds(preds_train, df).copy()
             fit_t = pd.Series([fit_through] * len(aligned_t), index=aligned_t.index, dtype=object)
@@ -222,23 +273,29 @@ class ModelResidualsData(NamedTuple):
         Schema dei fit da derive_fit_schedule sulla configurazione dello split.
     residuals : pd.DataFrame
         Uscita di compute_model_residuals (11 colonne di RESIDUALS_COLUMNS).
+    module1 : str
+        Identificatore del Modulo 1 che ha prodotto i residui ("elo" di default).
     """
 
     df: pd.DataFrame
     schedule: dict[str, dict[str, list[str]]]
     residuals: pd.DataFrame
+    module1: str = MODULE1_ELO
 
 
-def load_model_residuals(
+DEFAULT_ROLES: Final[tuple[str, ...]] = ("history", "training", "validation")
+
+
+def load_match_frame(
     config_path: Path | str = DEFAULT_SPLIT_CONFIG_PATH,
     data_dir: Path | str = DEFAULT_DATA_DIR,
-    fits: dict[str, EloFitParams] | None = None,
-) -> ModelResidualsData:
-    """Catena comune sui dati reali, per script e test nuovi (decisione del 2026-10-11).
+    roles: tuple[str, ...] = DEFAULT_ROLES,
+) -> tuple[pd.DataFrame, dict[str, dict[str, list[str]]]]:
+    """Prima parte della catena comune: DataFrame delle partite e schema dei fit.
 
-    Passi, gli stessi degli script di C5 e C6: read_split_config; load_by_role per
-    history, training e validation; concatenazione e ordinamento stabile per Date;
-    derive_fit_schedule; compute_model_residuals. Il ruolo test non si carica.
+    Passi: read_split_config; load_by_role per ciascun ruolo, nell'ordine dato;
+    concatenazione e ordinamento stabile per Date; derive_fit_schedule. Di default il
+    ruolo test non si carica.
 
     Parametri
     ---------
@@ -246,26 +303,55 @@ def load_model_residuals(
         File di configurazione dello split (default: DEFAULT_SPLIT_CONFIG_PATH).
     data_dir : Path o str, opzionale
         Directory dei CSV E0 (default: DEFAULT_DATA_DIR).
-    fits : dict[str, EloFitParams] o None, opzionale
-        Parametri dei fit; se None, ELO_FITS.
+    roles : tuple[str, ...], opzionale
+        Ruoli da caricare (default: history, training, validation).
+
+    Restituisce
+    -----------
+    tuple[pd.DataFrame, dict[str, dict[str, list[str]]]]
+        DataFrame ordinato per Date e schema dei fit.
+    """
+    cfg = read_split_config(config_path)
+    frames = [load_by_role(role, config_path=config_path, data_dir=data_dir) for role in roles]
+    df = pd.concat(frames, ignore_index=True)
+    df = df.sort_values("Date", kind="stable").reset_index(drop=True)
+    return df, derive_fit_schedule(cfg)
+
+
+def load_model_residuals(
+    config_path: Path | str = DEFAULT_SPLIT_CONFIG_PATH,
+    data_dir: Path | str = DEFAULT_DATA_DIR,
+    fits: dict | None = None,
+    module1: str = MODULE1_ELO,
+) -> ModelResidualsData:
+    """Catena comune sui dati reali, per script e test nuovi (decisione del 2026-10-11; T60).
+
+    Passi, gli stessi degli script di C5 e C6: load_match_frame (read_split_config;
+    load_by_role per history, training e validation; concatenazione e ordinamento stabile
+    per Date; derive_fit_schedule); compute_model_residuals con il Modulo 1 dato. Il ruolo
+    test non si carica.
+
+    Parametri
+    ---------
+    config_path : Path o str, opzionale
+        File di configurazione dello split (default: DEFAULT_SPLIT_CONFIG_PATH).
+    data_dir : Path o str, opzionale
+        Directory dei CSV E0 (default: DEFAULT_DATA_DIR).
+    fits : dict o None, opzionale
+        Parametri dei fit; se None, ELO_FITS o DC_FITS secondo il Modulo 1.
+    module1 : str, opzionale
+        Identificatore del Modulo 1, "elo" (default) o "dixon_coles".
 
     Restituisce
     -----------
     ModelResidualsData
-        DataFrame delle partite, schema dei fit e residui.
+        DataFrame delle partite, schema dei fit, residui e Modulo 1.
 
     Solleva
     -------
     TypeError, ValueError, FileNotFoundError
         Come read_split_config, load_by_role e compute_model_residuals.
     """
-    cfg = read_split_config(config_path)
-    frames = [
-        load_by_role(role, config_path=config_path, data_dir=data_dir)
-        for role in ("history", "training", "validation")
-    ]
-    df = pd.concat(frames, ignore_index=True)
-    df = df.sort_values("Date", kind="stable").reset_index(drop=True)
-    schedule = derive_fit_schedule(cfg)
-    residuals = compute_model_residuals(df, schedule, fits)
-    return ModelResidualsData(df=df, schedule=schedule, residuals=residuals)
+    df, schedule = load_match_frame(config_path, data_dir)
+    residuals = compute_model_residuals(df, schedule, fits, module1=module1)
+    return ModelResidualsData(df=df, schedule=schedule, residuals=residuals, module1=check_module1(module1))

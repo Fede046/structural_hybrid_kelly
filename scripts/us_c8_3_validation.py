@@ -7,6 +7,8 @@ Parametri solo da config/frozen_params.toml. Scrive:
 - thesis/figures/us_c8_3_validation_summary.png.
 Le stagioni girano su WORKERS processi; i risultati non dipendono dal numero di processi.
 Con --figure-only rigenera solo la figura dal file npz già scritto.
+Con --module1 dixon_coles usa il Modulo 1 Dixon-Coles e config/frozen_params_dc.toml, e scrive
+le uscite con il suffisso _dc, senza toccare quelle Elo (T60).
 """
 
 import csv
@@ -19,7 +21,8 @@ import matplotlib.pyplot as plt
 import numpy as np
 
 from shk.model.frozen_agents import AGENT_ORDER
-from shk.model.frozen_params import load_frozen_params
+from shk.model.frozen_params import frozen_params_path, load_frozen_params
+from shk.model.module1 import MODULE1_ELO, module1_from_argv, with_module1_suffix
 from shk.model.module2_data import build_module2_frame
 from shk.model.residuals import load_model_residuals
 from shk.model.validation_run import (
@@ -37,19 +40,25 @@ from shk.model.validation_run import (
 WORKERS = 5
 
 
-def run_experiment() -> None:
-    """Esegue S10 sulla validazione, scrive le uscite per seed, la sintesi e la figura."""
+def output_paths(module1: str = MODULE1_ELO) -> tuple[Path, Path, Path]:
+    """File npz delle uscite per seed, CSV di sintesi e figura del Modulo 1."""
     repo_root = Path(__file__).resolve().parents[1]
-    raw_path = repo_root / "results" / "raw" / "us_c8_3_validation_raw.npz"
-    csv_path = repo_root / "results" / "us_c8_3_validation_summary.csv"
-    png_path = repo_root / "thesis" / "figures" / "us_c8_3_validation_summary.png"
+    return (with_module1_suffix(repo_root / "results" / "raw" / "us_c8_3_validation_raw.npz", module1),
+            with_module1_suffix(repo_root / "results" / "us_c8_3_validation_summary.csv", module1),
+            with_module1_suffix(repo_root / "thesis" / "figures" / "us_c8_3_validation_summary.png", module1))
+
+
+def run_experiment(module1: str = MODULE1_ELO) -> None:
+    """Esegue S10 sulla validazione, scrive le uscite per seed, la sintesi e la figura."""
+    raw_path, csv_path, png_path = output_paths(module1)
     for p in (raw_path, csv_path, png_path):
         p.parent.mkdir(parents=True, exist_ok=True)
 
-    frame = build_module2_frame(load_model_residuals())
-    result = evaluate_validation(frame, workers=WORKERS)
+    params_path = frozen_params_path(module1)
+    frame = build_module2_frame(load_model_residuals(module1=module1))
+    result = evaluate_validation(frame, params_path=params_path, workers=WORKERS)
     save_raw(raw_path, result)
-    params = load_frozen_params()
+    params = load_frozen_params(params_path)
     records = summary_records(result) + inactive_records(params, validation_inputs(frame, list(params.fixed["covariates"])))
     with open(csv_path, mode="w", newline="", encoding="utf-8") as f:
         writer = csv.DictWriter(f, fieldnames=list(SUMMARY_COLUMNS))
@@ -107,9 +116,9 @@ def make_figure(result, png_path: Path) -> None:
 
 
 if __name__ == "__main__":
+    module1_ = module1_from_argv(sys.argv[1:])
     if "--figure-only" in sys.argv[1:]:
-        root = Path(__file__).resolve().parents[1]
-        make_figure(load_raw(root / "results" / "raw" / "us_c8_3_validation_raw.npz"),
-                    root / "thesis" / "figures" / "us_c8_3_validation_summary.png")
+        raw_, _, png_ = output_paths(module1_)
+        make_figure(load_raw(raw_), png_)
     else:
-        run_experiment()
+        run_experiment(module1_)

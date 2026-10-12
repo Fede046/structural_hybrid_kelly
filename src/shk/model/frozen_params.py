@@ -13,6 +13,9 @@ Sezioni:
 - [fixed]: parametri fissati per costruzione, con la loro origine nei commenti del file;
 - [c1_thresholds]: soglia di C1 per fit alla W scelta per C1, a L_PW;
 - [not_calibrated_on_training]: parametri non calibrati sul training, con il motivo (vuota).
+
+Con Dixon-Coles come Modulo 1 (T60, T61) il file è config/frozen_params_dc.toml;
+frozen_params_path restituisce il file del Modulo 1 dato.
 """
 
 import datetime
@@ -24,8 +27,17 @@ from pathlib import Path
 from types import MappingProxyType
 from typing import Any, Final
 
+from shk.model.module1 import MODULE1_ELO, check_module1
+
 REPO_ROOT: Final[Path] = Path(__file__).resolve().parents[3]
 FROZEN_PARAMS_PATH: Final[Path] = REPO_ROOT / "config" / "frozen_params.toml"
+FROZEN_PARAMS_DC_PATH: Final[Path] = REPO_ROOT / "config" / "frozen_params_dc.toml"
+
+
+def frozen_params_path(module1: str = MODULE1_ELO) -> Path:
+    """File di congelamento del Modulo 1: frozen_params.toml (Elo) o frozen_params_dc.toml."""
+    return FROZEN_PARAMS_PATH if check_module1(module1) == MODULE1_ELO else FROZEN_PARAMS_DC_PATH
+
 
 SECTION_KEYS: Final[dict[str, frozenset[str]]] = {
     "sources": frozenset({"us_c7_2_covariates", "us_c7_3_module2", "us_c7_3_module2_ci", "us_c8_3b_power"}),

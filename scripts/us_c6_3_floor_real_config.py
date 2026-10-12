@@ -10,15 +10,13 @@ import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 
-from shk.data.split import load_by_role, read_split_config
 from shk.kelly.floor import SEED_C6
-from shk.model.elo_fit import ELO_FITS, derive_fit_schedule
 from shk.model.floor_real_config import (
     FLOOR_REAL_CSV_COLUMNS,
     evaluate_floor_real_config,
 )
 from shk.model.paired_backtest import CONFIGURATIONS, build_season_agents
-from shk.model.residuals import compute_model_residuals
+from shk.model.residuals import load_model_residuals
 
 
 def _plot_three_panels(
@@ -245,15 +243,8 @@ def main() -> None:
     csv_path = results_dir / "us_c6_3_floor_real_config.csv"
     fig_path = figures_dir / "us_c6_3_floor_real_config.png"
 
-    cfg = read_split_config()
-    df_hist = load_by_role("history")
-    df_train = load_by_role("training")
-    df_val = load_by_role("validation")
-    df = pd.concat([df_hist, df_train, df_val], ignore_index=True)
-    df = df.sort_values("Date", kind="stable").reset_index(drop=True)
-
-    schedule = derive_fit_schedule(cfg)
-    df_residuals = compute_model_residuals(df, schedule, ELO_FITS)
+    data = load_model_residuals()
+    df, schedule, df_residuals = data.df, data.schedule, data.residuals
 
     records, group_artifacts = evaluate_floor_real_config(
         df_residuals=df_residuals,

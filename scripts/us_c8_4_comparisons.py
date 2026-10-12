@@ -5,6 +5,8 @@ aggiuntivo degli stessi agenti (results/raw/us_c8_4_validation_iid_raw.npz, non 
 e π e λ di C2 sui seed di T55, e scrive results/us_c8_4_comparisons.csv e
 thesis/figures/us_c8_4_comparisons.png. Nessun confronto è una soglia da superare.
 Con --from-raw rilegge anche il run iid già scritto invece di rieseguirlo.
+Con --module1 dixon_coles usa il Modulo 1 Dixon-Coles e config/frozen_params_dc.toml, e legge e
+scrive i file con il suffisso _dc, senza toccare quelli Elo (T60).
 """
 
 import csv
@@ -25,6 +27,8 @@ from shk.model.comparisons_run import (
     evaluate_iid,
     pi_lambda_records,
 )
+from shk.model.frozen_params import frozen_params_path
+from shk.model.module1 import MODULE1_ELO, module1_from_argv, with_module1_suffix
 from shk.model.module2_data import build_module2_frame
 from shk.model.residuals import load_model_residuals
 from shk.model.validation_run import load_raw, save_raw
@@ -32,23 +36,24 @@ from shk.model.validation_run import load_raw, save_raw
 WORKERS = 5
 
 
-def run_experiment(from_raw: bool = False) -> None:
+def run_experiment(from_raw: bool = False, module1: str = MODULE1_ELO) -> None:
     """Run iid (o rilettura con from_raw), confronti, falsi allarmi, π e λ, copertura; scrive CSV e figura."""
     repo_root = Path(__file__).resolve().parents[1]
-    block = load_raw(repo_root / "results" / "raw" / "us_c8_3_validation_raw.npz")
-    iid_path = repo_root / "results" / "raw" / "us_c8_4_validation_iid_raw.npz"
-    csv_path = repo_root / "results" / "us_c8_4_comparisons.csv"
-    png_path = repo_root / "thesis" / "figures" / "us_c8_4_comparisons.png"
+    block = load_raw(with_module1_suffix(repo_root / "results" / "raw" / "us_c8_3_validation_raw.npz", module1))
+    iid_path = with_module1_suffix(repo_root / "results" / "raw" / "us_c8_4_validation_iid_raw.npz", module1)
+    csv_path = with_module1_suffix(repo_root / "results" / "us_c8_4_comparisons.csv", module1)
+    png_path = with_module1_suffix(repo_root / "thesis" / "figures" / "us_c8_4_comparisons.png", module1)
     png_path.parent.mkdir(parents=True, exist_ok=True)
 
-    frame = build_module2_frame(load_model_residuals())
+    params_path = frozen_params_path(module1)
+    frame = build_module2_frame(load_model_residuals(module1=module1))
     if from_raw:
         iid = load_raw(iid_path)
     else:
-        iid = evaluate_iid(frame, block, workers=WORKERS)
+        iid = evaluate_iid(frame, block, params_path=params_path, workers=WORKERS)
         save_raw(iid_path, iid)
     records = (comparison_records(block, iid) + alarm_records(block)
-               + pi_lambda_records(frame, workers=WORKERS) + coverage_records(block))
+               + pi_lambda_records(frame, params_path=params_path, workers=WORKERS) + coverage_records(block))
     with open(csv_path, mode="w", newline="", encoding="utf-8") as f:
         writer = csv.DictWriter(f, fieldnames=list(COMPARISON_COLUMNS))
         writer.writeheader()
@@ -107,4 +112,4 @@ def run_experiment(from_raw: bool = False) -> None:
 
 
 if __name__ == "__main__":
-    run_experiment(from_raw="--from-raw" in sys.argv[1:])
+    run_experiment(from_raw="--from-raw" in sys.argv[1:], module1=module1_from_argv(sys.argv[1:]))

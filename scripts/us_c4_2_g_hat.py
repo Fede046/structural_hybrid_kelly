@@ -15,8 +15,8 @@ import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 
-from shk.data.split import load_by_role, read_split_config
-from shk.model.elo_fit import ELO_FITS, derive_fit_schedule
+from shk.model.elo_fit import ELO_FITS
+from shk.model.residuals import load_match_frame
 from shk.model.scoring import (
     ALL_DEVIG_METHODS,
     CSV_COLUMNS,
@@ -41,15 +41,7 @@ def run_experiment() -> None:
     csv_path.parent.mkdir(parents=True, exist_ok=True)
     png_path.parent.mkdir(parents=True, exist_ok=True)
 
-    cfg = read_split_config()
-    schedule = derive_fit_schedule(cfg)
-
-    df_hist = load_by_role("history")
-    df_train = load_by_role("training")
-    df_val = load_by_role("validation")
-
-    df_full = pd.concat([df_hist, df_train, df_val], ignore_index=True)
-    df_full = df_full.sort_values("Date", kind="stable").reset_index(drop=True)
+    df_full, schedule = load_match_frame()
 
     # 1. Previsioni del modello e allineamento semantico
     df_preds = generate_validation_predictions(df_full, ELO_FITS, schedule)

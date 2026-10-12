@@ -2,9 +2,12 @@
 
 Scrive results/us_c7_4_did_support.csv e thesis/figures/us_c7_4_did_support.png
 (shk.model.did_support).
+Con --module1 dixon_coles usa il Modulo 1 Dixon-Coles e scrive le uscite con il suffisso _dc,
+senza toccare quelle Elo (T60).
 """
 
 import csv
+import sys
 from pathlib import Path
 
 import matplotlib
@@ -16,20 +19,21 @@ import pandas as pd
 from shk.model.covariate_inspection import derive_specification
 from shk.model.did_support import DID_SUPPORT_CSV_COLUMNS, evaluate_did_support
 from shk.model.known_scenarios import add_no_objective_flag
+from shk.model.module1 import MODULE1_ELO, module1_from_argv, with_module1_suffix
 from shk.model.module2_data import build_module2_frame
 from shk.model.residuals import load_model_residuals
 from shk.stats.oaxaca_synthetic import SEED_S8
 
 
-def run_experiment() -> None:
+def run_experiment(module1: str = MODULE1_ELO) -> None:
     """Calcola DiD, placebo, Ñopo e supporto; scrive CSV e figura a tre pannelli."""
     repo_root = Path(__file__).resolve().parents[1]
-    csv_path = repo_root / "results" / "us_c7_4_did_support.csv"
-    png_path = repo_root / "thesis" / "figures" / "us_c7_4_did_support.png"
+    csv_path = with_module1_suffix(repo_root / "results" / "us_c7_4_did_support.csv", module1)
+    png_path = with_module1_suffix(repo_root / "thesis" / "figures" / "us_c7_4_did_support.png", module1)
     csv_path.parent.mkdir(parents=True, exist_ok=True)
     png_path.parent.mkdir(parents=True, exist_ok=True)
 
-    data = load_model_residuals()
+    data = load_model_residuals(module1=module1)
     frame = add_no_objective_flag(build_module2_frame(data), data.df)
     spec = derive_specification(frame[frame["role"] == "training"])
     records = evaluate_did_support(frame, spec.covariates, data.df, seed=SEED_S8)
@@ -107,4 +111,4 @@ def run_experiment() -> None:
 
 
 if __name__ == "__main__":
-    run_experiment()
+    run_experiment(module1_from_argv(sys.argv[1:]))

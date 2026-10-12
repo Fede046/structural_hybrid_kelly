@@ -11,15 +11,13 @@ import matplotlib
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 import numpy as np
-import pandas as pd
 
-from shk.data.split import load_by_role, read_split_config
-from shk.model.elo_fit import ELO_FITS, derive_fit_schedule, parse_season_start_year
+from shk.model.elo_fit import parse_season_start_year
 from shk.model.paired_backtest import (
     PAIRED_BACKTEST_CSV_COLUMNS,
     evaluate_validation_seasons,
 )
-from shk.model.residuals import compute_model_residuals
+from shk.model.residuals import load_model_residuals
 
 
 def run_experiment() -> None:
@@ -34,16 +32,8 @@ def run_experiment() -> None:
     png_path = figures_dir / "us_c6_2_paired_backtest.png"
 
     # Caricamento dei dati tramite split config (history, training, validation)
-    cfg = read_split_config()
-    df_hist = load_by_role("history")
-    df_train = load_by_role("training")
-    df_val = load_by_role("validation")
-
-    df = pd.concat([df_hist, df_train, df_val], ignore_index=True)
-    df = df.sort_values("Date", kind="stable").reset_index(drop=True)
-
-    schedule = derive_fit_schedule(cfg)
-    df_residuals = compute_model_residuals(df, schedule, ELO_FITS)
+    data = load_model_residuals()
+    df, schedule, df_residuals = data.df, data.schedule, data.residuals
 
     records = evaluate_validation_seasons(df_residuals, df, schedule)
 

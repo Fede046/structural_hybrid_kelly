@@ -8,6 +8,12 @@ Con l'opzione --from-log non ricalcola: rilegge il log esistente, riapplica la s
 (training_calibration.finalize_log, con la regola di parità di secondo livello del
 2026-10-11), riscrive il log e scrive il file di congelamento. I valori di obiettivo e
 puntata media del log restano quelli del calcolo.
+
+Con --module1 dixon_coles usa il Modulo 1 Dixon-Coles: log e CSV di origine con il suffisso
+_dc, file di congelamento config/frozen_params_dc.toml (T60).
+
+Con --log-to PATH (verifica del refactoring di T60) scrive il log in PATH e il testo del file
+di congelamento in PATH con estensione .toml, senza leggere né scrivere il file in config/.
 """
 
 import csv
@@ -23,7 +29,8 @@ from shk.kelly.staking import BASE_LAMBDA
 from shk.model.agent_c import C0_LAMBDA, C1_N_BOOT
 from shk.model.covariate_inspection import derive_specification
 from shk.model.elo_fit import ELO_FITS
-from shk.model.frozen_params import FROZEN_PARAMS_PATH, render_frozen_params, write_frozen_params
+from shk.model.frozen_params import frozen_params_path, render_frozen_params, write_frozen_params
+from shk.model.module1 import MODULE1_ELO, module1_from_argv, with_module1_suffix
 from shk.model.module2_data import build_module2_frame
 from shk.model.module3 import CHOSEN_CANDIDATE, INACTIVE_LAMBDA
 from shk.model.paired_backtest import CONFIGURATIONS
@@ -83,19 +90,25 @@ def _sha256(path: Path) -> str:
     return hashlib.sha256(path.read_bytes()).hexdigest()
 
 
-def run_experiment(from_log: bool = False) -> None:
-    """Calibra sul training (o rilegge il log con from_log), scrive il log e il file di congelamento."""
+def run_experiment(from_log: bool = False, module1: str = MODULE1_ELO, log_to: Path | None = None) -> None:
+    """Calibra sul training (o rilegge il log con from_log), scrive il log e il file di congelamento.
+
+    Con log_to scrive il log in log_to e il testo del file di congelamento accanto, con
+    estensione .toml, senza toccare il file in config/ (verifica di T60).
+    """
     repo_root = Path(__file__).resolve().parents[1]
-    if FROZEN_PARAMS_PATH.exists():
-        raise FileExistsError(f"{FROZEN_PARAMS_PATH} already exists: frozen parameters are written only once")
-    log_path = repo_root / "results" / "us_c8_2_calibration_log.csv"
+    frozen_path = frozen_params_path(module1)
+    if log_to is None and frozen_path.exists():
+        raise FileExistsError(f"{frozen_path} already exists: frozen parameters are written only once")
+    source_log = with_module1_suffix(repo_root / "results" / "us_c8_2_calibration_log.csv", module1)
+    log_path = source_log if log_to is None else Path(log_to)
     log_path.parent.mkdir(parents=True, exist_ok=True)
 
-    frame = build_module2_frame(load_model_residuals())
+    frame = build_module2_frame(load_model_residuals(module1=module1))
     train = frame[frame["role"] == "training"]
     covariates = derive_specification(train).covariates
     if from_log:
-        with open(log_path, newline="", encoding="utf-8") as f:
+        with open(source_log, newline="", encoding="utf-8") as f:
             records = finalize_log(list(csv.DictReader(f)))
     else:
         records = evaluate_calibration(train, covariates)
@@ -104,21 +117,23 @@ def run_experiment(from_log: bool = False) -> None:
         writer.writeheader()
         writer.writerows(records)
 
-    sections = build_sections(records, train, covariates, log_path, repo_root)
-    write_frozen_params(FROZEN_PARAMS_PATH, render_frozen_params(FROZEN_ON, sections, COMMENTS, HEADER))
+    sections = build_sections(records, train, covariates, log_path, repo_root, module1)
+    text = render_frozen_params(FROZEN_ON, sections, COMMENTS, HEADER)
+    write_frozen_params(frozen_path if log_to is None else log_path.with_suffix(".toml"), text)
 
 
 def build_sections(records: list[dict], train: pd.DataFrame, covariates: tuple[str, ...], log_path: Path,
-                   repo_root: Path) -> dict[str, dict]:
+                   repo_root: Path, module1: str = MODULE1_ELO) -> dict[str, dict]:
     """Sezioni del file di congelamento dal log della calibrazione e dalle costanti del codice."""
     chosen = {r["family"]: r for r in records if r["chosen"]}
     inputs = [season_input_from_frame(train, s, covariates) for s in training_seasons(train)]
     _, thresholds = threshold_records(inputs)
-    power = pd.read_csv(repo_root / SOURCE_CSVS["us_c8_3b_power"]).query("row_type == 'pooled'").iloc[0]
+    sources = {k: with_module1_suffix(repo_root / v, module1) for k, v in SOURCE_CSVS.items()}
+    power = pd.read_csv(sources["us_c8_3b_power"]).query("row_type == 'pooled'").iloc[0]
     adwin, ph = detector_params("adwin"), detector_params("page_hinkley")
     min_stake = dict(CONFIGURATIONS)[CALIBRATION_CONFIG]
     sections = {
-        "sources": {k: _sha256(repo_root / v) for k, v in SOURCE_CSVS.items()},
+        "sources": {k: _sha256(path) for k, path in sources.items()},
         "calibrated": {
             "c1_window": int(chosen["C1"]["window"]),
             "c1_kappa": float(chosen["C1"]["kappa"]),
@@ -140,7 +155,7 @@ def build_sections(records: list[dict], train: pd.DataFrame, covariates: tuple[s
                 "decisions, then kappa of the most similar binary arm with identified kappa "
                 "(other D detector, then C1, else 1), then grid order (2026-10-11)"
             ),
-            "log_csv": "results/us_c8_2_calibration_log.csv",
+            "log_csv": with_module1_suffix(Path("results/us_c8_2_calibration_log.csv"), module1).as_posix(),
             "log_sha256": _sha256(log_path),
         },
         "fixed": {
@@ -181,4 +196,6 @@ def build_sections(records: list[dict], train: pd.DataFrame, covariates: tuple[s
 
 
 if __name__ == "__main__":
-    run_experiment(from_log="--from-log" in sys.argv[1:])
+    args = sys.argv[1:]
+    log_to = Path(args[args.index("--log-to") + 1]) if "--log-to" in args else None
+    run_experiment(from_log="--from-log" in args, module1=module1_from_argv(args), log_to=log_to)

@@ -13,17 +13,16 @@ matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 import pandas as pd
 
-from shk.data.split import load_by_role, read_split_config
 from shk.model.elo_fit import (
     ELO_FITS,
     GRID_H,
     GRID_K,
     WALKFORWARD_CSV_COLUMNS,
     compute_training_log_loss,
-    derive_fit_schedule,
     parse_season_start_year,
 )
 from shk.model.elo_predictor import predict_elo_fast
+from shk.model.residuals import load_match_frame
 
 
 def run_experiment() -> None:
@@ -35,15 +34,8 @@ def run_experiment() -> None:
     csv_path.parent.mkdir(parents=True, exist_ok=True)
     png_path.parent.mkdir(parents=True, exist_ok=True)
 
-    cfg = read_split_config()
-    df_hist = load_by_role("history")
-    df_train = load_by_role("training")
-    df_val = load_by_role("validation")
+    df, schedule = load_match_frame()
 
-    df = pd.concat([df_hist, df_train, df_val], ignore_index=True)
-    df = df.sort_values("Date", kind="stable").reset_index(drop=True)
-
-    schedule = derive_fit_schedule(cfg)
     ordered_fits = sorted(schedule.keys(), key=parse_season_start_year)
 
     csv_rows: list[dict[str, Any]] = []

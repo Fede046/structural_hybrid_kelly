@@ -37,11 +37,12 @@ from typing import Final, NamedTuple
 import numpy as np
 import pandas as pd
 
-from shk.data.split import load_by_role, read_split_config
+from shk.data.split import read_split_config
 from shk.market.divergence import ODDS_BIN_LABELS, assign_odds_bin
 from shk.model.elo_fit import ELO_FITS, derive_fit_schedule, parse_season_start_year
 from shk.model.comparisons import t_cluster_interval
 from shk.model.module3_synthetic import N_STORY_TASKS
+from shk.model.residuals import load_match_frame
 from shk.model.scoring import (
     ALL_DEVIG_METHODS,
     SERIES_NAMES,
@@ -81,8 +82,7 @@ ODDS_COLUMNS: Final[dict[str, tuple[str, str, str]]] = {
 
 def load_full_frame() -> pd.DataFrame:
     """Stagioni di storia, training e validazione (mai il test), ordinate per Date, come in C4.2."""
-    df = pd.concat([load_by_role(r) for r in ("history", "training", "validation")], ignore_index=True)
-    return df.sort_values("Date", kind="stable").reset_index(drop=True)
+    return load_match_frame()[0]
 
 
 def evaluate_series(df_full: pd.DataFrame) -> dict[str, SeriesEvaluationData]:

@@ -5,9 +5,12 @@ L_PW stationary, L_PW circolare e la più vicina fra 7, 20 e 40; aggiunge la cop
 Monte Carlo dell'intervallo al 95% della media di AR(1) con stationary bootstrap a L_PW
 contro il bootstrap iid. Scrive results/us_c8_3a_block_length.csv e
 thesis/figures/us_c8_3a_block_length.png.
+Con --module1 dixon_coles usa il Modulo 1 Dixon-Coles e scrive le uscite con il suffisso _dc,
+senza toccare quelle Elo (T60).
 """
 
 import csv
+import sys
 from pathlib import Path
 
 import matplotlib
@@ -25,19 +28,20 @@ from shk.model.block_length import (
     compute_mean_coverage_records,
     compute_series_block_length_records,
 )
+from shk.model.module1 import MODULE1_ELO, module1_from_argv, with_module1_suffix
 from shk.model.residuals import load_model_residuals
 from shk.stats.false_rejection import BLOCK_LENGTHS, SEED_S7
 
 
-def run_experiment() -> None:
+def run_experiment(module1: str = MODULE1_ELO) -> None:
     """Calcola i record, scrive il CSV e la figura a due pannelli."""
     repo_root = Path(__file__).resolve().parents[1]
-    csv_path = repo_root / "results" / "us_c8_3a_block_length.csv"
-    png_path = repo_root / "thesis" / "figures" / "us_c8_3a_block_length.png"
+    csv_path = with_module1_suffix(repo_root / "results" / "us_c8_3a_block_length.csv", module1)
+    png_path = with_module1_suffix(repo_root / "thesis" / "figures" / "us_c8_3a_block_length.png", module1)
     csv_path.parent.mkdir(parents=True, exist_ok=True)
     png_path.parent.mkdir(parents=True, exist_ok=True)
 
-    data = load_model_residuals()
+    data = load_model_residuals(module1=module1)
     series_records = compute_series_block_length_records(data.residuals, data.schedule)
     coverage_records = compute_mean_coverage_records(seed=SEED_S7)
     records = series_records + coverage_records
@@ -135,4 +139,4 @@ def run_experiment() -> None:
 
 
 if __name__ == "__main__":
-    run_experiment()
+    run_experiment(module1_from_argv(sys.argv[1:]))
