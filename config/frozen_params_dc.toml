@@ -1,0 +1,98 @@
+# Parametri congelati di T61 (US-C9.2) con Dixon-Coles come Modulo 1, scritti una sola volta
+# dallo script scripts/us_c8_2_calibration.py (--module1 dixon_coles) e da non modificare.
+# Stessa procedura di T54 (obiettivo, griglie, regole di parità) e delle regole di T46, T52 e
+# T53, sulle sole stagioni di training (2000-01, 2010-11, 2020-21), con i residui di Dixon-Coles
+# (DC_FITS) e i seed di T61. Il differenziale di forza delle covariate è lambda_diff = λ − μ.
+# S10 con Dixon-Coles li legge solo con shk.model.frozen_params.load_frozen_params.
+
+frozen_on = 2026-10-17
+module1 = "dixon_coles"
+
+[sources]
+# SHA256 dei CSV da cui dipendono i parametri (T46, T47, T53)
+us_c7_2_covariates = "ab66064fa82230be4d6fa7f96bd9123017d946ba76513fd78c26fe526002aba0"
+us_c7_3_module2 = "ae313b753a42602f7483b8cbc472286285d296facd021b78264a26f70ef37821"
+us_c7_3_module2_ci = "a53b0e9afedb2029fae4ff6f5a6170ba53dada6234e5ef561ba7f8a1ae1fc3fd"
+us_c8_3b_power = "2d75d9b4098702e5512f39146514c336208196b165cff43a54af47157eb9d86c"
+
+[calibrated]
+# Dal log: famiglia C1, regola objective, bordo della griglia window;kappa
+c1_window = 40
+# Dal log: famiglia C1, regola objective, bordo della griglia window;kappa
+c1_kappa = 0.0
+# Dal log: famiglia C2_global, regola objective, bordo della griglia window
+c2_global_window = 190
+# Dal log: famiglia C2, regola objective, bordo della griglia window
+c2_window = 40
+# Dal log: famiglia D_ADWIN, regola second_level_tie_rule, bordo della griglia kappa
+d_adwin_delta = 0.5
+# Dal log: famiglia D_ADWIN, regola second_level_tie_rule, bordo della griglia kappa
+d_adwin_kappa = 0.0
+# Dal log: famiglia D_PH, regola objective, bordo della griglia kappa;detector_delta;detector_threshold
+d_page_hinkley_delta = 0.005
+# Dal log: famiglia D_PH, regola objective, bordo della griglia kappa;detector_delta;detector_threshold
+d_page_hinkley_threshold = 1.0
+# Dal log: famiglia D_PH, regola objective, bordo della griglia kappa;detector_delta;detector_threshold
+d_page_hinkley_kappa = 0.0
+
+[calibration]
+# Decisione S9
+objective = "mean final log-wealth over seeds and training seasons"
+configuration = "gbp_0.01"
+n_seeds = 200
+seed_scheme = "SeedSequence(SEED_S11).spawn(5)[2].spawn(5)[4].spawn(3)[season].spawn(n_seeds)"
+tie_rule = "objective within 1e-12, then lower mean stake; on exact ties: values frozen by earlier decisions, then kappa of the most similar binary arm with identified kappa (other D detector, then C1, else 1), then grid order (2026-10-11)"
+log_csv = "results/us_c9_2a_calibration_log_dc.csv"
+log_sha256 = "66a2c773d613f0c853d85987be0267f8cb51a9af6dce8bd743ad9b727fdc085b"
+
+[fixed]
+# Soglia di C1 (T52): moving block bootstrap della serie di δ del fit, B = 999, L_PW
+c1_alpha = 0.05
+c1_n_boot = 999
+c1_block_length = "politis_white_circular_of_fit_delta"
+c1_threshold_seed_scheme = "SeedSequence(SEED_S11).spawn(5)[2].spawn(5)[2]"
+# Decisioni del programmatore del 2026-10-11 (T52)
+c1_alarm = "active and -S > threshold"
+c1_alarm_count = "onsets"
+# Decisione S9: λ in [0, 1], 0 se ĝ della finestra <= 0
+lambda_min = 0.0
+lambda_max = 1.0
+stop_rule = "lambda = 0 if window g_hat <= 0"
+# C0 = B_0.25; λ dei bracci con Modulo 2 non attivo (T51, decisione S9)
+c0_lambda = 0.25
+inactive_lambda = 0.25
+# Candidata del Modulo 3 scelta in T51
+module3_candidate = "P3"
+# Specificazione del Modulo 2 (T46)
+covariates = ["log_odds_ratio", "market_entropy", "flag_promoted", "position", "model_entropy"]
+# Regola fuori supporto di T49
+out_of_support_min_count = 5
+# Decisione S7
+devig_method = "shin"
+# Modulo 1 raw Dixon-Coles con DC_FITS (US-C9.1, T59); elo_fits elenca i fit di DC_FITS
+module1 = "raw"
+elo_fits = ["2000-01", "2010-11", "2020-21"]
+# N_SEEDS dall'analisi di potenza di T53
+n_seeds = 500
+# Configurazione principale (decisione S9)
+main_configuration_b0_over_f = 22000
+# Ripiego forzato: default (a), politica attuale (T50)
+fallback_policy = "model_ev"
+# D alimentata con δ (decisione S9); altri parametri del detector da drift.py
+d_series = "delta"
+d_base_lambda = 0.25
+d_adwin_clock = 32
+d_adwin_max_buckets = 5
+d_adwin_min_window_length = 5
+d_adwin_grace_period = 10
+d_page_hinkley_min_instances = 30
+d_page_hinkley_alpha = 0.9999
+d_page_hinkley_mode = "both"
+
+[c1_thresholds]
+# Soglia di T = -S per fit alla W di C1, a L_PW (T52), seed di T61
+"2000-01" = 0.054873717798855526
+"2010-11" = 0.06870617037006799
+"2020-21" = 0.07033140200701937
+
+[not_calibrated_on_training]

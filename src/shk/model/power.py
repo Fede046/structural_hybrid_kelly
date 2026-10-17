@@ -36,6 +36,7 @@ import scipy.stats
 from shk.model.module3_synthetic import N_STORY_TASKS, SEED_S9
 from shk.model.paired_backtest import CONFIGURATIONS
 from shk.model.season_bootstrap import reconstruct_season, season_block_length
+from shk.model.task_seeds import task_sequence
 from shk.model.training_agents import (
     PROVISIONAL_WINDOW,
     run_training_season,
@@ -68,11 +69,9 @@ TIMING_COLUMNS: Final[tuple[str, ...]] = ("seconds_per_run", "s10_hours")
 
 
 def spawn_t53_generators(seasons: Sequence[str], n_seeds: int = N_POWER_SEEDS,
-                         seed: int = SEED_S9) -> dict[str, list[np.random.Generator]]:
+                         seed: int | np.random.SeedSequence = SEED_S9) -> dict[str, list[np.random.Generator]]:
     """Un generatore per seed e stagione (vedi modulo)."""
-    if isinstance(seed, bool) or not isinstance(seed, (int, np.integer)):
-        raise TypeError(f"seed must be an integer, got {type(seed).__name__}")
-    task = np.random.SeedSequence(seed).spawn(N_STORY_TASKS)[T53_STORY_POSITION]
+    task = task_sequence(seed, T53_STORY_POSITION, N_STORY_TASKS)
     return {s: [np.random.default_rng(c) for c in s_seq.spawn(n_seeds)]
             for s, s_seq in zip(seasons, task.spawn(len(seasons)))}
 
@@ -93,9 +92,12 @@ def _empty() -> dict[str, object]:
     return {c: "" for c in POWER_CSV_COLUMNS}
 
 
-def evaluate_power(frame: pd.DataFrame, covariates: Sequence[str], seed: int = SEED_S9,
-                   n_seeds: int = N_POWER_SEEDS) -> list[dict[str, object]]:
+def evaluate_power(frame: pd.DataFrame, covariates: Sequence[str], seed: int | np.random.SeedSequence = SEED_S9,
+                   n_seeds: int = N_POWER_SEEDS,
+                   threshold_seed: int | np.random.SeedSequence = SEED_S9) -> list[dict[str, object]]:
     """Seed ricostruiti, differenze appaiate, regola di N_SEEDS e stima del tempo di S10.
+
+    threshold_seed: seed delle soglie di C1 (threshold_records, T52).
 
     Solleva
     -------
@@ -106,7 +108,7 @@ def evaluate_power(frame: pd.DataFrame, covariates: Sequence[str], seed: int = S
         raise ValueError("frame must contain training rows only")
     min_stake = dict(CONFIGURATIONS)[POWER_CONFIG]
     inputs = [season_input_from_frame(frame, s, covariates) for s in training_seasons(frame)]
-    _, thresholds = threshold_records(inputs)
+    _, thresholds = threshold_records(inputs, threshold_seed)
     gens = spawn_t53_generators([inp.season for inp in inputs], n_seeds, seed)
     records: list[dict[str, object]] = []
     variances_d1, variances_d2, means_d1, means_d2 = [], [], [], []

@@ -72,7 +72,7 @@ from shk.model.module3_synthetic import N_STORY_TASKS
 from shk.model.monitoring import ScenarioSeries, build_drift_records
 from shk.model.paired_backtest import CONFIGURATIONS
 from shk.model.module1 import MODULE1_ELO
-from shk.model.residuals import ModelResidualsData, compute_model_residuals, load_match_frame
+from shk.model.residuals import ModelResidualsData, load_match_frame, model_residuals_data
 from shk.model.scoring import (
     ALL_DEVIG_METHODS,
     MATCH_KEYS,
@@ -153,8 +153,7 @@ def load_season_data(season: str, fit: str = TEST_FIT, module1: str = MODULE1_EL
     schedule = copy.deepcopy(schedule)
     if season not in schedule[fit]["validation"]:
         schedule[fit]["validation"] = list(schedule[fit]["validation"]) + [season]
-    data = ModelResidualsData(df=df, schedule=schedule,
-                              residuals=compute_model_residuals(df, schedule, module1=module1), module1=module1)
+    data = model_residuals_data(df, schedule, module1=module1)
     frame = build_module2_frame(data)
     covariates = derive_specification(frame[frame["role"] == "training"]).covariates
     season_frame = frame[frame["season"] == season].assign(role="test")

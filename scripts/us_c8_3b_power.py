@@ -2,7 +2,7 @@
 
 Scrive results/us_c8_3b_power.csv (shk.model.power). Parametri provvisori di T52.
 Con --module1 dixon_coles usa il Modulo 1 Dixon-Coles e scrive le uscite con il suffisso _dc,
-senza toccare quelle Elo (T60).
+senza toccare quelle Elo (T60), con i seed di T61 (module1_seeds.procedure_seeds).
 """
 
 import csv
@@ -11,6 +11,7 @@ from pathlib import Path
 
 from shk.model.covariate_inspection import derive_specification
 from shk.model.module1 import MODULE1_ELO, module1_from_argv, with_module1_suffix
+from shk.model.module1_seeds import procedure_seeds
 from shk.model.module2_data import build_module2_frame
 from shk.model.power import POWER_CSV_COLUMNS, evaluate_power
 from shk.model.residuals import load_model_residuals
@@ -24,7 +25,9 @@ def run_experiment(module1: str = MODULE1_ELO) -> None:
 
     frame = build_module2_frame(load_model_residuals(module1=module1))
     train = frame[frame["role"] == "training"]
-    records = evaluate_power(train, derive_specification(train).covariates)
+    seeds = procedure_seeds(module1)
+    records = evaluate_power(train, derive_specification(train).covariates, seed=seeds["t53"],
+                             threshold_seed=seeds["t52"])
 
     with open(csv_path, mode="w", newline="", encoding="utf-8") as f:
         writer = csv.DictWriter(f, fieldnames=list(POWER_CSV_COLUMNS))

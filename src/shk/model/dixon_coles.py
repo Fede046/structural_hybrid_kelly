@@ -365,7 +365,10 @@ class DixonColesForecaster:
         return value
 
     def predict_season(self, season: str) -> pd.DataFrame:
-        """Previsioni walk-forward delle partite della stagione (stesso ordine del DataFrame)."""
+        """Previsioni walk-forward delle partite della stagione (stesso ordine del DataFrame).
+
+        Oltre a p_home, p_draw e p_away restituisce i gol attesi lambda_home (λ) e lambda_away (μ).
+        """
         m = self._m
         rows_s = np.flatnonzero(m.season == season)
         if rows_s.size == 0:
@@ -375,6 +378,7 @@ class DixonColesForecaster:
         entry = self._entry_values(season, start_state)
         warm = start_state
         probs = np.empty((rows_s.size, 3))
+        rates = np.empty((rows_s.size, 2))
         pos = {int(r): i for i, r in enumerate(rows_s)}
         # Con σ = ∞ le neopromosse senza partite restano fuori dal fit e usano il valore d'ingresso
         extra = entry.keys() if math.isfinite(self._sigma) else ()
@@ -388,11 +392,13 @@ class DixonColesForecaster:
             lam = np.exp(alpha[m.home[today]] + beta[m.away[today]] + state.gamma)
             mu = np.exp(alpha[m.away[today]] + beta[m.home[today]])
             p = outcome_probs(lam, mu, state.rho)
-            for r, row_p in zip(today, p):
+            for r, row_p, row_lam, row_mu in zip(today, p, lam, mu):
                 probs[pos[int(r)]] = row_p
+                rates[pos[int(r)]] = (row_lam, row_mu)
             warm = state
         out = self._df.iloc[rows_s][["season", "Date", "HomeTeam", "AwayTeam", "FTR"]].copy()
         out[["p_home", "p_draw", "p_away"]] = probs
+        out[["lambda_home", "lambda_away"]] = rates
         return out.reset_index(drop=True)
 
 

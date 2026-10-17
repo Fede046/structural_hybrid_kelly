@@ -7,7 +7,7 @@ results/us_c7_3_module2.csv (una riga per data x W), results/us_c7_3_module2_ci.
 thesis/figures/us_c7_3_module2.png. La specificazione è quella di T46, ricavata dalle
 regole sul training (derive_specification).
 Con --module1 dixon_coles usa il Modulo 1 Dixon-Coles e scrive le uscite con il suffisso _dc,
-senza toccare quelle Elo (T60).
+senza toccare quelle Elo (T60), con i seed di T61 (module1_seeds.procedure_seeds).
 """
 
 import csv
@@ -22,10 +22,10 @@ import pandas as pd
 
 from shk.model.covariate_inspection import MODULE2_WINDOWS, derive_specification
 from shk.model.module1 import MODULE1_ELO, module1_from_argv, with_module1_suffix
+from shk.model.module1_seeds import procedure_seeds
 from shk.model.module2 import MODULE2_CI_COLUMNS, evaluate_module2, module2_record_columns
 from shk.model.module2_data import build_module2_frame
 from shk.model.residuals import load_model_residuals
-from shk.stats.oaxaca_synthetic import SEED_S8
 
 
 def run_experiment(module1: str = MODULE1_ELO) -> None:
@@ -40,7 +40,7 @@ def run_experiment(module1: str = MODULE1_ELO) -> None:
     data = load_model_residuals(module1=module1)
     frame = build_module2_frame(data)
     spec = derive_specification(frame[frame["role"] == "training"])
-    records, ci_records = evaluate_module2(frame, spec.covariates, seed=SEED_S8)
+    records, ci_records = evaluate_module2(frame, spec.covariates, seed=procedure_seeds(module1)["t47"])
 
     for path, columns, rows in (
         (csv_path, module2_record_columns(spec.covariates), records),

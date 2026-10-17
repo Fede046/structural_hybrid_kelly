@@ -51,6 +51,7 @@ from shk.model.module3_synthetic import N_STORY_TASKS, SEED_S9
 from shk.model.paired_backtest import CONFIGURATIONS
 from shk.model.season_bootstrap import reconstruct_season, season_block_length
 from shk.model.stateful_agents import SERIES_DELTA, BaselineDAgent
+from shk.model.task_seeds import task_sequence
 from shk.model.training_agents import SeasonInput, season_input_from_frame, threshold_records, training_seasons
 from shk.stats.drift import (
     ADWIN_DELTA,
@@ -145,11 +146,9 @@ def calibration_grid() -> list[Combination]:
 
 
 def spawn_t54_generators(seasons: Sequence[str], n_seeds: int = N_CALIBRATION_SEEDS,
-                         seed: int = SEED_S9) -> dict[str, list[np.random.Generator]]:
+                         seed: int | np.random.SeedSequence = SEED_S9) -> dict[str, list[np.random.Generator]]:
     """Un generatore per seed e stagione (vedi modulo)."""
-    if isinstance(seed, bool) or not isinstance(seed, (int, np.integer)):
-        raise TypeError(f"seed must be an integer, got {type(seed).__name__}")
-    task = np.random.SeedSequence(seed).spawn(N_STORY_TASKS)[T54_STORY_POSITION]
+    task = task_sequence(seed, T54_STORY_POSITION, N_STORY_TASKS)
     return {s: [np.random.default_rng(c) for c in s_seq.spawn(n_seeds)]
             for s, s_seq in zip(seasons, task.spawn(len(seasons)))}
 
@@ -306,9 +305,12 @@ def finalize_log(rows: Sequence[dict[str, object]]) -> list[dict[str, object]]:
     return out + [rule]
 
 
-def evaluate_calibration(frame: pd.DataFrame, covariates: Sequence[str], seed: int = SEED_S9,
-                         n_seeds: int = N_CALIBRATION_SEEDS) -> list[dict[str, object]]:
+def evaluate_calibration(frame: pd.DataFrame, covariates: Sequence[str], seed: int | np.random.SeedSequence = SEED_S9,
+                         n_seeds: int = N_CALIBRATION_SEEDS,
+                         threshold_seed: int | np.random.SeedSequence = SEED_S9) -> list[dict[str, object]]:
     """Obiettivo e puntata media per ogni combinazione; scelta per famiglia (log completo).
+
+    threshold_seed: seed delle soglie di C1 (threshold_records, T52).
 
     Solleva
     -------
@@ -320,7 +322,7 @@ def evaluate_calibration(frame: pd.DataFrame, covariates: Sequence[str], seed: i
     grid = calibration_grid()
     min_stake = dict(CONFIGURATIONS)[CALIBRATION_CONFIG]
     inputs = [season_input_from_frame(frame, s, covariates) for s in training_seasons(frame)]
-    _, thr = threshold_records(inputs)
+    _, thr = threshold_records(inputs, threshold_seed)
     gens = spawn_t54_generators([inp.season for inp in inputs], n_seeds, seed)
     lw = {c.agent_name: {inp.season: [] for inp in inputs} for c in grid}
     stake = {c.agent_name: [] for c in grid}

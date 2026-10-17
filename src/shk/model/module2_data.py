@@ -16,6 +16,11 @@ Colonne principali:
   o una delle due, nella stagione); position = posizione nella stagione (1..380) in ordine
   di Date stabile; model_entropy = H(p̂).
 
+Con Dixon-Coles come Modulo 1 (T61) il differenziale di forza è quello del modello in uso:
+lambda_diff = λ − μ, differenza dei gol attesi di casa e in trasferta delle stesse previsioni,
+al posto di elo_diff (scelta delegata di T61: nessuna covariata calcolata con un modello
+diverso dal Modulo 1). Le altre colonne sono le stesse.
+
 I flag di ingresso seguono la regola del Modulo 1 (elo_predictor._EloTracker): nella
 stagione s una squadra è "new" se non compare in nessuna stagione precedente del DataFrame,
 "returning" se compare prima ma non in s − 1, "" se compare in s − 1; nella prima stagione
@@ -30,6 +35,7 @@ import pandas as pd
 from shk.data.coverage import classify_column
 from shk.market.devig import devig_shin
 from shk.model.elo_fit import parse_season_start_year
+from shk.model.module1 import MODULE1_DIXON_COLES, MODULE1_ELO, check_module1
 from shk.model.residual_heteroskedasticity import compute_shannon_entropy
 from shk.model.residuals import ModelResidualsData
 from shk.model.scoring import MATCH_KEYS, align_predictions_with_odds
@@ -53,6 +59,8 @@ COVARIATE_COLUMNS: Final[tuple[str, ...]] = (
     "position",
     "model_entropy",
 )
+
+STRENGTH_COVARIATES: Final[dict[str, str]] = {MODULE1_ELO: "elo_diff", MODULE1_DIXON_COLES: "lambda_diff"}
 
 MODULE2_FRAME_COLUMNS: Final[tuple[str, ...]] = (
     "season",
@@ -162,6 +170,21 @@ def entry_status_by_team_season(df: pd.DataFrame) -> dict[tuple[str, str], str]:
     return status
 
 
+def strength_covariate(frame: pd.DataFrame) -> str:
+    """Nome del differenziale di forza presente nel DataFrame: lambda_diff (Dixon-Coles) o elo_diff."""
+    return STRENGTH_COVARIATES[MODULE1_DIXON_COLES] if "lambda_diff" in frame.columns else STRENGTH_COVARIATES[MODULE1_ELO]
+
+
+def with_strength(names: tuple[str, ...], strength: str) -> tuple[str, ...]:
+    """Nomi di covariate con elo_diff sostituito dal differenziale di forza dato."""
+    return tuple(strength if n == STRENGTH_COVARIATES[MODULE1_ELO] else n for n in names)
+
+
+def module2_frame_columns(module1: str = MODULE1_ELO) -> tuple[str, ...]:
+    """Colonne del DataFrame del Modulo 2 per il Modulo 1 dato."""
+    return with_strength(MODULE2_FRAME_COLUMNS, STRENGTH_COVARIATES[check_module1(module1)])
+
+
 def reconstruct_elo_diff(p_home: np.ndarray, p_away: np.ndarray, scale: float = ELO_SCALE) -> np.ndarray:
     """Differenziale Elo con h da probabilità di Davidson: scale · log10(p_home / p_away).
 
@@ -197,6 +220,9 @@ def build_module2_frame(data: ModelResidualsData, triple_2000_01: str | None = N
     res = data.residuals
     train_mask = (res["role"] == "training") & (res["season"] == res["fit_through"])
     frame = res[train_mask | (res["role"] == "validation")].copy()
+    if data.rates is not None:
+        # Gol attesi di Dixon-Coles, allineati per indice alle righe dei residui
+        frame = frame.join(data.rates)
     frame["season_year"] = frame["season"].map(parse_season_start_year)
     frame = frame.sort_values(["season_year", "Date"], kind="stable").drop(columns="season_year")
     frame = frame.reset_index(drop=True)
@@ -222,6 +248,11 @@ def build_module2_frame(data: ModelResidualsData, triple_2000_01: str | None = N
     outcome = aligned["FTR"].astype(str).str.strip().map(_OUTCOME_INDEX).to_numpy(dtype=np.int64)
     rows = np.arange(len(aligned))
     delta = np.log(probs[rows, outcome]) - np.log(q[rows, outcome])
+
+    if data.module1 == MODULE1_ELO:
+        strength = reconstruct_elo_diff(probs[:, 0], probs[:, 2])
+    else:
+        strength = (aligned["lambda_home"] - aligned["lambda_away"]).to_numpy(dtype=np.float64)
 
     status = entry_status_by_team_season(data.df)
     home_status = np.array([status[(s, t)] for s, t in zip(aligned["season"], aligned["HomeTeam"])])
@@ -252,7 +283,7 @@ def build_module2_frame(data: ModelResidualsData, triple_2000_01: str | None = N
             "delta": delta,
             "log_odds_ratio": np.log(odds[:, 0] / odds[:, 2]),
             "market_entropy": compute_shannon_entropy(q),
-            "elo_diff": reconstruct_elo_diff(probs[:, 0], probs[:, 2]),
+            STRENGTH_COVARIATES[data.module1]: strength,
             "flag_new": flag_new.astype(np.int64),
             "flag_returning": flag_returning.astype(np.int64),
             "flag_promoted": (flag_new | flag_returning).astype(np.int64),
@@ -260,4 +291,4 @@ def build_module2_frame(data: ModelResidualsData, triple_2000_01: str | None = N
             "model_entropy": compute_shannon_entropy(probs),
         }
     )
-    return out[list(MODULE2_FRAME_COLUMNS)]
+    return out[list(module2_frame_columns(data.module1))]

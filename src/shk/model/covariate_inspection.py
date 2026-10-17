@@ -21,6 +21,9 @@ d di Cohen (gruppo con flag meno gruppo senza, deviazione standard pooled) e
 OVL = 2 Φ(−|d| / 2). Seed: SeedSequence(SEED_S8).spawn(5)[1] (T46 in posizione 1),
 spawn(2) per insieme (training, validazione), poi spawn(len(ANOVA_COVARIATES)), un
 generatore per covariata.
+
+Con Dixon-Coles come Modulo 1 (T61) elo_diff è sostituito da lambda_diff in regole e tabelle
+(strength_covariate), e il seed può essere una SeedSequence data (task_seeds.task_sequence).
 """
 
 import math
@@ -30,7 +33,8 @@ import numpy as np
 import pandas as pd
 import scipy.stats
 
-from shk.model.module2_data import COVARIATE_COLUMNS
+from shk.model.module2_data import COVARIATE_COLUMNS, strength_covariate, with_strength
+from shk.model.task_seeds import task_sequence
 from shk.stats.anova import oneway_anova
 from shk.stats.bootstrap import optimal_block_length, round_block_length
 from shk.stats.false_rejection import (
@@ -180,7 +184,7 @@ def derive_specification(train: pd.DataFrame) -> Specification:
     """Applica le regole (i), (ii), (iii) al training pooled."""
     flag_rule = apply_flag_rule(train)
     candidates = (
-        "log_odds_ratio", "market_entropy", "elo_diff", *flag_rule.flags, "position", MODEL_ENTROPY,
+        "log_odds_ratio", "market_entropy", strength_covariate(train), *flag_rule.flags, "position", MODEL_ENTROPY,
     )
     steps = vif_elimination(train, candidates)
     removed = [s.removed for s in steps if s.removed is not None]
@@ -222,11 +226,9 @@ def cohen_d_and_ovl(y: np.ndarray, flag: np.ndarray) -> tuple[float, float]:
     return d, float(2.0 * scipy.stats.norm.cdf(-abs(d) / 2.0))
 
 
-def spawn_t46_generators(seed: int = SEED_S8) -> tuple[tuple[np.random.Generator, ...], ...]:
+def spawn_t46_generators(seed: int | np.random.SeedSequence = SEED_S8) -> tuple[tuple[np.random.Generator, ...], ...]:
     """(training, validazione) x covariate di ANOVA_COVARIATES."""
-    if isinstance(seed, bool) or not isinstance(seed, (int, np.integer)):
-        raise TypeError(f"seed must be an integer, got {type(seed).__name__}")
-    task_seed = np.random.SeedSequence(seed).spawn(N_STORY_TASKS)[T46_STORY_POSITION]
+    task_seed = task_sequence(seed, T46_STORY_POSITION, N_STORY_TASKS)
     return tuple(
         tuple(np.random.default_rng(s) for s in ds.spawn(len(ANOVA_COVARIATES)))
         for ds in task_seed.spawn(2)
@@ -246,7 +248,7 @@ def anova_records(frame: pd.DataFrame, dataset: str, rngs: tuple[np.random.Gener
     """ANOVA di δ per covariata con soglia nominale e calibrata (metodo centrato di T40)."""
     delta = frame["delta"].to_numpy(dtype=np.float64)
     records = []
-    for covariate, rng in zip(ANOVA_COVARIATES, rngs):
+    for covariate, rng in zip(with_strength(ANOVA_COVARIATES, strength_covariate(frame)), rngs):
         labels = covariate_labels(frame, covariate)
         k = int(labels.max()) + 1
         res = oneway_anova([delta[labels == g] for g in range(k)])
@@ -273,7 +275,8 @@ def anova_records(frame: pd.DataFrame, dataset: str, rngs: tuple[np.random.Gener
 def descriptive_records(frame: pd.DataFrame, dataset: str) -> list[dict[str, object]]:
     """Distribuzioni, conteggi per cella, finestre, deviazione Elo nelle finestre, correlazioni, VIF."""
     records: list[dict[str, object]] = []
-    for col in ("delta", *COVARIATE_COLUMNS):
+    strength = strength_covariate(frame)
+    for col in ("delta", *with_strength(COVARIATE_COLUMNS, strength)):
         v = frame[col].to_numpy(dtype=np.float64)
         q = np.quantile(v, [0.25, 0.5, 0.75])
         records.append(_record(
@@ -285,14 +288,14 @@ def descriptive_records(frame: pd.DataFrame, dataset: str) -> list[dict[str, obj
         for flag in FLAG_COVARIATES:
             records.append(_record(row_type="cell_count", dataset=dataset, season=season,
                                    covariate=flag, n=int(len(grp)), value=int(grp[flag].sum())))
-    sd_all = float(frame["elo_diff"].std(ddof=1))
+    sd_all = float(frame[strength].std(ddof=1))
     for w in MODULE2_WINDOWS:
         sds: list[float] = []
         counts: dict[str, list[int]] = {f: [] for f in FLAG_COVARIATES}
         for _, grp in frame.groupby("season", sort=False):
             for start in range(0, len(grp) - w + 1, w):
                 win = grp.iloc[start:start + w]
-                sds.append(float(win["elo_diff"].std(ddof=1)))
+                sds.append(float(win[strength].std(ddof=1)))
                 for f in FLAG_COVARIATES:
                     counts[f].append(int(win[f].sum()))
         for f in FLAG_COVARIATES:
@@ -300,9 +303,9 @@ def descriptive_records(frame: pd.DataFrame, dataset: str) -> list[dict[str, obj
             records.append(_record(row_type="window_count", dataset=dataset, covariate=f, window=w,
                                    n=int(c.size), count_min=int(c.min()), count_mean=float(c.mean()),
                                    count_max=int(c.max())))
-        records.append(_record(row_type="elo_window_sd", dataset=dataset, covariate="elo_diff",
+        records.append(_record(row_type="elo_window_sd", dataset=dataset, covariate=strength,
                                window=w, n=len(sds), value=float(np.mean(sds)) / sd_all))
-    continuous = list(CONTINUOUS_COVARIATES) + list(FLAG_COVARIATES)
+    continuous = list(with_strength(CONTINUOUS_COVARIATES, strength)) + list(FLAG_COVARIATES)
     corr = frame[continuous].corr().to_numpy()
     for i, a in enumerate(continuous):
         for j, b in enumerate(continuous):
@@ -312,7 +315,7 @@ def descriptive_records(frame: pd.DataFrame, dataset: str) -> list[dict[str, obj
     return records
 
 
-def evaluate_covariates(frame: pd.DataFrame, seed: int = SEED_S8) -> tuple[Specification, list[dict[str, object]]]:
+def evaluate_covariates(frame: pd.DataFrame, seed: int | np.random.SeedSequence = SEED_S8) -> tuple[Specification, list[dict[str, object]]]:
     """Specificazione sul training e record del CSV results/us_c7_2_covariates.csv."""
     train = frame[frame["role"] == "training"]
     valid = frame[frame["role"] == "validation"]
@@ -328,7 +331,8 @@ def evaluate_covariates(frame: pd.DataFrame, seed: int = SEED_S8) -> tuple[Speci
         for cov, vif in step.vifs.items():
             records.append(_record(row_type="vif", dataset="training", covariate=cov, step=step.step,
                                    value=vif, reason="removed" if cov == step.removed else ""))
-    candidates_all = ("log_odds_ratio", "market_entropy", "elo_diff", "flag_new", "flag_returning",
+    strength = strength_covariate(frame)
+    candidates_all = ("log_odds_ratio", "market_entropy", strength, "flag_new", "flag_returning",
                       "flag_promoted", "position", MODEL_ENTROPY)
     for cov in candidates_all:
         records.append(_record(row_type="specification", dataset="training", covariate=cov,
@@ -336,7 +340,7 @@ def evaluate_covariates(frame: pd.DataFrame, seed: int = SEED_S8) -> tuple[Speci
     for dataset, sub in (("training", train), ("validation", valid)):
         records.extend(descriptive_records(sub, dataset))
         flags_used = list(spec.flag_rule.flags)
-        cols = ["log_odds_ratio", "market_entropy", "elo_diff", *flags_used, "position", MODEL_ENTROPY]
+        cols = ["log_odds_ratio", "market_entropy", strength, *flags_used, "position", MODEL_ENTROPY]
         vifs = variance_inflation_factors(sub[cols].to_numpy(dtype=np.float64))
         for cov, vif in zip(cols, vifs):
             records.append(_record(row_type="vif_full", dataset=dataset, covariate=cov, value=float(vif)))

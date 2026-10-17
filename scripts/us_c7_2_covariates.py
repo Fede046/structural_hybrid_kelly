@@ -4,7 +4,8 @@ Costruisce il DataFrame per partita del Modulo 2 (shk.model.module2_data), appli
 training le regole di specificazione fissate prima (shk.model.covariate_inspection) e
 scrive results/us_c7_2_covariates.csv e thesis/figures/us_c7_2_covariates.png.
 Con --module1 dixon_coles usa il Modulo 1 Dixon-Coles e scrive le uscite con il suffisso _dc,
-senza toccare quelle Elo (T60).
+senza toccare quelle Elo (T60); il differenziale di forza è lambda_diff e i seed sono quelli
+di T61 (module1_seeds.procedure_seeds).
 """
 
 import csv
@@ -22,9 +23,9 @@ from shk.model.covariate_inspection import (
     evaluate_covariates,
 )
 from shk.model.module1 import MODULE1_ELO, module1_from_argv, with_module1_suffix
-from shk.model.module2_data import build_module2_frame, select_triple_2000_01
+from shk.model.module1_seeds import procedure_seeds
+from shk.model.module2_data import build_module2_frame, select_triple_2000_01, strength_covariate, with_strength
 from shk.model.residuals import load_model_residuals
-from shk.stats.oaxaca_synthetic import SEED_S8
 
 
 def run_experiment(module1: str = MODULE1_ELO) -> None:
@@ -38,7 +39,7 @@ def run_experiment(module1: str = MODULE1_ELO) -> None:
     data = load_model_residuals(module1=module1)
     choice = select_triple_2000_01(data.df)
     frame = build_module2_frame(data, triple_2000_01=choice.source)
-    spec, records = evaluate_covariates(frame, seed=SEED_S8)
+    spec, records = evaluate_covariates(frame, seed=procedure_seeds(module1)["t46"])
 
     triple_records = [
         {**{c: "" for c in COVARIATES_CSV_COLUMNS}, "row_type": "triple_2000_01", "dataset": "training",
@@ -97,13 +98,14 @@ def run_experiment(module1: str = MODULE1_ELO) -> None:
 
     # Pannello C: η² dell'ANOVA di δ per covariata
     anova = [r for r in records if r["row_type"] == "anova"]
+    anova_names = with_strength(ANOVA_COVARIATES, strength_covariate(frame))
     width = 0.4
     for j, dataset in enumerate(("training", "validation")):
         values = [next(float(r["eta2"]) for r in anova if r["dataset"] == dataset and r["covariate"] == c)
-                  for c in ANOVA_COVARIATES]
-        ax_c.bar(np.arange(len(ANOVA_COVARIATES)) + (j - 0.5) * width, values, width=width, label=dataset)
-    ax_c.set_xticks(np.arange(len(ANOVA_COVARIATES)))
-    ax_c.set_xticklabels(ANOVA_COVARIATES, rotation=45, fontsize=8)
+                  for c in anova_names]
+        ax_c.bar(np.arange(len(anova_names)) + (j - 0.5) * width, values, width=width, label=dataset)
+    ax_c.set_xticks(np.arange(len(anova_names)))
+    ax_c.set_xticklabels(anova_names, rotation=45, fontsize=8)
     ax_c.set_ylabel("η² di δ")
     ax_c.set_title("C) ANOVA di δ per covariata (quintili o flag)", loc="left", fontsize=11, fontweight="bold")
     ax_c.legend(fontsize=8)

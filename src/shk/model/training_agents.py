@@ -42,6 +42,7 @@ from shk.model.elo_fit import parse_season_start_year
 from shk.model.module3_synthetic import N_STORY_TASKS, SEED_S9
 from shk.model.paired_backtest import CONFIGURATIONS
 from shk.model.stateful_agents import SERIES_DELTA, BaselineDAgent
+from shk.model.task_seeds import task_sequence
 from shk.stats.bootstrap import optimal_block_length, round_block_length
 from shk.stats.drift import detector_params
 
@@ -101,11 +102,9 @@ def training_seasons(frame: pd.DataFrame) -> list[str]:
     return sorted(set(frame["season"]), key=parse_season_start_year)
 
 
-def spawn_t52_generators(seasons: Sequence[str], seed: int = SEED_S9) -> dict[tuple[str, int, int], np.random.Generator]:
+def spawn_t52_generators(seasons: Sequence[str], seed: int | np.random.SeedSequence = SEED_S9) -> dict[tuple[str, int, int], np.random.Generator]:
     """Generatori per (stagione, W, indice della lunghezza di blocco), vedi modulo."""
-    if isinstance(seed, bool) or not isinstance(seed, (int, np.integer)):
-        raise TypeError(f"seed must be an integer, got {type(seed).__name__}")
-    task = np.random.SeedSequence(seed).spawn(N_STORY_TASKS)[T52_STORY_POSITION]
+    task = task_sequence(seed, T52_STORY_POSITION, N_STORY_TASKS)
     out: dict[tuple[str, int, int], np.random.Generator] = {}
     for season, s_seq in zip(seasons, task.spawn(len(seasons))):
         for w, w_seq in zip(MODULE2_WINDOWS, s_seq.spawn(len(MODULE2_WINDOWS))):
@@ -119,7 +118,7 @@ def _empty_record() -> dict[str, object]:
 
 
 def threshold_records(
-    inputs: Sequence[SeasonInput], seed: int = SEED_S9
+    inputs: Sequence[SeasonInput], seed: int | np.random.SeedSequence = SEED_S9
 ) -> tuple[list[dict[str, object]], dict[tuple[str, int], float]]:
     """Soglie di C1 per stagione (fit), W e lunghezza di blocco; dizionario delle soglie a L_PW."""
     seasons = [inp.season for inp in inputs]
@@ -218,7 +217,7 @@ def _season_record(run: AgentRun, agent: Agent, config: str, min_stake: float, s
 def evaluate_training_agents(
     frame: pd.DataFrame,
     covariates: Sequence[str],
-    seed: int = SEED_S9,
+    seed: int | np.random.SeedSequence = SEED_S9,
     window: int = PROVISIONAL_WINDOW,
     kappa: float = PROVISIONAL_KAPPA,
 ) -> list[dict[str, object]]:

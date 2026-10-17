@@ -31,6 +31,7 @@ import pandas as pd
 
 from shk.model.covariate_inspection import FLAG_COVARIATES, MODULE2_WINDOWS
 from shk.model.elo_fit import parse_season_start_year
+from shk.model.task_seeds import task_sequence
 from shk.stats.bootstrap import (
     optimal_block_length,
     round_block_length,
@@ -213,12 +214,10 @@ def matchday_decision_dates(data: Module2Data, season: str) -> list[pd.Timestamp
     return out
 
 
-def spawn_t47_generators(seasons: Sequence[str], seed: int = SEED_S8) -> dict[tuple[int, str], np.random.Generator]:
+def spawn_t47_generators(seasons: Sequence[str], seed: int | np.random.SeedSequence = SEED_S8) -> dict[tuple[int, str], np.random.Generator]:
     """Generatore per (W, stagione), schema nella docstring del modulo."""
-    if isinstance(seed, bool) or not isinstance(seed, (int, np.integer)):
-        raise TypeError(f"seed must be an integer, got {type(seed).__name__}")
     ordered = sorted(seasons, key=parse_season_start_year)
-    task_seed = np.random.SeedSequence(seed).spawn(N_STORY_TASKS)[T47_STORY_POSITION]
+    task_seed = task_sequence(seed, T47_STORY_POSITION, N_STORY_TASKS)
     out: dict[tuple[int, str], np.random.Generator] = {}
     for w, w_seed in zip(MODULE2_WINDOWS, task_seed.spawn(len(MODULE2_WINDOWS))):
         for s, s_seed in zip(ordered, w_seed.spawn(len(ordered))):
@@ -318,7 +317,7 @@ MODULE2_CI_COLUMNS: Final[tuple[str, ...]] = (
 def evaluate_module2(
     frame: pd.DataFrame,
     covariates: Sequence[str],
-    seed: int = SEED_S8,
+    seed: int | np.random.SeedSequence = SEED_S8,
     n_boot: int = N_BOOT_CI,
     windows: Sequence[int] = MODULE2_WINDOWS,
 ) -> tuple[list[dict[str, object]], list[dict[str, object]]]:

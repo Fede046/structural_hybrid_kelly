@@ -9,8 +9,10 @@ Con l'opzione --from-log non ricalcola: rilegge il log esistente, riapplica la s
 2026-10-11), riscrive il log e scrive il file di congelamento. I valori di obiettivo e
 puntata media del log restano quelli del calcolo.
 
-Con --module1 dixon_coles usa il Modulo 1 Dixon-Coles: log e CSV di origine con il suffisso
-_dc, file di congelamento config/frozen_params_dc.toml (T60).
+Con --module1 dixon_coles (T60, T61) usa il Modulo 1 Dixon-Coles: CSV di origine con il
+suffisso _dc, seed di T61 (module1_seeds.procedure_seeds), log in
+results/us_c9_2a_calibration_log_dc.csv e file di congelamento config/frozen_params_dc.toml,
+con la chiave module1 e i commenti delle scelte ricavati dal log (regola decisiva e bordo).
 
 Con --log-to PATH (verifica del refactoring di T60) scrive il log in PATH e il testo del file
 di congelamento in PATH con estensione .toml, senza leggere né scrivere il file in config/.
@@ -28,13 +30,13 @@ from shk.kelly.environment import FALLBACK_MODEL_EV
 from shk.kelly.staking import BASE_LAMBDA
 from shk.model.agent_c import C0_LAMBDA, C1_N_BOOT
 from shk.model.covariate_inspection import derive_specification
-from shk.model.elo_fit import ELO_FITS
 from shk.model.frozen_params import frozen_params_path, render_frozen_params, write_frozen_params
-from shk.model.module1 import MODULE1_ELO, module1_from_argv, with_module1_suffix
+from shk.model.module1 import MODULE1_DIXON_COLES, MODULE1_ELO, module1_from_argv, with_module1_suffix
+from shk.model.module1_seeds import procedure_seeds
 from shk.model.module2_data import build_module2_frame
 from shk.model.module3 import CHOSEN_CANDIDATE, INACTIVE_LAMBDA
 from shk.model.paired_backtest import CONFIGURATIONS
-from shk.model.residuals import load_model_residuals
+from shk.model.residuals import default_fits, load_model_residuals
 from shk.model.training_agents import season_input_from_frame, threshold_records, training_seasons
 from shk.model.training_calibration import (
     CALIBRATION_CONFIG,
@@ -48,6 +50,17 @@ from shk.stats.false_rejection import ALPHA
 from shk.stats.nopo import MIN_CELL_COUNT
 
 FROZEN_ON = datetime.date(2026, 10, 11)
+FROZEN_ON_DC = datetime.date(2026, 10, 17)
+LOG_PATHS = {
+    MODULE1_ELO: "results/us_c8_2_calibration_log.csv",
+    MODULE1_DIXON_COLES: "results/us_c9_2a_calibration_log_dc.csv",
+}
+SEED_SCHEMES = {
+    MODULE1_ELO: ("SeedSequence(SEED_S9).spawn(5)[4].spawn(3)[season].spawn(n_seeds)",
+                  "SeedSequence(SEED_S9).spawn(5)[2]"),
+    MODULE1_DIXON_COLES: ("SeedSequence(SEED_S11).spawn(5)[2].spawn(5)[4].spawn(3)[season].spawn(n_seeds)",
+                          "SeedSequence(SEED_S11).spawn(5)[2].spawn(5)[2]"),
+}
 SOURCE_CSVS = {
     "us_c7_2_covariates": "results/us_c7_2_covariates.csv",
     "us_c7_3_module2": "results/us_c7_3_module2.csv",
@@ -59,6 +72,12 @@ scripts/us_c8_2_calibration.py e da non modificare. I parametri liberi sono cali
 sulle sole stagioni di training (2000-01, 2010-11, 2020-21) con l'obiettivo unico della
 decisione S9; gli altri sono fissati per costruzione. S10 li legge solo con
 shk.model.frozen_params.load_frozen_params."""
+HEADER_DC = """Parametri congelati di T61 (US-C9.2) con Dixon-Coles come Modulo 1, scritti una sola volta
+dallo script scripts/us_c8_2_calibration.py (--module1 dixon_coles) e da non modificare.
+Stessa procedura di T54 (obiettivo, griglie, regole di parità) e delle regole di T46, T52 e
+T53, sulle sole stagioni di training (2000-01, 2010-11, 2020-21), con i residui di Dixon-Coles
+(DC_FITS) e i seed di T61. Il differenziale di forza delle covariate è lambda_diff = λ − μ.
+S10 con Dixon-Coles li legge solo con shk.model.frozen_params.load_frozen_params."""
 COMMENTS = {
     "sources.us_c7_2_covariates": "SHA256 dei CSV da cui dipendono i parametri (T46, T47, T53)",
     "calibrated.c1_window": "Massimo dell'obiettivo sulle griglie del task T54 (log in [calibration])",
@@ -90,6 +109,26 @@ def _sha256(path: Path) -> str:
     return hashlib.sha256(path.read_bytes()).hexdigest()
 
 
+CALIBRATED_FAMILIES = {
+    "c1_window": "C1", "c1_kappa": "C1", "c2_global_window": "C2_global", "c2_window": "C2",
+    "d_adwin_delta": "D_ADWIN", "d_adwin_kappa": "D_ADWIN", "d_page_hinkley_delta": "D_PH",
+    "d_page_hinkley_threshold": "D_PH", "d_page_hinkley_kappa": "D_PH",
+}
+
+
+def dc_comments(records: list[dict]) -> dict[str, str]:
+    """Commenti del file di Dixon-Coles: quelli generali dell'Elo, e per i parametri calibrati la
+    regola che ha deciso la scelta e il bordo della griglia, dal log."""
+    chosen = {r["family"]: r for r in records if r["chosen"] in (True, "True")}
+    comments = {k: v for k, v in COMMENTS.items() if not k.startswith("calibrated.")}
+    comments["fixed.module1"] = "Modulo 1 raw Dixon-Coles con DC_FITS (US-C9.1, T59); elo_fits elenca i fit di DC_FITS"
+    comments["c1_thresholds.2000-01"] = "Soglia di T = -S per fit alla W di C1, a L_PW (T52), seed di T61"
+    for key, family in CALIBRATED_FAMILIES.items():
+        r = chosen[family]
+        comments[f"calibrated.{key}"] = f"Dal log: famiglia {family}, regola {r['chosen_by']}, bordo della griglia {r['on_grid_edge']!s}"
+    return comments
+
+
 def run_experiment(from_log: bool = False, module1: str = MODULE1_ELO, log_to: Path | None = None) -> None:
     """Calibra sul training (o rilegge il log con from_log), scrive il log e il file di congelamento.
 
@@ -100,7 +139,7 @@ def run_experiment(from_log: bool = False, module1: str = MODULE1_ELO, log_to: P
     frozen_path = frozen_params_path(module1)
     if log_to is None and frozen_path.exists():
         raise FileExistsError(f"{frozen_path} already exists: frozen parameters are written only once")
-    source_log = with_module1_suffix(repo_root / "results" / "us_c8_2_calibration_log.csv", module1)
+    source_log = repo_root / LOG_PATHS[module1]
     log_path = source_log if log_to is None else Path(log_to)
     log_path.parent.mkdir(parents=True, exist_ok=True)
 
@@ -111,14 +150,18 @@ def run_experiment(from_log: bool = False, module1: str = MODULE1_ELO, log_to: P
         with open(source_log, newline="", encoding="utf-8") as f:
             records = finalize_log(list(csv.DictReader(f)))
     else:
-        records = evaluate_calibration(train, covariates)
+        seeds = procedure_seeds(module1)
+        records = evaluate_calibration(train, covariates, seed=seeds["t54"], threshold_seed=seeds["t52"])
     with open(log_path, mode="w", newline="", encoding="utf-8") as f:
         writer = csv.DictWriter(f, fieldnames=list(CALIBRATION_LOG_COLUMNS))
         writer.writeheader()
         writer.writerows(records)
 
     sections = build_sections(records, train, covariates, log_path, repo_root, module1)
-    text = render_frozen_params(FROZEN_ON, sections, COMMENTS, HEADER)
+    if module1 == MODULE1_ELO:
+        text = render_frozen_params(FROZEN_ON, sections, COMMENTS, HEADER)
+    else:
+        text = render_frozen_params(FROZEN_ON_DC, sections, dc_comments(records), HEADER_DC, module1=module1)
     write_frozen_params(frozen_path if log_to is None else log_path.with_suffix(".toml"), text)
 
 
@@ -127,7 +170,7 @@ def build_sections(records: list[dict], train: pd.DataFrame, covariates: tuple[s
     """Sezioni del file di congelamento dal log della calibrazione e dalle costanti del codice."""
     chosen = {r["family"]: r for r in records if r["chosen"]}
     inputs = [season_input_from_frame(train, s, covariates) for s in training_seasons(train)]
-    _, thresholds = threshold_records(inputs)
+    _, thresholds = threshold_records(inputs, procedure_seeds(module1)["t52"])
     sources = {k: with_module1_suffix(repo_root / v, module1) for k, v in SOURCE_CSVS.items()}
     power = pd.read_csv(sources["us_c8_3b_power"]).query("row_type == 'pooled'").iloc[0]
     adwin, ph = detector_params("adwin"), detector_params("page_hinkley")
@@ -149,20 +192,20 @@ def build_sections(records: list[dict], train: pd.DataFrame, covariates: tuple[s
             "objective": "mean final log-wealth over seeds and training seasons",
             "configuration": CALIBRATION_CONFIG,
             "n_seeds": N_CALIBRATION_SEEDS,
-            "seed_scheme": "SeedSequence(SEED_S9).spawn(5)[4].spawn(3)[season].spawn(n_seeds)",
+            "seed_scheme": SEED_SCHEMES[module1][0],
             "tie_rule": (
                 "objective within 1e-12, then lower mean stake; on exact ties: values frozen by earlier "
                 "decisions, then kappa of the most similar binary arm with identified kappa "
                 "(other D detector, then C1, else 1), then grid order (2026-10-11)"
             ),
-            "log_csv": with_module1_suffix(Path("results/us_c8_2_calibration_log.csv"), module1).as_posix(),
+            "log_csv": LOG_PATHS[module1],
             "log_sha256": _sha256(log_path),
         },
         "fixed": {
             "c1_alpha": ALPHA,
             "c1_n_boot": C1_N_BOOT,
             "c1_block_length": "politis_white_circular_of_fit_delta",
-            "c1_threshold_seed_scheme": "SeedSequence(SEED_S9).spawn(5)[2]",
+            "c1_threshold_seed_scheme": SEED_SCHEMES[module1][1],
             "c1_alarm": "active and -S > threshold",
             "c1_alarm_count": "onsets",
             "lambda_min": 0.0,
@@ -175,7 +218,7 @@ def build_sections(records: list[dict], train: pd.DataFrame, covariates: tuple[s
             "out_of_support_min_count": MIN_CELL_COUNT,
             "devig_method": "shin",
             "module1": "raw",
-            "elo_fits": list(ELO_FITS),
+            "elo_fits": list(default_fits(module1)),
             "n_seeds": int(power["n_seeds"]),
             "main_configuration_b0_over_f": int(round(1.0 / min_stake)),
             "fallback_policy": FALLBACK_MODEL_EV,

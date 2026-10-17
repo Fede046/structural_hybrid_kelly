@@ -15,7 +15,9 @@ Sezioni:
 - [not_calibrated_on_training]: parametri non calibrati sul training, con il motivo (vuota).
 
 Con Dixon-Coles come Modulo 1 (T60, T61) il file è config/frozen_params_dc.toml;
-frozen_params_path restituisce il file del Modulo 1 dato.
+frozen_params_path restituisce il file del Modulo 1 dato. Il file di Dixon-Coles ha le stesse
+chiavi più la chiave di primo livello module1 = "dixon_coles" (T61); quello dell'Elo non la ha,
+e vale "elo".
 """
 
 import datetime
@@ -27,7 +29,7 @@ from pathlib import Path
 from types import MappingProxyType
 from typing import Any, Final
 
-from shk.model.module1 import MODULE1_ELO, check_module1
+from shk.model.module1 import MODULE1_ELO, MODULE1_IDS, check_module1
 
 REPO_ROOT: Final[Path] = Path(__file__).resolve().parents[3]
 FROZEN_PARAMS_PATH: Final[Path] = REPO_ROOT / "config" / "frozen_params.toml"
@@ -60,6 +62,7 @@ SECTION_KEYS: Final[dict[str, frozenset[str]]] = {
     "not_calibrated_on_training": frozenset(),
 }
 TOP_LEVEL_KEYS: Final[frozenset[str]] = frozenset({"frozen_on", *SECTION_KEYS})
+MODULE1_KEY: Final[str] = "module1"
 
 
 @dataclass(frozen=True)
@@ -73,6 +76,7 @@ class FrozenParams:
     fixed: Mapping[str, Any]
     c1_thresholds: Mapping[str, float]
     not_calibrated_on_training: Mapping[str, str]
+    module1: str = MODULE1_ELO
 
     def adwin_params(self) -> dict[str, Any]:
         """Parametri completi di ADWIN per D_ADWIN."""
@@ -105,8 +109,13 @@ def check_keys(data: Mapping[str, Any]) -> None:
     """
     problems = []
     top = set(data)
-    if top != TOP_LEVEL_KEYS:
-        problems.append(f"top level: missing {sorted(TOP_LEVEL_KEYS - top)}, extra {sorted(top - TOP_LEVEL_KEYS)}")
+    expected = TOP_LEVEL_KEYS | ({MODULE1_KEY} if MODULE1_KEY in data else set())
+    if top != expected:
+        problems.append(f"top level: missing {sorted(expected - top)}, extra {sorted(top - expected)}")
+    # Identificatore del Modulo 1: solo per Modulo 1 diversi dall'Elo, che è il default senza chiave
+    if MODULE1_KEY in data and (data[MODULE1_KEY] not in MODULE1_IDS or data[MODULE1_KEY] == MODULE1_ELO):
+        problems.append(f"{MODULE1_KEY}: must be one of {[m for m in MODULE1_IDS if m != MODULE1_ELO]}, "
+                        f"got {data[MODULE1_KEY]!r}")
     for section, keys in SECTION_KEYS.items():
         if section in data:
             if not isinstance(data[section], Mapping):
@@ -136,6 +145,7 @@ def load_frozen_params(path: Path | str = FROZEN_PARAMS_PATH) -> FrozenParams:
     return FrozenParams(
         frozen_on=data["frozen_on"],
         **{s: MappingProxyType(dict(data[s])) for s in SECTION_KEYS},
+        module1=data.get(MODULE1_KEY, MODULE1_ELO),
     )
 
 
@@ -158,12 +168,18 @@ def _toml_value(value: Any) -> str:
 
 
 def render_frozen_params(frozen_on: datetime.date, sections: Mapping[str, Mapping[str, Any]],
-                         comments: Mapping[str, str], header: str) -> str:
-    """Testo TOML del file di congelamento; comments: commento per "sezione.chiave"."""
-    data_check = {"frozen_on": frozen_on, **sections}
+                         comments: Mapping[str, str], header: str, module1: str = MODULE1_ELO) -> str:
+    """Testo TOML del file di congelamento; comments: commento per "sezione.chiave".
+
+    Con un Modulo 1 diverso dall'Elo scrive anche la chiave module1, dopo frozen_on.
+    """
+    extra = {} if check_module1(module1) == MODULE1_ELO else {MODULE1_KEY: module1}
+    data_check = {"frozen_on": frozen_on, **extra, **sections}
     check_keys(data_check)
     lines = [f"# {line}" if line else "#" for line in header.splitlines()]
     lines += ["", f"frozen_on = {frozen_on.isoformat()}"]
+    if extra:
+        lines.append(f"{MODULE1_KEY} = {_toml_value(module1)}")
     for section in SECTION_KEYS:
         lines += ["", f"[{section}]"]
         for key, value in sections[section].items():

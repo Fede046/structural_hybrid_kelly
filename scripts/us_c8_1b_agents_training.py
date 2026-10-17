@@ -3,7 +3,7 @@
 Scrive results/us_c8_1b_agents_training.csv (shk.model.training_agents). Parametri
 provvisori W = 80 e κ = 0.5: non sono una calibrazione.
 Con --module1 dixon_coles usa il Modulo 1 Dixon-Coles e scrive le uscite con il suffisso _dc,
-senza toccare quelle Elo (T60).
+senza toccare quelle Elo (T60), con i seed di T61 (module1_seeds.procedure_seeds).
 """
 
 import csv
@@ -12,6 +12,7 @@ from pathlib import Path
 
 from shk.model.covariate_inspection import derive_specification
 from shk.model.module1 import MODULE1_ELO, module1_from_argv, with_module1_suffix
+from shk.model.module1_seeds import procedure_seeds
 from shk.model.module2_data import build_module2_frame
 from shk.model.residuals import load_model_residuals
 from shk.model.training_agents import TRAINING_AGENTS_CSV_COLUMNS, evaluate_training_agents
@@ -27,7 +28,7 @@ def run_experiment(module1: str = MODULE1_ELO) -> None:
     frame = build_module2_frame(data)
     train = frame[frame["role"] == "training"]
     spec = derive_specification(train)
-    records = evaluate_training_agents(train, spec.covariates)
+    records = evaluate_training_agents(train, spec.covariates, seed=procedure_seeds(module1)["t52"])
 
     with open(csv_path, mode="w", newline="", encoding="utf-8") as f:
         writer = csv.DictWriter(f, fieldnames=list(TRAINING_AGENTS_CSV_COLUMNS))
