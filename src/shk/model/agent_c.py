@@ -52,7 +52,7 @@ import pandas as pd
 
 from shk.kelly.agents import Agent, DateResults, DateView, FractionalKellyAgent, estimated_expected_values
 from shk.kelly.staking import BASE_LAMBDA, kelly_staking
-from shk.market.devig import devig_shin
+from shk.market.devig import devig_probabilities
 from shk.model.module2 import STATE_ACTIVE, STATE_NOT_ACTIVE, Module2Data, Module2Output, module2_at_date
 from shk.model.module3 import WindowData, module3_lambda
 from shk.model.stateful_agents import adaptive_multiplier
@@ -114,6 +114,8 @@ class Module2Supervisor:
         Partite già regolate delle stagioni precedenti della catena, tutte anteriori alla
         stagione: con None la catena è tagliata alla stagione (calibrazione T52–T54 e S10);
         altrimenti attraversa le stagioni come nella decisione S8 (sensibilità di T55).
+    devig_method : str, default "shin"
+        Metodo di de-vigging di q per δ (decisione S7; gli altri per la sensibilità di T63).
 
     Solleva
     -------
@@ -129,7 +131,9 @@ class Module2Supervisor:
         covariate_names: Sequence[str],
         window: int,
         history: "SupervisorHistory | None" = None,
+        devig_method: str = "shin",
     ) -> None:
+        self._devig_method = devig_method
         d = np.asarray(dates).astype("datetime64[ns]")
         x = np.asarray(covariates_x, dtype=np.float64)
         names = tuple(covariate_names)
@@ -173,7 +177,7 @@ class Module2Supervisor:
 
     def _record(self, rows: np.ndarray, probs: np.ndarray, odds: np.ndarray, realized: np.ndarray) -> None:
         idx = np.arange(rows.shape[0])
-        q, _ = devig_shin(odds)
+        q = devig_probabilities(odds, self._devig_method)
         self._delta[rows] = np.log(probs[idx, realized]) - np.log(q[idx, realized])
         self._p_hat[rows] = probs
         self._q[rows] = q

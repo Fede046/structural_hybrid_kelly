@@ -1,0 +1,35 @@
+% Generato da scripts/build_thesis_tables.py (T65) dai CSV versionati: non modificare a mano.
+% Richiede \usepackage{booktabs}.
+\begin{table}[htbp]
+\centering
+\small
+\caption{Effetto del floor sulla rovina nella configurazione reale}
+\label{tab:c6_3_floor_reale}
+\begin{tabular}{llrcrrr}
+\toprule
+Configurazione & Agente & Rovina & IC 99\% & Ricchezza finale mediana & $P(\min W \le 0{,}5)$ & Puntate col floor \\
+\midrule
+\pounds{}0,01 & A & 0,1792 & [0,1720; 0,1863] & 0,006 & 0,983 & 0,042 \\
+ & B\textsubscript{0,25} & 0,0000 & [0,0000; 0,0000] & 0,584 & 0,554 & 0,002 \\
+ & B\textsubscript{0,10} & 0,0000 & [0,0000; 0,0000] & 0,852 & 0,050 & 0,003 \\
+ & E & 0,0000 & [0,0000; 0,0000] & 1,000 & 0,000 & 0,000 \\
+\midrule
+\pounds{}1 & A & 0,6897 & [0,6810; 0,6983] & 0,003 & 0,984 & 0,218 \\
+ & B\textsubscript{0,25} & 0,0049 & [0,0036; 0,0063] & 0,578 & 0,564 & 0,229 \\
+ & B\textsubscript{0,10} & 0,0000 & [0,0000; 0,0000] & 0,835 & 0,081 & 0,409 \\
+ & E & 0,0000 & [0,0000; 0,0000] & 0,971 & 0,000 & 0,000 \\
+\midrule
+senza floor ($F = 0$) & A & 0,0000 & [0,0000; 0,0000] & 0,006 & 0,983 & 0,000 \\
+ & B\textsubscript{0,25} & 0,0000 & [0,0000; 0,0000] & 0,584 & 0,554 & 0,000 \\
+ & B\textsubscript{0,10} & 0,0000 & [0,0000; 0,0000] & 0,852 & 0,050 & 0,000 \\
+\bottomrule
+\end{tabular}
+
+\smallskip
+\begin{minipage}{\linewidth}
+\footnotesize
+19 stagioni di validazione; 19\,000 traiettorie per riga, con gli esiti estratti dalle $q$ proporzionali di B365; bankroll 1 a inizio stagione; puntata minima $F$ in unità del bankroll iniziale $B_0 = \pounds{}220$.\par
+IC al 99\% del tasso di rovina. $P(\min W \le 0{,}5)$: quota di traiettorie con ricchezza minima al più 0,5.\par
+Fonte: \texttt{results/us\_c6\_3\_floor\_real\_config.csv} (SHA256 \texttt{81e3d059ded5}).
+\end{minipage}
+\end{table}

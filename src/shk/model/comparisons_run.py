@@ -46,6 +46,7 @@ from shk.model.module2 import STATE_ACTIVE
 from shk.model.module3 import module3_lambda
 from shk.model.module3_synthetic import N_STORY_TASKS
 from shk.model.season_bootstrap import reconstruct_season, season_block_length
+from shk.model.task_seeds import story_task_sequence
 from shk.model.validation_run import (
     CONFIG_NAMES,
     METRICS,
@@ -76,9 +77,9 @@ COMPARISON_COLUMNS: Final[tuple[str, ...]] = (
 )
 
 
-def t56_sequences(seed: int = SEED_S10) -> list[np.random.SeedSequence]:
-    """Tre figli di SeedSequence(SEED_S10).spawn(5)[1] (vedi modulo)."""
-    return np.random.SeedSequence(seed).spawn(N_STORY_TASKS)[T56_STORY_POSITION].spawn(3)
+def t56_sequences(seed: int | np.random.SeedSequence = SEED_S10) -> list[np.random.SeedSequence]:
+    """Tre figli di SeedSequence(SEED_S10).spawn(5)[1] (vedi modulo); seed è la radice della story."""
+    return story_task_sequence(seed, T56_STORY_POSITION, N_STORY_TASKS).spawn(3)
 
 
 def run_iid_season(params_path: str, season: ValidationSeason,
@@ -95,7 +96,7 @@ def run_iid_season(params_path: str, season: ValidationSeason,
 
 
 def evaluate_iid(frame: pd.DataFrame, block: ValidationResult, params_path: Path | str = FROZEN_PARAMS_PATH,
-                 workers: int = 1, seed: int = SEED_S10) -> ValidationResult:
+                 workers: int = 1, seed: int | np.random.SeedSequence = SEED_S10) -> ValidationResult:
     """Run iid aggiuntivo degli stessi agenti, con N_SEEDS seed per stagione."""
     params = load_frozen_params(params_path)
     seasons = validation_inputs(frame, list(params.fixed["covariates"]))
@@ -115,7 +116,7 @@ def _excludes(lo: float, hi: float) -> tuple[bool, str]:
     return excludes, (("+" if lo > 0.0 else "-") if excludes else "")
 
 
-def comparison_records(block: ValidationResult, iid: ValidationResult, seed: int = SEED_S10) -> list[dict[str, object]]:
+def comparison_records(block: ValidationResult, iid: ValidationResult, seed: int | np.random.SeedSequence = SEED_S10) -> list[dict[str, object]]:
     """Righe "comparison": stima, intervalli principali (t corretto) e percentile, block e iid, effect size."""
     n_seasons = block.seeds.shape[0]
     idx = two_level_indices(n_seasons, block.seeds.shape[-1], np.random.default_rng(t56_sequences(seed)[0]))
@@ -209,7 +210,7 @@ def pi_lambda_season(params_path: str, season: ValidationSeason,
 
 
 def pi_lambda_records(frame: pd.DataFrame, params_path: Path | str = FROZEN_PARAMS_PATH, workers: int = 1,
-                      seed: int = SEED_S10) -> list[dict[str, object]]:
+                      seed: int | np.random.SeedSequence = SEED_S10) -> list[dict[str, object]]:
     """Righe "pi_lambda": quantili di π e λ di C2 per stagione e pooled, sotto H₀ e sui dati."""
     params = load_frozen_params(params_path)
     seasons = validation_inputs(frame, list(params.fixed["covariates"]))
@@ -244,7 +245,7 @@ def pi_lambda_records(frame: pd.DataFrame, params_path: Path | str = FROZEN_PARA
     return records
 
 
-def coverage_records(block: ValidationResult, seed: int = SEED_S10, n_replicas: int = 1000) -> list[dict[str, object]]:
+def coverage_records(block: ValidationResult, seed: int | np.random.SeedSequence = SEED_S10, n_replicas: int = 1000) -> list[dict[str, object]]:
     """Copertura del bootstrap a due livelli su un disegno sintetico con le dimensioni e le varianze dei dati.
 
     Disegno fissato prima di calcolare la copertura: 19 stagioni, N_SEEDS seed, differenza

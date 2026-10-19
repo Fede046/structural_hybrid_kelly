@@ -8,6 +8,7 @@ I risultati vengono esportati in formato CSV e visualizzati in una figura a due 
 """
 
 import os
+from pathlib import Path
 import csv
 import matplotlib
 matplotlib.use("Agg")
@@ -27,6 +28,11 @@ from shk.kelly.scenarios import (
     draw_scenario_outcomes,
     simulate_scenario,
 )
+
+# Percorsi dalla posizione dello script, non dalla directory corrente (T64)
+REPO_ROOT = Path(__file__).resolve().parents[1]
+CSV_PATH = REPO_ROOT / "results" / "us_c1_2_estimation_error.csv"
+PNG_PATH = REPO_ROOT / "thesis" / "figures" / "us_c1_2_estimation_error.png"
 
 
 def run_experiment() -> None:
@@ -144,8 +150,8 @@ def run_experiment() -> None:
                 })
 
     # Scrittura del file CSV
-    os.makedirs("results", exist_ok=True)
-    csv_path = os.path.join("results", "us_c1_2_estimation_error.csv")
+    os.makedirs(CSV_PATH.parent, exist_ok=True)
+    csv_path = CSV_PATH
     fieldnames = [
         "scenario",
         "sigma_p",
@@ -269,8 +275,8 @@ def run_experiment() -> None:
     ax2.legend(loc="best", fontsize=8)
 
     plt.tight_layout()
-    os.makedirs(os.path.join("thesis", "figures"), exist_ok=True)
-    fig_path = os.path.join("thesis", "figures", "us_c1_2_estimation_error.png")
+    os.makedirs(PNG_PATH.parent, exist_ok=True)
+    fig_path = PNG_PATH
     plt.savefig(fig_path, dpi=150)
     plt.close(fig)
 

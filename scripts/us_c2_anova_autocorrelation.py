@@ -13,6 +13,7 @@ pannelli di thesis/figures/us_c2_anova_autocorrelation.png.
 """
 
 import os
+from pathlib import Path
 import csv
 import matplotlib
 matplotlib.use("Agg")
@@ -33,6 +34,11 @@ from shk.stats.false_rejection import (
     compute_nominal_rejection_rates,
 )
 
+# Percorsi dalla posizione dello script, non dalla directory corrente (T64)
+REPO_ROOT = Path(__file__).resolve().parents[1]
+CSV_PATH = REPO_ROOT / "results" / "us_c2_anova_autocorrelation.csv"
+PNG_PATH = REPO_ROOT / "thesis" / "figures" / "us_c2_anova_autocorrelation.png"
+
 
 def run_experiment() -> None:
     """Esegue la simulazione degli esperimenti US-C2.2 e US-C2.3 e produce CSV e figura."""
@@ -42,8 +48,8 @@ def run_experiment() -> None:
     all_results = nominal_results + calibrated_results + centered_results
 
     # 1. Scrittura del file CSV (36 righe: 12 nominali + 12 calibrate + 12 calibrate centrate)
-    os.makedirs("results", exist_ok=True)
-    csv_path = os.path.join("results", "us_c2_anova_autocorrelation.csv")
+    os.makedirs(CSV_PATH.parent, exist_ok=True)
+    csv_path = CSV_PATH
     with open(csv_path, mode="w", newline="", encoding="utf-8") as csvfile:
         writer = csv.DictWriter(csvfile, fieldnames=list(CSV_COLUMNS))
         writer.writeheader()
@@ -236,8 +242,8 @@ def run_experiment() -> None:
     ax3.legend(loc="upper left", fontsize=9)
 
     plt.tight_layout()
-    os.makedirs(os.path.join("thesis", "figures"), exist_ok=True)
-    fig_path = os.path.join("thesis", "figures", "us_c2_anova_autocorrelation.png")
+    os.makedirs(PNG_PATH.parent, exist_ok=True)
+    fig_path = PNG_PATH
     plt.savefig(fig_path, dpi=150)
     plt.close(fig)
 

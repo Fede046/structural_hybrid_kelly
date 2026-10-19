@@ -1,0 +1,35 @@
+% Generato da scripts/build_thesis_tables.py (T65) dai CSV versionati: non modificare a mano.
+% Richiede \usepackage{booktabs}.
+\begin{table}[htbp]
+\centering
+\small
+\caption{Sensibilità di $\hat g$ al metodo di de-vigging}
+\label{tab:s11_devig}
+\begin{tabular}{llrcrc}
+\toprule
+ &  & \multicolumn{2}{c}{B365 pre-partita} & \multicolumn{2}{c}{Pinnacle chiusura} \\
+\cmidrule(lr){3-4} \cmidrule(lr){5-6}
+Insieme & Metodo & $\hat g$ & IC 95\% & $\hat g$ & IC 95\% \\
+\midrule
+validazione & proporzionale & $-$0,0214 & [$-$0,0291; $-$0,0138] & $-$0,0315 & [$-$0,0427; $-$0,0202] \\
+ & additivo & $-$0,0224 & [$-$0,0302; $-$0,0146] & $-$0,0316 & [$-$0,0430; $-$0,0201] \\
+ & power & $-$0,0224 & [$-$0,0301; $-$0,0147] & $-$0,0317 & [$-$0,0432; $-$0,0201] \\
+ & Shin & $-$0,0222 & [$-$0,0298; $-$0,0147] & $-$0,0316 & [$-$0,0436; $-$0,0196] \\
+ & odds ratio & $-$0,0221 & [$-$0,0299; $-$0,0143] & $-$0,0317 & [$-$0,0434; $-$0,0199] \\
+\midrule
+test 2023-24 & proporzionale & $-$0,0405 & [$-$0,0627; $-$0,0202] & $-$0,0502 & [$-$0,0735; $-$0,0249] \\
+ & additivo & $-$0,0433 & [$-$0,0684; $-$0,0189] & $-$0,0517 & [$-$0,0785; $-$0,0279] \\
+ & power & $-$0,0436 & [$-$0,0683; $-$0,0186] & $-$0,0518 & [$-$0,0768; $-$0,0270] \\
+ & Shin & $-$0,0427 & [$-$0,0677; $-$0,0183] & $-$0,0513 & [$-$0,0774; $-$0,0273] \\
+ & odds ratio & $-$0,0426 & [$-$0,0671; $-$0,0200] & $-$0,0513 & [$-$0,0754; $-$0,0263] \\
+\bottomrule
+\end{tabular}
+
+\smallskip
+\begin{minipage}{\linewidth}
+\footnotesize
+Validazione: pooled sulle stagioni, IC al 95\% con la correzione $t$ per cluster; test 2023-24: stationary bootstrap della stagione. Shin è il metodo principale.\par
+Conclusioni dei confronti di T56 e T58 che cambiano segno fra i metodi: test 2023-24, \pounds{}1, C1 $-$ C0, $g_{\mathrm{CE}}$, $\gamma = 2$ (\texttt{proportional:0;additive:+;power:+;shin:+;odds\_ratio:+}); test 2023-24, \pounds{}1, C1 $-$ D\textsubscript{PH}, tasso di rovina (\texttt{proportional:+;additive:+;power:0;shin:+;odds\_ratio:+}).\par
+Fonte: \texttt{results/us\_c9\_3\_devig\_sensitivity.csv} (SHA256 \texttt{d6369d92887c}).
+\end{minipage}
+\end{table}

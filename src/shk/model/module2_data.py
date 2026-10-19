@@ -33,7 +33,7 @@ import numpy as np
 import pandas as pd
 
 from shk.data.coverage import classify_column
-from shk.market.devig import devig_shin
+from shk.market.devig import devig_probabilities, devig_shin
 from shk.model.elo_fit import parse_season_start_year
 from shk.model.module1 import MODULE1_DIXON_COLES, MODULE1_ELO, check_module1
 from shk.model.residual_heteroskedasticity import compute_shannon_entropy
@@ -197,7 +197,8 @@ def reconstruct_elo_diff(p_home: np.ndarray, p_away: np.ndarray, scale: float = 
     return scale * np.log10(ph / pa)
 
 
-def build_module2_frame(data: ModelResidualsData, triple_2000_01: str | None = None) -> pd.DataFrame:
+def build_module2_frame(data: ModelResidualsData, triple_2000_01: str | None = None,
+                        devig_method: str = "shin") -> pd.DataFrame:
     """DataFrame per partita con δ e covariate candidate (colonne MODULE2_FRAME_COLUMNS).
 
     Parametri
@@ -206,6 +207,9 @@ def build_module2_frame(data: ModelResidualsData, triple_2000_01: str | None = N
         Uscita di load_model_residuals.
     triple_2000_01 : str o None
         Fonte delle quote per il 2000-01; se None si sceglie con select_triple_2000_01.
+    devig_method : str
+        Metodo di de-vigging di q (default "shin", decisione S7); gli altri servono alla
+        sensibilità di T63. Con un metodo diverso da Shin la colonna shin_z vale NaN.
 
     Restituisce
     -------
@@ -243,7 +247,10 @@ def build_module2_frame(data: ModelResidualsData, triple_2000_01: str | None = N
             raise ValueError(f"Odds triple {source} incomplete for some matches")
         odds[mask] = values
 
-    q, z = devig_shin(odds)
+    if devig_method == "shin":
+        q, z = devig_shin(odds)
+    else:
+        q, z = devig_probabilities(odds, devig_method), np.full(len(odds), np.nan)
     probs = aligned[["p_home", "p_draw", "p_away"]].to_numpy(dtype=np.float64)
     outcome = aligned["FTR"].astype(str).str.strip().map(_OUTCOME_INDEX).to_numpy(dtype=np.int64)
     rows = np.arange(len(aligned))

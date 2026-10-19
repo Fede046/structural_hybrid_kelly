@@ -7,6 +7,7 @@ I risultati vengono esportati in formato CSV e visualizzati in un grafico a tre 
 """
 
 import os
+from pathlib import Path
 import csv
 import matplotlib
 matplotlib.use("Agg")
@@ -22,6 +23,11 @@ from shk.kelly.metrics import (
     max_drawdown,
     fraction_below_start,
 )
+
+# Percorsi dalla posizione dello script, non dalla directory corrente (T64)
+REPO_ROOT = Path(__file__).resolve().parents[1]
+CSV_PATH = REPO_ROOT / "results" / "us_c1_1_growth_vs_lambda.csv"
+PNG_PATH = REPO_ROOT / "thesis" / "figures" / "us_c1_1_growth_vs_lambda.png"
 
 
 def run_experiment() -> None:
@@ -83,8 +89,8 @@ def run_experiment() -> None:
         })
 
     # Scrittura dei risultati nel file CSV
-    os.makedirs("results", exist_ok=True)
-    csv_path = os.path.join("results", "us_c1_1_growth_vs_lambda.csv")
+    os.makedirs(CSV_PATH.parent, exist_ok=True)
+    csv_path = CSV_PATH
     fieldnames = [
         "lambda",
         "f",
@@ -151,8 +157,8 @@ def run_experiment() -> None:
     ax3.grid(True, linestyle=":", alpha=0.6)
 
     plt.tight_layout()
-    os.makedirs(os.path.join("thesis", "figures"), exist_ok=True)
-    fig_path = os.path.join("thesis", "figures", "us_c1_1_growth_vs_lambda.png")
+    os.makedirs(PNG_PATH.parent, exist_ok=True)
+    fig_path = PNG_PATH
     plt.savefig(fig_path, dpi=150)
     plt.close(fig)
 

@@ -24,9 +24,12 @@ env/
 .DS_Store
 Thumbs.db
 
-# Data directory
+# Data directory (versionato solo il manifesto SHA256 dei CSV E0, T64)
 data/raw/*
 !data/raw/.gitkeep
+!data/raw/E0/
+data/raw/E0/*
+!data/raw/E0/MANIFEST.sha256
 
 
 # Agent files

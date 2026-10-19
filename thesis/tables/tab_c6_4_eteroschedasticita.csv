@@ -1,0 +1,7 @@
+statistica,nominale,L = 7,L = 20,L = 40,L_PW
+BP congiunto,19,1,0,1,
+BP temporale,2,2,2,2,
+White,19,0,0,0,
+Goldfeld-Quandt,0,2,3,3,1
+ARCH-LM,0,0,0,0,0
+Log-varianza mobile,,2,3,3,2

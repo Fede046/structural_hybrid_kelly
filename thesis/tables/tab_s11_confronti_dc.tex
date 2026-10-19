@@ -1,0 +1,40 @@
+% Generato da scripts/build_thesis_tables.py (T65) dai CSV versionati: non modificare a mano.
+% Richiede \usepackage{booktabs}.
+\begin{table}[htbp]
+\centering
+\small
+\setlength{\tabcolsep}{4pt}
+\caption{Confronti appaiati con il Modulo 1 Elo e con Dixon-Coles}
+\label{tab:s11_confronti_dc}
+\begin{tabular}{llrcrcc}
+\toprule
+ &  & \multicolumn{2}{c}{Elo} & \multicolumn{2}{c}{Dixon-Coles} &  \\
+\cmidrule(lr){3-4} \cmidrule(lr){5-6}
+Insieme & Confronto & Stima & IC 95\% & Stima & IC 95\% & Stessa concl. \\
+\midrule
+validazione & C2 $-$ D\textsubscript{ADWIN} & $+$0,321 & [0,187; 0,455] & $+$0,385 & [0,208; 0,561] & sì \\
+ & C2 $-$ D\textsubscript{PH} & $-$0,070 & [$-$0,094; $-$0,045] & $-$0,041 & [$-$0,064; $-$0,018] & sì \\
+ & C2 $-$ E & $-$0,243 & [$-$0,342; $-$0,144] & $-$0,105 & [$-$0,153; $-$0,056] & sì \\
+ & C1 $-$ C0 & $+$0,298 & [0,189; 0,407] & $+$0,359 & [0,195; 0,523] & sì \\
+ & C2 $-$ C1 & $+$0,023 & [$-$0,005; 0,051] & $+$0,026 & [0,012; 0,040] & no \\
+ & C2 $-$ C2\textsubscript{global} & $+$0,313 & [0,185; 0,442] & $+$0,376 & [0,205; 0,548] & sì \\
+ & C1 $-$ D\textsubscript{PH} & $-$0,093 & [$-$0,133; $-$0,052] & $-$0,067 & [$-$0,102; $-$0,032] & sì \\
+\midrule
+test 2023-24 & C2 $-$ D\textsubscript{ADWIN} & $+$0,789 & [0,742; 0,831] & $+$0,386 & [0,349; 0,423] & sì \\
+ & C2 $-$ D\textsubscript{PH} & $-$0,163 & [$-$0,182; $-$0,144] & $-$0,052 & [$-$0,064; $-$0,038] & sì \\
+ & C2 $-$ E & $-$0,596 & [$-$0,634; $-$0,554] & $-$0,133 & [$-$0,154; $-$0,113] & sì \\
+ & C1 $-$ C0 & $+$0,669 & [0,630; 0,703] & $+$0,353 & [0,317; 0,390] & sì \\
+ & C2 $-$ C1 & $+$0,120 & [0,100; 0,139] & $+$0,033 & [0,022; 0,044] & sì \\
+ & C2 $-$ C2\textsubscript{global} & $+$0,767 & [0,720; 0,807] & $+$0,379 & [0,341; 0,415] & sì \\
+ & C1 $-$ D\textsubscript{PH} & $-$0,283 & [$-$0,300; $-$0,265] & $-$0,085 & [$-$0,101; $-$0,069] & sì \\
+\bottomrule
+\end{tabular}
+
+\smallskip
+\begin{minipage}{\linewidth}
+\footnotesize
+Configurazione principale \pounds{}0,01 ($B_0/F = 22\,000$), log-ricchezza finale. Validazione: IC al 95\% con la correzione $t$ per cluster; test 2023-24: IC dai soli seed.\par
+Stessa conclusione: l'intervallo esclude 0 con lo stesso segno, o non lo esclude, con i due modelli.\par
+Fonte: \texttt{results/us\_c9\_2\_robustness.csv} (SHA256 \texttt{d881603774a7}).
+\end{minipage}
+\end{table}

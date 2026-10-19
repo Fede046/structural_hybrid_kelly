@@ -29,6 +29,7 @@ from shk.model.comparisons_run import (
 )
 from shk.model.frozen_params import frozen_params_path
 from shk.model.module1 import MODULE1_ELO, module1_from_argv, with_module1_suffix
+from shk.model.module1_seeds import s10_seed
 from shk.model.module2_data import build_module2_frame
 from shk.model.residuals import load_model_residuals
 from shk.model.validation_run import load_raw, save_raw
@@ -46,14 +47,16 @@ def run_experiment(from_raw: bool = False, module1: str = MODULE1_ELO) -> None:
     png_path.parent.mkdir(parents=True, exist_ok=True)
 
     params_path = frozen_params_path(module1)
+    seed = s10_seed(module1)
     frame = build_module2_frame(load_model_residuals(module1=module1))
     if from_raw:
         iid = load_raw(iid_path)
     else:
-        iid = evaluate_iid(frame, block, params_path=params_path, workers=WORKERS)
+        iid = evaluate_iid(frame, block, params_path=params_path, workers=WORKERS, seed=seed)
         save_raw(iid_path, iid)
-    records = (comparison_records(block, iid) + alarm_records(block)
-               + pi_lambda_records(frame, params_path=params_path, workers=WORKERS) + coverage_records(block))
+    records = (comparison_records(block, iid, seed=seed) + alarm_records(block)
+               + pi_lambda_records(frame, params_path=params_path, workers=WORKERS, seed=seed)
+               + coverage_records(block, seed=seed))
     with open(csv_path, mode="w", newline="", encoding="utf-8") as f:
         writer = csv.DictWriter(f, fieldnames=list(COMPARISON_COLUMNS))
         writer.writeheader()

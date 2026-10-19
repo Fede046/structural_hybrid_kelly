@@ -348,3 +348,28 @@ def devig_odds_ratio(odds: np.ndarray) -> tuple[np.ndarray, np.ndarray]:
 
     _check_sums(q, np.ones(n_markets, dtype=bool), "Odds ratio", n_iterations)
     return q, c.flatten()
+
+
+# Metodi per nome, nell'ordine di shk.model.scoring.ALL_DEVIG_METHODS (T63)
+DEVIG_METHOD_NAMES: Final[tuple[str, ...]] = ("proportional", "additive", "power", "shin", "odds_ratio")
+
+
+def devig_probabilities(odds: np.ndarray, method: str) -> np.ndarray:
+    """Probabilità de-viggate q (N, n) con il metodo dato, senza il parametro del metodo.
+
+    Solleva
+    -------
+    ValueError
+        Se il metodo non è uno di DEVIG_METHOD_NAMES.
+    """
+    if method == "proportional":
+        return devig_proportional(odds)
+    if method == "additive":
+        return devig_additive(odds)
+    if method == "power":
+        return devig_power(odds)[0]
+    if method == "shin":
+        return devig_shin(odds)[0]
+    if method == "odds_ratio":
+        return devig_odds_ratio(odds)[0]
+    raise ValueError(f"Unknown devig method {method!r}, expected one of {DEVIG_METHOD_NAMES}")

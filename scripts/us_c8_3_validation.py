@@ -23,6 +23,7 @@ import numpy as np
 from shk.model.frozen_agents import AGENT_ORDER
 from shk.model.frozen_params import frozen_params_path, load_frozen_params
 from shk.model.module1 import MODULE1_ELO, module1_from_argv, with_module1_suffix
+from shk.model.module1_seeds import s10_seed
 from shk.model.module2_data import build_module2_frame
 from shk.model.residuals import load_model_residuals
 from shk.model.validation_run import (
@@ -56,7 +57,7 @@ def run_experiment(module1: str = MODULE1_ELO) -> None:
 
     params_path = frozen_params_path(module1)
     frame = build_module2_frame(load_model_residuals(module1=module1))
-    result = evaluate_validation(frame, params_path=params_path, workers=WORKERS)
+    result = evaluate_validation(frame, params_path=params_path, workers=WORKERS, seed=s10_seed(module1))
     save_raw(raw_path, result)
     params = load_frozen_params(params_path)
     records = summary_records(result) + inactive_records(params, validation_inputs(frame, list(params.fixed["covariates"])))

@@ -89,11 +89,12 @@ def arm_windows(params: FrozenParams) -> dict[str, int]:
     return {"C1": int(c["c1_window"]), "C2_global": int(c["c2_global_window"]), "C2": int(c["c2_window"])}
 
 
-def build_supervisors(params: FrozenParams, inp: SeasonInput,
-                      history: SupervisorHistory | None = None) -> dict[int, Module2Supervisor]:
+def build_supervisors(params: FrozenParams, inp: SeasonInput, history: SupervisorHistory | None = None,
+                      devig_method: str = "shin") -> dict[int, Module2Supervisor]:
     """Un supervisore del Modulo 2 per ogni W congelata, condiviso dai bracci e dalle configurazioni."""
     covariates = list(params.fixed["covariates"])
-    return {w: Module2Supervisor(inp.season, inp.dates, inp.x, covariates, w, history=history)
+    return {w: Module2Supervisor(inp.season, inp.dates, inp.x, covariates, w, history=history,
+                                 devig_method=devig_method)
             for w in sorted(set(arm_windows(params).values()))}
 
 

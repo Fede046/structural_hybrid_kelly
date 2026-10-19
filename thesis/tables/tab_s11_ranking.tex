@@ -1,0 +1,32 @@
+% Generato da scripts/build_thesis_tables.py (T65) dai CSV versionati: non modificare a mano.
+% Richiede \usepackage{booktabs}.
+\begin{table}[htbp]
+\centering
+\small
+\caption{Robustezza del ranking degli agenti al Modulo 1: $\tau_b$ di Kendall fra Elo e Dixon-Coles}
+\label{tab:s11_ranking}
+\begin{tabular}{lrrrrrr}
+\toprule
+ & \multicolumn{3}{c}{Validazione} & \multicolumn{3}{c}{Test 2023-24} \\
+\cmidrule(lr){2-4} \cmidrule(lr){5-7}
+Metrica & $F = 0$ & \pounds{}0,01 & \pounds{}1 & $F = 0$ & \pounds{}0,01 & \pounds{}1 \\
+\midrule
+log-ricchezza finale & 0,818 & 0,857 & 0,837 & 0,697 & 0,762 & 0,714 \\
+drawdown massimo & 0,879 & 0,905 & 0,905 & 0,939 & 0,952 & 0,857 \\
+tempo di recupero & 0,939 & 0,476 & 0,762 & 0,939 & 0,600 & 0,295 \\
+$g_{\mathrm{CE}}$, $\gamma = 1$ & 0,794 & 0,837 & 0,837 & 0,879 & 0,905 & 0,857 \\
+$g_{\mathrm{CE}}$, $\gamma = 2$ & 0,794 & 0,837 & 0,791 & 0,939 & 0,952 & 0,810 \\
+$g_{\mathrm{CE}}$, $\gamma = 5$ & 0,853 & 0,884 & 0,837 & 0,939 & 0,952 & 0,905 \\
+tasso di rovina & --- & 1,000 & 0,883 & --- & 1,000 & 0,841 \\
+SD di $\ln W_T$ & 0,853 & 0,884 & 0,930 & 0,939 & 0,952 & 0,952 \\
+\bottomrule
+\end{tabular}
+
+\smallskip
+\begin{minipage}{\linewidth}
+\footnotesize
+$\tau_b$ di Kendall, con i pari, fra il ranking degli agenti col Modulo 1 Elo e quello con Dixon-Coles (9 agenti senza floor, 10 col floor); statistica per agente: mediana sui seed per stagione, poi media sulle stagioni (metriche per seed), o media sulle stagioni (metriche per stagione).\par
+Esempio di intervallo, validazione, \pounds{}0,01, log-ricchezza finale: [0,702; 1,013] (correzione $t$ per cluster). ``---'': $\tau$ non definito (tutti gli agenti pari).\par
+Fonte: \texttt{results/us\_c9\_2\_robustness.csv} (SHA256 \texttt{d881603774a7}).
+\end{minipage}
+\end{table}

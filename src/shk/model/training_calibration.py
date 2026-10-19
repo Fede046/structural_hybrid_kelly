@@ -44,7 +44,7 @@ import pandas as pd
 from shk.kelly.agents import Agent, DateResults
 from shk.kelly.environment import run_paired_backtest
 from shk.kelly.staking import BASE_LAMBDA, KAPPA_GRID
-from shk.market.devig import devig_shin
+from shk.market.devig import devig_probabilities
 from shk.model.agent_c import C1Agent, GradedAgent, Module2Supervisor, build_c0_agent
 from shk.model.covariate_inspection import MODULE2_WINDOWS
 from shk.model.module3_synthetic import N_STORY_TASKS, SEED_S9
@@ -154,17 +154,20 @@ def spawn_t54_generators(seasons: Sequence[str], n_seeds: int = N_CALIBRATION_SE
 
 
 class SharedShin:
-    """q di Shin per data, calcolate una volta e condivise dagli agenti D di un'esecuzione."""
+    """q per data, calcolate una volta e condivise dagli agenti D di un'esecuzione.
 
-    def __init__(self) -> None:
+    Il metodo è Shin (decisione S7); method sceglie un altro metodo per la sensibilità di T63.
+    """
+
+    def __init__(self, method: str = "shin") -> None:
+        self._method = method
         self._cache: dict[np.datetime64, np.ndarray] = {}
 
     def get(self, results: DateResults) -> np.ndarray:
-        """q di Shin delle quote della data (dalla cache se già calcolate)."""
+        """q delle quote della data (dalla cache se già calcolate)."""
         key = np.datetime64(results.date, "ns")
         if key not in self._cache:
-            q, _ = devig_shin(np.asarray(results.odds))
-            self._cache[key] = q
+            self._cache[key] = devig_probabilities(np.asarray(results.odds), self._method)
         return self._cache[key]
 
 

@@ -55,6 +55,7 @@ from shk.model.module2 import season_chain_ids
 from shk.model.module3_synthetic import N_STORY_TASKS
 from shk.model.paired_backtest import CONFIGURATIONS
 from shk.model.season_bootstrap import reconstruct_season, season_block_length
+from shk.model.task_seeds import story_task_sequence
 from shk.model.training_agents import SeasonInput, season_input_from_frame
 from shk.model.training_calibration import SharedShin
 
@@ -121,11 +122,10 @@ def validation_inputs(frame: pd.DataFrame, covariates: Sequence[str]) -> list[Va
     return out
 
 
-def spawn_t55_sequences(n_seasons: int, n_seeds: int, seed: int = SEED_S10) -> list[list[np.random.SeedSequence]]:
-    """SeedSequence per stagione e seed (vedi modulo)."""
-    if isinstance(seed, bool) or not isinstance(seed, (int, np.integer)):
-        raise TypeError(f"seed must be an integer, got {type(seed).__name__}")
-    task = np.random.SeedSequence(seed).spawn(N_STORY_TASKS)[T55_STORY_POSITION]
+def spawn_t55_sequences(n_seasons: int, n_seeds: int,
+                        seed: int | np.random.SeedSequence = SEED_S10) -> list[list[np.random.SeedSequence]]:
+    """SeedSequence per stagione e seed (vedi modulo); seed è la radice della story (intero o SeedSequence)."""
+    task = story_task_sequence(seed, T55_STORY_POSITION, N_STORY_TASKS)
     return [s.spawn(n_seeds) for s in task.spawn(n_seasons)]
 
 
@@ -148,10 +148,13 @@ def run_metrics(run: AgentRun, agent: object) -> np.ndarray:
 
 
 def run_instance(params: FrozenParams, inp: SeasonInput, fit: str, history: SupervisorHistory | None = None,
-                 arms: Sequence[str] = AGENT_ORDER) -> np.ndarray:
-    """Una stagione (seed o realizzazione osservata) nelle tre configurazioni: (C, len(arms), M)."""
-    supervisors = build_supervisors(params, inp, history)
-    shin = SharedShin()
+                 arms: Sequence[str] = AGENT_ORDER, devig_method: str = "shin") -> np.ndarray:
+    """Una stagione (seed o realizzazione osservata) nelle tre configurazioni: (C, len(arms), M).
+
+    devig_method: metodo di q per il Modulo 2 e per D (Shin; gli altri per la sensibilità di T63).
+    """
+    supervisors = build_supervisors(params, inp, history, devig_method)
+    shin = SharedShin(devig_method)
     out = np.full((len(CONFIGURATIONS), len(arms), len(METRICS)), np.nan)
     for ci, (_, min_stake) in enumerate(CONFIGURATIONS):
         agents = build_frozen_agents(params, min_stake, supervisors, shin, fit, arms)
@@ -162,8 +165,8 @@ def run_instance(params: FrozenParams, inp: SeasonInput, fit: str, history: Supe
     return out
 
 
-def run_validation_season(params_path: str, season: ValidationSeason,
-                          seed_seqs: Sequence[np.random.SeedSequence]) -> tuple[np.ndarray, np.ndarray, int]:
+def run_validation_season(params_path: str, season: ValidationSeason, seed_seqs: Sequence[np.random.SeedSequence],
+                          devig_method: str = "shin") -> tuple[np.ndarray, np.ndarray, int]:
     """Seed e realizzazione osservata di una stagione; (seed (C, A, M, N), osservata (C, A, M), L_PW)."""
     params = load_frozen_params(params_path)
     check_frozen_constants(params)
@@ -172,20 +175,24 @@ def run_validation_season(params_path: str, season: ValidationSeason,
     seeds = np.full((len(CONFIGURATIONS), len(AGENT_ORDER), len(METRICS), len(seed_seqs)), np.nan)
     for k, ss in enumerate(seed_seqs):
         rec = reconstruct_season(season.inp, np.random.default_rng(ss), l_pw, covariates=covariates)
-        seeds[..., k] = run_instance(params, rec, season.fit)
-    observed = run_instance(params, season.inp, season.fit)
+        seeds[..., k] = run_instance(params, rec, season.fit, devig_method=devig_method)
+    observed = run_instance(params, season.inp, season.fit, devig_method=devig_method)
     return seeds, observed, l_pw
 
 
 def evaluate_validation(frame: pd.DataFrame, params_path: Path | str = FROZEN_PARAMS_PATH,
-                        n_seeds: int | None = None, workers: int = 1, seed: int = SEED_S10) -> ValidationResult:
-    """Tutte le stagioni di validazione; con workers > 1 le stagioni vanno su processi separati."""
+                        n_seeds: int | None = None, workers: int = 1,
+                        seed: int | np.random.SeedSequence = SEED_S10, devig_method: str = "shin") -> ValidationResult:
+    """Tutte le stagioni di validazione; con workers > 1 le stagioni vanno su processi separati.
+
+    devig_method: metodo di q nel Modulo 2 e in D; il DataFrame deve essere costruito con lo stesso.
+    """
     params = load_frozen_params(params_path)
     check_frozen_constants(params)
     seasons = validation_inputs(frame, list(params.fixed["covariates"]))
     n = int(params.fixed["n_seeds"]) if n_seeds is None else n_seeds
     seqs = spawn_t55_sequences(len(seasons), n, seed)
-    args = [(str(params_path), s, q) for s, q in zip(seasons, seqs)]
+    args = [(str(params_path), s, q, devig_method) for s, q in zip(seasons, seqs)]
     if workers > 1:
         with ProcessPoolExecutor(max_workers=workers) as pool:
             outputs = list(pool.map(run_validation_season, *zip(*args)))

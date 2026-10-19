@@ -1,0 +1,33 @@
+% Generato da scripts/build_thesis_tables.py (T65) dai CSV versionati: non modificare a mano.
+% Richiede \usepackage{booktabs}.
+\begin{table}[htbp]
+\centering
+\small
+\caption{$\hat g$ del Modulo 1 (Elo) contro il mercato, pooled sulle stagioni di validazione}
+\label{tab:c4_2_g_hat}
+\begin{tabular}{llrrccr}
+\toprule
+Serie & Metodo & Partite & $\hat g$ & IC 95\% & IC 95\% iid & Rapporto \\
+\midrule
+B365 pre-partita & proporzionale & 7220 & $-$0,0214 & [$-$0,0291; $-$0,0138] & [$-$0,0293; $-$0,0136] & 0,97 \\
+ & additivo & 7220 & $-$0,0224 & [$-$0,0302; $-$0,0146] & [$-$0,0303; $-$0,0145] & 0,99 \\
+ & power & 7220 & $-$0,0224 & [$-$0,0301; $-$0,0147] & [$-$0,0301; $-$0,0147] & 1,00 \\
+ & Shin & 7220 & $-$0,0222 & [$-$0,0298; $-$0,0147] & [$-$0,0297; $-$0,0148] & 1,01 \\
+ & odds ratio & 7220 & $-$0,0221 & [$-$0,0299; $-$0,0143] & [$-$0,0299; $-$0,0143] & 1,00 \\
+\midrule
+Pinnacle chiusura & proporzionale & 3800 & $-$0,0315 & [$-$0,0427; $-$0,0202] & [$-$0,0426; $-$0,0204] & 1,01 \\
+ & additivo & 3800 & $-$0,0316 & [$-$0,0430; $-$0,0201] & [$-$0,0432; $-$0,0199] & 0,98 \\
+ & power & 3800 & $-$0,0317 & [$-$0,0432; $-$0,0201] & [$-$0,0435; $-$0,0198] & 0,97 \\
+ & Shin & 3800 & $-$0,0316 & [$-$0,0436; $-$0,0196] & [$-$0,0429; $-$0,0202] & 1,05 \\
+ & odds ratio & 3800 & $-$0,0317 & [$-$0,0434; $-$0,0199] & [$-$0,0432; $-$0,0201] & 1,02 \\
+\bottomrule
+\end{tabular}
+
+\smallskip
+\begin{minipage}{\linewidth}
+\footnotesize
+$\hat g$: media su tutte le partite di $\ln \hat p_t(x_t) - \ln q_t(x_t)$, con $x_t$ esito realizzato, sulle 19 stagioni di validazione (B365) e sulle 10 dal 2012-13 (Pinnacle).\par
+Intervallo al 95\%: bootstrap a due livelli (stagioni come cluster, stationary bootstrap dentro la stagione con lunghezza media $L_{\mathrm{PW}}$), $\hat g \pm t_{0{,}975,\,S-1}\sqrt{S/(S-1)}\,\mathrm{se}_{\mathrm{boot}}$; iid: lo stesso con blocchi di lunghezza 1. Rapporto: ampiezza block su ampiezza iid.\par
+Fonte: \texttt{results/us\_c4\_2b\_g\_hat\_inference.csv} (SHA256 \texttt{9d1b56614e0f}).
+\end{minipage}
+\end{table}

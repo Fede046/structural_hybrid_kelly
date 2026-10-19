@@ -6,6 +6,8 @@ e la figura a 3 pannelli in italiano. Nessun print: misurazione del tempo dall'e
 """
 
 from pathlib import Path
+import matplotlib
+matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd

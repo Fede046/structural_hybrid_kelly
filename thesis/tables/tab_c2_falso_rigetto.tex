@@ -1,0 +1,27 @@
+% Generato da scripts/build_thesis_tables.py (T65) dai CSV versionati: non modificare a mano.
+% Richiede \usepackage{booktabs}.
+\begin{table}[htbp]
+\centering
+\small
+\caption{Tasso di falso rigetto dell'ANOVA con soglia nominale, per autocorrelazione $\varphi$ e disegno dei gruppi}
+\label{tab:c2_falso_rigetto}
+\begin{tabular}{lrrr}
+\toprule
+$\varphi$ & Due metà contigue & 38 blocchi contigui & Due gruppi casuali \\
+\midrule
+0,0 & 0,037 & 0,044 & 0,058 \\
+0,3 & 0,149 & 0,843 & 0,035 \\
+0,5 & 0,253 & 0,999 & 0,048 \\
+0,7 & 0,399 & 1,000 & 0,045 \\
+\bottomrule
+\end{tabular}
+
+\smallskip
+\begin{minipage}{\linewidth}
+\footnotesize
+ANOVA a una via con soglia nominale (quantile 0,95 della $F(k - 1, N - k)$), 1000 serie AR(1) di 380 osservazioni per ogni $\varphi$, innovazioni $N(0, 1)$ e nessuna differenza fra i gruppi: ogni rigetto è falso.\par
+Disegni: due metà contigue da 190 (principale); 38 blocchi contigui da 10 (le giornate di C5.2); le etichette delle due metà sulla serie permutata a caso (controllo).\par
+Intervallo Monte Carlo al 99\% per $\alpha = 0{,}05$: [0,0322; 0,0678].\par
+Fonte: \texttt{results/us\_c2\_anova\_autocorrelation.csv} (SHA256 \texttt{7d507b8a64d9}).
+\end{minipage}
+\end{table}

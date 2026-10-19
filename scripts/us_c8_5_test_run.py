@@ -22,6 +22,7 @@ import pandas as pd
 
 from shk.model.frozen_agents import AGENT_ORDER
 from shk.model.module1 import MODULE1_ELO, module1_from_argv, with_module1_suffix
+from shk.model.module1_seeds import s10_seed
 from shk.model.test_run import (
     DRY_RUN_SEASON,
     TEST_FIT,
@@ -66,16 +67,17 @@ def run_experiment(dry_run: bool = False, module1: str = MODULE1_ELO) -> None:
         p.parent.mkdir(parents=True, exist_ok=True)
 
     sd = load_season_data(season, TEST_FIT, module1)
+    seed = s10_seed(module1)
     records = check_records(sd)
-    records += g_hat_records(sd, t58_sequences()[3].spawn(2)[0])
+    records += g_hat_records(sd, t58_sequences(seed)[3].spawn(2)[0])
     records += drift_records(sd)
     records += module2_records(sd)
-    result = evaluate_agents(sd, workers=WORKERS)
+    result = evaluate_agents(sd, workers=WORKERS, seed=seed)
     save_raw(raw_path, result.block)
     save_raw(raw_path.with_name(raw_path.stem + "_iid.npz"), result.iid)
     records += agent_summary_records(result)
-    records += comparison_records_single(result)
-    records += stratum_records(sd)
+    records += comparison_records_single(result, seed=seed)
+    records += stratum_records(sd, seed=seed)
     records += e_roi_records(result)
     with open(csv_path, mode="w", newline="", encoding="utf-8") as f:
         writer = csv.DictWriter(f, fieldnames=list(TEST_RUN_COLUMNS))

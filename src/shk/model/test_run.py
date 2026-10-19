@@ -83,6 +83,7 @@ from shk.model.scoring import (
     prepare_series_evaluation,
 )
 from shk.model.season_bootstrap import reconstruct_season, season_block_length
+from shk.model.task_seeds import story_task_sequence
 from shk.model.training_agents import SeasonInput, season_input_from_frame
 from shk.model.validation_run import (
     CONFIG_NAMES,
@@ -126,9 +127,9 @@ def _row(**fields: object) -> dict[str, object]:
     return rec
 
 
-def t58_sequences(seed: int = SEED_S10) -> list[np.random.SeedSequence]:
-    """Quattro figli di SeedSequence(SEED_S10).spawn(5)[3] (vedi modulo)."""
-    return np.random.SeedSequence(seed).spawn(N_STORY_TASKS)[T58_STORY_POSITION].spawn(4)
+def t58_sequences(seed: int | np.random.SeedSequence = SEED_S10) -> list[np.random.SeedSequence]:
+    """Quattro figli di SeedSequence(SEED_S10).spawn(5)[3] (vedi modulo); seed è la radice della story."""
+    return story_task_sequence(seed, T58_STORY_POSITION, N_STORY_TASKS).spawn(4)
 
 
 class SeasonData(NamedTuple):
@@ -140,9 +141,11 @@ class SeasonData(NamedTuple):
     frame: pd.DataFrame       # DataFrame del Modulo 2 della sola stagione, ruolo "test"
     covariates: tuple[str, ...]
     inp: SeasonInput
+    devig_method: str = "shin"  # metodo di q (Shin; gli altri per la sensibilità di T63)
 
 
-def load_season_data(season: str, fit: str = TEST_FIT, module1: str = MODULE1_ELO) -> SeasonData:
+def load_season_data(season: str, fit: str = TEST_FIT, module1: str = MODULE1_ELO,
+                     devig_method: str = "shin") -> SeasonData:
     """Residui con la stagione nello schema del fit, DataFrame del Modulo 2 e ingressi dell'ambiente.
 
     La specificazione delle covariate resta quella di T46 sul training (derive_specification).
@@ -154,11 +157,11 @@ def load_season_data(season: str, fit: str = TEST_FIT, module1: str = MODULE1_EL
     if season not in schedule[fit]["validation"]:
         schedule[fit]["validation"] = list(schedule[fit]["validation"]) + [season]
     data = model_residuals_data(df, schedule, module1=module1)
-    frame = build_module2_frame(data)
+    frame = build_module2_frame(data, devig_method=devig_method)
     covariates = derive_specification(frame[frame["role"] == "training"]).covariates
     season_frame = frame[frame["season"] == season].assign(role="test")
     return SeasonData(season, fit, data, season_frame, tuple(covariates),
-                      season_input_from_frame(season_frame, season, covariates))
+                      season_input_from_frame(season_frame, season, covariates), devig_method)
 
 
 def season_params_path(sd: SeasonData) -> Path:
@@ -283,14 +286,14 @@ def module2_records(sd: SeasonData) -> list[dict[str, object]]:
 
 
 def _seed_chunk(params_path: str, inp: SeasonInput, fit: str, seed_seqs: Sequence[np.random.SeedSequence],
-                block_length: float) -> np.ndarray:
+                block_length: float, devig_method: str = "shin") -> np.ndarray:
     params = load_frozen_params(params_path)
     check_frozen_constants(params)
     covariates = list(params.fixed["covariates"])
     out = np.full((len(CONFIGURATIONS), len(AGENT_ORDER), len(METRICS), len(seed_seqs)), np.nan)
     for k, ss in enumerate(seed_seqs):
         rec = reconstruct_season(inp, np.random.default_rng(ss), block_length, covariates=covariates)
-        out[..., k] = run_instance(params, rec, fit)
+        out[..., k] = run_instance(params, rec, fit, devig_method=devig_method)
     return out
 
 
@@ -298,7 +301,7 @@ def run_seeds(sd: SeasonData, seqs: Sequence[np.random.SeedSequence], block_leng
               chunk: int = 50) -> np.ndarray:
     """Agenti di T55 sui seed della stagione: (C, A, M, N)."""
     parts = [seqs[i:i + chunk] for i in range(0, len(seqs), chunk)]
-    args = [(str(season_params_path(sd)), sd.inp, sd.fit, p, block_length) for p in parts]
+    args = [(str(season_params_path(sd)), sd.inp, sd.fit, p, block_length, sd.devig_method) for p in parts]
     if workers > 1:
         with ProcessPoolExecutor(max_workers=workers) as pool:
             outs = list(pool.map(_seed_chunk, *zip(*args)))
@@ -314,7 +317,7 @@ class TestResult(NamedTuple):
     iid: ValidationResult
 
 
-def evaluate_agents(sd: SeasonData, workers: int = 1, seed: int = SEED_S10) -> TestResult:
+def evaluate_agents(sd: SeasonData, workers: int = 1, seed: int | np.random.SeedSequence = SEED_S10) -> TestResult:
     """Seed block (L_PW), seed iid (L = 1) e realizzazione osservata."""
     params = load_frozen_params(season_params_path(sd))
     check_frozen_constants(params)
@@ -323,7 +326,7 @@ def evaluate_agents(sd: SeasonData, workers: int = 1, seed: int = SEED_S10) -> T
     l_pw = season_block_length(sd.inp)
     block = run_seeds(sd, seq_block.spawn(n), l_pw, workers)
     iid = run_seeds(sd, seq_iid.spawn(n), 1.0, workers)
-    observed = run_instance(params, sd.inp, sd.fit)
+    observed = run_instance(params, sd.inp, sd.fit, devig_method=sd.devig_method)
     n_dates = np.array([np.unique(sd.inp.dates).shape[0]])
     make = lambda seeds, l: ValidationResult((sd.season,), (sd.fit,), n_dates, np.array([l]), seeds[None], observed[None])
     return TestResult(make(block, l_pw), make(iid, 1))
@@ -339,7 +342,7 @@ def agent_summary_records(result: TestResult) -> list[dict[str, object]]:
     return out
 
 
-def comparison_records_single(result: TestResult, seed: int = SEED_S10) -> list[dict[str, object]]:
+def comparison_records_single(result: TestResult, seed: int | np.random.SeedSequence = SEED_S10) -> list[dict[str, object]]:
     """Confronti di T56 con un solo cluster: intervalli dal bootstrap dei soli seed, percentile."""
     n = result.block.seeds.shape[-1]
     rng = np.random.default_rng(t58_sequences(seed)[2])
@@ -398,11 +401,11 @@ def _per_match(view: DateView, selected_fractions: np.ndarray) -> np.ndarray:
     return out
 
 
-def stratum_records(sd: SeasonData, seed: int = SEED_S10) -> list[dict[str, object]]:
+def stratum_records(sd: SeasonData, seed: int | np.random.SeedSequence = SEED_S10) -> list[dict[str, object]]:
     """Stratificazione per neopromossa e per le squadre note (vedi modulo)."""
     params = load_frozen_params(season_params_path(sd))
     w_c2 = arm_windows(params)["C2"]
-    sups = build_supervisors(params, sd.inp)
+    sups = build_supervisors(params, sd.inp, devig_method=sd.devig_method)
     b_agent = _RecB("B_0.25", AGENT_B_LAMBDAS[0])
     c2_agent = _RecC2("C2", sups[w_c2], abstain=True)
     run_paired_backtest([b_agent, c2_agent], sd.inp.dates, sd.inp.probs, sd.inp.odds, sd.inp.outcomes, 0.0)
