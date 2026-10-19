@@ -36,8 +36,8 @@ data/raw/E0/*
 .agent/*
 !.agent/.gitkeep
 
-
-
+doc/*
+!doc/.gitkeep
 
 # Uscite per seed di S10 (decisione S10), compresse e non versionate
 results/raw/
