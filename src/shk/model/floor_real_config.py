@@ -1,6 +1,6 @@
-"""Modulo per l'analisi Monte Carlo del floor nella configurazione reale (US-C6.3 / Task 37).
+"""Modulo per l'analisi Monte Carlo del floor nella configurazione reale.
 
-Questo modulo implementa il test di US-C6.3 sul calendario e sulle quote reali delle
+Questo modulo implementa il test del floor sul calendario e sulle quote reali delle
 19 stagioni di validazione: gli agenti A, B_0.25, B_0.10 ed E giocano sulle previsioni
 e quote B365 reali, ma gli esiti sono estratti dalle probabilita' de-viggati proporzionali
 del mercato (verita').
@@ -400,7 +400,7 @@ def evaluate_floor_real_config(
     m_replicas : int
         Numero di repliche Monte Carlo per stagione (default 1000).
     seed : int
-        Seme radice di C6 (default SEED_C6).
+        Seme radice del backtest appaiato (default SEED_C6).
 
     Restituisce
     -----------

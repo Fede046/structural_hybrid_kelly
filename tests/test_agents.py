@@ -1,4 +1,4 @@
-"""Test per il modulo shk.kelly.agents: viste di data, decisioni e agenti A, B, E (Task 33 / US-C6.1)."""
+"""Test per il modulo shk.kelly.agents: viste di data, decisioni e agenti A, B, E."""
 
 import ast
 import dataclasses
@@ -25,7 +25,7 @@ REPO_ROOT = Path(__file__).resolve().parents[1]
 KELLY_DIR = REPO_ROOT / "src" / "shk" / "kelly"
 AGENTS_PATH = KELLY_DIR / "agents.py"
 
-# Seed e numero di viste casuali per l'equivalenza con C5.3 e la coerenza fra agenti
+# Seed e numero di viste casuali per l'equivalenza con la Baseline D e la coerenza fra agenti
 SEED_T33 = 20261009
 N_MIXED_VIEWS = 160
 N_NON_POSITIVE_VIEWS = 80
@@ -583,7 +583,7 @@ def test_subclass_allowed_overrides() -> None:
 
 
 # ---------------------------------------------------------------------------
-# Criterio 5: equivalenza con select_baseline_d_bets (C5.3)
+# Criterio 5: equivalenza con select_baseline_d_bets
 # ---------------------------------------------------------------------------
 
 

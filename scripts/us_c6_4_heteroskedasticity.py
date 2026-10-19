@@ -1,4 +1,4 @@
-"""Script per l'analisi dell'eteroschedasticità dei residui del Modulo 1 (US-C6.4 / Task 39).
+"""Script per l'analisi dell'eteroschedasticità dei residui del Modulo 1.
 
 Genera il file CSV dei risultati results/us_c6_4_heteroskedasticity.csv e la figura
 a tre pannelli thesis/figures/us_c6_4_heteroskedasticity.png.
@@ -13,18 +13,15 @@ import matplotlib
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 import numpy as np
-import pandas as pd
 
-from shk.data.split import load_by_role, read_split_config
 from shk.kelly.floor import SEED_C6
-from shk.model.elo_fit import ELO_FITS, derive_fit_schedule
 from shk.model.residual_heteroskedasticity import (
     HETEROSKEDASTICITY_CSV_COLUMNS,
     STATISTIC_DFS,
     STATISTICS,
     evaluate_residual_heteroskedasticity,
 )
-from shk.model.residuals import compute_model_residuals
+from shk.model.residuals import load_model_residuals
 
 
 def save_csv(
@@ -279,16 +276,8 @@ def main() -> None:
     png_path = figures_dir / "us_c6_4_heteroskedasticity.png"
 
     # Caricamento storico, training e validazione
-    cfg = read_split_config()
-    df_hist = load_by_role("history")
-    df_train = load_by_role("training")
-    df_val = load_by_role("validation")
-
-    df = pd.concat([df_hist, df_train, df_val], ignore_index=True)
-    df = df.sort_values("Date", kind="stable").reset_index(drop=True)
-
-    schedule = derive_fit_schedule(cfg)
-    df_residuals = compute_model_residuals(df, schedule, ELO_FITS)
+    data = load_model_residuals()
+    df, schedule, df_residuals = data.df, data.schedule, data.residuals
 
     records = evaluate_residual_heteroskedasticity(
         df_residuals=df_residuals,

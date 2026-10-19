@@ -1,4 +1,4 @@
-"""Test di accettazione per l'esperimento US-C1.2 (stima e asimmetria di Kelly)."""
+"""Test di accettazione (stima e asimmetria di Kelly)."""
 
 import numpy as np
 import pytest

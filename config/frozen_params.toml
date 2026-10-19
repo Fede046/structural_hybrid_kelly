@@ -1,0 +1,92 @@
+# Parametri congelati di S9 (T54, US-C8.2), scritti una sola volta dallo script
+# scripts/us_c8_2_calibration.py e da non modificare. I parametri liberi sono calibrati
+# sulle sole stagioni di training (2000-01, 2010-11, 2020-21) con l'obiettivo unico della
+# decisione S9; gli altri sono fissati per costruzione. S10 li legge solo con
+# shk.model.frozen_params.load_frozen_params.
+
+frozen_on = 2026-10-11
+
+[sources]
+# SHA256 dei CSV da cui dipendono i parametri (T46, T47, T53)
+us_c7_2_covariates = "33169a926e3916d9c73bad685771e2492fe39ced23218f5fdc9b48c4e30a87e7"
+us_c7_3_module2 = "d02e9a5b6336316fb5ffe1f042f59368719cdd601d25593da9d23ac5af32e569"
+us_c7_3_module2_ci = "5e9eccd55a3b439dac785cacc02e280da499022d957cf82f952aab3c2652a397"
+us_c8_3b_power = "3745b77e1636200a6779ac524168651ebc801fd134cdea739f6f60f45701310c"
+
+[calibrated]
+# Massimo dell'obiettivo sulle griglie del task T54 (log in [calibration])
+c1_window = 40
+c1_kappa = 0.75
+c2_global_window = 190
+c2_window = 80
+# D_ADWIN: il training non identifica né δ né κ (nessun allarme di ADWIN con δ <= 0.5;
+# 41 combinazioni su 45 in parità esatta anche sulla puntata media). I valori vengono dalla
+# regola di parità di secondo livello del 2026-10-11: δ = 0.002 congelato dalla decisione S5
+# (ADWIN_DELTA), κ = 0.75 dal braccio D_PH, in cui κ è identificato.
+d_adwin_delta = 0.002
+d_adwin_kappa = 0.75
+d_page_hinkley_delta = 0.005
+d_page_hinkley_threshold = 1.0
+d_page_hinkley_kappa = 0.75
+
+[calibration]
+# Decisione S9
+objective = "mean final log-wealth over seeds and training seasons"
+configuration = "gbp_0.01"
+n_seeds = 200
+seed_scheme = "SeedSequence(SEED_S9).spawn(5)[4].spawn(3)[season].spawn(n_seeds)"
+tie_rule = "objective within 1e-12, then lower mean stake; on exact ties: values frozen by earlier decisions, then kappa of the most similar binary arm with identified kappa (other D detector, then C1, else 1), then grid order (2026-10-11)"
+log_csv = "results/us_c8_2_calibration_log.csv"
+log_sha256 = "b8ccfcb7029d94241b4059c9986daab453299ed8e732f27ea5a1bcda6d5a52bb"
+
+[fixed]
+# Soglia di C1 (T52): moving block bootstrap della serie di δ del fit, B = 999, L_PW
+c1_alpha = 0.05
+c1_n_boot = 999
+c1_block_length = "politis_white_circular_of_fit_delta"
+c1_threshold_seed_scheme = "SeedSequence(SEED_S9).spawn(5)[2]"
+# Decisioni del programmatore del 2026-10-11 (T52)
+c1_alarm = "active and -S > threshold"
+c1_alarm_count = "onsets"
+# Decisione S9: λ in [0, 1], 0 se ĝ della finestra <= 0
+lambda_min = 0.0
+lambda_max = 1.0
+stop_rule = "lambda = 0 if window g_hat <= 0"
+# C0 = B_0.25; λ dei bracci con Modulo 2 non attivo (T51, decisione S9)
+c0_lambda = 0.25
+inactive_lambda = 0.25
+# Candidata del Modulo 3 scelta in T51
+module3_candidate = "P3"
+# Specificazione del Modulo 2 (T46)
+covariates = ["log_odds_ratio", "market_entropy", "flag_promoted", "position", "model_entropy"]
+# Regola fuori supporto di T49
+out_of_support_min_count = 5
+# Decisione S7
+devig_method = "shin"
+# Modulo 1 raw con ELO_FITS (US-C4.1)
+module1 = "raw"
+elo_fits = ["2000-01", "2010-11", "2020-21"]
+# N_SEEDS dall'analisi di potenza di T53
+n_seeds = 500
+# Configurazione principale (decisione S9)
+main_configuration_b0_over_f = 22000
+# Ripiego forzato: default (a), politica attuale (T50)
+fallback_policy = "model_ev"
+# D alimentata con δ (decisione S9); altri parametri del detector da drift.py
+d_series = "delta"
+d_base_lambda = 0.25
+d_adwin_clock = 32
+d_adwin_max_buckets = 5
+d_adwin_min_window_length = 5
+d_adwin_grace_period = 10
+d_page_hinkley_min_instances = 30
+d_page_hinkley_alpha = 0.9999
+d_page_hinkley_mode = "both"
+
+[c1_thresholds]
+# Soglia di T = -S per fit alla W di C1, a L_PW (T52)
+"2000-01" = 0.06274452118325424
+"2010-11" = 0.07682507170298258
+"2020-21" = 0.10170087346629561
+
+[not_calibrated_on_training]

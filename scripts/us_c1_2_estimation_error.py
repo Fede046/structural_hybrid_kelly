@@ -1,4 +1,4 @@
-"""Script per l'esperimento US-C1.2: stima della probabilità e asimmetria di Kelly.
+"""Script per l'esperimento: stima della probabilità e asimmetria di Kelly.
 
 Questo script conduce simulazioni Monte Carlo su scommesse ripetute per analizzare
 l'impatto dell'errore di stima della probabilità (sia deterministico che stocastico)
@@ -8,6 +8,7 @@ I risultati vengono esportati in formato CSV e visualizzati in una figura a due 
 """
 
 import os
+from pathlib import Path
 import csv
 import matplotlib
 matplotlib.use("Agg")
@@ -28,15 +29,20 @@ from shk.kelly.scenarios import (
     simulate_scenario,
 )
 
+# Percorsi dalla posizione dello script, non dalla directory corrente
+REPO_ROOT = Path(__file__).resolve().parents[1]
+CSV_PATH = REPO_ROOT / "results" / "us_c1_2_estimation_error.csv"
+PNG_PATH = REPO_ROOT / "thesis" / "figures" / "us_c1_2_estimation_error.png"
+
 
 def run_experiment() -> None:
-    """Esegue la simulazione dell'esperimento US-C1.2 e produce CSV e grafici."""
+    """Esegue la simulazione dell'esperimento e produce CSV e grafici."""
     scenarios = [BASE_SCENARIO, SUBTLE_SCENARIO]
     sigmas = [0.015, 0.0283, 0.045]
 
     records = []
 
-    # 1. Rilevazioni del Task 4: errore relativo deterministico (+10% e -10%)
+    # 1. Errore relativo deterministico (+10% e -10%)
     for sc in scenarios:
         rng_outcomes, _ = spawn_generators(SEED)
         outcomes = draw_scenario_outcomes(sc, rng_outcomes)
@@ -87,7 +93,7 @@ def run_experiment() -> None:
             "fraction_below_start": fb_under,
         })
 
-    # 2. Rilevazioni dei Task 5 e 6: rumore stocastico per scommessa e confronto regole
+    # 2. Rumore stocastico per scommessa e confronto delle regole
     # Salviamo i risultati simulati a sigma_p = 0.0283 per i marcatori del Pannello B
     markers_data = {}
 
@@ -144,8 +150,8 @@ def run_experiment() -> None:
                 })
 
     # Scrittura del file CSV
-    os.makedirs("results", exist_ok=True)
-    csv_path = os.path.join("results", "us_c1_2_estimation_error.csv")
+    os.makedirs(CSV_PATH.parent, exist_ok=True)
+    csv_path = CSV_PATH
     fieldnames = [
         "scenario",
         "sigma_p",
@@ -269,8 +275,8 @@ def run_experiment() -> None:
     ax2.legend(loc="best", fontsize=8)
 
     plt.tight_layout()
-    os.makedirs(os.path.join("thesis", "figures"), exist_ok=True)
-    fig_path = os.path.join("thesis", "figures", "us_c1_2_estimation_error.png")
+    os.makedirs(PNG_PATH.parent, exist_ok=True)
+    fig_path = PNG_PATH
     plt.savefig(fig_path, dpi=150)
     plt.close(fig)
 

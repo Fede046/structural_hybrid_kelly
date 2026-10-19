@@ -24,14 +24,20 @@ env/
 .DS_Store
 Thumbs.db
 
-# Data directory
+# Data directory (versionato solo il manifesto SHA256 dei CSV E0, T64)
 data/raw/*
 !data/raw/.gitkeep
+!data/raw/E0/
+data/raw/E0/*
+!data/raw/E0/MANIFEST.sha256
 
 
 # Agent files
 .agent/*
 !.agent/.gitkeep
 
+docs/*
+!docs/.gitkeep
 
-
+# Uscite per seed di S10 (decisione S10), compresse e non versionate
+results/raw/

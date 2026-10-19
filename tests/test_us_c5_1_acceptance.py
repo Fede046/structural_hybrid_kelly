@@ -1,4 +1,4 @@
-"""Test di accettazione per US-C5.1 / Task 28.
+"""Test di accettazione dei drift detector ADWIN e Page-Hinkley.
 
 Verifica:
 - sui test sintetici: schema dei record, matchday == match_index // 10 + 1, stringhe vuote,

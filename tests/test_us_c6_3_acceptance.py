@@ -1,4 +1,4 @@
-"""Test di accettazione per la User Story US-C6.3 (Task 36).
+"""Test di accettazione del test del floor sul calendario sintetico.
 
 Verifica della predizione teorica della Nota 2.9: il floor sulle puntate (F > 0)
 e l'unico meccanismo che rende possibile la rovina di un agente Kelly.

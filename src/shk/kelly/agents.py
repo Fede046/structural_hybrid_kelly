@@ -1,4 +1,4 @@
-"""Modulo degli agenti di scommessa come classi con una base comune (Task 33 / US-C6.1).
+"""Modulo degli agenti di scommessa come classi con una base comune.
 
 La classe base Agent esegue ciò che gli agenti condividono: selezione dell'esito per
 partita, ripiego sulla data, validazioni e sola lettura degli input. Ogni sottoclasse
@@ -31,8 +31,10 @@ AGENT_B_LAMBDAS: Final[tuple[float, ...]] = (0.25, 0.10)
 _N_OUTCOMES: Final[int] = 3
 _ROW_SUM_TOLERANCE: Final[float] = 1e-9
 
-# Membri di Agent che una sottoclasse può ridefinire
-_OVERRIDABLE_MEMBERS: Final[frozenset[str]] = frozenset({"__init__", "stake_fractions"})
+# Membri di Agent che una sottoclasse può ridefinire (observe_results dagli agenti con stato)
+_OVERRIDABLE_MEMBERS: Final[frozenset[str]] = frozenset(
+    {"__init__", "stake_fractions", "observe_results"}
+)
 
 
 def _is_real_numeric_dtype(dtype: np.dtype) -> bool:
@@ -169,6 +171,58 @@ class DateView:
 
         object.__setattr__(self, "probs", probs)
         object.__setattr__(self, "odds", odds)
+
+
+@dataclass(frozen=True, eq=False)
+class DateResults:
+    """Esiti di una data già regolata, unico canale da cui un agente riceve esiti.
+
+    L'ambiente lo costruisce dopo il regolamento della data e lo passa a
+    Agent.observe_results. Gli array sono viste non scrivibili di copie private, come in
+    DateView.
+
+    Attributi
+    ---------
+    date : np.datetime64
+        Data regolata.
+    probs : np.ndarray
+        Probabilità stimate (n, 3) delle partite della data.
+    odds : np.ndarray
+        Quote (n, 3) delle partite della data.
+    outcomes : np.ndarray
+        Esiti int64 (M, n) in {0, 1, 2}, una riga per replica dell'ambiente.
+
+    Solleva
+    -------
+    TypeError
+        Se date non è np.datetime64 o outcomes non è un ndarray intero.
+    ValueError
+        Se le forme non sono coerenti o gli esiti sono fuori da {0, 1, 2}.
+    """
+
+    date: np.datetime64
+    probs: np.ndarray
+    odds: np.ndarray
+    outcomes: np.ndarray
+
+    def __post_init__(self) -> None:
+        """Valida i campi e li sostituisce con viste non scrivibili di copie private."""
+        if not isinstance(self.date, np.datetime64):
+            raise TypeError(f"date must be a numpy.datetime64, got {type(self.date).__name__}")
+        _validate_outcome_matrices(self.probs, self.odds)
+        if not isinstance(self.outcomes, np.ndarray) or self.outcomes.dtype == np.bool_ or not np.issubdtype(
+            self.outcomes.dtype, np.integer
+        ):
+            raise TypeError("outcomes must be a numpy.ndarray with an integer dtype")
+        if self.outcomes.ndim != 2 or self.outcomes.shape[1] != self.probs.shape[0]:
+            raise ValueError(
+                f"outcomes must have shape (M, {self.probs.shape[0]}), got {self.outcomes.shape}"
+            )
+        if np.any(~np.isin(self.outcomes, (0, 1, 2))):
+            raise ValueError("outcomes must contain only values in {0, 1, 2}")
+        object.__setattr__(self, "probs", _read_only_view(self.probs, np.float64))
+        object.__setattr__(self, "odds", _read_only_view(self.odds, np.float64))
+        object.__setattr__(self, "outcomes", _read_only_view(self.outcomes, np.int64))
 
 
 def estimated_expected_values(probs: np.ndarray, odds: np.ndarray) -> np.ndarray:
@@ -329,9 +383,10 @@ class Agent(abc.ABC):
     """Classe base astratta degli agenti di scommessa.
 
     La base esegue in decide la selezione dell'esito, le validazioni e il ripiego;
-    una sottoclasse può ridefinire soltanto __init__ e stake_fractions. Ogni altra
-    ridefinizione di un metodo o di una proprietà di Agent, anche tramite un mixin,
-    solleva TypeError alla definizione della sottoclasse.
+    una sottoclasse può ridefinire soltanto __init__, stake_fractions e observe_results
+    (canale degli esiti delle date regolate). Ogni altra ridefinizione di un metodo
+    o di una proprietà di Agent, anche tramite un mixin, solleva TypeError alla
+    definizione della sottoclasse.
 
     Parametri
     ---------
@@ -358,7 +413,7 @@ class Agent(abc.ABC):
         -------
         TypeError
             Se la sottoclasse, direttamente o tramite un'altra base, ridefinisce un metodo o
-            una proprietà di Agent diversi da __init__ e stake_fractions.
+            una proprietà di Agent diversi da __init__, stake_fractions e observe_results.
         """
         super().__init_subclass__(**kwargs)
         protected_kinds = (FunctionType, property, classmethod, staticmethod)
@@ -368,7 +423,7 @@ class Agent(abc.ABC):
             if inspect.getattr_static(cls, member_name) is not member:
                 raise TypeError(
                     f"{cls.__name__} must not override Agent.{member_name}; "
-                    "only __init__ and stake_fractions may be overridden"
+                    "only __init__, stake_fractions and observe_results may be overridden"
                 )
 
     def __init__(self, name: str) -> None:
@@ -461,6 +516,20 @@ class Agent(abc.ABC):
             fallback_match=flat_index // _N_OUTCOMES,
             fallback_outcome=flat_index % _N_OUTCOMES,
         )
+
+    def observe_results(self, results: DateResults) -> None:
+        """Riceve gli esiti di una data già regolata; per default non fa nulla.
+
+        L'ambiente lo chiama per ogni agente dopo il regolamento di ogni data, anche se
+        l'agente è in rovina. Un agente con stato lo ridefinisce per aggiornarsi; non deve
+        modificare previsioni, quote o esiti, che riceve in sola lettura.
+
+        Parametri
+        ---------
+        results : DateResults
+            Esiti, previsioni e quote della data regolata.
+        """
+        return None
 
     @abc.abstractmethod
     def stake_fractions(

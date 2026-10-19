@@ -6,8 +6,8 @@
 # dei parametri (US-C8.2).
 
 frozen_on = 2026-09-29
-test_unlocked = false
-test_unlocked_on = ""
+test_unlocked = true
+test_unlocked_on = 2026-10-12
 
 training = ["2000-01", "2010-11", "2020-21"]
 

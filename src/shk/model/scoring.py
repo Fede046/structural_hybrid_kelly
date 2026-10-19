@@ -4,7 +4,13 @@ from typing import Any, Final, NamedTuple
 import numpy as np
 import pandas as pd
 
-from shk.market.devig import devig_additive, devig_power, devig_proportional
+from shk.market.devig import (
+    devig_additive,
+    devig_odds_ratio,
+    devig_power,
+    devig_proportional,
+    devig_shin,
+)
 from shk.model.elo_fit import (
     EloFitParams,
     parse_season_start_year,
@@ -17,6 +23,12 @@ PINNACLE_START_YEAR: Final[int] = 2012
 
 # Metodi di de-vigging ammessi
 DEVIG_METHODS: Final[tuple[str, ...]] = ("proportional", "additive", "power")
+
+# Metodi aggiunti nell'aggiunta di Shin e odds ratio (decisione di progetto: Shin principale, sensibilità sui cinque metodi).
+# Restano separati da DEVIG_METHODS, che il calcolo di ĝ e la calibrazione del Modulo 1 usano per le righe già versionate:
+# le righe dei metodi nuovi si accodano a quelle esistenti.
+EXTRA_DEVIG_METHODS: Final[tuple[str, ...]] = ("shin", "odds_ratio")
+ALL_DEVIG_METHODS: Final[tuple[str, ...]] = DEVIG_METHODS + EXTRA_DEVIG_METHODS
 
 # Serie di quote ammesse
 SERIES_NAMES: Final[tuple[str, ...]] = ("b365_prematch", "pinnacle_closing")
@@ -334,7 +346,12 @@ def align_predictions_with_odds(
 
 
 class SeriesEvaluationData(NamedTuple):
-    """Dati di valutazione per una serie di quote e i tre metodi di de-vigging."""
+    """Dati di valutazione per una serie di quote e i cinque metodi di de-vigging.
+
+    I campi da shin_inapplicable in poi sono stati aggiunti nell'aggiunta di Shin e odds ratio: Shin non è applicabile
+    a un mercato con booksum S < 1 (quarta causa di esclusione, dopo l'additivo);
+    shin_z e odds_ratio_c sono i parametri stimati per ciascuna partita usata.
+    """
 
     series: str
     seasons: list[str]
@@ -350,6 +367,11 @@ class SeriesEvaluationData(NamedTuple):
     q_additive: np.ndarray
     q_power: np.ndarray
     outcomes: np.ndarray
+    shin_inapplicable: int
+    q_shin: np.ndarray
+    q_odds_ratio: np.ndarray
+    shin_z: np.ndarray
+    odds_ratio_c: np.ndarray
 
 
 def prepare_series_evaluation(
@@ -357,7 +379,11 @@ def prepare_series_evaluation(
     series: str,
     schedule: dict[str, dict[str, list[str]]],
 ) -> SeriesEvaluationData:
-    """Estrae le quote H, D, A, applica le esclusioni e calcola q dei tre metodi.
+    """Estrae le quote H, D, A, applica le esclusioni e calcola q dei cinque metodi.
+
+    Esclusioni per causa, nell'ordine: quota mancante, quota non valida, additivo non
+    applicabile, Shin non applicabile (S < 1). Le partite usate sono le stesse per
+    tutti i metodi.
 
     Parametri
     ---------
@@ -425,12 +451,21 @@ def prepare_series_evaluation(
         has_nan = np.isnan(q_add_candidate).any(axis=1)
         additive_inapplicable_mask.loc[valid_odds_mask] = has_nan
 
-    used_mask = valid_odds_mask & (~additive_inapplicable_mask)
+    # 4. Shin non applicabile (booksum S < 1), fra le valide e con additivo applicabile
+    shin_inapplicable_mask = pd.Series(False, index=df_series.index)
+    candidate_mask = valid_odds_mask & (~additive_inapplicable_mask)
+    if candidate_mask.any():
+        candidate_odds = odds_raw.loc[candidate_mask].to_numpy(dtype=np.float64)
+        booksum = (1.0 / candidate_odds).sum(axis=1)
+        shin_inapplicable_mask.loc[candidate_mask] = booksum < 1.0
+
+    used_mask = candidate_mask & (~shin_inapplicable_mask)
 
     missing_count = int(missing_mask.sum())
     invalid_count = int(invalid_mask.sum())
     additive_count = int(additive_inapplicable_mask.sum())
-    excluded_count = missing_count + invalid_count + additive_count
+    shin_count = int(shin_inapplicable_mask.sum())
+    excluded_count = missing_count + invalid_count + additive_count + shin_count
     used_count = int(used_mask.sum())
 
     if used_count + excluded_count != matches_total:
@@ -439,10 +474,12 @@ def prepare_series_evaluation(
     df_used = df_series.loc[used_mask].copy().reset_index(drop=True)
     odds_used = odds_raw.loc[used_mask].to_numpy(dtype=np.float64)
 
-    # Calcolo q per i tre metodi sullo stesso insieme di partite
+    # Calcolo q per i cinque metodi sullo stesso insieme di partite
     q_prop = devig_proportional(odds_used)
     q_add = devig_additive(odds_used)
     q_pow, _ = devig_power(odds_used)
+    q_shin, shin_z = devig_shin(odds_used)
+    q_or, or_c = devig_odds_ratio(odds_used)
 
     p_model = df_used[["p_home", "p_draw", "p_away"]].to_numpy(dtype=np.float64)
     outcomes = df_used["FTR"].astype(str).str.strip().to_numpy()
@@ -452,6 +489,8 @@ def prepare_series_evaluation(
     _validate_probs(q_prop)
     _validate_probs(q_add)
     _validate_probs(q_pow)
+    _validate_probs(q_shin)
+    _validate_probs(q_or)
     _validate_outcomes(outcomes, len(df_used))
 
     return SeriesEvaluationData(
@@ -469,4 +508,9 @@ def prepare_series_evaluation(
         q_additive=q_add,
         q_power=q_pow,
         outcomes=outcomes,
+        shin_inapplicable=shin_count,
+        q_shin=q_shin,
+        q_odds_ratio=q_or,
+        shin_z=shin_z,
+        odds_ratio_c=or_c,
     )

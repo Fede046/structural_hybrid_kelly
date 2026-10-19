@@ -1,4 +1,4 @@
-"""Test di accettazione e unita' per la divergenza di de-vigging (US-C3.2)."""
+"""Test di accettazione e unita' per la divergenza di de-vigging."""
 
 import csv
 import math

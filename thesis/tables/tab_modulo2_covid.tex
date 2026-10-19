@@ -1,0 +1,29 @@
+% Generato da scripts/build_thesis_tables.py dai CSV versionati: non modificare a mano.
+% Richiede \usepackage{booktabs}.
+\begin{table}[htbp]
+\centering
+\small
+\caption{Modulo 2: decomposizione di $\delta$ attorno alla sospensione del 2019-20}
+\label{tab:modulo2_covid}
+\begin{tabular}{lrc}
+\toprule
+Quantità & Stima & IC 95\% \\
+\midrule
+totale & $-$0,0050 & [$-$0,0395; 0,0350] \\
+compositiva & 0,0116 & [$-$0,0169; 0,0383] \\
+strutturale & $-$0,0004 & [$-$0,0390; 0,0395] \\
+interazione & $-$0,0163 & [$-$0,0502; 0,0188] \\
+quota compositiva & 0,4115 & [0,0339; 0,5580] \\
+quota strutturale $\pi$ & 0,0136 & [0,0228; 0,7961] \\
+\bottomrule
+\end{tabular}
+
+\smallskip
+\begin{minipage}{\linewidth}
+\footnotesize
+Sospensione del 2019-20: A = 288 partite del 2019-20 fino al 2020-03-09; B = 472 partite dal 2020-06-17 (resto del 2019-20 e 2020-21).\par
+Oaxaca-Blinder three-fold di $\delta = \ln \hat p - \ln q$ (q Shin): totale = compositiva + strutturale + interazione; $\pi = |S| / (|C| + |S| + |I|)$, quota compositiva $|C| / (|C| + |S| + |I|)$.\par
+IC al 95\%: stationary bootstrap dentro ciascun gruppo, 999 ricampionamenti, percentili.\par
+Fonte: \texttt{results/us\_c7\_3b\_known\_scenarios.csv} (SHA256 \texttt{4365678b0eb3}).
+\end{minipage}
+\end{table}

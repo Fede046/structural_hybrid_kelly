@@ -1,4 +1,4 @@
-"""Script per il monitoraggio dello Z-test per giornata e confronto con i detector (US-C5.2 / Task 29 e Task 30).
+"""Script per il monitoraggio dello Z-test per giornata e confronto con i detector.
 
 Calcola lo Z-test per giornata (blocchi di 10 partite) sulle 19 stagioni di validazione
 utilizzando le baseline di training dei rispettivi fit, calcola le soglie calibrate
@@ -17,15 +17,12 @@ import matplotlib
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 import numpy as np
-import pandas as pd
 
-from shk.data.split import load_by_role, read_split_config
-from shk.model.elo_fit import ELO_FITS, derive_fit_schedule
 from shk.model.monitoring import (
     DAILY_Z_TEST_CSV_COLUMNS,
     generate_daily_z_test_records,
 )
-from shk.model.residuals import compute_model_residuals
+from shk.model.residuals import load_model_residuals
 from shk.stats.false_rejection import BLOCK_LENGTHS
 
 
@@ -39,16 +36,8 @@ def run_experiment() -> None:
     png_path.parent.mkdir(parents=True, exist_ok=True)
 
     # 1. Caricamento dati e calcolo residui del Modulo 1
-    cfg = read_split_config()
-    df_hist = load_by_role("history")
-    df_train = load_by_role("training")
-    df_val = load_by_role("validation")
-
-    df = pd.concat([df_hist, df_train, df_val], ignore_index=True)
-    df = df.sort_values("Date", kind="stable").reset_index(drop=True)
-
-    schedule = derive_fit_schedule(cfg)
-    df_residuals = compute_model_residuals(df, schedule, ELO_FITS)
+    data = load_model_residuals()
+    schedule, df_residuals = data.schedule, data.residuals
 
     # 2. Generazione record e scrittura CSV
     records = generate_daily_z_test_records(df_residuals, schedule)

@@ -1,4 +1,4 @@
-"""Test di accettazione per US-C5.3 / Task 31.
+"""Test di accettazione della Baseline D.
 
 Verifica:
 - Criterio 1: il motore riproduce la log-ricchezza di un caso sintetico calcolata a mano entro 1e-12,
@@ -161,7 +161,7 @@ def test_frozen_kappas_match_real_data_calibration():
     assert res.chosen_kappas["page_hinkley"] == KAPPA_PAGE_HINKLEY
 
 
-# --- Nuovi test di accettazione per Task 32 (US-C5.3) ---
+# --- Test di accettazione dell'esecuzione sulle stagioni di validazione ---
 
 def _create_synthetic_validation_season_data() -> BaselineDValidationSeasonData:
     """Crea una BaselineDValidationSeasonData sintetica per i test unitari."""

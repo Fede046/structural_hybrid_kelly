@@ -1,4 +1,4 @@
-"""Test unitari e criteri di accettazione per il modulo elo (Task 20)."""
+"""Test unitari e criteri di accettazione per il modulo elo."""
 
 import math
 from typing import Final

@@ -1,0 +1,30 @@
+% Generato da scripts/build_thesis_tables.py dai CSV versionati: non modificare a mano.
+% Richiede \usepackage{booktabs}.
+\begin{table}[htbp]
+\centering
+\small
+\caption{Divergenza fra metodi di de-vigging per fascia di quota (prima riga della sensibilità)}
+\label{tab:divergenza_devig}
+\begin{tabular}{lrrrrr}
+\toprule
+Fascia di quota & Esiti & Spread medio & 99° percentile & Massimo & Spread relativo medio \\
+\midrule
+[1; 1,5) & 1666 & 2,33 & 4,83 & 6,29 & 0,031 \\
+[1,5; 2) & 2798 & 1,27 & 2,98 & 4,52 & 0,022 \\
+[2; 3) & 4606 & 0,35 & 1,11 & 1,45 & 0,008 \\
+[3; 5) & 10\,522 & 0,44 & 1,56 & 2,88 & 0,018 \\
+[5; 10) & 3356 & 1,10 & 2,67 & 3,66 & 0,081 \\
+[10; $\infty$) & 992 & 1,28 & 2,81 & 3,06 & 0,222 \\
+tutte & --- & --- & 3,45 & 6,29 & --- \\
+\bottomrule
+\end{tabular}
+
+\smallskip
+\begin{minipage}{\linewidth}
+\footnotesize
+Metodi proporzionale, additivo e power sulla terna B365 pre-partita, stagioni non di test. Spread di un esito: massimo meno minimo dei tre $q$, in punti percentuali; spread relativo: spread diviso per la media dei tre $q$. Fasce sulla quota dell'esito, chiuse a sinistra.\par
+Partite usate 7980, escluse 380 (la stagione 2000-01, senza B365); overround medio 0,0544.\par
+Rapporto con l'edge di riferimento di 2 punti: spread massimo 3,14, 99° percentile 1,73.\par
+Fonte: \texttt{results/us\_c3\_2\_devig\_divergence.csv} (SHA256 \texttt{5e9743252db2}).
+\end{minipage}
+\end{table}

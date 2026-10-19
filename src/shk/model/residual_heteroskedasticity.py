@@ -1,4 +1,4 @@
-"""Modulo per l'analisi dell'eteroschedasticità dei residui del Modulo 1 (US-C6.4 / Task 39).
+"""Modulo per l'analisi dell'eteroschedasticità dei residui del Modulo 1.
 
 Implementa la pipeline di test di eteroschedasticità (Breusch-Pagan joint su (H, t) con df=2,
 Breusch-Pagan su t con df=1, White su (H, t) con df=5) sui residui del Modulo 1 raw (y = log_loss),
@@ -28,7 +28,7 @@ from shk.stats.heteroskedasticity import (
 )
 
 # ------------------------------------------------------------------------------
-# Costanti di specifica (US-C6.4 / Task 39)
+# Costanti di specifica
 # ------------------------------------------------------------------------------
 ALPHA: Final[float] = 0.05
 N_BOOT_CALIB: Final[int] = 999
@@ -317,7 +317,7 @@ def spawn_c6_4_generators(
     fits: Sequence[str] = ("2000-01", "2010-11", "2020-21"),
     block_lengths: Sequence[int] = BLOCK_LENGTHS,
 ) -> dict[str, dict[int, tuple[np.random.Generator, np.random.Generator]]]:
-    """Costruisce la gerarchia deterministica di generatori di numeri casuali per US-C6.4.
+    """Costruisce la gerarchia deterministica di generatori di numeri casuali per il test di eteroschedasticità.
 
     Gerarchia:
     SeedSequence(SEED_C6).spawn(3)[2] -> spawn(len(fits)) -> per fit, spawn(len(block_lengths)) -> per L, spawn(2)
@@ -326,7 +326,7 @@ def spawn_c6_4_generators(
     Parametri
     ---------
     seed : int, opzionale
-        Seme master C6 (default SEED_C6).
+        Seme master del backtest (default SEED_C6).
     fits : Sequence[str], opzionale
         Nomi dei fit in ordine cronologico.
     block_lengths : Sequence[int], opzionale

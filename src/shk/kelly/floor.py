@@ -1,4 +1,4 @@
-"""Modulo per l'analisi del floor su calendario sintetico e soglie di rovina (Task 36).
+"""Modulo per l'analisi del floor su calendario sintetico e soglie di rovina.
 
 Questo modulo implementa gli esperimenti sintetici a una partita per data per verificare
 la predizione teorica della Nota 2.9: il floor sulle puntate (F > 0) e l'unico meccanismo
@@ -144,11 +144,11 @@ def spawn_t36_generators(
     np.random.Generator,
     tuple[np.random.Generator, np.random.Generator, np.random.Generator],
 ]:
-    """Genera i generatori casuali indipendenti per gli esperimenti A, B e C di T36.
+    """Genera i generatori casuali indipendenti per gli esperimenti A, B e C del test del floor sintetico.
 
     Seguendo la gerarchia della specifica:
         ss_c6 = SeedSequence(seed).spawn(2)
-        figlio 0 (T36), figlio 1 (T37)
+        figlio 0, figlio 1
         figlio 0.spawn(3) -> ss_exp_a, ss_exp_b, ss_exp_c
         ss_exp_c.spawn(3) -> ss_c_a, ss_c_b, ss_c_c (un generatore per configurazione)
 

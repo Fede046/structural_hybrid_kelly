@@ -1,4 +1,4 @@
-"""Test unitari per il modulo shk.kelly.floor (Task 36)."""
+"""Test unitari per il modulo shk.kelly.floor."""
 
 import math
 

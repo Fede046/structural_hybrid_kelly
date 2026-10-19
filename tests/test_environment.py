@@ -1,4 +1,4 @@
-"""Test suite per l'ambiente di simulazione passo-passo del criterio di Kelly (Task 34)."""
+"""Test suite per l'ambiente di simulazione passo-passo del criterio di Kelly."""
 
 import ast
 import inspect

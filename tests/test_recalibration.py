@@ -140,8 +140,8 @@ def test_out_of_sample_invariance_synthetic():
     df_synth = pd.DataFrame({
         "season": ["2000-01"] * 4 + ["2001-02"] * 2,
         "Date": pd.date_range("2000-09-01", periods=6, freq="D"),
-        "HomeTeam": ["T1", "T2", "T1", "T3", "T1", "T2"],
-        "AwayTeam": ["T2", "T1", "T3", "T1", "T2", "T1"],
+        "HomeTeam": ["Q1", "Q2", "Q1", "Q3", "Q1", "Q2"],
+        "AwayTeam": ["Q2", "Q1", "Q3", "Q1", "Q2", "Q1"],
         "FTR": ["H", "D", "A", "H", "H", "A"],
         "FTHG": [1, 0, 0, 2, 1, 0],
         "FTAG": [0, 0, 1, 0, 0, 1],

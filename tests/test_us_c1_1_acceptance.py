@@ -1,4 +1,4 @@
-"""Test di accettazione per l'esperimento US-C1.1.
+"""Test di accettazione dell'esperimento crescita-frazione di Kelly.
 
 Tutti i test in questo modulo richiedono l'esecuzione della simulazione completa
 e sono marcati con @pytest.mark.slow. Vengono deselezionati per impostazione

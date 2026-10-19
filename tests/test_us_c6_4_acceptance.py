@@ -1,4 +1,4 @@
-"""Test di accettazione per la User Story US-C6.4 (Task 39).
+"""Test di accettazione dei test di eteroschedasticità.
 
 Verifica:
 - Criterio 1: Statistiche Breusch-Pagan e White su dati sintetici controllati

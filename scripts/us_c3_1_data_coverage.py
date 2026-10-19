@@ -1,4 +1,10 @@
-"""Script di esperimento per l'audit di copertura dati (US-C3.1)."""
+"""Script di esperimento per l'audit di copertura dati.
+
+Le stagioni si caricano con load_by_role, solo per i ruoli history, training e
+validation di config/split.toml; le stagioni di test si aggiungono solo se
+test_unlocked = true. Con il test bloccato nessun file di stagione dal primo
+anno di test in poi viene aperto.
+"""
 
 import csv
 from pathlib import Path
@@ -8,17 +14,36 @@ matplotlib.use("Agg")
 import matplotlib.patches as mpatches
 import matplotlib.pyplot as plt
 import numpy as np
+import pandas as pd
 
 from shk.data.coverage import (
     COVERAGE_CSV_COLUMNS,
     GROUP_TYPE_ORDER,
     compute_coverage,
 )
-from shk.data.loading import load_all_seasons
+from shk.data.split import load_by_role, read_split_config
+
+COVERAGE_ROLES: tuple[str, ...] = ("history", "training", "validation")
+
+
+def load_coverage_seasons() -> pd.DataFrame:
+    """Carica le stagioni dell'audit con load_by_role, test compreso solo se sbloccato.
+
+    Restituisce
+    -----------
+    pd.DataFrame
+        Partite dei ruoli COVERAGE_ROLES, più quelle del ruolo test se test_unlocked
+        è true, ordinate in modo stabile per season e Date come load_all_seasons.
+    """
+    cfg = read_split_config()
+    roles = COVERAGE_ROLES + (("test",) if cfg.test_unlocked else ())
+    frames = [load_by_role(role) for role in roles]
+    df = pd.concat(frames, ignore_index=True)
+    return df.sort_values(["season", "Date"], kind="stable").reset_index(drop=True)
 
 
 def run_experiment() -> None:
-    """Esegue l'audit di copertura su tutte le stagioni e genera CSV e figura."""
+    """Esegue l'audit di copertura sulle stagioni non bloccate e genera CSV e figura."""
     repo_root = Path(__file__).resolve().parents[1]
     csv_path = repo_root / "results" / "us_c3_1_data_coverage.csv"
     png_path = repo_root / "thesis" / "figures" / "us_c3_1_data_coverage.png"
@@ -26,7 +51,7 @@ def run_experiment() -> None:
     csv_path.parent.mkdir(parents=True, exist_ok=True)
     png_path.parent.mkdir(parents=True, exist_ok=True)
 
-    df = load_all_seasons()
+    df = load_coverage_seasons()
     cov_df = compute_coverage(df)
 
     # Scrittura del CSV in formato lungo
@@ -69,7 +94,8 @@ def run_experiment() -> None:
     ax.set_yticklabels(row_labels, fontsize=7)
 
     ax.set_title(
-        "Audit di copertura per stagione e gruppo di colonne (Premier League 1993-94 – 2023-24)",
+        "Audit di copertura per stagione e gruppo di colonne "
+        f"(Premier League {seasons[0]} – {seasons[-1]})",
         fontsize=12,
         pad=15,
     )

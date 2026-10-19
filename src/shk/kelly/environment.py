@@ -1,4 +1,4 @@
-"""Modulo dell'ambiente di simulazione passo-passo del criterio di Kelly (Task 34).
+"""Modulo dell'ambiente di simulazione passo-passo del criterio di Kelly.
 
 L'ambiente esegue più agenti sulla stessa sequenza cronologica di date, previsioni,
 quote ed esiti, gestendo la ricchezza come stato, il floor sulle puntate, la puntata
@@ -6,9 +6,13 @@ obbligatoria di ripiego e la rovina del capitale. Gli agenti forniscono unicamen
 le frazioni desiderate di capitale tramite il metodo decide.
 
 Codifica degli esiti: 0 = H, 1 = D, 2 = A; NO_BET (-1) indica nessuna puntata.
+
+Dagli agenti con stato: dopo il regolamento di ogni data l'ambiente passa a ogni agente gli esiti della
+data con Agent.observe_results (unico canale degli esiti); la politica del ripiego è
+un'opzione di run_paired_backtest, con default identico al comportamento precedente.
 """
 
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 import math
 from typing import Final, Sequence
 
@@ -18,11 +22,24 @@ from shk.kelly.agents import (
     NO_BET,
     Agent,
     AgentDecision,
+    DateResults,
     DateView,
     estimated_expected_values,
 )
 
 _N_OUTCOMES: Final[int] = 3
+
+# Politiche del ripiego: EV stimato dal modello massimo (default, comportamento del backtest appaiato) oppure
+# EV implicito di mercato meno negativo, q·o − 1 con q fornite dal chiamante (nota 2.9 §7.2)
+FALLBACK_MODEL_EV: Final[str] = "model_ev"
+FALLBACK_MARKET_EV: Final[str] = "market_ev"
+FALLBACK_POLICIES: Final[tuple[str, ...]] = (FALLBACK_MODEL_EV, FALLBACK_MARKET_EV)
+
+
+def _notify_results(agents: Sequence[Agent], results: DateResults) -> None:
+    """Passa a ogni agente gli esiti della data regolata."""
+    for agent in agents:
+        agent.observe_results(results)
 
 
 def _is_real_numeric_dtype(dtype: np.dtype) -> bool:
@@ -476,8 +493,14 @@ def run_paired_backtest(
     outcomes: np.ndarray,
     min_stake: float,
     record_stakes: bool = False,
+    fallback_policy: str = FALLBACK_MODEL_EV,
+    market_probs: np.ndarray | None = None,
 ) -> tuple[AgentRun, ...]:
     """Esegue il backtest appaiato su più agenti sulla stessa sequenza temporale.
+
+    Per ogni data, nell'ordine: DateView condivisa; per ogni agente decide, controllo di
+    rovina, piazzamento e regolamento; infine observe_results di tutti gli agenti con gli
+    esiti della data, così alla data d nessun agente ha ricevuto esiti di date >= d.
 
     Parametri
     ---------
@@ -495,6 +518,14 @@ def run_paired_backtest(
         Puntata minima fissa F >= 0.
     record_stakes : bool, default=False
         Se True, popola i campi staked e desired in AgentRun.
+    fallback_policy : str, default="model_ev"
+        Politica del ripiego per tutti gli agenti: "model_ev" lascia quello della
+        decisione dell'agente (EV stimato massimo); "market_ev" lo sostituisce con la
+        coppia (partita, esito) a q·o − 1 massimo sulla data, cioè l'EV implicito di
+        mercato meno negativo.
+    market_probs : np.ndarray o None, default=None
+        Probabilità di mercato (N, 3), per esempio q di Shin; obbligatorie con
+        "market_ev" e non ammesse con "model_ev".
 
     Restituisce
     -----------
@@ -578,6 +609,18 @@ def run_paired_backtest(
     if not isinstance(record_stakes, bool):
         raise TypeError(f"record_stakes must be a bool, got {type(record_stakes).__name__}")
 
+    if not isinstance(fallback_policy, str) or fallback_policy not in FALLBACK_POLICIES:
+        raise ValueError(f"fallback_policy must be one of {FALLBACK_POLICIES}, got {fallback_policy!r}")
+    market_arr: np.ndarray | None = None
+    if fallback_policy == FALLBACK_MARKET_EV:
+        if not isinstance(market_probs, np.ndarray) or market_probs.shape != (n_matches, _N_OUTCOMES):
+            raise ValueError(f"market_probs must be a numpy.ndarray of shape ({n_matches}, {_N_OUTCOMES})")
+        market_arr = np.asarray(market_probs, dtype=np.float64)
+        if not np.all(np.isfinite(market_arr)) or np.any(market_arr < 0.0) or np.any(market_arr > 1.0):
+            raise ValueError("market_probs must contain finite values in [0, 1]")
+    elif market_probs is not None:
+        raise ValueError("market_probs is only used with fallback_policy='market_ev'")
+
     f_stake = float(min_stake)
 
     if n_matches == 0:
@@ -636,9 +679,15 @@ def run_paired_backtest(
         view = DateView(date=d_date, probs=d_probs, odds=d_odds)
         d_outcomes_all_m = outcomes[:, mask]
         n_date_matches = d_probs.shape[0]
+        market_fallback: tuple[int, int] | None = None
+        if market_arr is not None:
+            flat = int(np.argmax((market_arr[mask] * d_odds - 1.0).reshape(-1)))
+            market_fallback = (flat // _N_OUTCOMES, flat % _N_OUTCOMES)
 
         for a_idx, agent in enumerate(agents):
             decision = agent.decide(view)
+            if market_fallback is not None:
+                decision = replace(decision, fallback_match=market_fallback[0], fallback_outcome=market_fallback[1])
 
             w_current = wealth_all[a_idx][:, d_idx]
 
@@ -690,6 +739,9 @@ def run_paired_backtest(
                 wealth_all[a_idx][~active_mask, d_idx + 1] = w_current[~active_mask]
             else:
                 wealth_all[a_idx][:, d_idx + 1] = w_current
+
+        # 5. Esiti della data agli agenti, solo dopo il regolamento di tutti
+        _notify_results(agents, DateResults(date=d_date, probs=d_probs, odds=d_odds, outcomes=d_outcomes_all_m))
 
     runs: list[AgentRun] = []
     for a_idx, agent in enumerate(agents):

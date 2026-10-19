@@ -220,7 +220,7 @@ def plugin_staking(
     return result
 
 
-# Costanti di riferimento per la regola della Baseline D (Task 31 / US-C5.3)
+# Costanti di riferimento per la regola della Baseline D
 BASE_LAMBDA: Final[float] = 0.25
 KAPPA_GRID: Final[tuple[float, ...]] = (0.0, 0.25, 0.5, 0.75, 1.0)
 KAPPA_ADWIN: Final[float] = 1.0

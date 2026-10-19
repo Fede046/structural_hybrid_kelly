@@ -1,4 +1,4 @@
-"""Modulo di monitoraggio e generazione record per i drift detector (Task 28 / US-C5.1).
+"""Modulo di monitoraggio e generazione record per i drift detector.
 
 Fornisce la NamedTuple ScenarioSeries per rappresentare le serie temporali di log-loss
 dei 22 scenari (3 di training e 19 di validazione), la funzione di estrazione delle serie
@@ -38,7 +38,7 @@ from shk.stats.drift import (
 )
 from shk.stats.false_rejection import ALPHA, BLOCK_LENGTHS, N_BOOT
 
-# Schema delle 12 colonne in snake_case prescritte per il CSV dei detector (C5.1)
+# Schema delle 12 colonne in snake_case prescritte per il CSV dei detector
 DRIFT_DETECTOR_CSV_COLUMNS: Final[tuple[str, ...]] = (
     "row_type",
     "season",
@@ -54,7 +54,7 @@ DRIFT_DETECTOR_CSV_COLUMNS: Final[tuple[str, ...]] = (
     "n_alarms",
 )
 
-# Schema delle 14 colonne in snake_case prescritte per il CSV dello Z-test (C5.2 e C5.3)
+# Schema delle 14 colonne in snake_case prescritte per il CSV dello Z-test
 DAILY_Z_TEST_CSV_COLUMNS: Final[tuple[str, ...]] = (
     "row_type",
     "season",
@@ -688,7 +688,7 @@ def generate_daily_z_test_records(
     matchday_size: int = MATCHDAY_SIZE,
     seed: int = SEED_C5,
 ) -> list[dict[str, str | int | float]]:
-    """Estrae le serie dai residui e genera i record completi per il CSV di C5.2."""
+    """Estrae le serie dai residui e genera i record completi per il CSV dello Z-test per matchday."""
     all_series = extract_scenario_series(df_residuals, schedule, expected_matches=expected_matches)
     val_series = [s for s in all_series if s.role == "validation"]
     baseline_stats = compute_training_baseline_stats(df_residuals, schedule=schedule)
@@ -712,7 +712,7 @@ def generate_daily_z_test_records(
     )
 
 
-# --- Funzioni di calibrazione e backtest per la Baseline D (Task 31 / US-C5.3) ---
+# --- Funzioni di calibrazione e backtest per la Baseline D ---
 
 class BaselineDSeasonInput(NamedTuple):
     """Input completi di una stagione per il backtest della Baseline D.
@@ -994,9 +994,9 @@ def calibrate_baseline_d_kappa(
     )
 
 
-# --- Esecuzione appaiata della Baseline D sulle stagioni di validazione (Task 32 / US-C5.3) ---
+# --- Esecuzione appaiata della Baseline D sulle stagioni di validazione ---
 
-# Schema delle 9 colonne in snake_case prescritte per il CSV della Baseline D (US-C5.3)
+# Schema delle 9 colonne in snake_case prescritte per il CSV della Baseline D
 BASELINE_D_CSV_COLUMNS: Final[tuple[str, ...]] = (
     "row_type",
     "season",
@@ -1254,7 +1254,7 @@ def generate_baseline_d_records(
     kappa_adwin: float = KAPPA_ADWIN,
     kappa_page_hinkley: float = KAPPA_PAGE_HINKLEY,
 ) -> list[dict[str, str | int | float]]:
-    """Genera tutti i 60 record prescritti per il CSV di US-C5.3 (57 season e 3 total).
+    """Genera tutti i 60 record prescritti per il CSV della Baseline D (57 season e 3 total).
 
     Parametri
     ---------

@@ -1,4 +1,4 @@
-"""Test di accettazione per il floor nella configurazione reale (US-C6.3 / Task 37).
+"""Test di accettazione per il floor nella configurazione reale.
 
 Copre i 7 criteri di accettazione:
 1. Estrazione degli esiti per inversione, frequenze Monte Carlo, bordi e determinismo;

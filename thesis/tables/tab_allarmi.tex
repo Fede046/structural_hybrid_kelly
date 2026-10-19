@@ -1,0 +1,28 @@
+% Generato da scripts/build_thesis_tables.py dai CSV versionati: non modificare a mano.
+% Richiede \usepackage{booktabs}.
+\begin{table}[htbp]
+\centering
+\small
+\caption{Allarmi sulle 19 stagioni di validazione: Z-test per matchday, ADWIN e Page-Hinkley}
+\label{tab:allarmi}
+\begin{tabular}{lrrr}
+\toprule
+Metodo & Allarmi & Media per stagione & Attesi per stagione \\
+\midrule
+Z nominale & 53 & 2,79 & 1,9 \\
+ADWIN & 0 & 0,00 & 1,9 \\
+Page-Hinkley & 20 & 1,05 & 1,9 \\
+Z calibrato, $L = 7$ & 61 & 3,21 & 1,9 \\
+Z calibrato, $L = 20$ & 43 & 2,26 & 1,9 \\
+Z calibrato, $L = 40$ & 43 & 2,26 & 1,9 \\
+\bottomrule
+\end{tabular}
+
+\smallskip
+\begin{minipage}{\linewidth}
+\footnotesize
+Serie: log-loss per partita del Modulo 1 (Elo). Z-test per matchday (blocchi di 10 partite) con $\mu_f$ e $\sigma_f$ del training del fit; soglia nominale $|Z| > 1{,}96$; soglia calibrata col moving block bootstrap della serie di training del fit ($B = 999$).\par
+ADWIN (delta 0,002) e Page-Hinkley (delta 0,05, threshold 5) di river, tarati sul training, alimentati con la stessa serie. Attesi: 1,9 allarmi per stagione ($\alpha = 0{,}05$ su 38 matchday).\par
+Fonte: \texttt{results/us\_c5\_2\_daily\_z\_test.csv} (SHA256 \texttt{1d73d255abf1}).
+\end{minipage}
+\end{table}

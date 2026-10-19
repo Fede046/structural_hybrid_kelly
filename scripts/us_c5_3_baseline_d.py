@@ -1,4 +1,4 @@
-"""Script per l'esecuzione appaiata della Baseline D sulle stagioni di validazione (US-C5.3 / Task 32).
+"""Script per l'esecuzione appaiata della Baseline D sulle stagioni di validazione.
 
 Esegue i tre agenti (reference con quarto-Kelly fisso, d_adwin con KAPPA_ADWIN,
 d_page_hinkley con KAPPA_PAGE_HINKLEY) sulle 19 stagioni di validazione,
@@ -11,15 +11,12 @@ import matplotlib
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 import numpy as np
-import pandas as pd
 
-from shk.data.split import load_by_role, read_split_config
-from shk.model.elo_fit import ELO_FITS, derive_fit_schedule
 from shk.model.monitoring import (
     BASELINE_D_CSV_COLUMNS,
     generate_baseline_d_records,
 )
-from shk.model.residuals import compute_model_residuals
+from shk.model.residuals import load_model_residuals
 
 
 def run_experiment() -> None:
@@ -34,16 +31,8 @@ def run_experiment() -> None:
     png_path = figures_dir / "us_c5_3_baseline_d.png"
 
     # Caricamento dei dati tramite split config (history, training, validation; no test)
-    cfg = read_split_config()
-    df_hist = load_by_role("history")
-    df_train = load_by_role("training")
-    df_val = load_by_role("validation")
-
-    df = pd.concat([df_hist, df_train, df_val], ignore_index=True)
-    df = df.sort_values("Date", kind="stable").reset_index(drop=True)
-
-    schedule = derive_fit_schedule(cfg)
-    df_residuals = compute_model_residuals(df, schedule, ELO_FITS)
+    data = load_model_residuals()
+    df, schedule, df_residuals = data.df, data.schedule, data.residuals
 
     records = generate_baseline_d_records(df_residuals, df, schedule)
 
@@ -80,7 +69,7 @@ def run_experiment() -> None:
     ax.set_xticklabels(seasons, rotation=45, ha="right", fontsize=9)
     ax.set_xlabel("Stagione di validazione", fontsize=11)
     ax.set_ylabel("Differenza di log-ricchezza finale (D − Riferimento)", fontsize=11)
-    ax.set_title("Differenze appaiate di log-ricchezza finale per stagione di validazione (US-C5.3)", fontsize=12)
+    ax.set_title("Differenze appaiate di log-ricchezza finale per stagione di validazione", fontsize=12)
     ax.set_ylim(-0.05, 0.05)
     ax.grid(axis="y", linestyle=":", alpha=0.6)
     ax.legend(loc="upper right", frameon=True)

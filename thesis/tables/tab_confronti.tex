@@ -1,0 +1,48 @@
+% Generato da scripts/build_thesis_tables.py dai CSV versionati: non modificare a mano.
+% Richiede \usepackage{booktabs}.
+\begin{table}[htbp]
+\centering
+\small
+\setlength{\tabcolsep}{4pt}
+\caption{Confronti appaiati fra agenti sulla log-ricchezza finale, in validazione e sul test set}
+\label{tab:confronti}
+\begin{tabular}{llrcrrc}
+\toprule
+ &  & \multicolumn{3}{c}{Validazione (19 stagioni)} & \multicolumn{2}{c}{Test 2023-24} \\
+\cmidrule(lr){3-5} \cmidrule(lr){6-7}
+Configurazione & Confronto & Stima & IC 95\% & Block/iid & Stima & IC 95\% \\
+\midrule
+\pounds{}0,01 & C2 $-$ D\textsubscript{ADWIN} & $+$0,321 & [0,187; 0,455] & 0,99 & $+$0,789 & [0,742; 0,831] \\
+ & C2 $-$ D\textsubscript{PH} & $-$0,070 & [$-$0,094; $-$0,045] & 1,05 & $-$0,163 & [$-$0,182; $-$0,144] \\
+ & C2 $-$ E & $-$0,243 & [$-$0,342; $-$0,144] & 0,99 & $-$0,596 & [$-$0,634; $-$0,554] \\
+ & C1 $-$ C0 & $+$0,298 & [0,189; 0,407] & 0,99 & $+$0,669 & [0,630; 0,703] \\
+ & C2 $-$ C1 & $+$0,023 & [$-$0,005; 0,051] & 1,00 & $+$0,120 & [0,100; 0,139] \\
+ & C2 $-$ C2\textsubscript{global} & $+$0,313 & [0,185; 0,442] & 1,00 & $+$0,767 & [0,720; 0,807] \\
+ & C1 $-$ D\textsubscript{PH} & $-$0,093 & [$-$0,133; $-$0,052] & 0,98 & $-$0,283 & [$-$0,300; $-$0,265] \\
+\midrule
+\pounds{}1 & C2 $-$ D\textsubscript{ADWIN} & $+$0,412 & [0,247; 0,577] & 0,98 & $+$1,013 & [0,917; 1,115] \\
+ & C2 $-$ D\textsubscript{PH} & $-$0,008 & [$-$0,059; 0,043] & 1,02 & $-$0,107 & [$-$0,145; $-$0,068] \\
+ & C2 $-$ E & $-$0,264 & [$-$0,366; $-$0,161] & 0,99 & $-$0,706 & [$-$0,764; $-$0,648] \\
+ & C1 $-$ C0 & $+$0,307 & [0,188; 0,425] & 0,93 & $+$0,753 & [0,678; 0,827] \\
+ & C2 $-$ C1 & $+$0,105 & [0,043; 0,168] & 1,05 & $+$0,260 & [0,207; 0,317] \\
+ & C2 $-$ C2\textsubscript{global} & $+$0,398 & [0,242; 0,554] & 0,98 & $+$0,965 & [0,876; 1,060] \\
+ & C1 $-$ D\textsubscript{PH} & $-$0,113 & [$-$0,171; $-$0,056] & 1,09 & $-$0,367 & [$-$0,422; $-$0,320] \\
+\midrule
+senza floor ($F = 0$) & C2 $-$ D\textsubscript{ADWIN} & $+$0,321 & [0,187; 0,456] & 0,99 & $+$0,791 & [0,743; 0,833] \\
+ & C2 $-$ D\textsubscript{PH} & $-$0,070 & [$-$0,094; $-$0,045] & 1,05 & $-$0,161 & [$-$0,181; $-$0,142] \\
+ & C1 $-$ C0 & $+$0,298 & [0,189; 0,407] & 0,99 & $+$0,669 & [0,630; 0,703] \\
+ & C2 $-$ C1 & $+$0,023 & [$-$0,005; 0,051] & 1,00 & $+$0,121 & [0,102; 0,141] \\
+ & C2 $-$ C2\textsubscript{global} & $+$0,313 & [0,184; 0,442] & 1,00 & $+$0,768 & [0,722; 0,809] \\
+ & C1 $-$ D\textsubscript{PH} & $-$0,093 & [$-$0,133; $-$0,052] & 0,98 & $-$0,283 & [$-$0,300; $-$0,265] \\
+\bottomrule
+\end{tabular}
+
+\smallskip
+\begin{minipage}{\linewidth}
+\footnotesize
+Differenza pooled della log-ricchezza finale: media sulle stagioni della media sui seed delle differenze appaiate. C1 $-$ C0: rilevare; C2 $-$ C1: graduare.\par
+Validazione: IC al 95\% dal bootstrap a due livelli (stagioni e seed), $\hat D \pm t_{0{,}975,\,S-1}\sqrt{S/(S-1)}\,\mathrm{se}_{\mathrm{boot}}$; rapporto: ampiezza block su ampiezza iid. Copertura del metodo sul run prescritto: 0,914 col percentile, 0,935 con la correzione.\par
+Test 2023-24: una stagione, IC al 95\% dai soli seed.\par
+Fonti: \texttt{results/us\_c8\_4\_comparisons.csv} (SHA256 \texttt{b2a5d5d8372e}); \texttt{results/us\_c8\_5\_test\_run.csv} (SHA256 \texttt{914ca0be842c}).
+\end{minipage}
+\end{table}

@@ -1,4 +1,4 @@
-"""Script di esperimento per l'analisi di divergenza fra metodi di de-vigging (US-C3.2)."""
+"""Script di esperimento per l'analisi di divergenza fra metodi di de-vigging."""
 
 import csv
 from pathlib import Path
