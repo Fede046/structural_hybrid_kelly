@@ -1,4 +1,4 @@
-"""Test di T55: agenti dal solo loader, supervisore con storia, uscite per seed e sintesi."""
+"""Test: agenti dal solo loader, supervisore con storia, uscite per seed e sintesi."""
 
 import dataclasses
 import math
@@ -78,7 +78,7 @@ def test_agents_built_only_from_frozen_params(frame):
 
 
 def test_supervisor_with_history_matches_chain_module2(frame):
-    """Con la storia della catena il supervisore riproduce module2_at_date sulla catena (decisione S8)."""
+    """Con la storia della catena il supervisore riproduce module2_at_date sulla catena (decisione di progetto)."""
     params = load_frozen_params()
     covs = list(params.fixed["covariates"])
     s = [v for v in validation_inputs(frame, covs) if v.inp.season == "2003-04"][0]
@@ -139,7 +139,7 @@ def test_raw_file_seeds_and_c0_equals_b025():
 
 
 def test_observed_b025_reproduces_c6_2():
-    """Con F = 0, B_0.25 sulla realizzazione osservata riproduce C6.2 (−10.580 su 6 234 puntate)."""
+    """Con F = 0, B_0.25 sulla realizzazione osservata riproduce il backtest appaiato (−10.580 su 6 234 puntate)."""
     res = load_raw(RAW_PATH)
     c62 = pd.read_csv(C62_PATH)
     ref = c62[(c62["row_type"] == "summary") & (c62["config"] == "none") & (c62["agent"] == "B_0.25")].iloc[0]

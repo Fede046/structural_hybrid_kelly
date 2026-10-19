@@ -1,11 +1,11 @@
-"""Lunghezza ottima dei blocchi e stationary bootstrap (T42).
+"""Lunghezza ottima dei blocchi e stationary bootstrap.
 
 Contenuto:
 - optimal_block_length: lunghezza ottima dei blocchi di Politis e White (2004) con la
   correzione di Patton, Politis e White (2009), per lo stationary bootstrap e per il
   circular block bootstrap; la seconda vale anche per il moving block bootstrap, che ha
   la stessa costante asintotica;
-- round_block_length: arrotondamento della decisione S7 (intero più vicino, almeno 1);
+- round_block_length: arrotondamento della decisione di progetto (intero più vicino, almeno 1);
 - stationary_bootstrap_indices: indici dello stationary bootstrap di Politis e Romano
   (1994), con lo stesso contratto di forma e tipo di
   shk.stats.calibration.moving_block_indices;
@@ -181,7 +181,7 @@ def optimal_block_length(x: np.ndarray) -> OptimalBlockLength:
 
 
 def round_block_length(length: float) -> int:
-    """Arrotonda una lunghezza dei blocchi all'intero più vicino, almeno 1 (decisione S7).
+    """Arrotonda una lunghezza dei blocchi all'intero più vicino, almeno 1 (decisione di progetto).
 
     Le metà si arrotondano per eccesso: floor(length + 0.5).
 

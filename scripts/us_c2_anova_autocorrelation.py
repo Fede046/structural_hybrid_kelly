@@ -1,12 +1,12 @@
-"""Script per gli esperimenti US-C2.2 e US-C2.3: tasso di falso rigetto dell'ANOVA su serie AR(1).
+"""Script per gli esperimenti: tasso di falso rigetto dell'ANOVA su serie AR(1).
 
 Questo script misura, per phi in {0.0, 0.3, 0.5, 0.7} e per tre disegni sperimentali
 (contiguous_2, contiguous_38, random_2), la quota di serie AR(1) senza alcun effetto
-di gruppo su cui la statistica F rigetta al livello nominale alpha = 0.05 (US-C2.2).
+di gruppo su cui la statistica F rigetta al livello nominale alpha = 0.05.
 Inoltre, per il disegno contiguous_2 e per lunghezze di blocco L in {7, 20, 40},
-misura il tasso di falso rigetto impiegando la soglia calibrata per moving block bootstrap (US-C2.3),
-in due varianti: sulla serie grezza, senza imporre H0 (T12), e sulla serie centrata per
-gruppo, con H0 imposta (T40).
+misura il tasso di falso rigetto impiegando la soglia calibrata per moving block bootstrap,
+in due varianti: sulla serie grezza, senza imporre H0, e sulla serie centrata per
+gruppo, con H0 imposta.
 I risultati vengono esportati in results/us_c2_anova_autocorrelation.csv (36 righe: 12 nominali,
 12 calibrate sulla serie grezza, 12 calibrate sulla serie centrata) e visualizzati nei tre
 pannelli di thesis/figures/us_c2_anova_autocorrelation.png.
@@ -34,14 +34,14 @@ from shk.stats.false_rejection import (
     compute_nominal_rejection_rates,
 )
 
-# Percorsi dalla posizione dello script, non dalla directory corrente (T64)
+# Percorsi dalla posizione dello script, non dalla directory corrente
 REPO_ROOT = Path(__file__).resolve().parents[1]
 CSV_PATH = REPO_ROOT / "results" / "us_c2_anova_autocorrelation.csv"
 PNG_PATH = REPO_ROOT / "thesis" / "figures" / "us_c2_anova_autocorrelation.png"
 
 
 def run_experiment() -> None:
-    """Esegue la simulazione degli esperimenti US-C2.2 e US-C2.3 e produce CSV e figura."""
+    """Esegue la simulazione degli esperimenti e produce CSV e figura."""
     nominal_results = compute_nominal_rejection_rates()
     calibrated_results = compute_calibrated_rejection_rates()
     centered_results = compute_centered_calibrated_rejection_rates()

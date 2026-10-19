@@ -1,4 +1,4 @@
-"""Script T54: calibrazione sul training e file di congelamento (US-C8.2).
+"""Script: calibrazione sul training e file di congelamento.
 
 Scrive results/us_c8_2_calibration_log.csv (tutte le combinazioni delle griglie, comprese
 le scartate) e config/frozen_params.toml, che si scrive una sola volta: se esiste già lo
@@ -9,12 +9,12 @@ Con l'opzione --from-log non ricalcola: rilegge il log esistente, riapplica la s
 2026-10-11), riscrive il log e scrive il file di congelamento. I valori di obiettivo e
 puntata media del log restano quelli del calcolo.
 
-Con --module1 dixon_coles (T60, T61) usa il Modulo 1 Dixon-Coles: CSV di origine con il
-suffisso _dc, seed di T61 (module1_seeds.procedure_seeds), log in
+Con --module1 dixon_coles usa il Modulo 1 Dixon-Coles: CSV di origine con il
+suffisso _dc, seed della calibrazione con Dixon-Coles (module1_seeds.procedure_seeds), log in
 results/us_c9_2a_calibration_log_dc.csv e file di congelamento config/frozen_params_dc.toml,
 con la chiave module1 e i commenti delle scelte ricavati dal log (regola decisiva e bordo).
 
-Con --log-to PATH (verifica del refactoring di T60) scrive il log in PATH e il testo del file
+Con --log-to PATH (verifica del refactoring della catena col Modulo 1 come parametro) scrive il log in PATH e il testo del file
 di congelamento in PATH con estensione .toml, senza leggere né scrivere il file in config/.
 """
 
@@ -133,7 +133,7 @@ def run_experiment(from_log: bool = False, module1: str = MODULE1_ELO, log_to: P
     """Calibra sul training (o rilegge il log con from_log), scrive il log e il file di congelamento.
 
     Con log_to scrive il log in log_to e il testo del file di congelamento accanto, con
-    estensione .toml, senza toccare il file in config/ (verifica di T60).
+    estensione .toml, senza toccare il file in config/ (verifica della catena col Modulo 1 come parametro).
     """
     repo_root = Path(__file__).resolve().parents[1]
     frozen_path = frozen_params_path(module1)

@@ -1,11 +1,11 @@
-"""Script T48 (US-C7.3, parte 2): scenari con drift di tipo atteso.
+"""Script: scenari con drift di tipo atteso.
 
 Scenario 1 (transizioni di stagione), scenario 2 (sospensione e porte chiuse 2019-20/2020-21)
 e scenario 3 (fine stagione senza e con il flag "senza obiettivi"), con intervalli al 95%
 (shk.model.known_scenarios). Scrive results/us_c7_3b_known_scenarios.csv e
 thesis/figures/us_c7_3b_known_scenarios.png.
 Con --module1 dixon_coles usa il Modulo 1 Dixon-Coles e scrive le uscite con il suffisso _dc,
-senza toccare quelle Elo (T60).
+senza toccare quelle Elo.
 """
 
 import csv

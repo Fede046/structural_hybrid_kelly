@@ -1,4 +1,4 @@
-"""Test di accettazione di T59 (US-C9.1) su dati reali: anti-leakage, DC_FITS, CSV e figura."""
+"""Test di accettazione su dati reali: anti-leakage, DC_FITS, CSV e figura."""
 
 import math
 from pathlib import Path
@@ -43,7 +43,7 @@ class _NonStrictForecaster(DixonColesForecaster):
 
 
 def test_frame_excludes_test_set(frame):
-    """Il DataFrame di T59 contiene storia, training e validazione, mai il test."""
+    """Il DataFrame del Dixon-Coles walk-forward contiene storia, training e validazione, mai il test."""
     df, _ = frame
     assert not set(df["season"]) & set(read_split_config().test)
 

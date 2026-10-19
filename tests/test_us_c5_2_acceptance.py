@@ -1,11 +1,11 @@
-"""Test di accettazione per US-C5.2 / Task 29.
+"""Test di accettazione dello Z-test per matchday.
 
 Verifica:
 - sui test sintetici: calcolo di mu e sigma delle baseline di training, schema delle 14 colonne,
   coerenza degli allarmi (matchday vs summary vs overall), valori attesi;
 - sul CSV versionato results/us_c5_2_daily_z_test.csv (eseguibile in CI anche senza dati grezzi):
   schema delle 14 colonne, 722 righe matchday, 57 righe summary, 3 righe overall, coerenza con
-  i risultati di C5.1 per ADWIN e Page-Hinkley, assenza di leak della stagione 2023-24;
+  i risultati dei drift detector per ADWIN e Page-Hinkley, assenza di leak della stagione 2023-24;
 - sulla figura thesis/figures/us_c5_2_daily_z_test.png: esistenza e dimensione non nulla;
 - sui dati reali (saltato se non disponibili): ricalcolo esatto riga per riga contro il CSV versionato.
 """
@@ -40,19 +40,19 @@ def _has_real_data() -> bool:
 
 
 def _get_csv_path() -> Path:
-    """Restituisce il percorso del file CSV dello Z-test di C5.2."""
+    """Restituisce il percorso del file CSV dello Z-test per matchday."""
     repo_root = Path(__file__).resolve().parents[1]
     return repo_root / "results" / "us_c5_2_daily_z_test.csv"
 
 
 def _get_c51_csv_path() -> Path:
-    """Restituisce il percorso del CSV di C5.1."""
+    """Restituisce il percorso del CSV dei drift detector."""
     repo_root = Path(__file__).resolve().parents[1]
     return repo_root / "results" / "us_c5_1_drift_detectors.csv"
 
 
 def _get_png_path() -> Path:
-    """Restituisce il percorso della figura di C5.2."""
+    """Restituisce il percorso della figura dello Z-test per matchday."""
     repo_root = Path(__file__).resolve().parents[1]
     return repo_root / "thesis" / "figures" / "us_c5_2_daily_z_test.png"
 
@@ -331,7 +331,7 @@ def test_versioned_csv_counts_and_structure():
 
 
 def test_versioned_csv_alarms_match_c5_1():
-    """Verifica che i conteggi di ADWIN e Page-Hinkley sulle 19 stagioni coincidano con C5.1."""
+    """Verifica che i conteggi di ADWIN e Page-Hinkley sulle 19 stagioni coincidano con i drift detector."""
     c52_csv = _get_csv_path()
     c51_csv = _get_c51_csv_path()
     assert c51_csv.exists(), f"File C5.1 non trovato: {c51_csv}"
@@ -341,7 +341,7 @@ def test_versioned_csv_alarms_match_c5_1():
     with open(c52_csv, mode="r", encoding="utf-8") as f:
         c52_rows = list(csv.DictReader(f))
 
-    # Estrazione summary C5.1 su role == validation
+    # Estrazione summary dei drift detector su role == validation
     c51_counts = {
         (r["season"], r["detector"]): int(r["n_alarms"])
         for r in c51_rows
@@ -349,7 +349,7 @@ def test_versioned_csv_alarms_match_c5_1():
     }
     assert len(c51_counts) == 38  # 19 stagioni x 2 detector
 
-    # Estrazione summary C5.2 su adwin e page_hinkley
+    # Estrazione summary dello Z-test su adwin e page_hinkley
     c52_counts = {
         (r["season"], r["method"]): int(r["n_alarms"])
         for r in c52_rows

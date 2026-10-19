@@ -1,22 +1,22 @@
-"""File di congelamento dei parametri di S9 e loader unico per S10 (T54, US-C8.2).
+"""File di congelamento dei parametri della calibrazione degli agenti e loader unico per le esecuzioni congelate.
 
-config/frozen_params.toml si scrive una sola volta, in T54 (write_frozen_params rifiuta di
+config/frozen_params.toml si scrive una sola volta, nella calibrazione sul training (write_frozen_params rifiuta di
 sovrascrivere un file esistente), e poi non si tocca più. Il programmatore lo committa
-prima di T55. S10 legge i parametri solo da qui, con load_frozen_params, che verifica che
+prima dell'esecuzione congelata sulla validazione. Le esecuzioni congelate leggono i parametri solo da qui, con load_frozen_params, che verifica che
 il file contenga esattamente le chiavi richieste.
 
 Sezioni:
 - frozen_on: data del congelamento;
-- [sources]: SHA256 dei CSV di T46, T47 e T53 da cui dipendono i parametri;
-- [calibrated]: parametri liberi scelti sul training (T54);
+- [sources]: SHA256 dei CSV della specificazione delle covariate, del Modulo 2 su finestre scorrevoli e dell'analisi di potenza da cui dipendono i parametri;
+- [calibrated]: parametri liberi scelti sul training;
 - [calibration]: obiettivo, configurazione, seed e log della calibrazione;
 - [fixed]: parametri fissati per costruzione, con la loro origine nei commenti del file;
 - [c1_thresholds]: soglia di C1 per fit alla W scelta per C1, a L_PW;
 - [not_calibrated_on_training]: parametri non calibrati sul training, con il motivo (vuota).
 
-Con Dixon-Coles come Modulo 1 (T60, T61) il file è config/frozen_params_dc.toml;
+Con Dixon-Coles come Modulo 1 il file è config/frozen_params_dc.toml;
 frozen_params_path restituisce il file del Modulo 1 dato. Il file di Dixon-Coles ha le stesse
-chiavi più la chiave di primo livello module1 = "dixon_coles" (T61); quello dell'Elo non la ha,
+chiavi più la chiave di primo livello module1 = "dixon_coles"; quello dell'Elo non la ha,
 e vale "elo".
 """
 
@@ -129,7 +129,7 @@ def check_keys(data: Mapping[str, Any]) -> None:
 
 
 def load_frozen_params(path: Path | str = FROZEN_PARAMS_PATH) -> FrozenParams:
-    """Loader unico dei parametri congelati per S10.
+    """Loader unico dei parametri congelati per le esecuzioni congelate.
 
     Solleva
     -------

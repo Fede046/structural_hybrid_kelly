@@ -1,4 +1,4 @@
-"""Test di src/shk/model/module2.py e di three_fold_batch (T47)."""
+"""Test di src/shk/model/module2.py e di three_fold_batch."""
 
 import math
 

@@ -1,16 +1,16 @@
-"""ĝ formalizzato: intervalli, placebo, finestre, fasce di quota e soglia ln π (T57).
+"""ĝ formalizzato: intervalli, placebo, finestre, fasce di quota e soglia ln π.
 
-Serie e metodi di C4.2 e T43: b365_prematch (19 stagioni di validazione) e pinnacle_closing
+Serie e metodi del calcolo di ĝ e dell'aggiunta di Shin e odds ratio: b365_prematch (19 stagioni di validazione) e pinnacle_closing
 (10 stagioni dal 2012-13), cinque metodi di de-vigging. Termini per partita
 g_t = ln p̂_t(x_t) − ln q_t(x_t) (scoring.compute_g_hat_terms); ĝ = media dei termini.
 
 Intervalli al 95% (percentili, B = 999):
 - per stagione: stationary bootstrap della serie dei termini della stagione, lunghezza media
-  L_PW stationary della serie stessa (decisione S7), e versione iid (L = 1);
+  L_PW stationary della serie stessa (decisione di progetto), e versione iid (L = 1);
 - pooled: bootstrap a due livelli, stagioni ricampionate con reinserimento come cluster e,
   dentro ciascuna, la serie ricampionata come sopra; ĝ pooled = media di tutti i termini,
-  come in C4.2. Intervallo principale con la correzione per il numero di cluster (decisione
-  del programmatore del 2026-10-12, la stessa di T56): ĝ ± t_{0.975, S−1}·√(S/(S − 1))·se_boot,
+  come nel calcolo di ĝ. Intervallo principale con la correzione per il numero di cluster (decisione
+  del programmatore del 2026-10-12, la stessa dei confronti fra agenti): ĝ ± t_{0.975, S−1}·√(S/(S − 1))·se_boot,
   con S il numero di stagioni della serie; il percentile resta come secondario.
 
 Placebo (nota 2.8 §9.3): l'intera pipeline del Modulo 1 (previsioni walk-forward con i
@@ -25,7 +25,7 @@ favorita della partita (minima delle tre), caratteristica pre-partita.
 Soglia (nota 2.4 §8): ĝ > ln π, con π = Σ_i 1/o_i della partita; si confronta ĝ con la media
 di ln π sulle partite, per stagione e pooled.
 
-Seed: SeedSequence(SEED_S10).spawn(5)[2] (T57 in posizione 2), spawn(3): figlio 0 per gli
+Seed: SeedSequence(SEED_S10).spawn(5)[2] (posizione 2), spawn(3): figlio 0 per gli
 intervalli (spawn per serie × metodo, poi per stagione), figlio 1 per le permutazioni del
 placebo, figlio 2 per la verifica di copertura su AR(1).
 """
@@ -81,19 +81,19 @@ ODDS_COLUMNS: Final[dict[str, tuple[str, str, str]]] = {
 
 
 def load_full_frame() -> pd.DataFrame:
-    """Stagioni di storia, training e validazione (mai il test), ordinate per Date, come in C4.2."""
+    """Stagioni di storia, training e validazione (mai il test), ordinate per Date, come nel calcolo di ĝ."""
     return load_match_frame()[0]
 
 
 def evaluate_series(df_full: pd.DataFrame) -> dict[str, SeriesEvaluationData]:
-    """Pipeline del Modulo 1 di C4.2: previsioni walk-forward, allineamento, de-vigging."""
+    """Pipeline del Modulo 1 del calcolo di ĝ: previsioni walk-forward, allineamento, de-vigging."""
     schedule = derive_fit_schedule(read_split_config())
     aligned = align_predictions_with_odds(generate_validation_predictions(df_full, ELO_FITS, schedule), df_full)
     return {s: prepare_series_evaluation(aligned, s, schedule) for s in SERIES_NAMES}
 
 
 def series_terms(ev: SeriesEvaluationData, method: str) -> np.ndarray:
-    """Termini g_t della serie per il metodo, nell'ordine di C4.2."""
+    """Termini g_t della serie per il metodo, nell'ordine del calcolo di ĝ."""
     return compute_g_hat_terms(ev.p_model, getattr(ev, Q_FIELDS[method]), ev.outcomes)
 
 
@@ -299,7 +299,7 @@ def threshold_rows(evals: dict[str, SeriesEvaluationData]) -> list[dict[str, obj
 
 def ar1_coverage(phi: float, seq: np.random.SeedSequence, n: int = COVERAGE_N_OBS,
                  n_series: int = COVERAGE_N_SERIES) -> tuple[float, float, float]:
-    """Copertura al 95% della media (vera 0) di AR(1) con la procedura di T42.
+    """Copertura al 95% della media (vera 0) di AR(1) con la procedura della scelta della lunghezza dei blocchi.
 
     generate_ar1_series(phi, n, n_series); per serie L_PW stationary arrotondata e intervallo
     percentile con N_BOOT ricampionamenti (stationary_bootstrap_mean_interval), a L_PW e iid.

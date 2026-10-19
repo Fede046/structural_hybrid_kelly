@@ -1,4 +1,4 @@
-"""Test di covariate_inspection.py e di accettazione di T46 (US-C7.2)."""
+"""Test di covariate_inspection.py e di accettazione della specificazione delle covariate."""
 
 import csv
 import math

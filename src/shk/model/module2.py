@@ -1,6 +1,6 @@
-"""Modulo 2 su finestre scorrevoli (T47, US-C7.3 parte 1).
+"""Modulo 2 su finestre scorrevoli.
 
-Gruppi (decisione S8, opzione (c) della nota 1.5 §9.4): alla data di decisione D, fra le
+Gruppi (decisione di progetto, opzione (c) della nota 1.5 §9.4): alla data di decisione D, fra le
 partite con Date strettamente anteriore a D della catena di stagioni di D, B = le ultime W
 partite e A = le W precedenti. La catena è la serie cronologica che attraversa le stagioni
 finché la precedente ha δ: si interrompe dove manca una stagione (per esempio fra 2000-01
@@ -12,12 +12,12 @@ blocchi di dummy con il livello 0 omesso), numerosità e media di δ per finestr
 finestra), indeterminatezza = (max − min delle spiegate delle two-fold) / |totale|.
 
 Date di decisione: le Date distinte di ogni stagione (le date dell'ambiente). Intervalli a
-fine matchday (blocchi di 10 partite di S5): per il matchday m la data di decisione è la
+fine matchday (blocchi di 10 partite del monitoraggio dei residui): per il matchday m la data di decisione è la
 prima Date della stagione strettamente successiva a quella della partita 10m; per m = 38,
 il giorno dopo l'ultima partita. Intervalli al 95% per stationary bootstrap dentro ciascuna
 finestra (righe ricampionate insieme a δ), a L_PW stationary arrotondata del δ della
 finestra, percentili per statistiche d'ordine sui ricampionamenti a rango pieno. Seed:
-SeedSequence(SEED_S8).spawn(5)[2] (T47 in posizione 2), spawn(len(MODULE2_WINDOWS)) per W,
+SeedSequence(SEED_S8).spawn(5)[2] (posizione 2), spawn(len(MODULE2_WINDOWS)) per W,
 spawn(numero di stagioni) per stagione in ordine cronologico; ogni generatore si usa in
 sequenza sui matchday, prima per A e poi per B.
 """

@@ -1,4 +1,4 @@
-"""Script T51: scelta della candidata del Modulo 3 su verità sintetica.
+"""Script: scelta della candidata del Modulo 3 su verità sintetica.
 
 Scrive results/us_c8_1a_module3_synthetic.csv e thesis/figures/us_c8_1a_module3_synthetic.png
 (shk.model.module3_synthetic).

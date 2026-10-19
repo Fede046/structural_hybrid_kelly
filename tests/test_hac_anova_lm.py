@@ -1,4 +1,4 @@
-"""Test di controllo del comportamento di anova_lm su fit HAC (US-C6.4 / Task 38).
+"""Test di controllo del comportamento di anova_lm su fit HAC.
 
 Verifica esplicitamente:
 - con typ=1 l'F di anova_lm sul fit HAC coincide con l'F dell'OLS ordinario (rel 1e-12);

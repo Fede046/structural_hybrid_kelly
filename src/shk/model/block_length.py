@@ -1,4 +1,4 @@
-"""Lunghezza dei blocchi sulle serie di log-loss del Modulo 1 e copertura su AR(1) (T42).
+"""Lunghezza dei blocchi sulle serie di log-loss del Modulo 1 e copertura su AR(1).
 
 Due gruppi di record per results/us_c8_3a_block_length.csv:
 - row_type = "series": una riga per serie di log-loss del Modulo 1 raw, cioè la serie di
@@ -10,7 +10,7 @@ Due gruppi di record per results/us_c8_3a_block_length.csv:
   di AR(1) (phi = 0.5, n = 380, 1000 serie, media vera 0) con stationary bootstrap a L_PW
   stationary arrotondata, serie per serie, e con bootstrap iid (L = 1).
 
-Seed: SeedSequence(SEED_S7).spawn(5)[2] (T42 è in posizione 2 della story S7), diviso con
+Seed: SeedSequence(SEED_S7).spawn(5)[2] (posizione 2), diviso con
 spawn(3): figlio 0 per le serie AR(1), figlio 1 per lo stationary bootstrap, figlio 2 per
 il bootstrap iid; ogni generatore si usa in sequenza sulle 1000 serie.
 """
@@ -218,7 +218,7 @@ def compute_mean_coverage_records(
     Parametri
     ---------
     seed : int, opzionale
-        Seed della story (default: SEED_S7).
+        Seed radice (default: SEED_S7).
 
     Restituisce
     -----------

@@ -1,4 +1,4 @@
-"""Test di T62 (US-C9.2): τ di Kendall, statistica di ranking, C0 = B_0.25 con Dixon-Coles, CSV e figura."""
+"""Test: τ di Kendall, statistica di ranking, C0 = B_0.25 con Dixon-Coles, CSV e figura."""
 
 import math
 from pathlib import Path
@@ -78,7 +78,7 @@ def test_c0_equals_b025_with_dixon_coles(name):
     """Con Dixon-Coles C0 coincide con B_0.25 entro 1e-12, sui seed e sulla realizzazione osservata."""
     path = RAW / name
     if not path.exists():
-        pytest.skip(f"Missing {path}: run the Dixon-Coles executions of T62")
+        pytest.skip(f"Missing {path}: run the Dixon-Coles validation and test executions")
     res = load_raw(path)
     c0, b = AGENT_ORDER.index("C0"), AGENT_ORDER.index("B_0.25")
     for arr in (res.seeds, res.observed):
@@ -88,7 +88,7 @@ def test_c0_equals_b025_with_dixon_coles(name):
 
 
 def test_csv_and_figure_exist():
-    """CSV e figura di T62 esistono, con τ per validazione e test e confronti affiancati."""
+    """CSV e figura della robustezza del ranking esistono, con τ per validazione e test e confronti affiancati."""
     if not CSV_PATH.exists():
         pytest.skip(f"Missing {CSV_PATH}: run scripts/us_c9_2_robustness.py")
     df = pd.read_csv(CSV_PATH)

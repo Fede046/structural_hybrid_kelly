@@ -1,4 +1,4 @@
-"""Seed di backtest: stagione ricostruita per stationary bootstrap delle date (T53, decisione S9).
+"""Seed di backtest: stagione ricostruita per stationary bootstrap delle date (decisione di progetto).
 
 Un seed è una ricostruzione della stagione. Si estrae una sequenza di n_date indici di data
 con lo stationary bootstrap di Politis-Romano sulle date: la posizione 0 apre sempre un
@@ -14,7 +14,7 @@ calendario resta ordinato. La covariata "position" (posizione della partita nell
 stagione) si ricalcola sull'ordine ricostruito, perché descrive il calendario.
 
 Lunghezza media dei blocchi: L_PW stationary (Politis-White con la correzione del 2009,
-arrotondata come nella decisione S7) della serie per data della media di δ della stagione
+arrotondata come nella decisione di progetto) della serie per data della media di δ della stagione
 stessa. Con L = 1 ogni posizione apre un blocco: è la versione iid.
 """
 

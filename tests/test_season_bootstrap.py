@@ -1,4 +1,4 @@
-"""Test di T53: generatore dei seed (stationary bootstrap delle date)."""
+"""Test: generatore dei seed (stationary bootstrap delle date)."""
 
 import numpy as np
 import pytest
@@ -42,7 +42,7 @@ def _per_date_counts(n_dates: int, length: float, reps: int, rng: np.random.Gene
 
 
 def test_date_layout_matches_stationary_bootstrap_indices():
-    """Stesse estrazioni dello stationary bootstrap di T42 con un solo ricampionamento."""
+    """Stesse estrazioni dello stationary bootstrap della scelta della lunghezza dei blocchi con un solo ricampionamento."""
     for n, length in ((50, 1.0), (97, 3.0), (135, 7.5)):
         a = date_layout(n, length, np.random.default_rng(11)).date_indices
         b = stationary_bootstrap_indices(n, length, 1, np.random.default_rng(11))[0]

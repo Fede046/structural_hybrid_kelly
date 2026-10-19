@@ -1,4 +1,4 @@
-"""Script per l'esperimento US-C1.1: trade-off crescita/varianza e frazionamento di Kelly.
+"""Script per l'esperimento: trade-off crescita/varianza e frazionamento di Kelly.
 
 Questo script conduce una simulazione Monte Carlo su scommesse binarie ripetute per
 studiare l'impatto del moltiplicatore lambda (f = lambda * f_star) sulla crescita del
@@ -24,14 +24,14 @@ from shk.kelly.metrics import (
     fraction_below_start,
 )
 
-# Percorsi dalla posizione dello script, non dalla directory corrente (T64)
+# Percorsi dalla posizione dello script, non dalla directory corrente
 REPO_ROOT = Path(__file__).resolve().parents[1]
 CSV_PATH = REPO_ROOT / "results" / "us_c1_1_growth_vs_lambda.csv"
 PNG_PATH = REPO_ROOT / "thesis" / "figures" / "us_c1_1_growth_vs_lambda.png"
 
 
 def run_experiment() -> None:
-    """Esegue la simulazione dell'esperimento US-C1.1 e genera report e grafici."""
+    """Esegue la simulazione dell'esperimento e genera report e grafici."""
     # Parametri dell'esperimento
     p: float = 0.60
     b: float = 1.0

@@ -1,4 +1,4 @@
-"""Test di accettazione di T56 sul CSV dei confronti e sulle uscite per seed."""
+"""Test di accettazione sul CSV dei confronti e sulle uscite per seed."""
 
 import math
 from pathlib import Path

@@ -1,4 +1,4 @@
-"""Test di T63 (US-C9.3): metodo di de-vigging come parametro, Shin uguale a T55, T56 e T58, tabella completa."""
+"""Test: metodo di de-vigging come parametro, Shin uguale all'esecuzione congelata sulla validazione, ai confronti fra agenti e all'esecuzione sul test 2023-24, tabella completa."""
 
 from pathlib import Path
 
@@ -59,7 +59,7 @@ def test_module2_frame_with_devig_method():
     (season_raw_path("shin", iid=True), RAW / "us_c8_5_test_raw_iid.npz"),
 ])
 def test_shin_runs_equal_t55_and_t58(ours, theirs):
-    """Con Shin le uscite per seed e la realizzazione osservata coincidono con T55 e T58 entro 1e-12."""
+    """Con Shin le uscite per seed e la realizzazione osservata coincidono con l'esecuzione congelata sulla validazione e con l'esecuzione sul test 2023-24 entro 1e-12."""
     if not ours.exists() or not theirs.exists():
         pytest.skip(f"Missing {ours} or {theirs}")
     a, b = load_raw(ours), load_raw(theirs)
@@ -70,7 +70,7 @@ def test_shin_runs_equal_t55_and_t58(ours, theirs):
 
 
 def test_shin_comparisons_equal_t56_and_t58():
-    """Con Shin i confronti della tabella coincidono con T56 (intervallo block) e T58 entro 1e-12."""
+    """Con Shin i confronti della tabella coincidono con i confronti fra agenti (intervallo block) e con l'esecuzione sul test entro 1e-12."""
     if not CSV_PATH.exists():
         pytest.skip(f"Missing {CSV_PATH}: run scripts/us_c9_3_devig_sensitivity.py")
     df = pd.read_csv(CSV_PATH)

@@ -1,10 +1,10 @@
-"""Esecutore unico: rigenera i risultati e li confronta con results/MANIFEST.sha256 (T64).
+"""Esecutore unico: rigenera i risultati e li confronta con results/MANIFEST.sha256.
 
 Esegue gli script nell'ordine delle dipendenze, per gruppi (decisione del programmatore del
 2026-10-18: il run completo dura circa 20 h e si fa in più riprese, ciascuna sotto le 12 h):
-- elo: da C1 a S10 con il Modulo 1 Elo (circa 6 h);
-- dixon_coles: T59, T61 e T62 con Dixon-Coles (circa 6 h);
-- devig: validazioni dei cinque metodi di de-vigging di T63 e la loro tabella (circa 8 h).
+- elo: dalle simulazioni di Kelly alle esecuzioni congelate, con il Modulo 1 Elo (circa 6 h);
+- dixon_coles: Dixon-Coles walk-forward, calibrazione con Dixon-Coles e robustezza del ranking (circa 6 h);
+- devig: validazioni con i cinque metodi di de-vigging e la tabella di sensibilità (circa 8 h).
 Opzioni:
 - --group NOME (ripetibile; senza, tutti i gruppi);
 - --skip-slow salta i passi lenti (più di circa 10 minuti), che restano solo verificati;
@@ -14,12 +14,12 @@ Opzioni:
 - --compare-only non esegue nulla: confronta il manifesto con i file presenti e, per i gruppi
   indicati, con i file congelati già rigenerati in build/reproduce/.
 
-Le esecuzioni sul 2023-24 (T58, test di T62 e di T63) non si rieseguono (decisione del
+Le esecuzioni sul 2023-24 (l'esecuzione unica e i test della robustezza del ranking e della sensibilità al de-vigging) non si rieseguono (decisione del
 2026-10-18): i loro CSV si verificano soltanto. Le tabelle che leggono le uscite per seed del
 2023-24 (us_c9_2_robustness, us_c9_3_devig_sensitivity) si ricostruiscono solo se quelle uscite
 ci sono in results/raw/, altrimenti si verificano soltanto.
 
-La calibrazione di T54 (e quella con Dixon-Coles) gira con --log-to build/reproduce/…: il log si
+La calibrazione sul training (e quella con Dixon-Coles) gira con --log-to build/reproduce/…: il log si
 confronta con la riga del manifesto del log versionato, e il testo del file congelato con quella
 di config/frozen_params*.toml.
 
@@ -108,6 +108,7 @@ STEPS: tuple[Step, ...] = (
     Step("elo", "us_c8_4_comparisons", outputs=(_r("us_c8_4_comparisons"),), slow=True,
          needs=(_raw("us_c8_3_validation_raw"),)),
     Step("elo", "us_c8_5_test_run", outputs=(_r("us_c8_5_test_run"),), test_set=True),
+    Step("elo", "kellybench_2023_24", outputs=(_r("kellybench_2023_24"),), test_set=True),
     Step("dixon_coles", "us_c9_1_dixon_coles", outputs=(_r("us_c9_1_dixon_coles"),)),
     Step("dixon_coles", "us_c7_2_covariates", DC, outputs=(_r("us_c7_2_covariates_dc"),)),
     Step("dixon_coles", "us_c7_3_module2", DC, outputs=(_r("us_c7_3_module2_dc"), _r("us_c7_3_module2_ci_dc"))),
@@ -166,10 +167,10 @@ def write_manifest_and_environment() -> None:
     paths = sorted(p.relative_to(REPO_ROOT).as_posix() for p in (REPO_ROOT / "results").glob("*.csv"))
     paths += ["config/frozen_params.toml", "config/frozen_params_dc.toml"]
     header = (
-        "SHA256 dei CSV di results/ e dei file congelati in config/ (T64).",
+        "SHA256 dei CSV di results/ e dei file congelati in config/.",
         "Formato: <sha256>  <percorso>[  normalized=<regola>]. Regole (decisione del 2026-10-18):",
         "drop_seasons: righe delle stagioni date tolte (us_c3_1 aggiunge il test dopo lo sblocco);",
-        "blank_columns: colonne svuotate (tempi misurati di us_c8_3b_power, TIMING_COLUMNS di T53);",
+        "blank_columns: colonne svuotate (tempi misurati di us_c8_3b_power, TIMING_COLUMNS di power.py);",
         "drop_lines: righe tolte (nei file congelati, lo SHA256 grezzo del CSV di potenza, che dipende dai tempi).",
         "Verifica: .venv/Scripts/python.exe scripts/reproduce_all.py (vedi README.md).",
     )

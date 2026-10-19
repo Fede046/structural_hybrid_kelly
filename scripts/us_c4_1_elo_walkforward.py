@@ -1,4 +1,4 @@
-"""Script di calibrazione e previsione walk-forward Elo (US-C4.1).
+"""Script di calibrazione e previsione walk-forward Elo.
 
 Genera il file CSV delle previsioni (results/us_c4_1_elo_walkforward.csv) e la figura
 dei profili di log-loss rispetto a K e h (thesis/figures/us_c4_1_elo_walkforward.png).
@@ -158,7 +158,7 @@ def run_experiment() -> None:
     ax2.legend(loc="best", fontsize=9)
 
     fig.suptitle(
-        "Profili di verosimiglianza di training per i tre fit Elo (US-C4.1)",
+        "Profili di verosimiglianza di training per i tre fit Elo",
         fontsize=12,
         fontweight="bold",
         y=1.02,

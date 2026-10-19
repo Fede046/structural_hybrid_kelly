@@ -270,7 +270,7 @@ def test_overround_computation():
 
 
 # ---------------------------------------------------------------------------
-# T43: metodi Shin e odds ratio
+# Metodi Shin e odds ratio
 # ---------------------------------------------------------------------------
 
 # Valori della nota 2.1 §7 (percentuali a 3 decimali, parametri a 4 decimali)

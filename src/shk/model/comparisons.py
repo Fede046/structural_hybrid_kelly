@@ -1,13 +1,12 @@
-"""Confronti appaiati fra agenti con intervalli block e iid ed effect size (T56, US-C8.3 e US-C8.4).
+"""Confronti appaiati fra agenti con intervalli block e iid ed effect size.
 
-Ingressi: le uscite per seed di T55 (seed a L_PW, "block") e di un run iid aggiuntivo degli
+Ingressi: le uscite per seed dell'esecuzione congelata sulla validazione (seed a L_PW, "block") e di un run iid aggiuntivo degli
 stessi agenti (seed con L = 1), nella forma ValidationResult (S stagioni, C configurazioni,
 A agenti, M metriche, N seed).
 
 Metriche primarie (PRIMARY_METRICS):
-- per seed: log-ricchezza finale, drawdown massimo, tempo di recupero (con la censura di
-  T55: senza recupero vale la durata osservata D − t*);
-- per stagione, calcolate sui seed: g_CE(γ) per γ ∈ {1, 2, 5} (decisione S10), tasso di
+- per seed: log-ricchezza finale, drawdown massimo, tempo di recupero (con la censura dell'esecuzione congelata sulla validazione: senza recupero vale la durata osservata D − t*);
+- per stagione, calcolate sui seed: g_CE(γ) per γ ∈ {1, 2, 5} (decisione di progetto), tasso di
   rovina, SD di ln B_T sulle traiettorie non rovinate.
 
 Differenza pooled di A − B: media sulle stagioni della differenza per stagione; per le
@@ -16,7 +15,7 @@ metriche per seed la differenza per stagione è la media sui seed delle differen
 statistiche. C2 − E non esiste con F = 0 (E non c'è).
 
 Intervallo al 95%, bootstrap a due livelli (stagioni come cluster indipendenti, decisione
-S10): a ogni ricampionamento si estraggono 19 stagioni con reinserimento e, dentro ciascuna,
+di progetto): a ogni ricampionamento si estraggono 19 stagioni con reinserimento e, dentro ciascuna,
 N seed con reinserimento fra quelli esistenti, gli stessi per i due agenti; si ricalcola la
 differenza pooled. Intervallo principale (decisione del programmatore del 2026-10-12, per la
 sottocopertura nota con pochi cluster): D̂ ± t_{0.975, S−1}·√(S/(S − 1))·se_boot, con se_boot

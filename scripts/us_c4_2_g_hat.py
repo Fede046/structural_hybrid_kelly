@@ -1,8 +1,8 @@
-"""Script per il calcolo di g_hat del Modulo 1 contro il mercato de-viggato (US-C4.2).
+"""Script per il calcolo di g_hat del Modulo 1 contro il mercato de-viggato.
 
 Genera il file CSV dei risultati (results/us_c4_2_g_hat.csv) e la figura
 dell'edge cumulativo g_hat (thesis/figures/us_c4_2_g_hat.png). Le righe di Shin e odds ratio
-(T43) seguono quelle dei tre metodi di T23.
+ seguono quelle dei tre metodi del primo calcolo di ĝ.
 """
 
 import csv
@@ -63,7 +63,7 @@ def run_experiment() -> None:
     }
 
     # 3. Calcolo metriche e assemblaggio righe CSV nell'ordine specificato: prima i tre
-    # metodi di T23 per le due serie (righe già versionate), poi Shin e odds ratio (T43)
+    # metodi del primo calcolo di ĝ per le due serie (righe già versionate), poi Shin e odds ratio
     q_fields = {
         "proportional": "q_proportional",
         "additive": "q_additive",

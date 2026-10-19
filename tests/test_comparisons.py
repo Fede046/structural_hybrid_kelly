@@ -1,4 +1,4 @@
-"""Test di T56 su dati sintetici: statistiche per stagione, bootstrap a due livelli, copertura, effect size."""
+"""Test su dati sintetici: statistiche per stagione, bootstrap a due livelli, copertura, effect size."""
 
 import math
 
@@ -80,7 +80,7 @@ def test_effect_sizes():
 
 
 def test_coverage_simulation_is_deterministic_fraction():
-    """Funzionamento della simulazione di copertura (il criterio vincolante è sul CSV di T56)."""
+    """Funzionamento della simulazione di copertura (il criterio vincolante è sul CSV dei confronti fra agenti)."""
     a = coverage_simulation(np.random.default_rng(5), n_replicas=30, n_seeds=50, tau=0.05, sigma=0.3)
     b = coverage_simulation(np.random.default_rng(5), n_replicas=30, n_seeds=50, tau=0.05, sigma=0.3)
     assert a == b and all(0.0 <= v <= 1.0 for v in a)

@@ -1,4 +1,4 @@
-"""Tabelle LaTeX con booktabs e loro gemelle CSV (T65).
+"""Tabelle LaTeX con booktabs e loro gemelle CSV.
 
 Una tabella è un elenco di colonne e di righe di celle. Ogni cella ha:
 - la resa LaTeX, con la virgola decimale (DECIMAL_MARK) e le etichette in italiano;
@@ -157,7 +157,7 @@ def _source_note(sources: Sequence[VersionedCsv]) -> str:
 def render_latex(table: ThesisTable) -> str:
     """Sorgente LaTeX della tabella (ambiente table, tabular con booktabs, note e fonte)."""
     lines = [
-        f"% Generato da {GENERATED_BY} (T65) dai CSV versionati: non modificare a mano.",
+        f"% Generato da {GENERATED_BY} dai CSV versionati: non modificare a mano.",
         r"% Richiede \usepackage{booktabs}.",
         r"\begin{table}[htbp]",
         r"\centering",

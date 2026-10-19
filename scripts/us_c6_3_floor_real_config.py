@@ -1,4 +1,4 @@
-"""Script per l'esecuzione del backtest Monte Carlo del floor reale (US-C6.3 / Task 37).
+"""Script per l'esecuzione del backtest Monte Carlo del floor reale.
 
 Esegue gli agenti A, B_0.25, B_0.10 ed E sul calendario e quote reali con esiti estratti
 dalle probabilita' proporzionali di mercato (verita'). Produce il CSV dei risultati

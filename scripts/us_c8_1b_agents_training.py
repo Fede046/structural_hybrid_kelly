@@ -1,9 +1,9 @@
-"""Script T52: soglie di C1 ed esecuzione appaiata di prova degli agenti sulle stagioni di training.
+"""Script: soglie di C1 ed esecuzione appaiata di prova degli agenti sulle stagioni di training.
 
 Scrive results/us_c8_1b_agents_training.csv (shk.model.training_agents). Parametri
 provvisori W = 80 e κ = 0.5: non sono una calibrazione.
 Con --module1 dixon_coles usa il Modulo 1 Dixon-Coles e scrive le uscite con il suffisso _dc,
-senza toccare quelle Elo (T60), con i seed di T61 (module1_seeds.procedure_seeds).
+senza toccare quelle Elo, con i seed della calibrazione con Dixon-Coles (module1_seeds.procedure_seeds).
 """
 
 import csv

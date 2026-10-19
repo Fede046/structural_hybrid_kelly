@@ -17,27 +17,27 @@ inferenziali. In ogni applicazione il dato passato a calibrate_threshold è una 
 cui H0 vale, perché imporla spetta al chiamante (punto (c)); la statistica osservata si
 calcola invece sui dati originali. L'applicazione copre quattro strumenti metodologici
 principali del progetto:
-1. ANOVA F (C2, T40):
+1. ANOVA F:
    - Dato: la serie della risposta centrata per gruppo, cioè ogni osservazione meno la
      media del suo gruppo, con il tempo sull'asse 0 (center_by_group in
      shk.stats.false_rejection);
    - Statistica: statistica F con etichette di gruppo fisse, allineate al tempo originale.
-2. FWER dello Z-test per giornata (C5.2):
-   - Dato: una serie in cui H0 vale per costruzione; in C5.2 è la serie di training del
+2. FWER dello Z-test per giornata:
+   - Dato: una serie in cui H0 vale per costruzione; nello Z-test per matchday è la serie di training del
      fit che definisce media e deviazione standard dello Z;
    - Statistica: |Z| calcolato con l'assegnazione alle giornate fissa.
 3. Difference-in-Differences (DiD):
    - Dato: la serie della differenza fra trattati e controlli, con l'effetto stimato
      sottratto dal periodo post;
    - Statistica: la differenza fra la media post e la media pre, con la data di separazione fissa.
-4. Test di Breusch-Pagan (C6.4):
-   - Dato: una serie in cui H0 di omoschedasticità vale per costruzione; in C6.4 è la serie
+4. Test di Breusch-Pagan:
+   - Dato: una serie in cui H0 di omoschedasticità vale per costruzione; nel test di eteroschedasticità è la serie
      di training del fit, ricampionata insieme ai suoi regressori;
    - Statistica: moltiplicatore di Lagrange LM = n * R^2 della regressione ausiliaria
      dei residui al quadrato sui regressori.
 
 (b) Dipendenza dalla lunghezza dei blocchi L:
-La soglia calibrata, e quindi il tasso di falso rigetto che ne risulta, dipende dalla lunghezza dei blocchi L. La dipendenza misurata sulle serie AR(1) dell'esperimento C2 è riportata nelle righe con method = block_bootstrap (serie grezza, H0 non imposta, T12) e method = block_bootstrap_centered (serie centrata per gruppo, H0 imposta, T40) di results/us_c2_anova_autocorrelation.csv.
+La soglia calibrata, e quindi il tasso di falso rigetto che ne risulta, dipende dalla lunghezza dei blocchi L. La dipendenza misurata sulle serie AR(1) dell'esperimento C2 è riportata nelle righe con method = block_bootstrap (serie grezza, H0 non imposta) e method = block_bootstrap_centered (serie centrata per gruppo, H0 imposta) di results/us_c2_anova_autocorrelation.csv.
 
 (c) Imposizione dell'ipotesi nulla H0:
 La funzione di calibrazione opera come algoritmo generale di ricampionamento e non altera
@@ -46,7 +46,7 @@ centrando la serie per gruppo prima dell'ANOVA F, centrandola attorno alla media
 sottraendo l'effetto stimato o calcolando i residui vincolati sotto H0) spetta
 esclusivamente al chiamante prima dell'invocazione. Ricampionare la serie grezza senza
 imporre H0 lascia nella distribuzione bootstrap la differenza osservata fra i gruppi:
-in T12, a phi = 0, la soglia così calibrata aveva correlazione di rango positiva con la
+nella calibrazione non centrata dell'ANOVA, a phi = 0, la soglia così calibrata aveva correlazione di rango positiva con la
 F osservata.
 """
 

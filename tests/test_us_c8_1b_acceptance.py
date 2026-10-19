@@ -1,4 +1,4 @@
-"""Test di accettazione di T52 sul CSV dell'esecuzione di prova sulle stagioni di training."""
+"""Test di accettazione sul CSV dell'esecuzione di prova sulle stagioni di training."""
 
 import math
 from pathlib import Path

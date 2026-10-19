@@ -1,10 +1,10 @@
-% Generato da scripts/build_thesis_tables.py (T65) dai CSV versionati: non modificare a mano.
+% Generato da scripts/build_thesis_tables.py dai CSV versionati: non modificare a mano.
 % Richiede \usepackage{booktabs}.
 \begin{table}[htbp]
 \centering
 \small
 \caption{Eteroschedasticità e cambio di varianza della log-loss: rigetti sulle 19 stagioni di validazione}
-\label{tab:c6_4_eteroschedasticita}
+\label{tab:eteroschedasticita}
 \begin{tabular}{lrrrrr}
 \toprule
  & \multicolumn{5}{c}{Rigetti su 19 stagioni} \\
@@ -24,7 +24,7 @@ Log-varianza mobile & --- & 2 & 3 & 3 & 2 \\
 \begin{minipage}{\linewidth}
 \footnotesize
 Serie: log-loss per partita del Modulo 1 (Elo). BP: Breusch-Pagan (Koenker) sui residui OLS di $y \sim 1 + H + t$, congiunto con $z = (H, t)$ e temporale con $z = t$; White con i termini quadratici. Soglie calibrate col moving block bootstrap della serie di training del fit ($B = 999$).\par
-Goldfeld-Quandt, ARCH-LM e log-varianza mobile: T44, con la stessa calibrazione e $L_{\mathrm{PW}}$ di Politis-White; ``---'': non applicabile o non calcolato.\par
+Goldfeld-Quandt, ARCH-LM e log-varianza mobile: con la stessa calibrazione e $L_{\mathrm{PW}}$ di Politis-White; ``---'': non applicabile o non calcolato.\par
 Brown-Forsythe fra stagioni (7220 partite): statistica 1,321; soglie nominale 1,605; $L = 7$ 1,301; $L = 20$ 1,309; $L = 40$ 1,192; $L_{\mathrm{PW}}$ 1,458.\par
 Fonti: \texttt{results/us\_c6\_4\_heteroskedasticity.csv} (SHA256 \texttt{c98a6c96c7e5}); \texttt{results/us\_c6\_4b\_variance\_change.csv} (SHA256 \texttt{4475d96451d6}).
 \end{minipage}

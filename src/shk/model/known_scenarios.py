@@ -1,6 +1,6 @@
-"""Scenari con drift di tipo atteso e decomposizione annidata (T48, US-C7.3 parte 2).
+"""Scenari con drift di tipo atteso e decomposizione annidata.
 
-Specificazione: quella di T46 (derive_specification sul training), senza modifiche.
+Specificazione: quella scelta sul training (derive_specification), senza modifiche.
 Gruppi e W fissati prima di eseguire:
 - scenario 1, compositivo atteso: per ogni transizione s − 1 → s fra stagioni consecutive
   con δ, A = ultime W partite di s − 1, B = prime W di s, W in MODULE2_WINDOWS (W = 80
@@ -12,7 +12,7 @@ Gruppi e W fissati prima di eseguire:
   91–250), B = matchday 30–38 (posizioni 291–380), senza e con il flag "senza obiettivi"
   (season_objectives.no_objective_flags; almeno una delle due squadre).
 
-Scenari 1 e 2: three-fold e π come nella decisione S8. Scenario 3 (decisione del
+Scenari 1 e 2: three-fold e π come nella decisione di progetto. Scenario 3 (decisione del
 programmatore, 2026-10-11): il flag "senza obiettivi" esiste solo nel gruppo B, per
 costruzione (violazione del supporto comune), quindi β_A,flag non è identificato.
 - Quantità principale, identica nelle due versioni: la two-fold con riferimento β_B, con
@@ -26,7 +26,7 @@ costruzione (violazione del supporto comune), quindi β_A,flag non è identifica
 Intervalli al 95%: stationary bootstrap dentro ciascun gruppo (righe ricampionate insieme a
 δ), L = L_PW stationary arrotondata del δ del gruppo, B = N_BOOT_SCENARIOS, percentili per
 statistiche d'ordine sui ricampionamenti validi. Seed: SeedSequence(SEED_S8).spawn(5)[3]
-(T48 in posizione 3), spawn(3) per scenario; scenario 1: spawn(len(MODULE2_WINDOWS)) per W
+(posizione 3), spawn(3) per scenario; scenario 1: spawn(len(MODULE2_WINDOWS)) per W
 e poi spawn(numero di transizioni), uno per transizione; scenario 2: un generatore;
 scenario 3: spawn(numero di stagioni), uno per stagione. Ogni generatore estrae prima per A
 e poi per B.

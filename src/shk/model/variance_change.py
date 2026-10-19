@@ -1,10 +1,10 @@
-"""Diagnostiche della varianza nel tempo sui residui del Modulo 1 raw (T44, seguito di C6.4).
+"""Diagnostiche della varianza nel tempo sui residui del Modulo 1 raw.
 
 Serie: z_t = residui della log-loss standardizzati per varentropia
 (shk.stats.variance_change.varentropy_standardized_residuals), calcolati dalle
 probabilità p_home, p_draw, p_away e dall'esito FTR di compute_model_residuals.
 
-Scenari, come in C5 e C6.4: i 3 di training (la stagione j prevista dal fit che termina
+Scenari, come nel monitoraggio dei residui e come nel test di eteroschedasticità: i 3 di training (la stagione j prevista dal fit che termina
 in j, 380 partite, in campione) e le 19 stagioni di validazione (ciascuna dal suo fit), in
 ordine cronologico.
 
@@ -18,12 +18,12 @@ Statistiche nel tempo, per scenario (parametri fissati dal task: terzi, q = 10, 
 - rolling_log_variance: massimo di |ln(var finestra / var stagione)|; nessuna soglia
   nominale.
 
-Soglie calibrate come in T39: moving block bootstrap della serie di training del fit che
+Soglie calibrate come nel test di eteroschedasticità: moving block bootstrap della serie di training del fit che
 prevede la stagione (z di tutte le righe di training del fit, 380, 760 o 1140 partite),
 prime 380 posizioni, B = 999, soglia = 950-esima statistica d'ordine, rigetto stretto;
-L in (7, 20, 40) più L_PW = lunghezza di Politis-White circolare (T42) della serie
+L in (7, 20, 40) più L_PW = lunghezza di Politis-White circolare della serie
 ricampionata, arrotondata con round_block_length. Verifica su 1 000 ricampionamenti
-indipendenti per fit x L x statistica contro l'intervallo con Bonferroni di T39
+indipendenti per fit x L x statistica contro l'intervallo con Bonferroni del test di eteroschedasticità
 [BONFERRONI_LOWER, BONFERRONI_UPPER], estremi inclusi.
 
 Varianza fra stagioni: Brown-Forsythe sulle 19 stagioni di validazione di z_t, nominale
@@ -31,7 +31,7 @@ F(18, 7201). Soglia calibrata ricampionando la serie di training concatenata, ci
 scenari di training in ordine cronologico (1140 partite), in 19 pseudo-stagioni da 380:
 moving block bootstrap di lunghezza 7220 (moving_block_indices_of_length), stesse L.
 
-Seed: SeedSequence(SEED_S7).spawn(5)[4] (T44 è in posizione 4 della story S7), diviso con
+Seed: SeedSequence(SEED_S7).spawn(5)[4] (posizione 4), diviso con
 spawn(4): figli 0, 1, 2 per i fit in ordine cronologico, figlio 3 per Brown-Forsythe; ogni
 figlio con spawn(4), uno per L nell'ordine (7, 20, 40, L_PW); ogni L con spawn(2):
 calibrazione, verifica.

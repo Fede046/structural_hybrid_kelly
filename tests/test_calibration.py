@@ -219,7 +219,7 @@ def test_calibrate_threshold_vectorized_vs_non_vectorized():
 
 def test_calibrate_threshold_two_different_statistics():
     """Verifica il funzionamento con ANOVA vettorizzata (1D) e statistica multivariata (2D)."""
-    # Statistica 1: ANOVA vettorizzata del Task 8 con etichette fisse su dati 1D
+    # Statistica 1: ANOVA vettorizzata con etichette fisse su dati 1D
     rng_1d = np.random.default_rng(1)
     data_1d = rng_1d.normal(size=380)
     labels = np.array([0] * 190 + [1] * 190, dtype=np.int64)

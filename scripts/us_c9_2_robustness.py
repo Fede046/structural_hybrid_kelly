@@ -1,9 +1,9 @@
-"""Script T62 (US-C9.2): robustezza del ranking degli agenti fra Elo e Dixon-Coles.
+"""Script: robustezza del ranking degli agenti fra Elo e Dixon-Coles.
 
-Legge le uscite per seed delle esecuzioni Elo (T55, T58) e Dixon-Coles (T62, suffisso _dc):
+Legge le uscite per seed delle esecuzioni Elo e Dixon-Coles (suffisso _dc):
 - results/raw/us_c8_3_validation_raw.npz e us_c8_3_validation_raw_dc.npz (19 stagioni);
 - results/raw/us_c8_5_test_raw.npz e us_c8_5_test_raw_dc.npz (2023-24);
-e i confronti di T56 e T58 (results/us_c8_4_comparisons*.csv, results/us_c8_5_test_run*.csv).
+e i confronti fra agenti in validazione e sul test 2023-24 (results/us_c8_4_comparisons*.csv, results/us_c8_5_test_run*.csv).
 Scrive results/us_c9_2_robustness.csv (statistiche di ranking, τ di Kendall con intervalli,
 coppie invertite, differenze appaiate affiancate) e thesis/figures/us_c9_2_robustness.png.
 Seed del bootstrap: SeedSequence(SEED_S11).spawn(5)[3].spawn(5)[4], spawn(2): validazione, test.
@@ -97,7 +97,7 @@ def make_figure(df: pd.DataFrame, png_path: Path) -> None:
     ax_c.set_yticks(y)
     ax_c.set_yticklabels(comp["comparison"])
     ax_c.set_xlabel("Differenza pooled di ln W_T (19 stagioni), intervallo t corretto")
-    ax_c.set_title("C) Confronti di T56 con Elo e Dixon-Coles, £0.01", loc="left", fontsize=10, fontweight="bold")
+    ax_c.set_title("C) Confronti fra agenti con Elo e Dixon-Coles, £0.01", loc="left", fontsize=10, fontweight="bold")
     ax_c.legend(fontsize=8)
     ax_c.grid(True, axis="x", linestyle=":", alpha=0.6)
     fig.tight_layout()

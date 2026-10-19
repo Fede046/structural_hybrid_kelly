@@ -1,4 +1,4 @@
-"""Modulo per i test di eteroschedasticita' di Breusch-Pagan (Koenker) e White (US-C6.4 / Task 38).
+"""Modulo per i test di eteroschedasticita' di Breusch-Pagan (Koenker) e White.
 
 Implementa:
 - ols_residuals: calcolo dei residui OLS via fattorizzazione QR (senza inversa di X'X);

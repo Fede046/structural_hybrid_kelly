@@ -1,4 +1,4 @@
-"""Test di accettazione per g_hat del Modulo 1 contro il mercato de-viggato (US-C4.2)."""
+"""Test di accettazione per g_hat del Modulo 1 contro il mercato de-viggato."""
 
 import csv
 import math
@@ -34,7 +34,7 @@ def _has_real_data() -> bool:
 
 
 def test_csv_schema_and_summary_structure():
-    """Verifica colonne, 10 righe di summary (6 di T23 e 4 di T43) e g_hat = LL(q) - LL(p)."""
+    """Verifica colonne, 10 righe di summary (6 del primo calcolo di ĝ e 4 dell'aggiunta di Shin e odds ratio) e g_hat = LL(q) - LL(p)."""
     assert CSV_PATH.exists(), f"File {CSV_PATH} not found"
 
     with open(CSV_PATH, mode="r", encoding="utf-8") as f:
@@ -47,7 +47,7 @@ def test_csv_schema_and_summary_structure():
 
     assert len(df_sum) == 10, f"Expected 10 summary rows, got {len(df_sum)}"
 
-    # Prima le 6 righe di T23, poi Shin e odds ratio accodati (T43)
+    # Prima le 6 righe del primo calcolo di ĝ, poi Shin e odds ratio accodati
     expected_pairs = [
         (s, m) for s in SERIES_NAMES for m in DEVIG_METHODS
     ] + [(s, m) for s in SERIES_NAMES for m in EXTRA_DEVIG_METHODS]

@@ -1,17 +1,18 @@
-"""Sequenza di seed di un task di story (T61).
+"""Sequenza di seed di una procedura.
 
-Le procedure di S8 e S9 (T46, T47, T52, T53, T54) ricavano i propri seed da
-SeedSequence(seed).spawn(N_STORY_TASKS)[posizione del task]. Con Dixon-Coles come Modulo 1,
-T61 le riesegue con seed diversi: per questo accettano anche una SeedSequence già pronta,
-che si usa al posto di quella del task. Con un intero il risultato è quello di sempre.
+Le procedure del Modulo 2 e della calibrazione degli agenti ricavano i propri seed da
+SeedSequence(seed).spawn(N_STORY_TASKS)[posizione della procedura]. Con Dixon-Coles come
+Modulo 1 la calibrazione si riesegue con seed diversi: per questo accettano anche una
+SeedSequence già pronta, che si usa al posto di quella della procedura. Con un intero il
+risultato è quello di sempre.
 
 Della SeedSequence data si usa una copia nuova (stessa entropia e stessa spawn_key, nessun
 figlio già generato): spawn() avanza un contatore interno, e la stessa sequenza passata due
 volte deve dare gli stessi figli, come un intero.
 
-Le procedure di S10 (T55, T56, T58) usano invece il seed come radice della story: con
-Dixon-Coles T62 passa la radice R = SeedSequence(SEED_S11).spawn(5)[3], e ogni procedura
-prende R.spawn(5)[posizione] con la stessa forma di SEED_S10 (story_task_sequence).
+Le esecuzioni congelate usano invece il seed come radice: con Dixon-Coles la robustezza del
+ranking passa la radice R = SeedSequence(SEED_S11).spawn(5)[3], e ogni procedura prende
+R.spawn(5)[posizione] con la stessa forma di SEED_S10 (story_task_sequence).
 """
 
 from typing import Final
@@ -39,7 +40,7 @@ def task_sequence(seed: int | np.random.SeedSequence, position: int,
 
 def story_task_sequence(seed: int | np.random.SeedSequence, position: int,
                         n_tasks: int = N_STORY_TASKS) -> np.random.SeedSequence:
-    """Sequenza del task dalla radice della story: SeedSequence(seed) per un intero, una copia nuova
+    """Sequenza della procedura dalla radice: SeedSequence(seed) per un intero, una copia nuova
     della SeedSequence data altrimenti; poi spawn(n_tasks)[position].
 
     Solleva

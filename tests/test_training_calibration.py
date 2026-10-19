@@ -1,4 +1,4 @@
-"""Test di T54: griglie, regola di scelta, agente D con q condivise, loader dei parametri congelati."""
+"""Test: griglie, regola di scelta, agente D con q condivise, loader dei parametri congelati."""
 
 import csv
 import datetime

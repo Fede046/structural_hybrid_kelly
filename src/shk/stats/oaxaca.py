@@ -1,4 +1,4 @@
-"""Decomposizione di Oaxaca-Blinder a mano, su array (T45, US-C7.1).
+"""Decomposizione di Oaxaca-Blinder a mano, su array.
 
 Convenzione della nota 1.5 §9.5: A è il gruppo di riferimento (la finestra vecchia), B il
 gruppo recente; in ciascun gruppo si stima un OLS separato y = x'beta con intercetta. Con

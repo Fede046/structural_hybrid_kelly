@@ -1,9 +1,9 @@
-"""Script T49: DiD fra partite con neopromosse e fra squadre note, Ñopo e supporto comune.
+"""Script: DiD fra partite con neopromosse e fra squadre note, Ñopo e supporto comune.
 
 Scrive results/us_c7_4_did_support.csv e thesis/figures/us_c7_4_did_support.png
 (shk.model.did_support).
 Con --module1 dixon_coles usa il Modulo 1 Dixon-Coles e scrive le uscite con il suffisso _dc,
-senza toccare quelle Elo (T60).
+senza toccare quelle Elo.
 """
 
 import csv

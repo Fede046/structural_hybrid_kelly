@@ -1,4 +1,4 @@
-"""Test unitari e criteri di accettazione per il previsore Elo walk-forward (Task 21)."""
+"""Test unitari e criteri di accettazione per il previsore Elo walk-forward."""
 
 from collections.abc import Collection
 from pathlib import Path

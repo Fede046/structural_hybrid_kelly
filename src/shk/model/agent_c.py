@@ -1,23 +1,23 @@
-"""Agente C e bracci dell'ablazione dentro l'architettura di C6 (T52, decisione S9).
+"""Agente C e bracci dell'ablazione dentro l'architettura del backtest appaiato (decisione di progetto).
 
 Supervisore del Modulo 2 (Module2Supervisor). Un'istanza per esecuzione dell'ambiente,
 condivisa dai bracci che lo usano (C1, C2_global, C2), così il Modulo 2 si calcola una volta
 per data. Riceve all'inizio solo le covariate pre-partita della stagione, nell'ordine delle
 partite dell'ambiente. Gli esiti gli arrivano solo da Agent.observe_results, che l'ambiente
 chiama dopo il regolamento di ogni data: per ogni partita regolata registra p̂, q di Shin
-dalle quote della data, esito e δ = ln p̂(x) − ln q(x) (decisione S8). L'aggiornamento è
+dalle quote della data, esito e δ = ln p̂(x) − ln q(x) (decisione di progetto). L'aggiornamento è
 idempotente per data, perché i bracci inoltrano le stesse DateResults.
 
 Alla data di decisione d (state_at, con cache per data) il supervisore costruisce i dati
 del Modulo 2 dalle sole partite osservate e chiama module2.module2_at_date con anteriorità
-stretta (Date < d), sulla catena della sola stagione: in T52 le stagioni di training non si
+stretta (Date < d), sulla catena della sola stagione: nell'esecuzione di prova sul training le stagioni di training non si
 collegano alle stagioni di validazione precedenti. Restituisce anche:
 - le finestre A e B nel formato del Modulo 3 (WindowData, con EV̂ dell'esito candidato,
   cioè quello a EV stimato massimo, di ogni partita della finestra);
-- la maschera "fuori supporto" di T49 per le partite della data (out_of_support_mask sulla
+- la maschera "fuori supporto" dell'analisi del supporto comune per le partite della data (out_of_support_mask sulla
   finestra A), quando ci sono almeno 2W partite anteriori, come out_of_support_at_date.
 
-Bracci (decisione S9; il supervisore cambia solo le frazioni, mai previsioni, selezione o
+Bracci (decisione di progetto; il supervisore cambia solo le frazioni, mai previsioni, selezione o
 ripiego, che restano quelli di Agent.decide):
 - C0: FractionalKellyAgent con λ = 0.25, identico a B_0.25 (build_c0_agent);
 - C1 (C1Agent): λ = 0.25·κ^n, con n il numero di accensioni dell'allarme strutturale,
@@ -29,7 +29,7 @@ ripiego, che restano quelli di Agent.decide):
   un allarme di D su partite anteriori. Con κ = 0 vale la convenzione di
   compute_adaptive_lambda (adaptive_multiplier);
 - C2_global (GradedAgent, abstain=False): λ per scommessa = module3.module3_lambda
-  (candidata P3 di T51), con le finestre A e B e S del supervisore; Modulo 2 non attivo
+  (candidata P3 della scelta del Modulo 3), con le finestre A e B e S del supervisore; Modulo 2 non attivo
   o con rango non pieno → λ = 0.25;
 - C2 (GradedAgent, abstain=True): come C2_global, con frazione 0 sulle partite fuori
   supporto.
@@ -86,7 +86,7 @@ class SupervisorState(NamedTuple):
 
 
 class SupervisorHistory(NamedTuple):
-    """Partite già regolate delle stagioni precedenti della catena (sensibilità di T55)."""
+    """Partite già regolate delle stagioni precedenti della catena (sensibilità dell'esecuzione congelata sulla validazione)."""
 
     dates: np.ndarray     # (H,) datetime64, ordinate e anteriori alla stagione
     x: np.ndarray         # (H, k) covariate pre-partita
@@ -112,10 +112,10 @@ class Module2Supervisor:
         W del Modulo 2.
     history : SupervisorHistory o None, default None
         Partite già regolate delle stagioni precedenti della catena, tutte anteriori alla
-        stagione: con None la catena è tagliata alla stagione (calibrazione T52–T54 e S10);
-        altrimenti attraversa le stagioni come nella decisione S8 (sensibilità di T55).
+        stagione: con None la catena è tagliata alla stagione (calibrazione sul training ed esecuzioni congelate);
+        altrimenti attraversa le stagioni come nella decisione di progetto (sensibilità dell'esecuzione congelata sulla validazione).
     devig_method : str, default "shin"
-        Metodo di de-vigging di q per δ (decisione S7; gli altri per la sensibilità di T63).
+        Metodo di de-vigging di q per δ (decisione di progetto; gli altri per la sensibilità al de-vigging).
 
     Solleva
     -------

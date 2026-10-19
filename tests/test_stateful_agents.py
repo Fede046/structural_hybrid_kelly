@@ -1,4 +1,4 @@
-"""Test di T50: canale degli esiti, Baseline D come agente e politica del ripiego."""
+"""Test: canale degli esiti, Baseline D come agente e politica del ripiego."""
 
 import inspect
 import math
@@ -160,7 +160,7 @@ def _season_inputs(data):
 
 
 def test_baseline_d_reproduces_c5_3(real_data):
-    """Con la log-loss e F = 0 l'agente D riproduce C5.3 entro 1e-12, per detector e κ."""
+    """Con la log-loss e F = 0 l'agente D riproduce la Baseline D entro 1e-12, per detector e κ."""
     seasons = _season_inputs(real_data)
     assert len(seasons) == 21
     worst = 0.0

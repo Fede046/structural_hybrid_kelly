@@ -1,4 +1,4 @@
-"""Script per la ricalibrazione, analisi di affidabilità e Brier score (US-C4.3).
+"""Script per la ricalibrazione, analisi di affidabilità e Brier score.
 
 Genera il file CSV dei risultati (results/us_c4_3_calibration.csv) e la figura
 dei diagrammi di calibrazione (thesis/figures/us_c4_3_calibration.png).
@@ -47,7 +47,7 @@ def run_experiment() -> None:
     # 1. Stima delle mappe di ricalibrazione one-vs-rest sui dati di training per ciascun fit
     fit_maps = fit_all_calibration_maps(df_full, ELO_FITS, schedule)
 
-    # 2. Ottenimento di SeriesEvaluationData per le due serie come in T23
+    # 2. Ottenimento di SeriesEvaluationData per le due serie come nel primo calcolo di ĝ
     df_preds = generate_validation_predictions(df_full, ELO_FITS, schedule)
     df_aligned = align_predictions_with_odds(df_preds, df_full)
 

@@ -1,4 +1,4 @@
-"""Test di T60: Flusso 1 con il Modulo 1 come parametro (identificatori, suffissi, catena comune)."""
+"""Test: Flusso 1 con il Modulo 1 come parametro (identificatori, suffissi, catena comune)."""
 
 import datetime
 import math
@@ -132,7 +132,7 @@ def test_load_match_frame_and_elo_chain_match_copied_sequence():
 
 @pytest.mark.slow
 def test_dixon_coles_chain_on_real_data_matches_t59():
-    """Dati reali (slow, circa 80 s): schema dell'Elo e log-loss di validazione uguale al CSV di T59."""
+    """Dati reali (slow, circa 80 s): schema dell'Elo e log-loss di validazione uguale al CSV del Dixon-Coles walk-forward."""
     if not _has_real_data():
         pytest.skip(f"Real data missing: no CSV in {DEFAULT_DATA_DIR}")
     if not T59_CSV.exists():

@@ -1,11 +1,11 @@
-"""Script T55, sensibilità: C1, C2_global e C2 con la catena del Modulo 2 che attraversa le stagioni.
+"""Script, sensibilità: C1, C2_global e C2 con la catena del Modulo 2 che attraversa le stagioni.
 
 Solo sulla realizzazione osservata, parametri di config/frozen_params.toml invariati, tre
 configurazioni. Si esegue dopo il run principale, di cui rilegge i valori a catena tagliata
 da results/raw/us_c8_3_validation_raw.npz. Scrive results/us_c8_3_validation_with_history.csv.
-Non entra nei confronti principali di T56.
+Non entra nei confronti principali fra agenti.
 Con --module1 dixon_coles usa il Modulo 1 Dixon-Coles e config/frozen_params_dc.toml, e scrive
-le uscite con il suffisso _dc, senza toccare quelle Elo (T60).
+le uscite con il suffisso _dc, senza toccare quelle Elo.
 """
 
 import csv

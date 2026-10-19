@@ -1,4 +1,4 @@
-"""Test di accettazione di T42: lunghezza dei blocchi sulle serie del Modulo 1 e copertura."""
+"""Test di accettazione: lunghezza dei blocchi sulle serie del Modulo 1 e copertura."""
 
 import csv
 import math

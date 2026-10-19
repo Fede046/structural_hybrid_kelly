@@ -1,4 +1,4 @@
-"""Script T42: lunghezza dei blocchi di Politis-White sulle serie di log-loss del Modulo 1.
+"""Script: lunghezza dei blocchi di Politis-White sulle serie di log-loss del Modulo 1.
 
 Per la serie di training di ciascun fit e per ciascuna stagione di validazione riporta
 L_PW stationary, L_PW circolare e la più vicina fra 7, 20 e 40; aggiunge la copertura
@@ -6,7 +6,7 @@ Monte Carlo dell'intervallo al 95% della media di AR(1) con stationary bootstrap
 contro il bootstrap iid. Scrive results/us_c8_3a_block_length.csv e
 thesis/figures/us_c8_3a_block_length.png.
 Con --module1 dixon_coles usa il Modulo 1 Dixon-Coles e scrive le uscite con il suffisso _dc,
-senza toccare quelle Elo (T60).
+senza toccare quelle Elo.
 """
 
 import csv

@@ -350,7 +350,7 @@ def devig_odds_ratio(odds: np.ndarray) -> tuple[np.ndarray, np.ndarray]:
     return q, c.flatten()
 
 
-# Metodi per nome, nell'ordine di shk.model.scoring.ALL_DEVIG_METHODS (T63)
+# Metodi per nome, nell'ordine di shk.model.scoring.ALL_DEVIG_METHODS
 DEVIG_METHOD_NAMES: Final[tuple[str, ...]] = ("proportional", "additive", "power", "shin", "odds_ratio")
 
 

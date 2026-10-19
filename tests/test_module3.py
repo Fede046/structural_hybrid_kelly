@@ -1,4 +1,4 @@
-"""Test del Modulo 3 (T51): λ*, stime di σ_p, candidate e regole comuni."""
+"""Test del Modulo 3: λ*, stime di σ_p, candidate e regole comuni."""
 
 import math
 

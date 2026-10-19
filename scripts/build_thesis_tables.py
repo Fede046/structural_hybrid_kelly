@@ -1,4 +1,4 @@
-"""Tabelle e numeri citabili della tesi, dai soli CSV versionati (T65).
+"""Tabelle e numeri citabili della tesi, dai soli CSV versionati.
 
 Per ogni tabella di shk.thesis.tables.TABLES scrive thesis/tables/<nome>.tex (booktabs, etichette
 in italiano, fonte in nota) e thesis/tables/<nome>.csv (la stessa tabella, valori a piena

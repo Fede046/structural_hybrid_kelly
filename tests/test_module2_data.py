@@ -1,4 +1,4 @@
-"""Test di src/shk/model/module2_data.py (T46): δ, covariate e anti-leakage."""
+"""Test di src/shk/model/module2_data.py: δ, covariate e anti-leakage."""
 
 import numpy as np
 import pandas as pd
@@ -93,7 +93,7 @@ def test_frame_structure(real_frame):
 
 
 def test_delta_season_means_match_shin_g_hat(real_frame):
-    """δ medio per stagione di validazione = ĝ Shin per stagione della serie di T43, entro 1e-12."""
+    """δ medio per stagione di validazione = ĝ Shin per stagione della serie dell'aggiunta di Shin e odds ratio, entro 1e-12."""
     data, frame = real_frame
     preds = generate_validation_predictions(data.df, ELO_FITS, data.schedule)
     ev = prepare_series_evaluation(align_predictions_with_odds(preds, data.df), "b365_prematch", data.schedule)

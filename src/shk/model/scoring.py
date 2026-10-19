@@ -24,8 +24,8 @@ PINNACLE_START_YEAR: Final[int] = 2012
 # Metodi di de-vigging ammessi
 DEVIG_METHODS: Final[tuple[str, ...]] = ("proportional", "additive", "power")
 
-# Metodi aggiunti in T43 (decisione S7: Shin principale, sensibilità sui cinque metodi).
-# Restano separati da DEVIG_METHODS, che C4.2 e C4.3 usano per le righe già versionate:
+# Metodi aggiunti nell'aggiunta di Shin e odds ratio (decisione di progetto: Shin principale, sensibilità sui cinque metodi).
+# Restano separati da DEVIG_METHODS, che il calcolo di ĝ e la calibrazione del Modulo 1 usano per le righe già versionate:
 # le righe dei metodi nuovi si accodano a quelle esistenti.
 EXTRA_DEVIG_METHODS: Final[tuple[str, ...]] = ("shin", "odds_ratio")
 ALL_DEVIG_METHODS: Final[tuple[str, ...]] = DEVIG_METHODS + EXTRA_DEVIG_METHODS
@@ -348,7 +348,7 @@ def align_predictions_with_odds(
 class SeriesEvaluationData(NamedTuple):
     """Dati di valutazione per una serie di quote e i cinque metodi di de-vigging.
 
-    I campi da shin_inapplicable in poi sono stati aggiunti in T43: Shin non è applicabile
+    I campi da shin_inapplicable in poi sono stati aggiunti nell'aggiunta di Shin e odds ratio: Shin non è applicabile
     a un mercato con booksum S < 1 (quarta causa di esclusione, dopo l'additivo);
     shin_z e odds_ratio_c sono i parametri stimati per ciascuna partita usata.
     """
@@ -382,7 +382,7 @@ def prepare_series_evaluation(
     """Estrae le quote H, D, A, applica le esclusioni e calcola q dei cinque metodi.
 
     Esclusioni per causa, nell'ordine: quota mancante, quota non valida, additivo non
-    applicabile, Shin non applicabile (S < 1, T43). Le partite usate sono le stesse per
+    applicabile, Shin non applicabile (S < 1). Le partite usate sono le stesse per
     tutti i metodi.
 
     Parametri

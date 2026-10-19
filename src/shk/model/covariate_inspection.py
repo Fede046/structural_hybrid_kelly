@@ -1,4 +1,4 @@
-"""Ispezione delle covariate del Modulo 2 e regole di specificazione (T46, US-C7.2).
+"""Ispezione delle covariate del Modulo 2 e regole di specificazione.
 
 Le regole si applicano sul solo training pooled (le tre stagioni di training, 1 140
 partite) e sono fissate prima di vedere i numeri:
@@ -10,19 +10,19 @@ partite) e sono fissate prima di vedere i numeri:
 - (iii) model_entropy H(p̂) resta solo se sopravvive a (ii): è una conseguenza di (ii),
   verificata in coda.
 La validazione riceve le stesse tabelle descrittive, che non decidono nulla (protocollo
-esteso, decisione S9).
+esteso, decisione di progetto).
 
 ANOVA a una via di δ per covariata: quintili per le continue (bordi = quantili 0.2, 0.4,
 0.6, 0.8 dell'insieme analizzato; un valore uguale a un bordo va nel gruppo superiore),
 livelli 0/1 per i flag. F nominale con soglia F(k − 1, N − k) al 95%; soglia calibrata col
-metodo centrato di T40 (calibrate_centered_threshold) a L = L_PW circolare arrotondata
+metodo centrato della calibrazione centrata dell'ANOVA (calibrate_centered_threshold) a L = L_PW circolare arrotondata
 della serie di δ centrata per gruppo, B = N_BOOT; η² = SS_between / SS_total; per i flag
 d di Cohen (gruppo con flag meno gruppo senza, deviazione standard pooled) e
-OVL = 2 Φ(−|d| / 2). Seed: SeedSequence(SEED_S8).spawn(5)[1] (T46 in posizione 1),
+OVL = 2 Φ(−|d| / 2). Seed: SeedSequence(SEED_S8).spawn(5)[1] (posizione 1),
 spawn(2) per insieme (training, validazione), poi spawn(len(ANOVA_COVARIATES)), un
 generatore per covariata.
 
-Con Dixon-Coles come Modulo 1 (T61) elo_diff è sostituito da lambda_diff in regole e tabelle
+Con Dixon-Coles come Modulo 1 elo_diff è sostituito da lambda_diff in regole e tabelle
 (strength_covariate), e il seed può essere una SeedSequence data (task_seeds.task_sequence).
 """
 
@@ -245,7 +245,7 @@ def _record(**fields: object) -> dict[str, object]:
 
 
 def anova_records(frame: pd.DataFrame, dataset: str, rngs: tuple[np.random.Generator, ...]) -> list[dict[str, object]]:
-    """ANOVA di δ per covariata con soglia nominale e calibrata (metodo centrato di T40)."""
+    """ANOVA di δ per covariata con soglia nominale e calibrata (metodo centrato della calibrazione centrata dell'ANOVA)."""
     delta = frame["delta"].to_numpy(dtype=np.float64)
     records = []
     for covariate, rng in zip(with_strength(ANOVA_COVARIATES, strength_covariate(frame)), rngs):

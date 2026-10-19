@@ -1,16 +1,16 @@
-"""Tabelle di T63 (US-C9.3): sensibilità al metodo di de-vigging, dalle uscite di devig_runs.
+"""Tabelle della sensibilità al de-vigging: sensibilità al metodo di de-vigging, dalle uscite di devig_runs.
 
 Righe di results/us_c9_3_devig_sensitivity.csv:
 - "agent": metodo × dataset (validation, test) × configurazione × agente × metrica primaria, con
-  la "mediana pooled" decisa per T62 (robustness.agent_statistics) e l'intervallo come in T56:
+  la "mediana pooled" decisa per la robustezza del ranking (robustness.agent_statistics) e l'intervallo come nei confronti fra agenti:
   bootstrap a due livelli con correzione t sulla validazione, percentile dai soli seed sul test;
-- "comparison": confronti di T56 (validazione, solo intervallo block) e di T58 (test) per metodo;
-- "g_hat": ĝ per metodo, serie e stagione da T57 (validazione) e T58 (2023-24), con il segno
+- "comparison": confronti fra agenti (validazione, solo intervallo block) e dell'esecuzione sul test 2023-24 per metodo;
+- "g_hat": ĝ per metodo, serie e stagione dall'inferenza su ĝ (validazione) e dall'esecuzione sul test (2023-24), con il segno
   dell'intervallo principale e quello della stima puntuale;
-- "conclusion": per ogni conclusione di T56 e T58 "l'intervallo esclude 0 con segno …", il segno
+- "conclusion": per ogni conclusione dei confronti fra agenti e dell'esecuzione sul test 2023-24 "l'intervallo esclude 0 con segno …", il segno
   con ciascun metodo e se vale per tutti e cinque.
-Gli indici di ricampionamento sono quelli di T56 (t56_sequences(SEED_S10)[0]) e di T58
-(t58_sequences(SEED_S10)[2]) per tutti i metodi: con Shin le righe ridanno T56 e T58.
+Gli indici di ricampionamento sono quelli dei confronti fra agenti (t56_sequences(SEED_S10)[0]) e dell'esecuzione sul test 2023-24
+(t58_sequences(SEED_S10)[2]) per tutti i metodi: con Shin le righe ridanno i confronti fra agenti e l'esecuzione sul test.
 """
 
 import csv
@@ -68,13 +68,13 @@ def load_method(method: str) -> tuple[ValidationResult, TestResult]:
 
 
 def validation_indices(result: ValidationResult) -> BootstrapIndices:
-    """Indici a due livelli di T56."""
+    """Indici a due livelli dei confronti fra agenti."""
     return two_level_indices(result.seeds.shape[0], result.seeds.shape[-1],
                              np.random.default_rng(t56_sequences(SEED_S10)[0]))
 
 
 def test_indices(result: ValidationResult) -> BootstrapIndices:
-    """Indici dei soli seed di T58, con la stagione unica."""
+    """Indici dei soli seed dell'esecuzione sul test 2023-24, con la stagione unica."""
     n = result.seeds.shape[-1]
     rng = np.random.default_rng(t58_sequences(SEED_S10)[2])
     return BootstrapIndices(np.zeros((N_BOOT, 1), dtype=np.int64), rng.integers(0, n, size=(N_BOOT, 1, n), dtype=np.int32))
@@ -107,7 +107,7 @@ def agent_records(method: str, dataset: str, result: ValidationResult, idx: Boot
 
 
 def validation_comparison_records(method: str, result: ValidationResult, idx: BootstrapIndices) -> list[dict]:
-    """Confronti di T56 per un metodo: stima e intervallo block con correzione t, con gli indici di T56."""
+    """Confronti fra agenti per un metodo: stima e intervallo block con correzione t, con gli indici dei confronti fra agenti."""
     s_count = result.seeds.shape[0]
     records = []
     for ci, config in enumerate(CONFIG_NAMES):
@@ -126,7 +126,7 @@ def validation_comparison_records(method: str, result: ValidationResult, idx: Bo
 
 
 def test_comparison_records(method: str, result: TestResult) -> list[dict]:
-    """Confronti di T58 per un metodo (comparison_records_single con i seed di T58)."""
+    """Confronti dell'esecuzione sul test 2023-24 per un metodo (comparison_records_single con i seed dell'esecuzione sul test 2023-24)."""
     return [{"row_type": "comparison", "method": method, "dataset": "test", "config": r["config"],
              "comparison": r["comparison"], "metric": r["metric"], "estimate": r["estimate"], "ci_low": r["ci_low"],
              "ci_high": r["ci_high"], "interval": "percentile_seeds", "excludes_zero": r["excludes_zero"],
@@ -135,7 +135,7 @@ def test_comparison_records(method: str, result: TestResult) -> list[dict]:
 
 
 def g_hat_records() -> list[dict]:
-    """ĝ per metodo, serie e stagione: T57 per la validazione (intervallo t corretto per il pooled), T58 per il test."""
+    """ĝ per metodo, serie e stagione: inferenza su ĝ per la validazione (intervallo t corretto per il pooled), esecuzione sul test per il 2023-24."""
     records = []
     t57 = pd.read_csv(T57_CSV)
     for r in t57[t57["row_type"] == "interval"].itertuples():
@@ -155,7 +155,7 @@ def g_hat_records() -> list[dict]:
 
 
 def conclusion_records(comparisons: list[dict]) -> list[dict]:
-    """Conclusioni di T56 e T58 che escludono 0: segno con ciascun metodo e stabilità."""
+    """Conclusioni dei confronti fra agenti e dell'esecuzione sul test 2023-24 che escludono 0: segno con ciascun metodo e stabilità."""
     by_key = {(r["dataset"], r["config"], r["comparison"], r["metric"], r["method"]): r["sign"] for r in comparisons}
     t56 = pd.read_csv(T56_CSV, dtype=str, keep_default_na=False)
     t58 = pd.read_csv(T58_CSV, dtype=str, keep_default_na=False)
@@ -199,7 +199,7 @@ def write_outputs() -> None:
 
 
 def make_figure(df: pd.DataFrame, png_path: Path) -> None:
-    """A) ĝ pooled e 2023-24 per metodo; B) confronti di T56 per metodo, £0.01; C) conclusioni stabili e fragili."""
+    """A) ĝ pooled e 2023-24 per metodo; B) confronti fra agenti per metodo, £0.01; C) conclusioni stabili e fragili."""
     import matplotlib
     matplotlib.use("Agg")
     import matplotlib.pyplot as plt
@@ -241,7 +241,7 @@ def make_figure(df: pd.DataFrame, png_path: Path) -> None:
     ax_b.set_yticks(np.arange(len(names)))
     ax_b.set_yticklabels(names)
     ax_b.set_xlabel("Differenza pooled di ln W_T (19 stagioni), intervallo t corretto")
-    ax_b.set_title("B) Confronti di T56 per metodo, £0.01", loc="left", fontsize=11, fontweight="bold")
+    ax_b.set_title("B) Confronti fra agenti per metodo, £0.01", loc="left", fontsize=11, fontweight="bold")
     ax_b.legend(fontsize=8)
     ax_b.grid(True, axis="x", linestyle=":", alpha=0.6)
 
@@ -259,7 +259,7 @@ def make_figure(df: pd.DataFrame, png_path: Path) -> None:
     ax_c.set_yticks(y)
     ax_c.set_yticklabels(labels, fontsize=8)
     ax_c.set_xlim(0, 1.35 * max(s + f for s, f in zip(stable, fragile)))
-    ax_c.set_xlabel("Conclusioni di T56 e T58 che escludono 0 (metriche × configurazioni)")
+    ax_c.set_xlabel("Conclusioni dei confronti che escludono 0 (metriche × configurazioni)")
     ax_c.set_title("C) Conclusioni stabili e fragili", loc="left", fontsize=11, fontweight="bold")
     ax_c.legend(fontsize=8, loc="upper right")
     fig.tight_layout()

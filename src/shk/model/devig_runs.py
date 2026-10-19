@@ -1,9 +1,8 @@
-"""Esecuzioni di T63 (US-C9.3): agenti di T55 e T58 con q da ciascun metodo di de-vigging.
+"""Esecuzioni della sensibilità al de-vigging: agenti dell'esecuzione congelata sulla validazione e dell'esecuzione sul test 2023-24 con q da ciascun metodo di de-vigging.
 
 Per un metodo: DataFrame del Modulo 2 con δ e market_entropy da quel q (build_module2_frame);
-validazione come T55 (19 stagioni, N_SEEDS seed block e realizzazione osservata) e 2023-24 come
-T58 (seed block, seed iid e realizzazione osservata), con il Modulo 2 e la Baseline D che usano lo
-stesso q. Parametri di frozen_params.toml invariati, Modulo 1 Elo, seed uguali a T55 e T58
+validazione come l'esecuzione congelata sulla validazione (19 stagioni, N_SEEDS seed block e realizzazione osservata) e 2023-24 come l'esecuzione sul test 2023-24 (seed block, seed iid e realizzazione osservata), con il Modulo 2 e la Baseline D che usano lo
+stesso q. Parametri di frozen_params.toml invariati, Modulo 1 Elo, seed uguali all'esecuzione congelata sulla validazione e all'esecuzione sul test 2023-24
 (SEED_S10). Le uscite per seed vanno in results/raw/ (non versionate).
 """
 
@@ -32,7 +31,7 @@ def test_raw_path(method: str, iid: bool = False) -> Path:
 def run_method(method: str, workers: int = 5, test: bool = True) -> None:
     """Test (2023-24) e validazione con il metodo dato; scrive le tre uscite per seed.
 
-    Con test=False solo la validazione: il 2023-24 non si riesegue (riproduzione di T64).
+    Con test=False solo la validazione: il 2023-24 non si riesegue (riproduzione da zero).
     """
     RAW_DIR.mkdir(parents=True, exist_ok=True)
     if test:

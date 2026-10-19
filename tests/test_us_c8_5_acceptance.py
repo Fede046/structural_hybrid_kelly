@@ -1,4 +1,4 @@
-"""Test di accettazione di T58 sulle uscite dell'esecuzione unica sul 2023-24."""
+"""Test di accettazione sulle uscite dell'esecuzione unica sul 2023-24."""
 
 from pathlib import Path
 

@@ -8,10 +8,10 @@ Fornisce anche load_model_residuals, la catena comune sui dati reali (split, car
 per ruolo, schema dei fit, residui) che script e test nuovi usano al posto di copiarla,
 e load_match_frame, la sua prima parte (DataFrame delle partite e schema dei fit).
 
-Il Modulo 1 è un parametro (T60, shk.model.module1): "elo" (ELO_FITS, percorso invariato)
-oppure "dixon_coles" (DC_FITS, T59). Le colonne restituite sono le stesse per entrambi.
+Il Modulo 1 è un parametro (shk.model.module1): "elo" (ELO_FITS, percorso invariato)
+oppure "dixon_coles" (DC_FITS). Le colonne restituite sono le stesse per entrambi.
 Con Dixon-Coles le previsioni di training e di validazione si calcolano sul DataFrame
-completo, come nella calibrazione di T59: la storia usata a ogni data è comunque solo
+completo, come nella calibrazione del Dixon-Coles walk-forward: la storia usata a ogni data è comunque solo
 quella con Date strettamente anteriore.
 """
 
@@ -60,7 +60,7 @@ RESIDUALS_COLUMNS: Final[tuple[str, ...]] = (
 )
 
 
-# Gol attesi delle previsioni Dixon-Coles (λ di casa e μ in trasferta), conservati a parte (T61)
+# Gol attesi delle previsioni Dixon-Coles (λ di casa e μ in trasferta), conservati a parte
 RATE_COLUMNS: Final[tuple[str, ...]] = ("lambda_home", "lambda_away")
 
 
@@ -292,7 +292,7 @@ class ModelResidualsData(NamedTuple):
         Identificatore del Modulo 1 che ha prodotto i residui ("elo" di default).
     rates : pd.DataFrame o None
         Per Dixon-Coles, gol attesi (RATE_COLUMNS) delle stesse righe di residuals, con lo
-        stesso indice; None per l'Elo (T61).
+        stesso indice; None per l'Elo.
     """
 
     df: pd.DataFrame
@@ -356,9 +356,9 @@ def load_model_residuals(
     fits: dict | None = None,
     module1: str = MODULE1_ELO,
 ) -> ModelResidualsData:
-    """Catena comune sui dati reali, per script e test nuovi (decisione del 2026-10-11; T60).
+    """Catena comune sui dati reali, per script e test nuovi (decisione del 2026-10-11).
 
-    Passi, gli stessi degli script di C5 e C6: load_match_frame (read_split_config;
+    Passi, gli stessi degli script del monitoraggio dei residui e del backtest appaiato: load_match_frame (read_split_config;
     load_by_role per history, training e validation; concatenazione e ordinamento stabile
     per Date; derive_fit_schedule); compute_model_residuals con il Modulo 1 dato. Il ruolo
     test non si carica.

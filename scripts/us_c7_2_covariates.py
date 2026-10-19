@@ -1,11 +1,11 @@
-"""Script T46 (US-C7.2): serie δ, covariate candidate e ispezione prima della specificazione.
+"""Script: serie δ, covariate candidate e ispezione prima della specificazione.
 
 Costruisce il DataFrame per partita del Modulo 2 (shk.model.module2_data), applica sul
 training le regole di specificazione fissate prima (shk.model.covariate_inspection) e
 scrive results/us_c7_2_covariates.csv e thesis/figures/us_c7_2_covariates.png.
 Con --module1 dixon_coles usa il Modulo 1 Dixon-Coles e scrive le uscite con il suffisso _dc,
-senza toccare quelle Elo (T60); il differenziale di forza è lambda_diff e i seed sono quelli
-di T61 (module1_seeds.procedure_seeds).
+senza toccare quelle Elo; il differenziale di forza è lambda_diff e i seed sono quelli
+della calibrazione con Dixon-Coles (module1_seeds.procedure_seeds).
 """
 
 import csv

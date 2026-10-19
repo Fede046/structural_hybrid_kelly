@@ -1,4 +1,4 @@
-"""Script di rilevazione del drift su tutti gli scenari (US-C5.1 / Task 28).
+"""Script di rilevazione del drift su tutti gli scenari.
 
 Esegue ADWIN e Page-Hinkley con parametri congelati sulle 22 serie temporali di log-loss
 (3 di training e 19 di validazione). Genera:

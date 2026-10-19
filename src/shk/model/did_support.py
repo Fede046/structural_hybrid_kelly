@@ -1,4 +1,4 @@
-"""DiD fra partite con neopromosse e fra squadre note, Ñopo e supporto comune (T49).
+"""DiD fra partite con neopromosse e fra squadre note, Ñopo e supporto comune.
 
 DiD (nota 1.6 §10, test 3 del Modulo 2): per stagione e pooled sulle 3 stagioni di training
 e le 19 di validazione; E = partite con almeno una squadra alla prima stagione dopo
@@ -6,7 +6,7 @@ l'ingresso (flag_promoted), NE = le altre; presto = matchday 1–10 (posizioni 1
 tardi = matchday 11–38 (posizioni 101–380); DiD = (δ̄_E,tardi − δ̄_E,presto) −
 (δ̄_NE,tardi − δ̄_NE,presto). Intervallo al 95% per stationary bootstrap delle date: ogni
 data porta con sé tutte le sue partite; L = L_PW stationary arrotondata della serie per data
-della media di δ (come la decisione S9 per i seed); B = N_BOOT_DID; il pooled ricampiona le
+della media di δ (come la decisione di progetto per i seed); B = N_BOOT_DID; il pooled ricampiona le
 date di ogni stagione in modo indipendente (stagioni come cluster) e ricalcola il DiD
 sull'unione. Il DiD è diagnostico e non entra nella regola di staking.
 
@@ -14,16 +14,16 @@ Placebo per la parallel trends: sulle sole partite fra squadre note, E' = partit
 una di k squadre note estratte a caso, con k = numero di neopromosse della stagione;
 N_PLACEBO = 200 ripetizioni per stagione.
 
-Ñopo (stats.nopo) sui gruppi dello scenario compositivo di T48 (ultime W partite di s − 1
+Ñopo (stats.nopo) sui gruppi dello scenario compositivo degli scenari noti (ultime W partite di s − 1
 contro prime W di s, ogni W) e, per decisione del programmatore, sui gruppi dello scenario
-3 di T48 (matchday 10–25 contro 30–38) senza e con il flag "senza obiettivi".
+3 degli scenari noti (matchday 10–25 contro 30–38) senza e con il flag "senza obiettivi".
 
 Quota di partite fuori supporto all'inizio di ogni stagione: per ogni partita dei matchday
 1–10, alla sua data di decisione e per ogni W, la regola out_of_support_mask con la finestra
 A del Modulo 2; separata per partite con una neopromossa mai vista, con una tornante, e
 senza neopromosse.
 
-Seed: SeedSequence(SEED_S8).spawn(5)[4] (T49 in posizione 4), spawn(2): figlio 0 per il
+Seed: SeedSequence(SEED_S8).spawn(5)[4] (posizione 4), spawn(2): figlio 0 per il
 bootstrap del DiD, diviso con spawn(numero di stagioni + 1) (stagioni in ordine cronologico,
 poi il pooled); figlio 1 per i placebo, diviso con spawn(numero di stagioni).
 """
@@ -166,7 +166,7 @@ def did_records(frame: pd.DataFrame, raw: pd.DataFrame, seed: int = SEED_S8, n_b
 
 
 def nopo_records(frame: pd.DataFrame, covariates: Sequence[str]) -> list[dict[str, object]]:
-    """Ñopo per lo scenario compositivo di T48 (ogni W) e per lo scenario 3 senza e con il flag."""
+    """Ñopo per lo scenario compositivo degli scenari noti (ogni W) e per lo scenario 3 senza e con il flag."""
     dummies = [i for i, c in enumerate(covariates) if c.startswith("flag_")]
     years = frame["season"].map(parse_season_start_year)
     ordered = frame.assign(_y=years).sort_values(["_y", "Date"], kind="stable")

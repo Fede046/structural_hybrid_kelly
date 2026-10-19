@@ -1,15 +1,15 @@
-"""Esecuzione appaiata congelata sulle 19 stagioni di validazione (T55, US-C8.3).
+"""Esecuzione appaiata congelata sulle 19 stagioni di validazione.
 
 Parametri solo da config/frozen_params.toml (load_frozen_params; costanti interne verificate
 con check_frozen_constants). Agenti in AGENT_ORDER, configurazioni CONFIGURATIONS (F = 0,
 £0.01, £1). Catena del Modulo 2 tagliata alla stagione, come nella calibrazione.
 
-Seed (decisione S9): stagione ricostruita per stationary bootstrap delle date a L_PW della
-serie per data della media di δ della stagione (T53). Gli stessi seed per tutti gli agenti
+Seed (decisione di progetto): stagione ricostruita per stationary bootstrap delle date a L_PW della
+serie per data della media di δ della stagione. Gli stessi seed per tutti gli agenti
 e le configurazioni; i supervisori del Modulo 2 e le q di Shin si condividono fra le tre
 configurazioni dello stesso seed (stesse uscite, meno calcolo). In più la realizzazione
 osservata. SEED_S10 = 20261014 (definito qui, primo modulo che lo usa):
-SeedSequence(SEED_S10).spawn(5)[0] (T55 in posizione 0), spawn(19) per stagione in ordine
+SeedSequence(SEED_S10).spawn(5)[0] (posizione 0), spawn(19) per stagione in ordine
 cronologico, spawn(N_SEEDS) per seed.
 
 Metriche per agente (METRICS): log-ricchezza finale (−inf se W_T = 0), rovina e indice
@@ -20,7 +20,7 @@ allarmi (C1: accensioni; D: allarmi del detector). NaN dove la metrica non si ap
 l'agente non c'è (E con F = 0).
 
 Sintesi per agente × configurazione × stagione: mediana, quantili 5% e 95% e media della
-log-ricchezza finale sui seed, tasso di rovina, g_CE(γ) per γ ∈ {1, 2, 5} (decisione S10:
+log-ricchezza finale sui seed, tasso di rovina, g_CE(γ) per γ ∈ {1, 2, 5} (decisione di progetto:
 (1/D)·mean(ln W_T) per γ = 1, (1/D)·(1/(1 − γ))·ln mean(W_T^(1 − γ)) per γ > 1, −inf con
 W_T = 0), più i valori della realizzazione osservata.
 """
@@ -94,7 +94,7 @@ class ValidationSeason(NamedTuple):
 
 
 class ValidationResult(NamedTuple):
-    """Uscite di T55: metriche per seed (S, C, A, M, N) e sulla realizzazione osservata (S, C, A, M)."""
+    """Uscite dell'esecuzione congelata sulla validazione: metriche per seed (S, C, A, M, N) e sulla realizzazione osservata (S, C, A, M)."""
 
     seasons: tuple[str, ...]
     fits: tuple[str, ...]
@@ -124,7 +124,7 @@ def validation_inputs(frame: pd.DataFrame, covariates: Sequence[str]) -> list[Va
 
 def spawn_t55_sequences(n_seasons: int, n_seeds: int,
                         seed: int | np.random.SeedSequence = SEED_S10) -> list[list[np.random.SeedSequence]]:
-    """SeedSequence per stagione e seed (vedi modulo); seed è la radice della story (intero o SeedSequence)."""
+    """SeedSequence per stagione e seed (vedi modulo); seed è la radice (intero o SeedSequence)."""
     task = story_task_sequence(seed, T55_STORY_POSITION, N_STORY_TASKS)
     return [s.spawn(n_seeds) for s in task.spawn(n_seasons)]
 
@@ -151,7 +151,7 @@ def run_instance(params: FrozenParams, inp: SeasonInput, fit: str, history: Supe
                  arms: Sequence[str] = AGENT_ORDER, devig_method: str = "shin") -> np.ndarray:
     """Una stagione (seed o realizzazione osservata) nelle tre configurazioni: (C, len(arms), M).
 
-    devig_method: metodo di q per il Modulo 2 e per D (Shin; gli altri per la sensibilità di T63).
+    devig_method: metodo di q per il Modulo 2 e per D (Shin; gli altri per la sensibilità al de-vigging).
     """
     supervisors = build_supervisors(params, inp, history, devig_method)
     shin = SharedShin(devig_method)
@@ -209,7 +209,7 @@ def evaluate_validation(frame: pd.DataFrame, params_path: Path | str = FROZEN_PA
 
 
 def certainty_equivalent(log_wealth: np.ndarray, n_dates: int, gamma: float) -> float:
-    """g_CE(γ) sulle traiettorie (decisione S10), con −inf se una W_T è 0."""
+    """g_CE(γ) sulle traiettorie (decisione di progetto), con −inf se una W_T è 0."""
     lw = np.asarray(log_wealth, dtype=np.float64)
     if np.any(np.isneginf(lw)):
         return -math.inf
@@ -288,7 +288,7 @@ def inactive_records(params: FrozenParams, seasons: Sequence[ValidationSeason]) 
 
 def chain_history(frame: pd.DataFrame, season: str, covariates: Sequence[str],
                   max_rows: int = HISTORY_ROWS) -> SupervisorHistory:
-    """Ultime max_rows partite delle stagioni precedenti della stessa catena (decisione S8).
+    """Ultime max_rows partite delle stagioni precedenti della stessa catena (decisione di progetto).
 
     Il Modulo 2 usa solo le ultime 2W partite anteriori (finestre A e B e regola fuori
     supporto sulla finestra A), quindi con max_rows = 2·max(W) il risultato è lo stesso che

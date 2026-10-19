@@ -1,4 +1,4 @@
-"""Test di T64: manifesti SHA256, normalizzazioni dichiarate, percorsi degli script, passi di reproduce_all."""
+"""Test: manifesti SHA256, normalizzazioni dichiarate, percorsi degli script, passi di reproduce_all."""
 
 import csv
 import hashlib
@@ -96,7 +96,7 @@ def test_reproduce_steps_cover_every_manifest_csv():
 
 
 def test_c3_1_unlocked_regeneration_matches_normalized_manifest(tmp_path):
-    """C3.1 rigenerato con il test sbloccato coincide con il manifesto dopo drop_seasons."""
+    """L'audit di copertura rigenerato con il test sbloccato coincide con il manifesto dopo drop_seasons."""
     if not DEFAULT_DATA_DIR.is_dir() or not any(DEFAULT_DATA_DIR.glob("*.csv")):
         pytest.skip(f"Real data missing: no CSV in {DEFAULT_DATA_DIR}")
     script = _load_script("us_c3_1_data_coverage")
@@ -123,7 +123,7 @@ def test_c1_c2_paths_do_not_depend_on_working_directory(name, tmp_path, monkeypa
 
 @pytest.mark.slow
 def test_c1_1_script_writes_to_repository_from_other_directory(tmp_path):
-    """Slow (circa 15 s): C1.1 lanciato da un'altra directory scrive in results/ della radice, con lo stesso SHA256."""
+    """Slow (circa 15 s): l'esperimento crescita-frazione lanciato da un'altra directory scrive in results/ della radice, con lo stesso SHA256."""
     target = REPO_ROOT / "results" / "us_c1_1_growth_vs_lambda.csv"
     before = target.stat().st_mtime_ns
     subprocess.run([sys.executable, str(REPO_ROOT / "scripts" / "us_c1_1_growth_vs_lambda.py")], cwd=tmp_path,

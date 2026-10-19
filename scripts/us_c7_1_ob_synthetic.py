@@ -1,4 +1,4 @@
-"""Script T45 (US-C7.1): Oaxaca-Blinder su verità nota sintetica.
+"""Script: Oaxaca-Blinder su verità nota sintetica.
 
 Per cinque casi (misto, solo composizione, solo struttura, covariata omessa con drift
 virtuale puro, errori AR(1)) e R = 1 000 repliche: stime medie, verità, errore standard

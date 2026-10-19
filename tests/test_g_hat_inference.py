@@ -1,4 +1,4 @@
-"""Test di unità di T57: permutazione, autocorrelazioni, valore atteso del placebo, intervalli."""
+"""Test di unità: permutazione, autocorrelazioni, valore atteso del placebo, intervalli."""
 
 import math
 

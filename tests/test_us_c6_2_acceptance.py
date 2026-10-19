@@ -1,4 +1,4 @@
-"""Test di accettazione per US-C6.2 / Task 35.
+"""Test di accettazione del backtest appaiato sulle stagioni di validazione.
 
 Verifica:
 - Criterio 3: equivalenza tra B_0.25 (F = 0) e il reference di us_c5_3_baseline_d.csv entro 1e-12
@@ -53,12 +53,12 @@ def _load_versioned_c5_3_records() -> list[dict[str, str]]:
 
 
 # ==============================================================================
-# Criterio 3: Allineamento con C5.3 (B_0.25 con F = 0 contro reference)
+# Criterio 3: Allineamento con la Baseline D (B_0.25 con F = 0 contro reference)
 # ==============================================================================
 
 
 def test_b_025_f0_matches_c5_3_csv() -> None:
-    """Per ogni stagione B_0.25 (F = 0) ha final_log_wealth uguale a C5.3 entro 1e-12 e stesso n_bets (6234 totale)."""
+    """Per ogni stagione B_0.25 (F = 0) ha final_log_wealth uguale alla Baseline D entro 1e-12 e stesso n_bets (6234 totale)."""
     c6_records = _load_versioned_c6_2_records()
     c5_records = _load_versioned_c5_3_records()
 
@@ -69,7 +69,7 @@ def test_b_025_f0_matches_c5_3_csv() -> None:
         if r["row_type"] == "season" and r["config"] == "none" and r["agent"] == "B_0.25"
     }
 
-    # Filtra reference di C5.3
+    # Filtra reference della Baseline D
     ref_rows = {
         r["season"]: r
         for r in c5_records
@@ -107,7 +107,7 @@ def test_b_025_f0_matches_c5_3_csv() -> None:
 
 @pytest.mark.skipif(not _has_real_data(), reason="Requires real data in data/raw/E0")
 def test_b_025_f0_recalculation_matches_c5_3() -> None:
-    """Ricalcola le stagioni dai dati reali e verifica l'allineamento con C5.3 reference."""
+    """Ricalcola le stagioni dai dati reali e verifica l'allineamento con la Baseline D reference."""
     cfg = read_split_config()
     df_hist = load_by_role("history")
     df_train = load_by_role("training")

@@ -1,4 +1,4 @@
-"""Calibrazione di ξ e σ e valutazione di validazione del Dixon-Coles contro l'Elo (T59).
+"""Calibrazione di ξ e σ e valutazione di validazione del Dixon-Coles contro l'Elo.
 
 Calibrazione (schema espansivo dell'Elo, derive_fit_schedule): per ogni combinazione
 (ξ, σ) ∈ XI_GRID × SIGMA_GRID, previsioni walk-forward delle stagioni di training; per ogni fit
@@ -7,11 +7,11 @@ minimo; a parità entro TIE_TOLERANCE il σ maggiore (prior più debole, decisio
 programmatore del 2026-10-12), poi il ξ minore (ordine della griglia).
 
 Validazione: ogni stagione di validazione con il (ξ, σ) del suo fit (DC_FITS); log-loss e ĝ
-dei cinque metodi su b365_prematch, accanto all'Elo (stesse partite, stesso de-vigging di C4.2).
+dei cinque metodi su b365_prematch, accanto all'Elo (stesse partite, stesso de-vigging del calcolo di ĝ).
 
 Neopromosse mai viste: log-loss delle partite che coinvolgono una squadra mai vista nei primi
 NEW_TEAM_MATCHDAYS matchday della stagione (matchday: blocco contiguo di MATCHDAY_SIZE partite
-nell'ordine cronologico stabile della stagione, decisione S5), Dixon-Coles contro Elo, sul
+nell'ordine cronologico stabile della stagione, decisione di progetto), Dixon-Coles contro Elo, sul
 training (per combinazione) e sulla validazione.
 """
 

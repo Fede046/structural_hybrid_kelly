@@ -1,4 +1,4 @@
-"""Statistiche di varianza che cambia nel tempo e fra stagioni, su array (T44).
+"""Statistiche di varianza che cambia nel tempo e fra stagioni, su array.
 
 Contenuto:
 - varentropy_standardized_residuals: residui z_t = (l_t - H_t) / sqrt(V_t) della log-loss

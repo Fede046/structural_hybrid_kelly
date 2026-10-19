@@ -1,4 +1,4 @@
-"""Test di accettazione per l'esperimento US-C2.2 (falso rigetto dell'ANOVA su serie AR(1))."""
+"""Test di accettazione (falso rigetto dell'ANOVA su serie AR(1))."""
 
 import os
 import csv
@@ -231,7 +231,7 @@ def test_acceptance_csv_structure_and_values():
     exp_mc_upper = str(ref_nominal_dict["mc_upper_99"])
     exp_n_series = str(N_SERIES)
 
-    # 3. Stessa verifica per le righe 24..35 (calibrate sulla serie centrata, T40)
+    # 3. Stessa verifica per le righe 24..35 (calibrate sulla serie centrata)
     calibrated_rows = rows[12:24]
     centered_rows = rows[24:36]
     assert len(calibrated_rows) == len(expected_pairs)
@@ -315,14 +315,14 @@ def test_compute_calibrated_rejection_rates_validation():
 
 
 # ---------------------------------------------------------------------------
-# T40: centramento per gruppo e soglia calibrata con H0 imposta
+# Centramento per gruppo e soglia calibrata con H0 imposta
 # ---------------------------------------------------------------------------
 
 
 @pytest.mark.parametrize("design", [DESIGN_CONTIGUOUS_2, DESIGN_CONTIGUOUS_38])
 @pytest.mark.parametrize("phi", [0.0, 0.7])
 def test_center_by_group_zero_group_means(design: str, phi: float):
-    """Dopo il centramento la media di ciascun gruppo è nulla entro 1e-12 (criterio T40)."""
+    """Dopo il centramento la media di ciascun gruppo è nulla entro 1e-12."""
     rng = np.random.default_rng(20261011)
     series = generate_ar1_series(phi, N_OBS, 50, rng) + 3.0
     labels = make_design_labels(design, N_OBS)
@@ -447,7 +447,7 @@ def test_centered_functions_seed_validation():
 
 
 # ---------------------------------------------------------------------------
-# Fixture e test di accettazione per US-C2.3 (marcati slow)
+# Fixture e test di accettazione sulla soglia calibrata (marcati slow)
 # ---------------------------------------------------------------------------
 
 
@@ -500,9 +500,9 @@ def test_acceptance_csv_calibrated_values(
 @pytest.mark.xfail(
     strict=True,
     reason=(
-        "Known result of T12: the threshold calibrated on the raw series, without imposing "
+        "Known result: the threshold calibrated on the raw series, without imposing "
         "H0, gives 29 (L = 20) and 32 (L = 40) rejections out of 1000 at phi = 0, below "
-        "the 99% MC interval; the centered method of T40 is the remedy"
+        "the 99% MC interval; the centered method is the remedy"
     ),
 )
 def test_acceptance_calibrated_phi_zero_within_mc_interval(
@@ -546,7 +546,7 @@ def test_acceptance_calibrated_strictly_below_nominal(
 
 
 # ---------------------------------------------------------------------------
-# T40: test slow sul metodo centrato (H0 imposta)
+# Test slow sul metodo centrato (H0 imposta)
 # ---------------------------------------------------------------------------
 
 

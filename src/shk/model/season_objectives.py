@@ -1,4 +1,4 @@
-"""Flag "squadra senza obiettivi" dalla classifica con i soli risultati anteriori (T48).
+"""Flag "squadra senza obiettivi" dalla classifica con i soli risultati anteriori.
 
 Per una partita alla data D della stagione s, la classifica si calcola con i soli risultati
 della stagione con Date strettamente anteriore a D (3 punti la vittoria, 1 il pareggio).

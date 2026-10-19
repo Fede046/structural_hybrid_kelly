@@ -1,4 +1,4 @@
-"""Verità sintetica per il Modulo 3 e scelta della candidata (T51).
+"""Verità sintetica per il Modulo 3 e scelta della candidata.
 
 Generatore (fissato nel piano prima di eseguire), nel formato del Modulo 2. Una replica è
 una stagione di N_MATCHES = 380 partite, MATCHES_PER_DATE = 10 per data (38 date), mercato
@@ -34,7 +34,7 @@ Scenario di trappola (nota 3.2 §7.5, abl32b): 150 partite a quota 2.10, una per
 σ_p da 0.015 a 0.045 e μ da +0.02 a −0.05 alla partita 75, W = 20, R = TRAP_REPLICAS;
 P1 e P2 con le stesse stime e gli stessi esiti.
 
-Seed: SeedSequence(SEED_S9).spawn(5)[1] (T51 in posizione 1 della story S9), spawn(5):
+Seed: SeedSequence(SEED_S9).spawn(5)[1] (posizione 1), spawn(5):
 figli 0–3 per i regimi (i)–(iv), figlio 4 per la trappola; ogni generatore in sequenza
 sulle repliche.
 """
@@ -47,7 +47,7 @@ import numpy as np
 from shk.model.known_scenarios import decomposition_batch
 from shk.model.module3 import CANDIDATES, ESTIMATED_QUANTITIES, WindowData, candidate_lambda, lambda_star
 
-# Seed della story S9 (decisione S7)
+# Seed radice della calibrazione degli agenti (decisione di progetto)
 SEED_S9: Final[int] = 20261013
 N_STORY_TASKS: Final[int] = 5
 T51_STORY_POSITION: Final[int] = 1

@@ -1,17 +1,17 @@
-"""Esecuzioni e tabelle di T56: run iid, confronti con intervalli, falsi allarmi, π e λ di C2.
+"""Esecuzioni e tabelle dei confronti fra agenti: run iid, confronti con intervalli, falsi allarmi, π e λ di C2.
 
-Seed: SeedSequence(SEED_S10).spawn(5)[1] (T56 in posizione 1), spawn(3):
+Seed: SeedSequence(SEED_S10).spawn(5)[1] (posizione 1), spawn(3):
 - figlio 0: indici del bootstrap a due livelli, gli stessi per l'intervallo block e per
   quello iid (numeri casuali comuni: il rapporto fra le ampiezze non dipende dagli indici);
 - figlio 1: seed del run iid (L = 1), spawn(19) per stagione in ordine cronologico e
   spawn(N_SEEDS) per seed;
 - figlio 2: simulazione di copertura.
 
-Falsi allarmi (passo 4): sotto H₀ sono gli allarmi sui seed di T55, cioè su stagioni
+Falsi allarmi (passo 4): sotto H₀ sono gli allarmi sui seed dell'esecuzione congelata sulla validazione, cioè su stagioni
 ricostruite per stationary bootstrap delle date a L_PW della serie per data di δ, che
 rompe la non stazionarietà; sui dati sono quelli della realizzazione osservata. Allarmi di
 C1 (accensioni) e dei detector di D non dipendono dalla configurazione: si usa F = 0.
-π e λ di C2: supervisore con la W di C2 sui seed di T55 (gli stessi SeedSequence) e sulla
+π e λ di C2: supervisore con la W di C2 sui seed dell'esecuzione congelata sulla validazione (gli stessi SeedSequence) e sulla
 realizzazione osservata; a ogni data attiva π = quota strutturale e λ = module3_lambda
 sull'esito candidato di ogni partita della data, mediato sulle partite.
 """
@@ -78,7 +78,7 @@ COMPARISON_COLUMNS: Final[tuple[str, ...]] = (
 
 
 def t56_sequences(seed: int | np.random.SeedSequence = SEED_S10) -> list[np.random.SeedSequence]:
-    """Tre figli di SeedSequence(SEED_S10).spawn(5)[1] (vedi modulo); seed è la radice della story."""
+    """Tre figli di SeedSequence(SEED_S10).spawn(5)[1] (vedi modulo); seed è la radice."""
     return story_task_sequence(seed, T56_STORY_POSITION, N_STORY_TASKS).spawn(3)
 
 
@@ -191,7 +191,7 @@ def pi_lambda_trace(season: str, inp, covariates: Sequence[str], window: int) ->
 
 def pi_lambda_season(params_path: str, season: ValidationSeason,
                      seed_seqs: Sequence[np.random.SeedSequence]) -> dict[str, object]:
-    """π e λ di C2 sui seed di T55 (H₀) e sulla realizzazione osservata, per una stagione."""
+    """π e λ di C2 sui seed dell'esecuzione congelata sulla validazione (H₀) e sulla realizzazione osservata, per una stagione."""
     params = load_frozen_params(params_path)
     covariates = list(params.fixed["covariates"])
     window = arm_windows(params)["C2"]

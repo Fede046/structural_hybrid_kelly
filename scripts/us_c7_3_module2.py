@@ -1,13 +1,13 @@
-"""Script T47 (US-C7.3, parte 1): Modulo 2 su finestre scorrevoli.
+"""Script: Modulo 2 su finestre scorrevoli.
 
 Per ogni data di decisione delle 3 stagioni di training e delle 19 di validazione e per ogni
 W in (40, 80, 120, 190): decomposizione di Oaxaca-Blinder fra le due finestre adiacenti di
 partite anteriori (shk.model.module2), con intervalli al 95% a fine matchday. Scrive
 results/us_c7_3_module2.csv (una riga per data x W), results/us_c7_3_module2_ci.csv e
-thesis/figures/us_c7_3_module2.png. La specificazione è quella di T46, ricavata dalle
+thesis/figures/us_c7_3_module2.png. La specificazione delle covariate è quella ricavata dalle
 regole sul training (derive_specification).
 Con --module1 dixon_coles usa il Modulo 1 Dixon-Coles e scrive le uscite con il suffisso _dc,
-senza toccare quelle Elo (T60), con i seed di T61 (module1_seeds.procedure_seeds).
+senza toccare quelle Elo, con i seed della calibrazione con Dixon-Coles (module1_seeds.procedure_seeds).
 """
 
 import csv

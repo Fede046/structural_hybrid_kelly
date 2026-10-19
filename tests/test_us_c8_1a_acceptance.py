@@ -1,4 +1,4 @@
-"""Test di accettazione di T51: tabella del criterio, regola di scelta e trappola sul CSV."""
+"""Test di accettazione: tabella del criterio, regola di scelta e trappola sul CSV."""
 
 import math
 from pathlib import Path

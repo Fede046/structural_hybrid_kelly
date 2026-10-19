@@ -1,16 +1,16 @@
-"""Tabelle della tesi, una funzione per tabella, dai soli CSV versionati (T65).
+"""Tabelle della tesi, una funzione per tabella, dai soli CSV versionati.
 
-Temi del backlog (materiale "da scrivere in tesi" di S2–S11) e tabelle:
-- C2, falso rigetto per φ: tab_c2_falso_rigetto;
-- C3.1, finestra effettiva dei dati: tab_c3_1_finestra_dati;
-- C3.2, prima riga della sensibilità: tab_c3_2_divergenza_devig;
-- C4.2 e T57, ĝ: tab_c4_2_g_hat;
-- C5, "perché ANOVA e non ADWIN": tab_c5_allarmi;
-- C6.3, floor: tab_c6_3_floor_reale e tab_c6_3_floor_sintetico;
-- C6.4 e T44, eteroschedasticità: tab_c6_4_eteroschedasticita;
-- S8, Modulo 2: tab_modulo2_covid e tab_modulo2_transizioni;
-- S10, confronti: tab_confronti;
-- S11, robustezza: tab_s11_dixon_coles, tab_s11_ranking, tab_s11_confronti_dc e tab_s11_devig.
+Temi e tabelle:
+- falso rigetto dell'ANOVA per φ: tab_falso_rigetto;
+- finestra effettiva dei dati: tab_finestra_dati;
+- divergenza fra metodi di de-vigging: tab_divergenza_devig;
+- ĝ del Modulo 1 contro il mercato: tab_g_hat;
+- "perché ANOVA e non ADWIN": tab_allarmi;
+- floor: tab_floor_reale e tab_floor_sintetico;
+- eteroschedasticità: tab_eteroschedasticita;
+- Modulo 2: tab_modulo2_covid e tab_modulo2_transizioni;
+- confronti fra agenti: tab_confronti;
+- robustezza: tab_dixon_coles, tab_ranking, tab_confronti_dc e tab_devig.
 Un tema ha più tabelle quando le sue grandezze hanno forme diverse.
 
 Le funzioni selezionano righe, le riordinano o le rimodellano e formattano i valori: nessuna
@@ -72,8 +72,8 @@ def _config(code: str) -> Cell:
     return _label(CONFIGS, code)
 
 
-def table_c2(root: Path | str = REPO_ROOT) -> ThesisTable:
-    """C2: tasso di falso rigetto dell'ANOVA nominale per φ e disegno dei gruppi."""
+def table_false_rejection(root: Path | str = REPO_ROOT) -> ThesisTable:
+    """Tasso di falso rigetto dell'ANOVA nominale per φ e disegno dei gruppi."""
     src = versioned_csv("us_c2_anova_autocorrelation", root)
     nom = select(read_versioned_csv(src.name, root), 'method == "nominal"')
     designs = ("contiguous_2", "contiguous_38", "random_2")
@@ -88,13 +88,13 @@ def table_c2(root: Path | str = REPO_ROOT) -> ThesisTable:
         rf"ANOVA a una via con soglia nominale (quantile 0,95 della $F(k - 1, N - k)$), "
         rf"{format_number(ref.n_series, 0)} serie AR(1) di 380 osservazioni per ogni $\varphi$, "
         "innovazioni $N(0, 1)$ e nessuna differenza fra i gruppi: ogni rigetto è falso.",
-        "Disegni: due metà contigue da 190 (principale); 38 blocchi contigui da 10 (le giornate di C5.2); "
+        "Disegni: due metà contigue da 190 (principale); 38 blocchi contigui da 10 (i matchday dello Z-test); "
         "le etichette delle due metà sulla serie permutata a caso (controllo).",
         rf"Intervallo Monte Carlo al 99\% per $\alpha = 0{{,}}05$: "
         rf"{interval(ref.mc_lower_99, ref.mc_upper_99, 4).latex}.",
     )
     return ThesisTable(
-        name="tab_c2_falso_rigetto",
+        name="tab_falso_rigetto",
         caption=r"Tasso di falso rigetto dell'ANOVA con soglia nominale, per autocorrelazione $\varphi$ e disegno dei gruppi",
         columns=(
             Column(r"$\varphi$", ("phi",), "l"),
@@ -108,8 +108,8 @@ def table_c2(root: Path | str = REPO_ROOT) -> ThesisTable:
     )
 
 
-def table_c3_1(root: Path | str = REPO_ROOT) -> ThesisTable:
-    """C3.1: copertura per stagione dei risultati e delle terne 1X2 dei bookmaker."""
+def table_data_window(root: Path | str = REPO_ROOT) -> ThesisTable:
+    """Copertura per stagione dei risultati e delle terne 1X2 dei bookmaker."""
     src = versioned_csv("us_c3_1_data_coverage", root)
     cov = read_versioned_csv(src.name, root)
     groups = (("results", "Ris.", "risultati"),) + tuple(
@@ -136,7 +136,7 @@ def table_c3_1(root: Path | str = REPO_ROOT) -> ThesisTable:
         "Il 2023-24 non compare: la regola del manifesto (drop\\_seasons) toglie le sue righe.",
     )
     return ThesisTable(
-        name="tab_c3_1_finestra_dati",
+        name="tab_finestra_dati",
         caption="Finestra effettiva dei dati: risultati e terne 1X2 complete per stagione (divisione E0)",
         columns=(Column("Stagione", ("stagione",), "l"),) + tuple(
             Column(head, (plain,), "c") for _, head, plain in groups
@@ -154,8 +154,8 @@ def _odds_bin(label: str) -> str:
     return label.replace(", ", "; ").replace(".", ",").replace("inf", r"$\infty$")
 
 
-def table_c3_2(root: Path | str = REPO_ROOT) -> ThesisTable:
-    """C3.2: divergenza fra i tre metodi di de-vigging per fascia di quota."""
+def table_devig_divergence(root: Path | str = REPO_ROOT) -> ThesisTable:
+    """Divergenza fra i tre metodi di de-vigging per fascia di quota."""
     src = versioned_csv("us_c3_2_devig_divergence", root)
     df = read_versioned_csv(src.name, root)
     rows = []
@@ -176,7 +176,7 @@ def table_c3_2(root: Path | str = REPO_ROOT) -> ThesisTable:
         rf"{format_number(tot.max_spread_ratio_to_edge, 2)}, 99° percentile {format_number(tot.p99_spread_ratio_to_edge, 2)}.",
     )
     return ThesisTable(
-        name="tab_c3_2_divergenza_devig",
+        name="tab_divergenza_devig",
         caption="Divergenza fra metodi di de-vigging per fascia di quota (prima riga della sensibilità)",
         columns=(
             Column("Fascia di quota", ("fascia di quota",), "l"),
@@ -193,7 +193,7 @@ def table_c3_2(root: Path | str = REPO_ROOT) -> ThesisTable:
 
 
 def table_g_hat(root: Path | str = REPO_ROOT) -> ThesisTable:
-    """C4.2 e T57: ĝ pooled per serie e metodo, con gli intervalli block e iid."""
+    """Ĝ pooled per serie e metodo, con gli intervalli block e iid."""
     src = versioned_csv("us_c4_2b_g_hat_inference", root)
     df = select(read_versioned_csv(src.name, root), 'row_type == "interval" and season == "pooled"')
     rows = []
@@ -209,7 +209,7 @@ def table_g_hat(root: Path | str = REPO_ROOT) -> ThesisTable:
         "iid: lo stesso con blocchi di lunghezza 1. Rapporto: ampiezza block su ampiezza iid.",
     )
     return ThesisTable(
-        name="tab_c4_2_g_hat",
+        name="tab_g_hat",
         caption=r"$\hat g$ del Modulo 1 (Elo) contro il mercato, pooled sulle stagioni di validazione",
         columns=(
             Column("Serie", ("serie",), "l", group=True),
@@ -226,8 +226,8 @@ def table_g_hat(root: Path | str = REPO_ROOT) -> ThesisTable:
     )
 
 
-def table_c5(root: Path | str = REPO_ROOT) -> ThesisTable:
-    """C5: allarmi di Z-test, ADWIN e Page-Hinkley sulle 19 stagioni di validazione."""
+def table_alarms(root: Path | str = REPO_ROOT) -> ThesisTable:
+    """Allarmi di Z-test, ADWIN e Page-Hinkley sulle 19 stagioni di validazione."""
     src = versioned_csv("us_c5_2_daily_z_test", root)
     df = select(read_versioned_csv(src.name, root), 'row_type == "overall"')
     names = {"z_nominal": ("Z nominale", "Z nominale"), "adwin": ("ADWIN", "ADWIN"),
@@ -243,11 +243,11 @@ def table_c5(root: Path | str = REPO_ROOT) -> ThesisTable:
         r"Serie: log-loss per partita del Modulo 1 (Elo). Z-test per matchday (blocchi di 10 partite) con "
         r"$\mu_f$ e $\sigma_f$ del training del fit; soglia nominale $|Z| > 1{,}96$; soglia calibrata col moving "
         r"block bootstrap della serie di training del fit ($B = 999$).",
-        "ADWIN (delta 0,002) e Page-Hinkley (delta 0,05, threshold 5) di river, tarati in C5.1 sul training, "
+        "ADWIN (delta 0,002) e Page-Hinkley (delta 0,05, threshold 5) di river, tarati sul training, "
         "alimentati con la stessa serie. Attesi: 1,9 allarmi per stagione ($\\alpha = 0{,}05$ su 38 matchday).",
     )
     return ThesisTable(
-        name="tab_c5_allarmi",
+        name="tab_allarmi",
         caption="Allarmi sulle 19 stagioni di validazione: Z-test per matchday, ADWIN e Page-Hinkley",
         columns=(
             Column("Metodo", ("metodo",), "l"),
@@ -261,8 +261,8 @@ def table_c5(root: Path | str = REPO_ROOT) -> ThesisTable:
     )
 
 
-def table_c6_3_real(root: Path | str = REPO_ROOT) -> ThesisTable:
-    """C6.3: rovina e ricchezza col floor nella configurazione reale (19 stagioni di validazione)."""
+def table_floor_real(root: Path | str = REPO_ROOT) -> ThesisTable:
+    """Rovina e ricchezza col floor nella configurazione reale (19 stagioni di validazione)."""
     src = versioned_csv("us_c6_3_floor_real_config", root)
     df = select(read_versioned_csv(src.name, root), 'row_type == "aggregate"')
     rows = []
@@ -279,7 +279,7 @@ def table_c6_3_real(root: Path | str = REPO_ROOT) -> ThesisTable:
         r"IC al 99\% del tasso di rovina. $P(\min W \le 0{,}5)$: quota di traiettorie con ricchezza minima al più 0,5.",
     )
     return ThesisTable(
-        name="tab_c6_3_floor_reale",
+        name="tab_floor_reale",
         caption="Effetto del floor sulla rovina nella configurazione reale",
         columns=(
             Column("Configurazione", ("configurazione",), "l", group=True),
@@ -301,8 +301,8 @@ def _ratio_cell(value: float) -> Cell:
     return num(value, decimals)
 
 
-def table_c6_3_synthetic(root: Path | str = REPO_ROOT) -> ThesisTable:
-    """C6.3: rovina col floor sul calendario sintetico, per B0/F e orizzonte (esperimento B)."""
+def table_floor_synthetic(root: Path | str = REPO_ROOT) -> ThesisTable:
+    """Rovina col floor sul calendario sintetico, per B0/F e orizzonte (esperimento B)."""
     src = versioned_csv("us_c6_3_floor_synthetic", root)
     df = read_versioned_csv(src.name, root)
     sweep = select(df, 'experiment == "B"').sort_values("initial_ratio", kind="stable")
@@ -325,7 +325,7 @@ def table_c6_3_synthetic(root: Path | str = REPO_ROOT) -> ThesisTable:
         rf"(nota 2.9: {format_number(ca.note_acceleration_factor, 0)}).",
     )
     return ThesisTable(
-        name="tab_c6_3_floor_sintetico",
+        name="tab_floor_sintetico",
         caption=r"Tasso di rovina col floor sul calendario sintetico, per $B_0/F$ e orizzonte",
         columns=(Column(r"$B_0/F$", ("B0/F",)),) + tuple(
             Column(f"{format_number(h, 0)} date", (f"rovina, {int(h)} date",)) for h in horizons
@@ -336,8 +336,8 @@ def table_c6_3_synthetic(root: Path | str = REPO_ROOT) -> ThesisTable:
     )
 
 
-def table_c6_4(root: Path | str = REPO_ROOT) -> ThesisTable:
-    """C6.4 e T44: rigetti dei test di eteroschedasticità e di cambio di varianza."""
+def table_heteroskedasticity(root: Path | str = REPO_ROOT) -> ThesisTable:
+    """Rigetti dei test di eteroschedasticità e di cambio di varianza."""
     src_a = versioned_csv("us_c6_4_heteroskedasticity", root)
     src_b = versioned_csv("us_c6_4b_variance_change", root)
     a = select(read_versioned_csv(src_a.name, root), 'row_type == "summary"')
@@ -370,13 +370,13 @@ def table_c6_4(root: Path | str = REPO_ROOT) -> ThesisTable:
         r"Serie: log-loss per partita del Modulo 1 (Elo). BP: Breusch-Pagan (Koenker) sui residui OLS di "
         r"$y \sim 1 + H + t$, congiunto con $z = (H, t)$ e temporale con $z = t$; White con i termini quadratici. "
         "Soglie calibrate col moving block bootstrap della serie di training del fit ($B = 999$).",
-        "Goldfeld-Quandt, ARCH-LM e log-varianza mobile: T44, con la stessa calibrazione e "
+        "Goldfeld-Quandt, ARCH-LM e log-varianza mobile: con la stessa calibrazione e "
         r"$L_{\mathrm{PW}}$ di Politis-White; ``---'': non applicabile o non calcolato.",
         rf"Brown-Forsythe fra stagioni ({format_number(bf_nom.n_obs, 0)} partite): statistica "
         rf"{format_number(bf_nom.statistic_value, 3)}; soglie {thresholds}.",
     )
     return ThesisTable(
-        name="tab_c6_4_eteroschedasticita",
+        name="tab_eteroschedasticita",
         caption="Eteroschedasticità e cambio di varianza della log-loss: rigetti sulle 19 stagioni di validazione",
         columns=(
             Column("Statistica", ("statistica",), "l"),
@@ -404,7 +404,7 @@ _COMPONENTS: Final[dict[str, tuple[str, str]]] = {
 
 
 def table_module2_covid(root: Path | str = REPO_ROOT) -> ThesisTable:
-    """S8: decomposizione three-fold nello scenario della sospensione del 2019-20."""
+    """Decomposizione three-fold nello scenario della sospensione del 2019-20."""
     src = versioned_csv("us_c7_3b_known_scenarios", root)
     df = select(read_versioned_csv(src.name, root), 'scenario == "2_covid" and version == "threefold"')
     rows = []
@@ -413,7 +413,7 @@ def table_module2_covid(root: Path | str = REPO_ROOT) -> ThesisTable:
         rows.append((text(*name), num(r.estimate, 4), interval(r.lower, r.upper, 4)))
     r = df.iloc[0]
     notes = (
-        rf"Scenario 2 di T48: A = {format_number(r.n_a, 0)} partite del 2019-20 fino al {r.date_a_last}; "
+        rf"Sospensione del 2019-20: A = {format_number(r.n_a, 0)} partite del 2019-20 fino al {r.date_a_last}; "
         rf"B = {format_number(r.n_b, 0)} partite dal {r.date_b_first} (resto del 2019-20 e 2020-21).",
         r"Oaxaca-Blinder three-fold di $\delta = \ln \hat p - \ln q$ (q Shin): totale = compositiva + strutturale + "
         r"interazione; $\pi = |S| / (|C| + |S| + |I|)$, quota compositiva $|C| / (|C| + |S| + |I|)$.",
@@ -434,7 +434,7 @@ def table_module2_covid(root: Path | str = REPO_ROOT) -> ThesisTable:
 
 
 def table_module2_transitions(root: Path | str = REPO_ROOT) -> ThesisTable:
-    """S8: decomposizione three-fold alle transizioni fra stagioni consecutive (W = 80)."""
+    """Decomposizione three-fold alle transizioni fra stagioni consecutive (W = 80)."""
     src = versioned_csv("us_c7_3b_known_scenarios", root)
     df = select(read_versioned_csv(src.name, root),
                 'scenario == "1_transition" and version == "threefold" and window == 80')
@@ -446,8 +446,8 @@ def table_module2_transitions(root: Path | str = REPO_ROOT) -> ThesisTable:
             cells.append(num(one(pair, f'quantity == "{quantity}"').estimate, 4 if "share" not in quantity else 3))
         rows.append(tuple(cells))
     notes = (
-        "Scenario 1 di T48, $W = 80$: A = ultime 80 partite della stagione A, B = prime 80 della stagione B. "
-        r"Oaxaca-Blinder three-fold di $\delta = \ln \hat p - \ln q$; quote come nella tabella dello scenario 2.",
+        "Transizioni fra stagioni consecutive, $W = 80$: A = ultime 80 partite della stagione A, B = prime 80 della stagione B. "
+        r"Oaxaca-Blinder three-fold di $\delta = \ln \hat p - \ln q$; quote come nella tabella della sospensione del 2019-20.",
     )
     return ThesisTable(
         name="tab_modulo2_transizioni",
@@ -464,7 +464,7 @@ def table_module2_transitions(root: Path | str = REPO_ROOT) -> ThesisTable:
 
 
 def table_comparisons(root: Path | str = REPO_ROOT) -> ThesisTable:
-    """S10: confronti appaiati sulla log-ricchezza finale, in validazione e nel 2023-24."""
+    """Confronti appaiati sulla log-ricchezza finale, in validazione e nel 2023-24."""
     src_v = versioned_csv("us_c8_4_comparisons", root)
     src_t = versioned_csv("us_c8_5_test_run", root)
     val = select(read_versioned_csv(src_v.name, root), 'row_type == "comparison" and metric == "final_log_wealth"')
@@ -507,8 +507,8 @@ def table_comparisons(root: Path | str = REPO_ROOT) -> ThesisTable:
     )
 
 
-def table_s11_dixon_coles(root: Path | str = REPO_ROOT) -> ThesisTable:
-    """S11: log-loss e ĝ di Elo e Dixon-Coles, in validazione e nel 2023-24."""
+def table_dixon_coles(root: Path | str = REPO_ROOT) -> ThesisTable:
+    """Log-loss e ĝ di Elo e Dixon-Coles, in validazione e nel 2023-24."""
     src_v = versioned_csv("us_c9_1_dixon_coles", root)
     src_te = versioned_csv("us_c8_5_test_run", root)
     src_td = versioned_csv("us_c8_5_test_run_dc", root)
@@ -542,10 +542,10 @@ def table_s11_dixon_coles(root: Path | str = REPO_ROOT) -> ThesisTable:
         r"$\hat g$ sulla terna B365 pre-partita, per metodo di de-vigging. Validazione: 19 stagioni, "
         rf"{format_number(n_val, 0)} partite; test: {format_number(n_test, 0)} partite.",
         rf"Neopromosse: log-loss delle partite di squadre mai viste nei primi 10 matchday ({format_number(n_early, 0)} partite).",
-        rf"Dixon-Coles con i parametri di T59 per fit: {fit_text}.",
+        rf"Dixon-Coles con i parametri calibrati per fit: {fit_text}.",
     )
     return ThesisTable(
-        name="tab_s11_dixon_coles",
+        name="tab_dixon_coles",
         caption=r"Modulo 1 Elo e Dixon-Coles: log-loss e $\hat g$ per metodo di de-vigging",
         columns=(
             Column("Insieme", ("insieme",), "l", group=True),
@@ -561,8 +561,8 @@ def table_s11_dixon_coles(root: Path | str = REPO_ROOT) -> ThesisTable:
     )
 
 
-def table_s11_ranking(root: Path | str = REPO_ROOT) -> ThesisTable:
-    """S11: τ-b di Kendall fra i ranking degli agenti con Elo e con Dixon-Coles."""
+def table_ranking(root: Path | str = REPO_ROOT) -> ThesisTable:
+    """Τ-b di Kendall fra i ranking degli agenti con Elo e con Dixon-Coles."""
     src = versioned_csv("us_c9_2_robustness", root)
     tau = select(read_versioned_csv(src.name, root), 'row_type == "tau"')
     configs = ("none", "gbp_0.01", "gbp_1")
@@ -583,7 +583,7 @@ def table_s11_ranking(root: Path | str = REPO_ROOT) -> ThesisTable:
         "(tutti gli agenti pari).",
     )
     return ThesisTable(
-        name="tab_s11_ranking",
+        name="tab_ranking",
         caption=r"Robustezza del ranking degli agenti al Modulo 1: $\tau_b$ di Kendall fra Elo e Dixon-Coles",
         columns=(Column("Metrica", ("metrica",), "l"),) + tuple(
             Column(CONFIGS[c].latex.replace(r"senza floor ($F = 0$)", r"$F = 0$"), (f"{d} {CONFIGS[c].plain}",))
@@ -596,8 +596,8 @@ def table_s11_ranking(root: Path | str = REPO_ROOT) -> ThesisTable:
     )
 
 
-def table_s11_comparisons(root: Path | str = REPO_ROOT) -> ThesisTable:
-    """S11: confronti di T56 con Elo e con Dixon-Coles, configurazione £0.01."""
+def table_comparisons_dc(root: Path | str = REPO_ROOT) -> ThesisTable:
+    """Confronti fra agenti con Elo e con Dixon-Coles, configurazione £0.01."""
     src = versioned_csv("us_c9_2_robustness", root)
     df = select(read_versioned_csv(src.name, root),
                 'row_type == "comparison" and metric == "final_log_wealth" and config == "gbp_0.01"')
@@ -615,7 +615,7 @@ def table_s11_comparisons(root: Path | str = REPO_ROOT) -> ThesisTable:
         "Stessa conclusione: l'intervallo esclude 0 con lo stesso segno, o non lo esclude, con i due modelli.",
     )
     return ThesisTable(
-        name="tab_s11_confronti_dc",
+        name="tab_confronti_dc",
         caption="Confronti appaiati con il Modulo 1 Elo e con Dixon-Coles",
         columns=(
             Column("Insieme", ("insieme",), "l", group=True),
@@ -634,8 +634,8 @@ def table_s11_comparisons(root: Path | str = REPO_ROOT) -> ThesisTable:
     )
 
 
-def table_s11_devig(root: Path | str = REPO_ROOT) -> ThesisTable:
-    """S11: ĝ per metodo di de-vigging, in validazione e nel 2023-24, e conclusioni instabili."""
+def table_devig(root: Path | str = REPO_ROOT) -> ThesisTable:
+    """Ĝ per metodo di de-vigging, in validazione e nel 2023-24, e conclusioni instabili."""
     src = versioned_csv("us_c9_3_devig_sensitivity", root)
     df = read_versioned_csv(src.name, root)
     g = select(df, 'row_type == "g_hat" and (season == "pooled" or season == "2023-24")')
@@ -658,10 +658,10 @@ def table_s11_devig(root: Path | str = REPO_ROOT) -> ThesisTable:
     notes = (
         r"Validazione: pooled sulle stagioni, IC al 95\% con la correzione $t$ per cluster; test 2023-24: "
         "stationary bootstrap della stagione. Shin è il metodo principale.",
-        f"Conclusioni dei confronti di T56 e T58 che cambiano segno fra i metodi: {listed}.",
+        f"Conclusioni dei confronti che cambiano segno fra i metodi: {listed}.",
     )
     return ThesisTable(
-        name="tab_s11_devig",
+        name="tab_devig",
         caption=r"Sensibilità di $\hat g$ al metodo di de-vigging",
         columns=(
             Column("Insieme", ("insieme",), "l", group=True),
@@ -679,21 +679,21 @@ def table_s11_devig(root: Path | str = REPO_ROOT) -> ThesisTable:
 
 
 TABLES: Final[dict[str, Callable[..., ThesisTable]]] = {
-    "tab_c2_falso_rigetto": table_c2,
-    "tab_c3_1_finestra_dati": table_c3_1,
-    "tab_c3_2_divergenza_devig": table_c3_2,
-    "tab_c4_2_g_hat": table_g_hat,
-    "tab_c5_allarmi": table_c5,
-    "tab_c6_3_floor_reale": table_c6_3_real,
-    "tab_c6_3_floor_sintetico": table_c6_3_synthetic,
-    "tab_c6_4_eteroschedasticita": table_c6_4,
+    "tab_falso_rigetto": table_false_rejection,
+    "tab_finestra_dati": table_data_window,
+    "tab_divergenza_devig": table_devig_divergence,
+    "tab_g_hat": table_g_hat,
+    "tab_allarmi": table_alarms,
+    "tab_floor_reale": table_floor_real,
+    "tab_floor_sintetico": table_floor_synthetic,
+    "tab_eteroschedasticita": table_heteroskedasticity,
     "tab_modulo2_covid": table_module2_covid,
     "tab_modulo2_transizioni": table_module2_transitions,
     "tab_confronti": table_comparisons,
-    "tab_s11_dixon_coles": table_s11_dixon_coles,
-    "tab_s11_ranking": table_s11_ranking,
-    "tab_s11_confronti_dc": table_s11_comparisons,
-    "tab_s11_devig": table_s11_devig,
+    "tab_dixon_coles": table_dixon_coles,
+    "tab_ranking": table_ranking,
+    "tab_confronti_dc": table_comparisons_dc,
+    "tab_devig": table_devig,
 }
 
 

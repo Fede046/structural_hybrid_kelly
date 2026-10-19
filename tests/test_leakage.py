@@ -1,4 +1,4 @@
-"""Test per il fornitore walk-forward e controlli anti-leakage (US-C3.4)."""
+"""Test per il fornitore walk-forward e controlli anti-leakage."""
 
 from collections.abc import Iterator
 from pathlib import Path

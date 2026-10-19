@@ -305,7 +305,7 @@ def test_load_all_seasons_real_data():
     """Verifica il caricamento su file reali in DEFAULT_DATA_DIR (saltato se assenti).
 
     Con il test bloccato si caricano solo le stagioni anteriori al primo anno di test:
-    i file bloccati si individuano dal nome, senza aprirli (T41).
+    i file bloccati si individuano dal nome, senza aprirli.
     """
     if not DEFAULT_DATA_DIR.exists():
         pytest.skip(f"Directory {DEFAULT_DATA_DIR} does not exist")

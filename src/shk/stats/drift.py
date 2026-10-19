@@ -1,4 +1,4 @@
-"""Modulo per la drift detection tramite ADWIN e Page-Hinkley (US-C5.1 / Task 27).
+"""Modulo per la drift detection tramite ADWIN e Page-Hinkley.
 
 Fornisce la funzione run_drift_detector per eseguire i detector ADWIN e Page-Hinkley
 importati da river su serie 1D, la regola pura di selezione dei parametri e le
@@ -21,7 +21,7 @@ TARGET_ALARMS_PER_SEASON: Final[float] = 1.9
 # Numero di partite per giornata (blocco contiguo)
 MATCHDAY_SIZE: Final[int] = 10
 
-# Seme congelato e parametri per la calibrazione e verifica bootstrap C5 (Task 30)
+# Seme congelato e parametri per la calibrazione e verifica bootstrap del monitoraggio dei residui
 SEED_C5: Final[int] = 20260929
 N_VERIFICATION_RESAMPLES: Final[int] = 1000
 
@@ -173,7 +173,7 @@ def run_drift_detector(
 
 
 def make_drift_detector(detector: str, params: Mapping[str, Any] | None = None) -> ADWIN | PageHinkley:
-    """Istanza nuova di ADWIN o PageHinkley di river con i parametri dati (T50).
+    """Istanza nuova di ADWIN o PageHinkley di river con i parametri dati.
 
     È la costruzione usata da run_drift_detector, estratta perché un agente con stato
     possa alimentare il detector un'osservazione alla volta. Con params=None valgono i
@@ -708,7 +708,7 @@ def spawn_c5_generators(
     seed: int = SEED_C5,
     n_fits: int = 3,
 ) -> tuple[tuple[tuple[np.random.Generator, np.random.Generator], ...], ...]:
-    """Genera i generatori casuali NumPy annidati secondo lo schema di seed di C5.
+    """Genera i generatori casuali NumPy annidati secondo lo schema di seed del monitoraggio dei residui.
 
     Struttura:
     SeedSequence(seed).spawn(n_fits) -> per ciascun fit .spawn(len(BLOCK_LENGTHS))

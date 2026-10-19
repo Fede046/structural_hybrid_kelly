@@ -1,4 +1,4 @@
-"""Test di accettazione di T49: DiD, placebo, Ñopo e supporto comune."""
+"""Test di accettazione: DiD, placebo, Ñopo e supporto comune."""
 
 import math
 from pathlib import Path

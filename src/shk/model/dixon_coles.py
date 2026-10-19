@@ -1,4 +1,4 @@
-"""Modulo 1 Dixon-Coles walk-forward (T59, US-C9.1; nota 2.8 §5).
+"""Modulo 1 Dixon-Coles walk-forward (nota 2.8 §5).
 
 Modello (Dixon e Coles, 1997): gol della squadra di casa X ~ Poisson(λ), della squadra in
 trasferta Y ~ Poisson(μ), con ln λ = α_casa + β_trasferta + γ e ln μ = α_trasferta + β_casa
@@ -16,7 +16,7 @@ non può bloccare la stima per partite con peso minimo e parametri poco identifi
 non contano per le previsioni. L-BFGS-B con gradiente analitico, avvio dalla soluzione della
 data precedente.
 
-Neopromosse (decisioni S4/S11 e del programmatore del 2026-10-12): ogni squadra alla prima
+Neopromosse (decisioni di progetto e del programmatore del 2026-10-12): ogni squadra alla prima
 stagione dopo l'ingresso, mai vista o tornante, ha un valore d'ingresso (α₀, β₀):
 - mai vista: media dei parametri delle ultime tre della classifica della stagione precedente,
   stimati a inizio stagione;
@@ -28,7 +28,7 @@ centrato su (α₀, β₀) con deviazione standard σ (uguale per attacco e dife
 prior. σ = ∞ è la massima verosimiglianza pura: il previsore la accetta, ma è esclusa dalla
 griglia (decisione del programmatore del 2026-10-12), perché per una squadra senza storia lo
 stimatore non esiste se nelle prime partite fa 0 gol (l'attacco diverge) o ne subisce 0 (la
-difesa diverge). Prima della prima partita di una mai vista la previsione usa il valore
+difesa diverge). Prima partita di una mai vista la previsione usa il valore
 d'ingresso (con σ finito è automatico, con σ = ∞ è imposto).
 
 Probabilità 1X2 dalla griglia dei punteggi 0..MAX_GOALS per squadra, rinormalizzata.
@@ -63,7 +63,7 @@ LOG_RATE_LIMIT: Final[float] = 10.0
 
 
 def t59_sequences(seed: int = SEED_S11) -> list[np.random.SeedSequence]:
-    """Figli di SeedSequence(SEED_S11).spawn(5)[0] (T59 in posizione 0 di S11): 0 recupero dei
+    """Figli di SeedSequence(SEED_S11).spawn(5)[0] (posizione 0): 0 recupero dei
     parametri su dati simulati, 1 campione del controllo anti-leakage."""
     return np.random.SeedSequence(seed).spawn(5)[T59_STORY_POSITION].spawn(2)
 
@@ -107,7 +107,7 @@ class DixonColesFitParams(NamedTuple):
     sigma: float
 
 
-# Parametri congelati della calibrazione US-C9.1 (calibrati il 2026-10-12, T59). Aggiornati lo
+# Parametri congelati della calibrazione di Dixon-Coles (calibrati il 2026-10-12). Aggiornati lo
 # stesso giorno con la griglia σ senza ∞ (decisione del programmatore): cambia solo il fit 2000-01,
 # prima (ξ 0.001, σ ∞)
 DC_FITS: Final[dict[str, DixonColesFitParams]] = {

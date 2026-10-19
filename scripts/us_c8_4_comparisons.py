@@ -1,12 +1,12 @@
-"""Script T56: confronti che decidono, con intervalli block e iid, effect size e falsi allarmi.
+"""Script: confronti che decidono, con intervalli block e iid, effect size e falsi allarmi.
 
-Legge le uscite per seed di T55 (results/raw/us_c8_3_validation_raw.npz), esegue il run iid
+Legge le uscite per seed dell'esecuzione congelata sulla validazione (results/raw/us_c8_3_validation_raw.npz), esegue il run iid
 aggiuntivo degli stessi agenti (results/raw/us_c8_4_validation_iid_raw.npz, non versionato)
-e π e λ di C2 sui seed di T55, e scrive results/us_c8_4_comparisons.csv e
+e π e λ di C2 sui seed dell'esecuzione congelata sulla validazione, e scrive results/us_c8_4_comparisons.csv e
 thesis/figures/us_c8_4_comparisons.png. Nessun confronto è una soglia da superare.
 Con --from-raw rilegge anche il run iid già scritto invece di rieseguirlo.
 Con --module1 dixon_coles usa il Modulo 1 Dixon-Coles e config/frozen_params_dc.toml, e legge e
-scrive i file con il suffisso _dc, senza toccare quelli Elo (T60).
+scrive i file con il suffisso _dc, senza toccare quelli Elo.
 """
 
 import csv

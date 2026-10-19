@@ -1,4 +1,4 @@
-"""Test di accettazione e di unità per la calibrazione Elo e previsioni walk-forward (US-C4.1)."""
+"""Test di accettazione e di unità per la calibrazione Elo e previsioni walk-forward."""
 
 import csv
 import math

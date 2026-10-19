@@ -1,8 +1,8 @@
-"""Script T44: diagnostiche della varianza nel tempo sui residui del Modulo 1 (seguito di C6.4).
+"""Script: diagnostiche della varianza nel tempo sui residui del Modulo 1.
 
 Scrive results/us_c6_4b_variance_change.csv e thesis/figures/us_c6_4b_variance_change.png.
 Con --module1 dixon_coles usa il Modulo 1 Dixon-Coles e scrive le uscite con il suffisso _dc,
-senza toccare quelle Elo (T60).
+senza toccare quelle Elo.
 """
 
 import csv
@@ -89,7 +89,7 @@ def run_experiment(module1: str = MODULE1_ELO) -> None:
     colors = ["tab:green" if r["within_interval"] else "tab:red" for r in verif]
     ax_c.scatter(np.arange(len(verif)), rates, c=colors, s=18)
     ax_c.axhspan(float(verif[0]["mc_lower"]), float(verif[0]["mc_upper"]), color="gray", alpha=0.2,
-                 label="Intervallo con Bonferroni (T39)")
+                 label="Intervallo con Bonferroni")
     ax_c.axhline(0.05, color="black", linestyle="--", linewidth=1.0, label=r"$\alpha = 0.05$")
     ax_c.set_xticks(np.arange(len(verif))[::4])
     ax_c.set_xticklabels(labels[::4], rotation=90, fontsize=6)

@@ -1,4 +1,4 @@
-"""Figure finali della tesi in PDF vettoriale, dai soli CSV versionati (T65).
+"""Figure finali della tesi in PDF vettoriale, dai soli CSV versionati.
 
 Per ogni figura di shk.thesis.figures.FIGURES scrive thesis/figures/<nome>.pdf, nello stile
 comune (shk.thesis.figures.STYLE) e con le etichette in italiano. I PNG degli script degli

@@ -1,11 +1,11 @@
-"""Script T63 (US-C9.3): sensibilità al metodo di de-vigging, con Modulo 1 Elo.
+"""Script: sensibilità al metodo di de-vigging, con Modulo 1 Elo.
 
-Con `--run METODO` esegue gli agenti di T55 (validazione) e di T58 (2023-24) con q dal metodo dato
+Con `--run METODO` esegue gli agenti dell'esecuzione congelata sulla validazione e dell'esecuzione sul test 2023-24 con q dal metodo dato
 (shk.model.devig_runs) e scrive le uscite per seed in results/raw/ (non versionate); i cinque
 metodi girano come esecuzioni separate. Con `--run METODO --validation-only` solo la validazione,
-senza rieseguire il 2023-24 (riproduzione di T64). Senza argomenti legge le uscite dei cinque
+senza rieseguire il 2023-24 (riproduzione da zero). Senza argomenti legge le uscite dei cinque
 metodi e scrive results/us_c9_3_devig_sensitivity.csv (tabella metodo × metrica primaria × agente ×
-configurazione, confronti, segno di ĝ per metodo, stabilità delle conclusioni di T56 e T58) e
+configurazione, confronti, segno di ĝ per metodo, stabilità delle conclusioni dei confronti fra agenti e dell'esecuzione sul test 2023-24) e
 thesis/figures/us_c9_3_devig_sensitivity.png (shk.model.devig_sensitivity). I tempi si misurano
 dall'esterno.
 """

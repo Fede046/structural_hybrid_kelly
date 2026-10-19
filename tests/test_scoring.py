@@ -208,7 +208,7 @@ def test_prepare_series_evaluation_synthetic():
     assert eval_data.q_proportional.shape == (2, 3)
     assert eval_data.q_additive.shape == (2, 3)
     assert eval_data.q_power.shape == (2, 3)
-    # T43: Shin e odds ratio sulle stesse partite, nessun mercato con S < 1
+    # Shin e odds ratio sulle stesse partite, nessun mercato con S < 1
     assert eval_data.shin_inapplicable == 0
     assert eval_data.q_shin.shape == (2, 3)
     assert eval_data.q_odds_ratio.shape == (2, 3)
@@ -219,7 +219,7 @@ def test_prepare_series_evaluation_synthetic():
 
 
 def test_prepare_series_evaluation_shin_inapplicable_is_excluded():
-    """Un mercato con booksum S < 1 si esclude per tutti i metodi e si conta a parte (T43)."""
+    """Un mercato con booksum S < 1 si esclude per tutti i metodi e si conta a parte."""
     df_aligned = pd.DataFrame({
         "season": ["2015-16"] * 3,
         "Date": pd.to_datetime(["2015-09-01", "2015-09-02", "2015-09-03"]),

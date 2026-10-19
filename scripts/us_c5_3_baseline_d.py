@@ -1,4 +1,4 @@
-"""Script per l'esecuzione appaiata della Baseline D sulle stagioni di validazione (US-C5.3 / Task 32).
+"""Script per l'esecuzione appaiata della Baseline D sulle stagioni di validazione.
 
 Esegue i tre agenti (reference con quarto-Kelly fisso, d_adwin con KAPPA_ADWIN,
 d_page_hinkley con KAPPA_PAGE_HINKLEY) sulle 19 stagioni di validazione,
@@ -69,7 +69,7 @@ def run_experiment() -> None:
     ax.set_xticklabels(seasons, rotation=45, ha="right", fontsize=9)
     ax.set_xlabel("Stagione di validazione", fontsize=11)
     ax.set_ylabel("Differenza di log-ricchezza finale (D − Riferimento)", fontsize=11)
-    ax.set_title("Differenze appaiate di log-ricchezza finale per stagione di validazione (US-C5.3)", fontsize=12)
+    ax.set_title("Differenze appaiate di log-ricchezza finale per stagione di validazione", fontsize=12)
     ax.set_ylim(-0.05, 0.05)
     ax.grid(axis="y", linestyle=":", alpha=0.6)
     ax.legend(loc="upper right", frameon=True)

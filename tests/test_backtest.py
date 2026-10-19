@@ -1,4 +1,4 @@
-"""Test unitari per il motore di backtest su quote reali (Task 31 / US-C5.3)."""
+"""Test unitari per il motore di backtest su quote reali."""
 
 import inspect
 import math

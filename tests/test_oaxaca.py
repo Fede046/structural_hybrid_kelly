@@ -1,4 +1,4 @@
-"""Test di src/shk/stats/oaxaca.py (T45)."""
+"""Test di src/shk/stats/oaxaca.py."""
 
 import math
 
@@ -98,7 +98,7 @@ def _design(levels: np.ndarray, x_cont: np.ndarray, reference: int) -> np.ndarra
 
 
 def test_yun_detailed_invariant_to_reference_category():
-    """La dettagliata con Yun non dipende dalla categoria omessa, entro 1e-12 (criterio T45)."""
+    """La dettagliata con Yun non dipende dalla categoria omessa, entro 1e-12."""
     rng = np.random.default_rng(12)
     lev_a, xc_a, y_a = _categorical_data(rng, 300, [0.5, 0.3, 0.2], [0.0, 0.4, -0.2], 0.1)
     lev_b, xc_b, y_b = _categorical_data(rng, 300, [0.2, 0.3, 0.5], [0.0, 0.1, 0.3], -0.2)

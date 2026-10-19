@@ -1,14 +1,14 @@
-"""DataFrame per partita del Modulo 2: δ_t e covariate candidate (T46, US-C7.2).
+"""DataFrame per partita del Modulo 2: δ_t e covariate candidate.
 
 Una riga per partita delle stagioni di training e di validazione:
-- training: la stagione j prevista dal fit che termina in j (scenario di training di S5);
+- training: la stagione j prevista dal fit che termina in j (scenario di training del monitoraggio dei residui);
 - validation: ogni stagione di validazione prevista dal suo fit.
 
 Colonne principali:
-- δ_t = ln p̂_t(x_t) − ln q_t(x_t) (decisione S8), con p̂ del Modulo 1 raw e q di Shin
+- δ_t = ln p̂_t(x_t) − ln q_t(x_t) (decisione di progetto), con p̂ del Modulo 1 raw e q di Shin
   dalla terna B365 pre-partita; per il 2000-01, che non ha B365, dalla terna pre-partita
   completa fra GB, IW, SB e WH il cui overround medio nel 2000-01 è il più vicino a quello
-  medio di B365 nel 2002-03 (decisione S8, select_triple_2000_01);
+  medio di B365 nel 2002-03 (decisione di progetto, select_triple_2000_01);
 - covariate, tutte note prima della partita: log_odds_ratio = ln(o_H / o_A) con le quote
   della stessa terna; market_entropy = H(q); elo_diff = R_casa − R_trasferta + h, ricavato
   dalle probabilità di Davidson come 400·log10(p_home / p_away), senza ricalcolare i
@@ -16,9 +16,9 @@ Colonne principali:
   o una delle due, nella stagione); position = posizione nella stagione (1..380) in ordine
   di Date stabile; model_entropy = H(p̂).
 
-Con Dixon-Coles come Modulo 1 (T61) il differenziale di forza è quello del modello in uso:
+Con Dixon-Coles come Modulo 1 il differenziale di forza è quello del modello in uso:
 lambda_diff = λ − μ, differenza dei gol attesi di casa e in trasferta delle stesse previsioni,
-al posto di elo_diff (scelta delegata di T61: nessuna covariata calcolata con un modello
+al posto di elo_diff (scelta delegata della calibrazione con Dixon-Coles: nessuna covariata calcolata con un modello
 diverso dal Modulo 1). Le altre colonne sono le stesse.
 
 I flag di ingresso seguono la regola del Modulo 1 (elo_predictor._EloTracker): nella
@@ -100,7 +100,7 @@ def _triple_columns(source: str) -> list[str]:
 
 
 def _complete_triple(frame: pd.DataFrame, source: str) -> bool:
-    """Terna presente, non nulla e > 1 su ogni riga (definizione di completezza di S3)."""
+    """Terna presente, non nulla e > 1 su ogni riga (definizione di completezza dell'audit dei dati)."""
     cols = _triple_columns(source)
     if not all(c in frame.columns for c in cols):
         return False
@@ -208,8 +208,8 @@ def build_module2_frame(data: ModelResidualsData, triple_2000_01: str | None = N
     triple_2000_01 : str o None
         Fonte delle quote per il 2000-01; se None si sceglie con select_triple_2000_01.
     devig_method : str
-        Metodo di de-vigging di q (default "shin", decisione S7); gli altri servono alla
-        sensibilità di T63. Con un metodo diverso da Shin la colonna shin_z vale NaN.
+        Metodo di de-vigging di q (default "shin", decisione di progetto); gli altri servono alla
+        sensibilità al de-vigging. Con un metodo diverso da Shin la colonna shin_z vale NaN.
 
     Restituisce
     -------

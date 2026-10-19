@@ -1,26 +1,26 @@
-"""Esecuzione appaiata di prova degli agenti sulle stagioni di training (T52, US-C8.1).
+"""Esecuzione appaiata di prova degli agenti sulle stagioni di training.
 
-Ingressi dell'ambiente: dal DataFrame del Modulo 2 di T46 (build_module2_frame), righe di
+Ingressi dell'ambiente: dal DataFrame del Modulo 2 (build_module2_frame), righe di
 training della stagione (fit_through = stagione), ordinate per Date in modo stabile come
 module2.prepare_module2_data: probabilità p_home, p_draw, p_away, quote odds_* della terna
-di T46 (B365, oppure SB nel 2000-01, decisione S8) ed esiti FTR. Le covariate della
-specificazione di T46 vanno al supervisore del Modulo 2; gli esiti solo all'ambiente.
+scelta per il Modulo 2 (B365, oppure SB nel 2000-01, decisione di progetto) ed esiti FTR. Le covariate della
+specificazione vanno al supervisore del Modulo 2; gli esiti solo all'ambiente.
 
 Agenti per configurazione (CONFIGURATIONS di paired_backtest.py, come build_season_agents):
-A, B_0.25, B_0.10, D_ADWIN e D_PH (BaselineDAgent di T50 con serie δ, parametri del
+A, B_0.25, B_0.10, D_ADWIN e D_PH (BaselineDAgent degli agenti con stato con serie δ, parametri del
 detector congelati in drift.py e κ provvisorio), C0, C1, C2_global, C2, più E con F > 0.
 Parametri provvisori al centro delle griglie: W = 80, κ = 0.5 (non sono una calibrazione).
 Soglia di C1: quella del fit della stagione per W, con la lunghezza di Politis-White.
 
 Soglie di C1 (righe "threshold"): per ogni stagione di training (fit), ogni W di
 MODULE2_WINDOWS e ogni lunghezza di blocco: L_PW (lunghezza ottima del circular/moving
-block bootstrap, correzione di Patton-Politis-White, arrotondata, decisione S7) sulla serie
+block bootstrap, correzione di Patton-Politis-White, arrotondata, decisione di progetto) sulla serie
 di δ del fit, e per confronto L ∈ {7, 20, 40}. Seed: SeedSequence(SEED_S9).spawn(5)[2]
-(T52 in posizione 2), spawn(numero di stagioni) in ordine cronologico, spawn(4) per W,
+(posizione 2), spawn(numero di stagioni) in ordine cronologico, spawn(4) per W,
 spawn(4) per L nell'ordine (L_PW, 7, 20, 40).
 
 Metriche per agente, stagione e configurazione (righe "season"): quelle delle righe di
-stagione di C6.2, più la crescita certo-equivalente della decisione S10 sulle traiettorie
+stagione del backtest appaiato, più la crescita certo-equivalente della decisione di progetto sulle traiettorie
 della stagione (qui una sola, M = 1), g_CE(γ) per γ ∈ {1, 2, 5}, con −inf se W_T = 0; la
 quota di date con λ = 0 (C1, C2_global, C2); gli allarmi (D: allarmi del detector; C1:
 accensioni) e le puntate azzerate perché fuori supporto (C2).
@@ -140,7 +140,7 @@ def threshold_records(
 
 
 def certainty_equivalent_growth(final_wealth: np.ndarray, n_dates: int, gamma: float) -> float:
-    """g_CE(γ) della decisione S10 sulle traiettorie della stagione; −inf se una W_T è 0."""
+    """g_CE(γ) della decisione di progetto sulle traiettorie della stagione; −inf se una W_T è 0."""
     w = np.asarray(final_wealth, dtype=np.float64)
     if np.any(w <= 0.0):
         return -math.inf
@@ -228,7 +228,7 @@ def evaluate_training_agents(
     frame : pd.DataFrame
         Righe di training del DataFrame del Modulo 2 (nessuna stagione di validazione).
     covariates : Sequence[str]
-        Specificazione di T46.
+        Specificazione delle covariate.
 
     Solleva
     -------

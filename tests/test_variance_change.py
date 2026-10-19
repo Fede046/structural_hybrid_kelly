@@ -1,4 +1,4 @@
-"""Test di src/shk/stats/variance_change.py (T44)."""
+"""Test di src/shk/stats/variance_change.py."""
 
 import math
 import warnings
@@ -69,7 +69,7 @@ def test_standardized_residuals_validation():
 
 
 def test_arch_lm_matches_statsmodels():
-    """ARCH-LM coincide con statsmodels het_arch(nlags=10) entro 1e-10 (criterio T44)."""
+    """ARCH-LM coincide con statsmodels het_arch(nlags=10) entro 1e-10."""
     rng = np.random.default_rng(1)
     for _ in range(30):
         z = rng.standard_t(5, size=380)

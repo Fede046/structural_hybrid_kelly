@@ -1,4 +1,4 @@
-"""Agenti di S10 costruiti solo dai parametri congelati (T55).
+"""Agenti delle esecuzioni congelate costruiti solo dai parametri congelati.
 
 Tutti i parametri di C0, C1, C2_global, C2, D_ADWIN e D_PH e del Modulo 2 vengono da
 FrozenParams (shk.model.frozen_params.load_frozen_params). Le costanti che il codice usa al
@@ -7,11 +7,11 @@ check_frozen_constants, che solleva un errore se non coincidono: λ non attivo e
 del Modulo 3, limiti di λ, soglia della regola fuori supporto, metodo di de-vigging, serie di
 D, politica del ripiego, B e α della soglia di C1.
 
-A, B_0.25, B_0.10 ed E sono le baseline di C6 (agents.py): non hanno parametri di S9.
+A, B_0.25, B_0.10 ed E sono le baseline del backtest appaiato (agents.py): non hanno parametri della calibrazione degli agenti.
 
-Catena del Modulo 2 tagliata alla stagione, come nella calibrazione T52–T54 (decisione del
+Catena del Modulo 2 tagliata alla stagione, come nella calibrazione sul training (decisione del
 programmatore del 2026-10-12): build_supervisors senza storia. Con history si ottiene la
-catena che attraversa le stagioni, solo per la sensibilità di T55.
+catena che attraversa le stagioni, solo per la sensibilità dell'esecuzione congelata sulla validazione.
 """
 
 import math

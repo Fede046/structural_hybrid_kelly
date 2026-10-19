@@ -1,21 +1,21 @@
-"""Agenti con stato dell'architettura di C6 (T50): la Baseline D come agente.
+"""Agenti con stato dell'architettura del backtest appaiato: la Baseline D come agente.
 
 Gli agenti con stato ricevono gli esiti solo da Agent.observe_results, chiamato
 dall'ambiente dopo il regolamento di ogni data, e cambiano solo le frazioni: selezione
-dell'esito, ripiego e previsioni restano quelli della classe base (decisione S9).
+dell'esito, ripiego e previsioni restano quelli della classe base (decisione di progetto).
 
-Stato e repliche (scelta delegata di T50, opzione a): un agente con stato accetta un'unica
-replica, M = 1, e lo verifica a ogni osservazione. I seed di S10 sono stagioni ricostruite,
+Stato e repliche (scelta delegata degli agenti con stato, opzione a): un agente con stato accetta un'unica
+replica, M = 1, e lo verifica a ogni osservazione. I seed SEED_S10 sono stagioni ricostruite,
 cioè chiamate separate dell'ambiente, ciascuna con M = 1.
 
-Baseline D (decisioni S5 e S9): λ_j = base · κ^k_j, con k_j il numero di allarmi del
+Baseline D (decisioni di progetto): λ_j = base · κ^k_j, con k_j il numero di allarmi del
 detector su partite con Date strettamente anteriore a quella della partita j, e con
 κ = 0 il moltiplicatore vale 1 senza allarmi e 0 con almeno un allarme, come
 staking.compute_adaptive_lambda; frazione kelly_staking(p̂, o − 1, λ_j) sull'esito
 selezionato. Il detector (river, istanza nuova per agente) si alimenta con la serie
 scelta, una partita alla volta nell'ordine delle partite della data:
-- "log_loss": −ln p̂(x), come la serie di C5;
-- "delta": δ = ln p̂(x) − ln q(x), con q di Shin dalle quote della data (decisione S8).
+- "log_loss": −ln p̂(x), come la serie del monitoraggio dei residui;
+- "delta": δ = ln p̂(x) − ln q(x), con q di Shin dalle quote della data (decisione di progetto).
 """
 
 import math
@@ -116,7 +116,7 @@ class BaselineDAgent(Agent):
     def _market_probs(self, results: DateResults) -> np.ndarray:
         """q di Shin dalle quote della data regolata, per la serie δ.
 
-        Una sottoclasse può ridefinirlo per condividere il calcolo fra più agenti (T54).
+        Una sottoclasse può ridefinirlo per condividere il calcolo fra più agenti.
         """
         q, _ = devig_shin(np.asarray(results.odds))
         return q

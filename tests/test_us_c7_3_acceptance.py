@@ -1,4 +1,4 @@
-"""Test di accettazione di T47 (US-C7.3, parte 1): Modulo 2 su finestre scorrevoli."""
+"""Test di accettazione: Modulo 2 su finestre scorrevoli."""
 
 import math
 from pathlib import Path

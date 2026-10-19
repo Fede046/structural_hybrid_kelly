@@ -1,4 +1,4 @@
-"""Test di accettazione di T57 sul CSV di inferenza su ĝ."""
+"""Test di accettazione sul CSV di inferenza su ĝ."""
 
 from pathlib import Path
 
@@ -16,7 +16,7 @@ C42_PATH = REPO_ROOT / "results" / "us_c4_2_g_hat.csv"
 
 
 def test_point_g_hat_matches_c4_2_and_t43():
-    """ĝ pooled e per stagione coincidono con C4.2 e T43 entro 1e-12."""
+    """ĝ pooled e per stagione coincidono con il calcolo di ĝ e con l'aggiunta di Shin e odds ratio entro 1e-12."""
     df = pd.read_csv(CSV_PATH)
     c42 = pd.read_csv(C42_PATH)
     iv = df[df["row_type"] == "interval"]
@@ -37,7 +37,7 @@ def test_point_g_hat_matches_c4_2_and_t43():
 
 
 def test_ar1_coverage_criteria_binding():
-    """Criteri sostituiti dal programmatore: φ = 0 in [0.93, 0.97] per block e iid; φ = 0.5 block > iid e vicino a T42."""
+    """Criteri sostituiti dal programmatore: φ = 0 in [0.93, 0.97] per block e iid; φ = 0.5 block > iid e vicino alla scelta della lunghezza dei blocchi."""
     cov = pd.read_csv(CSV_PATH).query("row_type == 'coverage'").set_index("phi")
     assert set(cov.index) == {0.0, 0.1, 0.25, 0.5}
     assert bool(cov.loc[0.0, "criterion"]) and bool(cov.loc[0.5, "criterion"])

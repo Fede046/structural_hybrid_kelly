@@ -1,4 +1,4 @@
-"""Script per la simulazione del floor su calendario sintetico (US-C6.3, Task 36).
+"""Script per la simulazione del floor su calendario sintetico.
 
 Questo script esegue gli esperimenti sintetici A (confronto con/senza floor), B (sweep
 del rapporto B0/F) e C (tempi di rovina e limite analitico), salva i risultati nel file

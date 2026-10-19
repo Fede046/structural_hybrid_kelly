@@ -1,4 +1,4 @@
-"""Test di T59: Dixon-Coles (τ, probabilità, verosimiglianza, recupero dei parametri, walk-forward)."""
+"""Test: Dixon-Coles (τ, probabilità, verosimiglianza, recupero dei parametri, walk-forward)."""
 
 import datetime
 import math
@@ -124,7 +124,7 @@ def _standard_errors(fit_theta: np.ndarray, data: FitData) -> np.ndarray:
 
 
 def test_parameter_recovery_within_three_standard_errors():
-    """20 squadre, 5 stagioni simulate dal modello (seme di S11, figlio 0): stime entro 3 SE."""
+    """20 squadre, 5 stagioni simulate dal modello (seme SEED_S11, figlio 0): stime entro 3 SE."""
     rng = np.random.default_rng(t59_sequences()[0])
     data, true = _simulate_league(rng)
     res = fit_dixon_coles(data)
@@ -201,9 +201,9 @@ def test_future_outcomes_do_not_change_predictions(sigma):
 def test_entry_values_of_promoted_teams():
     """Mai vista: media delle ultime tre della stagione precedente; tornante: ultimi parametri."""
     rng = np.random.default_rng(4)
-    s1 = [f"T{i}" for i in range(6)]
+    s1 = [f"Q{i}" for i in range(6)]
     s2 = s1[:5] + ["N1"]
-    s3 = ["T0", "T1", "T2", "T3", "N1", "T5"]
+    s3 = ["Q0", "Q1", "Q2", "Q3", "N1", "Q5"]
     df = _synthetic_frame(rng, [s1, s2, s3])
     fc = DixonColesForecaster(df, 0.003, 0.2)
     teams = list(fc._m.teams)
@@ -217,12 +217,12 @@ def test_entry_values_of_promoted_teams():
     a0, b0 = entry[teams.index("N1")]
     assert a0 == pytest.approx(float(np.mean(start_state.alpha[idx])), abs=1e-15)
     assert b0 == pytest.approx(float(np.mean(start_state.beta[idx])), abs=1e-15)
-    # T5 torna nella terza stagione: con peso ancora sufficiente usa i parametri d'inizio stagione
+    # Q5 torna nella terza stagione: con peso ancora sufficiente usa i parametri d'inizio stagione
     third = df["season"].unique()[2]
     third_day = int(fc._m.day[np.flatnonzero(fc._m.season == third)].min())
     state3, _ = fc._fit(third_day)
     entry3 = fc._entry_values(third, state3)
-    t5 = teams.index("T5")
+    t5 = teams.index("Q5")
     assert set(entry3) == {t5}
     assert entry3[t5] == (float(state3.alpha[t5]), float(state3.beta[t5]))
 
@@ -230,7 +230,7 @@ def test_entry_values_of_promoted_teams():
 def test_new_team_first_match_uses_entry_value_with_infinite_sigma():
     """Con σ = ∞ la prima partita di una mai vista usa il valore d'ingresso (imposto)."""
     rng = np.random.default_rng(5)
-    s1 = [f"T{i}" for i in range(6)]
+    s1 = [f"Q{i}" for i in range(6)]
     s2 = s1[:5] + ["N1"]
     df = _synthetic_frame(rng, [s1, s1, s2])
     fc = DixonColesForecaster(df, 0.003, math.inf)
@@ -268,7 +268,7 @@ def _never_seen_parameters(sigma: float, case: str, n_played: int) -> tuple[floa
     prima data successiva: inizio stagione, valori d'ingresso, prior con σ.
     """
     rng = np.random.default_rng(6)
-    s1 = [f"T{i}" for i in range(6)]
+    s1 = [f"Q{i}" for i in range(6)]
     df = _synthetic_frame(rng, [s1, s1, s1[:5] + ["N1"]])
     season = df["season"].unique()[2]
     played = df.index[(df["season"] == season) & ((df["HomeTeam"] == "N1") | (df["AwayTeam"] == "N1"))][:n_played]

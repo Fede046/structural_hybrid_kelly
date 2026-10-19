@@ -1,4 +1,4 @@
-"""Test di known_scenarios.py e di accettazione di T48 (US-C7.3, parte 2)."""
+"""Test di known_scenarios.py e di accettazione degli scenari noti."""
 
 import math
 from pathlib import Path

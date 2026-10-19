@@ -1,4 +1,4 @@
-"""Script per l'analisi dell'eteroschedasticità dei residui del Modulo 1 (US-C6.4 / Task 39).
+"""Script per l'analisi dell'eteroschedasticità dei residui del Modulo 1.
 
 Genera il file CSV dei risultati results/us_c6_4_heteroskedasticity.csv e la figura
 a tre pannelli thesis/figures/us_c6_4_heteroskedasticity.png.

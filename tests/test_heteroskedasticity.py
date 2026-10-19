@@ -1,4 +1,4 @@
-"""Test di accettazione e unita' per i test di eteroschedasticita' (US-C6.4 / Task 38).
+"""Test di accettazione e unita' per i test di eteroschedasticita'.
 
 Copre i criteri di accettazione:
 1. Validazioni di tipi, forme, valori non finiti e rango;

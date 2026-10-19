@@ -1,8 +1,8 @@
-"""Script T53: analisi di potenza sulle stagioni di training e numero di seed per S10.
+"""Script: analisi di potenza sulle stagioni di training e numero di seed per le esecuzioni congelate.
 
-Scrive results/us_c8_3b_power.csv (shk.model.power). Parametri provvisori di T52.
+Scrive results/us_c8_3b_power.csv (shk.model.power). Parametri provvisori dell'esecuzione di prova sul training.
 Con --module1 dixon_coles usa il Modulo 1 Dixon-Coles e scrive le uscite con il suffisso _dc,
-senza toccare quelle Elo (T60), con i seed di T61 (module1_seeds.procedure_seeds).
+senza toccare quelle Elo, con i seed della calibrazione con Dixon-Coles (module1_seeds.procedure_seeds).
 """
 
 import csv
@@ -18,7 +18,7 @@ from shk.model.residuals import load_model_residuals
 
 
 def run_experiment(module1: str = MODULE1_ELO) -> None:
-    """Seed ricostruiti, differenze appaiate C1 − C0 e C2 − C1, N_SEEDS e tempo di S10; scrive il CSV."""
+    """Seed ricostruiti, differenze appaiate C1 − C0 e C2 − C1, N_SEEDS e tempo delle esecuzioni congelate; scrive il CSV."""
     repo_root = Path(__file__).resolve().parents[1]
     csv_path = with_module1_suffix(repo_root / "results" / "us_c8_3b_power.csv", module1)
     csv_path.parent.mkdir(parents=True, exist_ok=True)

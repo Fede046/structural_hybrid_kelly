@@ -1,4 +1,4 @@
-"""Test di T65: numeri citabili, tabelle e figure della tesi.
+"""Test: numeri citabili, tabelle e figure della tesi.
 
 - Ogni voce di thesis/numeri.md si rilegge qui in modo indipendente: riga della tabella,
   CSV letto con la regola del manifesto, selezione con DataFrame.query, cella, valore e SHA256.

@@ -1,4 +1,4 @@
-"""Test di T66: riferimenti al codice e parametri di thesis/metodi_implementati.md.
+"""Test: riferimenti al codice e parametri di thesis/metodi_implementati.md.
 
 - Ogni riferimento `shk.modulo:nome` si risolve con un import (nome anche puntato, Classe.metodo).
 - Ogni riga "Formula:" ha almeno un riferimento, e almeno uno è a una funzione o classe.
@@ -43,7 +43,7 @@ SECTIONS = (
     "## 10. Seed e bootstrap",
     "## 11. Calibrazione e congelamento",
     "## 12. Intervalli",
-    "## Indice: user story, task e file",
+    "## Indice: aree del progetto e file",
 )
 
 
@@ -137,11 +137,11 @@ def test_frozen_file_parameters_match_the_files():
     assert wrong == []
 
 
-def test_index_lists_existing_files_for_every_story():
+def test_index_lists_existing_files_for_every_area():
     text = _text()
-    index = text.split("## Indice: user story, task e file", 1)[1]
-    rows = [ln for ln in index.splitlines() if re.match(r"\| S\d+ \|", ln)]
-    assert [r.split("|")[1].strip() for r in rows] == [f"S{i}" for i in range(1, 13)]
+    index = text.split("## Indice: aree del progetto e file", 1)[1]
+    rows = [ln for ln in index.splitlines() if ln.startswith("| ") and not ln.startswith("| Area")]
+    assert len(rows) == 12
     files = INDEX_FILE.findall(index)
     assert len(files) >= 60
     missing = [f for f in files if not (REPO_ROOT / f).is_file()]

@@ -1,11 +1,10 @@
-"""Robustezza del ranking degli agenti fra Modulo 1 Elo e Dixon-Coles (T62, US-C9.2).
+"""Robustezza del ranking degli agenti fra Modulo 1 Elo e Dixon-Coles.
 
 Statistica di ranking per agente, metrica primaria e configurazione ("mediana pooled",
 decisione del programmatore del 2026-10-17):
 - metriche per seed (log-ricchezza finale, drawdown massimo, tempo di recupero): mediana sui
   seed in ogni stagione, poi media sulle stagioni;
-- metriche per stagione (g_CE(γ), tasso di rovina, SD di ln W_T, calcolate sui seed come in
-  T56): media sulle stagioni.
+- metriche per stagione (g_CE(γ), tasso di rovina, SD di ln W_T, calcolate sui seed come nei confronti fra agenti): media sulle stagioni.
 Gli agenti con statistica non finita in una delle due esecuzioni (E con F = 0) non entrano.
 
 Confronto dei due ordinamenti: τ-b di Kendall, che tratta le parità (C0 = B_0.25 per
@@ -16,8 +15,8 @@ differenze nelle due esecuzioni.
 Intervallo: bootstrap a due livelli (stagioni con reinserimento e, dentro ciascuna, seed con
 reinserimento), con gli stessi indici per le due esecuzioni. Sulla validazione l'intervallo
 principale è τ̂ ± t_{0.975, S−1}·√(S/(S − 1))·se_boot (correzione per i cluster decisa il
-2026-10-12 per T57, T62 e T63), il percentile è secondario; sul test, con una stagione sola,
-si ricampionano i soli seed e si usa il percentile, come in T58.
+2026-10-12 per l'inferenza su ĝ, per la robustezza del ranking e per la sensibilità al de-vigging), il percentile è secondario; sul test, con una stagione sola,
+si ricampionano i soli seed e si usa il percentile, come nell'esecuzione sul test 2023-24.
 """
 
 import math
@@ -166,7 +165,7 @@ def ranking_records(elo: ValidationResult, dc: ValidationResult, dataset: str, r
 
 def comparison_pairs(elo_rows: list[dict], dc_rows: list[dict], dataset: str, low: str, high: str,
                      sign: str) -> list[dict[str, object]]:
-    """Righe "comparison": differenze appaiate di T56 (o T58) con Elo e con Dixon-Coles affiancate."""
+    """Righe "comparison": differenze appaiate dei confronti fra agenti (validazione o test) con Elo e con Dixon-Coles affiancate."""
     key = lambda r: (r["config"], r["comparison"], r["metric"])
     dc_by_key = {key(r): r for r in dc_rows}
     records = []

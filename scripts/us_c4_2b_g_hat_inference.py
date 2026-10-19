@@ -1,4 +1,4 @@
-"""Script T57: ĝ formalizzato, con intervalli, placebo, finestre, fasce di quota, soglia ln π e copertura.
+"""Script: ĝ formalizzato, con intervalli, placebo, finestre, fasce di quota, soglia ln π e copertura.
 
 Scrive results/us_c4_2b_g_hat_inference.csv e thesis/figures/us_c4_2b_g_hat_inference.png
 (shk.model.g_hat_inference). Le permutazioni del placebo girano su WORKERS processi; ognuna
@@ -38,7 +38,7 @@ CHUNK = 50
 
 
 def run_experiment() -> None:
-    """Calcola tutte le righe di T57, scrive CSV e figura."""
+    """Calcola tutte le righe dell'inferenza su ĝ, scrive CSV e figura."""
     repo_root = Path(__file__).resolve().parents[1]
     csv_path = repo_root / "results" / "us_c4_2b_g_hat_inference.csv"
     png_path = repo_root / "thesis" / "figures" / "us_c4_2b_g_hat_inference.png"

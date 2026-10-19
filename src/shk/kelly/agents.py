@@ -1,4 +1,4 @@
-"""Modulo degli agenti di scommessa come classi con una base comune (Task 33 / US-C6.1).
+"""Modulo degli agenti di scommessa come classi con una base comune.
 
 La classe base Agent esegue ciò che gli agenti condividono: selezione dell'esito per
 partita, ripiego sulla data, validazioni e sola lettura degli input. Ogni sottoclasse
@@ -31,7 +31,7 @@ AGENT_B_LAMBDAS: Final[tuple[float, ...]] = (0.25, 0.10)
 _N_OUTCOMES: Final[int] = 3
 _ROW_SUM_TOLERANCE: Final[float] = 1e-9
 
-# Membri di Agent che una sottoclasse può ridefinire (observe_results da T50)
+# Membri di Agent che una sottoclasse può ridefinire (observe_results dagli agenti con stato)
 _OVERRIDABLE_MEMBERS: Final[frozenset[str]] = frozenset(
     {"__init__", "stake_fractions", "observe_results"}
 )
@@ -175,7 +175,7 @@ class DateView:
 
 @dataclass(frozen=True, eq=False)
 class DateResults:
-    """Esiti di una data già regolata, unico canale da cui un agente riceve esiti (T50).
+    """Esiti di una data già regolata, unico canale da cui un agente riceve esiti.
 
     L'ambiente lo costruisce dopo il regolamento della data e lo passa a
     Agent.observe_results. Gli array sono viste non scrivibili di copie private, come in
@@ -384,7 +384,7 @@ class Agent(abc.ABC):
 
     La base esegue in decide la selezione dell'esito, le validazioni e il ripiego;
     una sottoclasse può ridefinire soltanto __init__, stake_fractions e observe_results
-    (canale degli esiti delle date regolate, T50). Ogni altra ridefinizione di un metodo
+    (canale degli esiti delle date regolate). Ogni altra ridefinizione di un metodo
     o di una proprietà di Agent, anche tramite un mixin, solleva TypeError alla
     definizione della sottoclasse.
 
@@ -518,7 +518,7 @@ class Agent(abc.ABC):
         )
 
     def observe_results(self, results: DateResults) -> None:
-        """Riceve gli esiti di una data già regolata; per default non fa nulla (T50).
+        """Riceve gli esiti di una data già regolata; per default non fa nulla.
 
         L'ambiente lo chiama per ogni agente dopo il regolamento di ogni data, anche se
         l'agente è in rovina. Un agente con stato lo ridefinisce per aggiornarsi; non deve

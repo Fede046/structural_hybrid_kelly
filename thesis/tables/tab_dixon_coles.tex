@@ -1,11 +1,11 @@
-% Generato da scripts/build_thesis_tables.py (T65) dai CSV versionati: non modificare a mano.
+% Generato da scripts/build_thesis_tables.py dai CSV versionati: non modificare a mano.
 % Richiede \usepackage{booktabs}.
 \begin{table}[htbp]
 \centering
 \small
 \setlength{\tabcolsep}{4pt}
 \caption{Modulo 1 Elo e Dixon-Coles: log-loss e $\hat g$ per metodo di de-vigging}
-\label{tab:s11_dixon_coles}
+\label{tab:dixon_coles}
 \begin{tabular}{llrrrrrrr}
 \toprule
  &  &  & \multicolumn{5}{c}{$\hat g$} &  \\
@@ -25,7 +25,7 @@ test 2023-24 & Elo & 0,9497 & $-$0,0405 & $-$0,0433 & $-$0,0436 & $-$0,0427 & $-
 \footnotesize
 $\hat g$ sulla terna B365 pre-partita, per metodo di de-vigging. Validazione: 19 stagioni, 7220 partite; test: 380 partite.\par
 Neopromosse: log-loss delle partite di squadre mai viste nei primi 10 matchday (148 partite).\par
-Dixon-Coles con i parametri di T59 per fit: 2000-01: $\xi$ = 0,0010, $\sigma$ = 0,4; 2010-11: $\xi$ = 0,0010, $\sigma$ = 0,4; 2020-21: $\xi$ = 0,0019, $\sigma$ = 0,4.\par
+Dixon-Coles con i parametri calibrati per fit: 2000-01: $\xi$ = 0,0010, $\sigma$ = 0,4; 2010-11: $\xi$ = 0,0010, $\sigma$ = 0,4; 2020-21: $\xi$ = 0,0019, $\sigma$ = 0,4.\par
 Fonti: \texttt{results/us\_c9\_1\_dixon\_coles.csv} (SHA256 \texttt{4cdbc12dac9b}); \texttt{results/us\_c8\_5\_test\_run.csv} (SHA256 \texttt{914ca0be842c}); \texttt{results/us\_c8\_5\_test\_run\_dc.csv} (SHA256 \texttt{128ed00043d0}).
 \end{minipage}
 \end{table}

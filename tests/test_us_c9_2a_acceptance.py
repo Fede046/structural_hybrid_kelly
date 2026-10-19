@@ -1,4 +1,4 @@
-"""Test di T61 (US-C9.2): seed per Modulo 1, schema del file di Dixon-Coles, DataFrame del Modulo 2,
+"""Test: seed per Modulo 1, schema del file di Dixon-Coles, DataFrame del Modulo 2,
 file di congelamento e log della calibrazione con Dixon-Coles."""
 
 import csv
@@ -67,7 +67,7 @@ def test_task_sequence_int_and_seed_sequence():
 
 
 def test_procedure_seeds_by_module1():
-    """Elo: i seed interi di S8 e S9; Dixon-Coles: i figli di SeedSequence(SEED_S11).spawn(5)[2]."""
+    """Elo: i seed interi SEED_S8 e SEED_S9; Dixon-Coles: i figli di SeedSequence(SEED_S11).spawn(5)[2]."""
     assert procedure_seeds(MODULE1_ELO) == {"t46": SEED_S8, "t47": SEED_S8, "t52": SEED_S9, "t53": SEED_S9,
                                             "t54": SEED_S9}
     dc = procedure_seeds(MODULE1_DIXON_COLES)

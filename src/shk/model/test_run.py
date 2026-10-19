@@ -1,34 +1,34 @@
-"""Esecuzione unica sul test set 2023-24 (T58, US-C8.2–C8.4 sul test).
+"""Esecuzione unica sul test set 2023-24.
 
 La stagione è un parametro, così la stessa catena gira prima su una stagione di validazione
 con lo stesso fit (prova, uscite in build/scratch) e poi una sola volta sul 2023-24.
 Parametri degli agenti solo da config/frozen_params.toml (loader e check_frozen_constants);
-catena del Modulo 2 tagliata alla stagione, come in calibrazione e in S10.
+catena del Modulo 2 tagliata alla stagione, come in calibrazione e nelle esecuzioni congelate.
 
 Contenuto:
 - residui del Modulo 1 con la stagione aggiunta allo schema del suo fit (load_residuals_for);
   le righe della stagione nel DataFrame del Modulo 2 hanno ruolo "test";
 - anti-leakage del fornitore: walkforward_split e assert_no_leakage su ogni partita;
 - log-loss e ĝ dei cinque metodi sulle due serie (b365_prematch, pinnacle_closing), con
-  intervalli come in T57 per una stagione: stationary bootstrap a L_PW e iid, percentile;
-- ADWIN e Page-Hinkley di C5.1 sulla serie di log-loss (build_drift_records, parametri
+  intervalli come nell'inferenza su ĝ per una stagione: stationary bootstrap a L_PW e iid, percentile;
+- ADWIN e Page-Hinkley dei drift detector sulla serie di log-loss (build_drift_records, parametri
   congelati in drift.py);
 - Modulo 2 a ogni data con le W congelate (C1, C2_global, C2);
-- agenti di T55 su N_SEEDS seed (stationary bootstrap delle date a L_PW) e sulla realizzazione
+- agenti dell'esecuzione congelata sulla validazione su N_SEEDS seed (stationary bootstrap delle date a L_PW) e sulla realizzazione
   osservata, più un run iid (L = 1) per l'intervallo iid;
-- confronti di T56 con un solo cluster: intervalli dai soli seed (bootstrap dei seed,
+- confronti fra agenti con un solo cluster: intervalli dai soli seed (bootstrap dei seed,
   percentile; nessuna correzione per i cluster, come deciso il 2026-10-12);
 - stratificazione per neopromossa (stato d'ingresso "new" o "returning") e per le partite fra
   squadre note: δ̄ e log-loss media con intervallo (stationary bootstrap della serie del
-  gruppo a L_PW), quota di partite fuori supporto (regola di T49 con la W di C2), frazione
+  gruppo a L_PW), quota di partite fuori supporto (regola dell'analisi del supporto comune con la W di C2), frazione
   media di C2 e di B_0.25 con F = 0 sulla realizzazione osservata;
 - ROI di E per configurazione accanto ai riferimenti del paper (−4.1%, e −5.1% dedotto nella
-  nota 3.4 §9; decisione S6).
+  nota 3.4 §9; decisione di progetto).
 
-Modulo 1 come parametro (T60): con "dixon_coles" residui e previsioni vengono da Dixon-Coles
+Modulo 1 come parametro: con "dixon_coles" residui e previsioni vengono da Dixon-Coles
 (DC_FITS) e i parametri da config/frozen_params_dc.toml (frozen_params_path).
 
-Seed: SeedSequence(SEED_S10).spawn(5)[3] (T58 in posizione 3), spawn(4): figlio 0 seed block
+Seed: SeedSequence(SEED_S10).spawn(5)[3] (posizione 3), spawn(4): figlio 0 seed block
 (spawn(N_SEEDS)), figlio 1 seed iid (spawn(N_SEEDS)), figlio 2 indici del bootstrap dei seed
 per i confronti (gli stessi per block e iid), figlio 3 intervalli: spawn(2), il primo per ĝ e
 log-loss, il secondo per gli strati.
@@ -128,7 +128,7 @@ def _row(**fields: object) -> dict[str, object]:
 
 
 def t58_sequences(seed: int | np.random.SeedSequence = SEED_S10) -> list[np.random.SeedSequence]:
-    """Quattro figli di SeedSequence(SEED_S10).spawn(5)[3] (vedi modulo); seed è la radice della story."""
+    """Quattro figli di SeedSequence(SEED_S10).spawn(5)[3] (vedi modulo); seed è la radice."""
     return story_task_sequence(seed, T58_STORY_POSITION, N_STORY_TASKS).spawn(4)
 
 
@@ -141,14 +141,14 @@ class SeasonData(NamedTuple):
     frame: pd.DataFrame       # DataFrame del Modulo 2 della sola stagione, ruolo "test"
     covariates: tuple[str, ...]
     inp: SeasonInput
-    devig_method: str = "shin"  # metodo di q (Shin; gli altri per la sensibilità di T63)
+    devig_method: str = "shin"  # metodo di q (Shin; gli altri per la sensibilità al de-vigging)
 
 
 def load_season_data(season: str, fit: str = TEST_FIT, module1: str = MODULE1_ELO,
                      devig_method: str = "shin") -> SeasonData:
     """Residui con la stagione nello schema del fit, DataFrame del Modulo 2 e ingressi dell'ambiente.
 
-    La specificazione delle covariate resta quella di T46 sul training (derive_specification).
+    La specificazione delle covariate resta quella scelta sul training (derive_specification).
     """
     cfg = read_split_config()
     roles = ("history", "training", "validation") + (("test",) if season in cfg.test else ())
@@ -172,7 +172,7 @@ def season_params_path(sd: SeasonData) -> Path:
 def validation_predictions(sd: SeasonData) -> pd.DataFrame:
     """Previsioni di validazione del Modulo 1 (con la stagione), ordinate per Date.
 
-    Per l'Elo come in C4.2 (generate_validation_predictions); per Dixon-Coles dalle righe di
+    Per l'Elo come nel calcolo di ĝ (generate_validation_predictions); per Dixon-Coles dalle righe di
     validazione dei residui, che contengono le stesse previsioni.
     """
     df, schedule = sd.residuals.df, sd.residuals.schedule
@@ -248,7 +248,7 @@ def g_hat_records(sd: SeasonData, seq: np.random.SeedSequence) -> list[dict[str,
 
 
 def drift_records(sd: SeasonData) -> list[dict[str, object]]:
-    """ADWIN e Page-Hinkley di C5.1 sulla serie di log-loss della stagione."""
+    """ADWIN e Page-Hinkley dei drift detector sulla serie di log-loss della stagione."""
     res = sd.residuals.residuals
     rows = res[(res["season"] == sd.season) & (res["fit_through"] == sd.fit)].sort_values("Date", kind="stable")
     series = ScenarioSeries(sd.season, "test", sd.fit, rows["log_loss"].to_numpy(dtype=np.float64),
@@ -299,7 +299,7 @@ def _seed_chunk(params_path: str, inp: SeasonInput, fit: str, seed_seqs: Sequenc
 
 def run_seeds(sd: SeasonData, seqs: Sequence[np.random.SeedSequence], block_length: float, workers: int = 1,
               chunk: int = 50) -> np.ndarray:
-    """Agenti di T55 sui seed della stagione: (C, A, M, N)."""
+    """Agenti dell'esecuzione congelata sulla validazione sui seed della stagione: (C, A, M, N)."""
     parts = [seqs[i:i + chunk] for i in range(0, len(seqs), chunk)]
     args = [(str(season_params_path(sd)), sd.inp, sd.fit, p, block_length, sd.devig_method) for p in parts]
     if workers > 1:
@@ -333,7 +333,7 @@ def evaluate_agents(sd: SeasonData, workers: int = 1, seed: int | np.random.Seed
 
 
 def agent_summary_records(result: TestResult) -> list[dict[str, object]]:
-    """Sintesi per agente × configurazione come T55 (seed block e realizzazione osservata)."""
+    """Sintesi per agente × configurazione come l'esecuzione congelata sulla validazione (seed block e realizzazione osservata)."""
     out = []
     for rec in summary_records(result.block):
         row = _row(row_type="summary")
@@ -343,7 +343,7 @@ def agent_summary_records(result: TestResult) -> list[dict[str, object]]:
 
 
 def comparison_records_single(result: TestResult, seed: int | np.random.SeedSequence = SEED_S10) -> list[dict[str, object]]:
-    """Confronti di T56 con un solo cluster: intervalli dal bootstrap dei soli seed, percentile."""
+    """Confronti fra agenti con un solo cluster: intervalli dal bootstrap dei soli seed, percentile."""
     n = result.block.seeds.shape[-1]
     rng = np.random.default_rng(t58_sequences(seed)[2])
     idx = BootstrapIndices(np.zeros((N_BOOT, 1), dtype=np.int64),

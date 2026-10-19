@@ -1,4 +1,4 @@
-"""Test di accettazione per ricalibrazione, reliability e Brier (US-C4.3)."""
+"""Test di accettazione per ricalibrazione, reliability e Brier."""
 
 import csv
 import math
@@ -105,7 +105,7 @@ def test_reliability_z_scores_and_bounds():
 
 
 def test_raw_g_hat_matches_t23():
-    """Criterio di accettazione: con la versione raw, g_hat coincide con T23 entro 1e-12."""
+    """Criterio di accettazione: con la versione raw, g_hat coincide con il primo calcolo di ĝ entro 1e-12."""
     assert CSV_PATH.exists()
     assert T23_CSV_PATH.exists()
 

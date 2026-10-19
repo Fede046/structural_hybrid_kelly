@@ -1,8 +1,8 @@
-"""Script di esperimento per l'audit di copertura dati (US-C3.1).
+"""Script di esperimento per l'audit di copertura dati.
 
 Le stagioni si caricano con load_by_role, solo per i ruoli history, training e
 validation di config/split.toml; le stagioni di test si aggiungono solo se
-test_unlocked = true (T41). Con il test bloccato nessun file di stagione dal primo
+test_unlocked = true. Con il test bloccato nessun file di stagione dal primo
 anno di test in poi viene aperto.
 """
 

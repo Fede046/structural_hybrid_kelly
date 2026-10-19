@@ -1,4 +1,4 @@
-"""Etichette in italiano di agenti, configurazioni, confronti, metriche, metodi e serie (T65).
+"""Etichette in italiano di agenti, configurazioni, confronti, metriche, metodi e serie.
 
 Ogni etichetta ha tre forme: LaTeX (tabelle), testo semplice (CSV gemelli) e mathtext
 (figure di matplotlib). Gli identificativi sono quelli dei CSV di results/.

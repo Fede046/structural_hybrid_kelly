@@ -1,4 +1,4 @@
-"""Test di accettazione di US-C3.1 sul blocco del test set (T41).
+"""Test di accettazione sul blocco del test set.
 
 Lo script dell'audit di copertura non apre nessun file di stagione dal primo anno di test
 in poi finché config/split.toml ha test_unlocked = false.
@@ -36,7 +36,7 @@ def _first_test_year() -> int:
 
 
 def _load_script_module() -> ModuleType:
-    """Importa lo script C3.1 come modulo, senza eseguirne il blocco __main__."""
+    """Importa lo script dell'audit di copertura come modulo, senza eseguirne il blocco __main__."""
     spec = importlib.util.spec_from_file_location("us_c3_1_data_coverage_under_test", SCRIPT_PATH)
     assert spec is not None and spec.loader is not None
     module = importlib.util.module_from_spec(spec)

@@ -1,7 +1,7 @@
-"""Identificatori del Modulo 1 e suffissi dei risultati (T60, US-C9.2).
+"""Identificatori del Modulo 1 e suffissi dei risultati.
 
 Il Flusso 1 (dati, schema dei fit, previsioni, residui) accetta il Modulo 1 come parametro:
-"elo" (US-C4.1, ELO_FITS) oppure "dixon_coles" (US-C9.1, DC_FITS). I risultati con
+"elo" (ELO_FITS) oppure "dixon_coles" (DC_FITS). I risultati con
 Dixon-Coles si scrivono con il suffisso "_dc" prima dell'estensione, senza sovrascrivere
 quelli Elo, che restano con i nomi di sempre.
 """

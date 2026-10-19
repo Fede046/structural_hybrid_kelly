@@ -1,6 +1,6 @@
-"""Calibrazione sul training dei parametri liberi di C1, C2_global, C2 e D (T54, US-C8.2).
+"""Calibrazione sul training dei parametri liberi di C1, C2_global, C2 e D.
 
-Obiettivo unico (decisione S9): media, su seed e sulle tre stagioni di training, della
+Obiettivo unico (decisione di progetto): media, su seed e sulle tre stagioni di training, della
 log-ricchezza finale nella configurazione principale B0/F = 22 000 (£0.01 su £220). A
 parità entro 1e-12 vince la combinazione con puntata media più bassa.
 
@@ -8,7 +8,7 @@ Regola di parità di secondo livello (decisione del programmatore del 2026-10-11
 dopo la calibrazione e prima del congelamento, perché sul training ADWIN non dà allarmi con
 δ <= 0.5), quando restano parità esatte anche sulla puntata media:
 1. un parametro con un valore congelato da una decisione precedente prende quel valore
-   (FROZEN_EARLIER_VALUES: δ di ADWIN, δ e soglia di Page-Hinkley di drift.py, decisione S5);
+   (FROZEN_EARLIER_VALUES: δ di ADWIN, δ e soglia di Page-Hinkley di drift.py, decisione di progetto);
 2. κ prende il valore scelto dal braccio a reazione binaria più simile in cui κ è
    identificato (KAPPA_REFERENCES: per un detector di D prima l'altro detector, poi C1); κ è
    identificato in un braccio se le combinazioni in parità di primo livello hanno tutte lo
@@ -25,12 +25,12 @@ Gli altri parametri dei detector restano quelli di drift.detector_params; D moni
 Esecuzione: per ogni stagione di training e seed (stagione ricostruita a L_PW,
 season_bootstrap.reconstruct_season) un'unica esecuzione dell'ambiente con tutti gli
 agenti della griglia, appaiati sugli stessi seed. Un supervisore del Modulo 2 per W,
-condiviso dai bracci con quella W. Soglia di C1 per fit e W a L_PW (T52, threshold_records).
+condiviso dai bracci con quella W. Soglia di C1 per fit e W a L_PW (threshold_records).
 
 Puntata media di una combinazione: media su seed e stagioni della media sulle date della
 quota di ricchezza puntata, staked_d / W_{d−1} (AgentRun.staked e AgentRun.wealth).
 
-Seed: SeedSequence(SEED_S9).spawn(5)[4] (T54 in posizione 4), spawn(numero di stagioni) in
+Seed: SeedSequence(SEED_S9).spawn(5)[4] (posizione 4), spawn(numero di stagioni) in
 ordine cronologico, spawn(n_seeds) per seed.
 """
 
@@ -156,7 +156,7 @@ def spawn_t54_generators(seasons: Sequence[str], n_seeds: int = N_CALIBRATION_SE
 class SharedShin:
     """q per data, calcolate una volta e condivise dagli agenti D di un'esecuzione.
 
-    Il metodo è Shin (decisione S7); method sceglie un altro metodo per la sensibilità di T63.
+    Il metodo è Shin (decisione di progetto); method sceglie un altro metodo per la sensibilità al de-vigging.
     """
 
     def __init__(self, method: str = "shin") -> None:
@@ -313,7 +313,7 @@ def evaluate_calibration(frame: pd.DataFrame, covariates: Sequence[str], seed: i
                          threshold_seed: int | np.random.SeedSequence = SEED_S9) -> list[dict[str, object]]:
     """Obiettivo e puntata media per ogni combinazione; scelta per famiglia (log completo).
 
-    threshold_seed: seed delle soglie di C1 (threshold_records, T52).
+    threshold_seed: seed delle soglie di C1 (threshold_records).
 
     Solleva
     -------

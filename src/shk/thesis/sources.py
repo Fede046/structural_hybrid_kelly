@@ -1,7 +1,7 @@
-"""Lettura dei CSV versionati per tabelle, figure e numeri della tesi (T65).
+"""Lettura dei CSV versionati per tabelle, figure e numeri della tesi.
 
-Un CSV è versionato se ha una riga in results/MANIFEST.sha256 (T64). Si legge come nel
-confronto di T64: con la regola di normalizzazione della sua riga, se c'è (per esempio
+Un CSV è versionato se ha una riga in results/MANIFEST.sha256. Si legge come nel
+confronto della riproduzione da zero: con la regola di normalizzazione della sua riga, se c'è (per esempio
 us_c3_1_data_coverage senza le righe del 2023-24). Lo SHA256 citato è quello del manifesto,
 e read_versioned_csv lo ricontrolla sul contenuto letto.
 """

@@ -15,7 +15,7 @@ from shk.market.devig import (
     overround,
 )
 
-# Fasce di quota standard della story (estremo sinistro incluso, estremo destro escluso)
+# Fasce di quota standard (estremo sinistro incluso, estremo destro escluso)
 ODDS_BINS: Final[tuple[float, ...]] = (1.0, 1.5, 2.0, 3.0, 5.0, 10.0, float("inf"))
 ODDS_BIN_LABELS: Final[tuple[str, ...]] = (
     "[1, 1.5)",
@@ -26,7 +26,7 @@ ODDS_BIN_LABELS: Final[tuple[str, ...]] = (
     "[10, inf)",
 )
 
-# Edge di riferimento della story S1 (2 punti percentuali = 0.02)
+# Edge di riferimento dello scenario sottile del simulatore (2 punti percentuali = 0.02)
 REFERENCE_EDGE: Final[float] = 0.02
 
 # Colonne delle quote Bet365 pre-partita

@@ -1,4 +1,4 @@
-"""Script T55: esecuzione appaiata congelata sulle 19 stagioni di validazione (US-C8.3).
+"""Script: esecuzione appaiata congelata sulle 19 stagioni di validazione.
 
 Parametri solo da config/frozen_params.toml. Scrive:
 - results/raw/us_c8_3_validation_raw.npz, uscite per seed e realizzazione osservata (non versionato);
@@ -8,7 +8,7 @@ Parametri solo da config/frozen_params.toml. Scrive:
 Le stagioni girano su WORKERS processi; i risultati non dipendono dal numero di processi.
 Con --figure-only rigenera solo la figura dal file npz già scritto.
 Con --module1 dixon_coles usa il Modulo 1 Dixon-Coles e config/frozen_params_dc.toml, e scrive
-le uscite con il suffisso _dc, senza toccare quelle Elo (T60).
+le uscite con il suffisso _dc, senza toccare quelle Elo.
 """
 
 import csv
@@ -50,7 +50,7 @@ def output_paths(module1: str = MODULE1_ELO) -> tuple[Path, Path, Path]:
 
 
 def run_experiment(module1: str = MODULE1_ELO) -> None:
-    """Esegue S10 sulla validazione, scrive le uscite per seed, la sintesi e la figura."""
+    """Esegue gli agenti congelati sulla validazione, scrive le uscite per seed, la sintesi e la figura."""
     raw_path, csv_path, png_path = output_paths(module1)
     for p in (raw_path, csv_path, png_path):
         p.parent.mkdir(parents=True, exist_ok=True)

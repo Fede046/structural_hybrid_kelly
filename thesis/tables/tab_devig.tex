@@ -1,10 +1,10 @@
-% Generato da scripts/build_thesis_tables.py (T65) dai CSV versionati: non modificare a mano.
+% Generato da scripts/build_thesis_tables.py dai CSV versionati: non modificare a mano.
 % Richiede \usepackage{booktabs}.
 \begin{table}[htbp]
 \centering
 \small
 \caption{Sensibilità di $\hat g$ al metodo di de-vigging}
-\label{tab:s11_devig}
+\label{tab:devig}
 \begin{tabular}{llrcrc}
 \toprule
  &  & \multicolumn{2}{c}{B365 pre-partita} & \multicolumn{2}{c}{Pinnacle chiusura} \\
@@ -29,7 +29,7 @@ test 2023-24 & proporzionale & $-$0,0405 & [$-$0,0627; $-$0,0202] & $-$0,0502 & 
 \begin{minipage}{\linewidth}
 \footnotesize
 Validazione: pooled sulle stagioni, IC al 95\% con la correzione $t$ per cluster; test 2023-24: stationary bootstrap della stagione. Shin è il metodo principale.\par
-Conclusioni dei confronti di T56 e T58 che cambiano segno fra i metodi: test 2023-24, \pounds{}1, C1 $-$ C0, $g_{\mathrm{CE}}$, $\gamma = 2$ (\texttt{proportional:0;additive:+;power:+;shin:+;odds\_ratio:+}); test 2023-24, \pounds{}1, C1 $-$ D\textsubscript{PH}, tasso di rovina (\texttt{proportional:+;additive:+;power:0;shin:+;odds\_ratio:+}).\par
+Conclusioni dei confronti che cambiano segno fra i metodi: test 2023-24, \pounds{}1, C1 $-$ C0, $g_{\mathrm{CE}}$, $\gamma = 2$ (\texttt{proportional:0;additive:+;power:+;shin:+;odds\_ratio:+}); test 2023-24, \pounds{}1, C1 $-$ D\textsubscript{PH}, tasso di rovina (\texttt{proportional:+;additive:+;power:0;shin:+;odds\_ratio:+}).\par
 Fonte: \texttt{results/us\_c9\_3\_devig\_sensitivity.csv} (SHA256 \texttt{d6369d92887c}).
 \end{minipage}
 \end{table}

@@ -1,4 +1,4 @@
-"""Modulo dell'ambiente di simulazione passo-passo del criterio di Kelly (Task 34).
+"""Modulo dell'ambiente di simulazione passo-passo del criterio di Kelly.
 
 L'ambiente esegue più agenti sulla stessa sequenza cronologica di date, previsioni,
 quote ed esiti, gestendo la ricchezza come stato, il floor sulle puntate, la puntata
@@ -7,7 +7,7 @@ le frazioni desiderate di capitale tramite il metodo decide.
 
 Codifica degli esiti: 0 = H, 1 = D, 2 = A; NO_BET (-1) indica nessuna puntata.
 
-Da T50: dopo il regolamento di ogni data l'ambiente passa a ogni agente gli esiti della
+Dagli agenti con stato: dopo il regolamento di ogni data l'ambiente passa a ogni agente gli esiti della
 data con Agent.observe_results (unico canale degli esiti); la politica del ripiego è
 un'opzione di run_paired_backtest, con default identico al comportamento precedente.
 """
@@ -29,7 +29,7 @@ from shk.kelly.agents import (
 
 _N_OUTCOMES: Final[int] = 3
 
-# Politiche del ripiego: EV stimato dal modello massimo (default, comportamento di C6) oppure
+# Politiche del ripiego: EV stimato dal modello massimo (default, comportamento del backtest appaiato) oppure
 # EV implicito di mercato meno negativo, q·o − 1 con q fornite dal chiamante (nota 2.9 §7.2)
 FALLBACK_MODEL_EV: Final[str] = "model_ev"
 FALLBACK_MARKET_EV: Final[str] = "market_ev"
@@ -500,7 +500,7 @@ def run_paired_backtest(
 
     Per ogni data, nell'ordine: DateView condivisa; per ogni agente decide, controllo di
     rovina, piazzamento e regolamento; infine observe_results di tutti gli agenti con gli
-    esiti della data (T50), così alla data d nessun agente ha ricevuto esiti di date >= d.
+    esiti della data, così alla data d nessun agente ha ricevuto esiti di date >= d.
 
     Parametri
     ---------

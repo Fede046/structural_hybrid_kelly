@@ -1,4 +1,4 @@
-"""Test di src/shk/model/season_objectives.py (T48): flag "senza obiettivi"."""
+"""Test di src/shk/model/season_objectives.py: flag "senza obiettivi"."""
 
 import numpy as np
 import pandas as pd

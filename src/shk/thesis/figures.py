@@ -1,4 +1,4 @@
-"""Figure finali della tesi in PDF vettoriale, dai soli CSV versionati (T65).
+"""Figure finali della tesi in PDF vettoriale, dai soli CSV versionati.
 
 Una figura per tema, con lo stesso stile (STYLE): carattere con grazie DejaVu Serif, corpo 9,
 tavolozza Okabe-Ito, griglia leggera, virgola decimale sugli assi ed etichette in italiano.
@@ -23,7 +23,7 @@ from shk.thesis.labels import AGENTS, CONFIGS, METHODS, METRICS, SERIES, compari
 from shk.thesis.sources import REPO_ROOT, read_versioned_csv
 from shk.thesis.tables import CONFIG_ORDER, PREMATCH_SOURCES, one, select
 
-GENERATED_BY: Final[str] = "scripts/build_thesis_figures.py (T65)"
+GENERATED_BY: Final[str] = "scripts/build_thesis_figures.py"
 WIDTH: Final[float] = 6.3
 PALETTE: Final[tuple[str, ...]] = (
     "#0072B2", "#D55E00", "#009E73", "#CC79A7", "#E69F00", "#56B4E9", "#000000", "#F0E442",
@@ -74,8 +74,8 @@ def _season_short(season: str) -> str:
     return season[2:]
 
 
-def figure_c2(root: Path | str = REPO_ROOT) -> Figure:
-    """C2: falso rigetto per φ, soglia nominale e calibrata centrata."""
+def figure_false_rejection(root: Path | str = REPO_ROOT) -> Figure:
+    """Falso rigetto per φ, soglia nominale e calibrata centrata."""
     df = read_versioned_csv("us_c2_anova_autocorrelation", root)
     ref = one(df, 'design == "contiguous_2" and method == "nominal" and phi == 0.0')
     fig = Figure(figsize=(WIDTH, 2.6), layout="constrained")
@@ -99,8 +99,8 @@ def figure_c2(root: Path | str = REPO_ROOT) -> Figure:
     return fig
 
 
-def figure_c3_1(root: Path | str = REPO_ROOT) -> Figure:
-    """C3.1: copertura per stagione di risultati e terne 1X2 (piena, parziale, assente)."""
+def figure_data_window(root: Path | str = REPO_ROOT) -> Figure:
+    """Copertura per stagione di risultati e terne 1X2 (piena, parziale, assente)."""
     cov = read_versioned_csv("us_c3_1_data_coverage", root)
     groups = [("results", "risultati")] + [(f"{s}_1x2_prematch", s.upper()) for s in PREMATCH_SOURCES] + [
         ("ps_1x2_closing", "PS chiusura")]
@@ -124,8 +124,8 @@ def figure_c3_1(root: Path | str = REPO_ROOT) -> Figure:
     return fig
 
 
-def figure_c3_2(root: Path | str = REPO_ROOT) -> Figure:
-    """C3.2: spread fra metodi di de-vigging per fascia di quota, con l'edge di riferimento."""
+def figure_devig_divergence(root: Path | str = REPO_ROOT) -> Figure:
+    """Spread fra metodi di de-vigging per fascia di quota, con l'edge di riferimento."""
     df = read_versioned_csv("us_c3_2_devig_divergence", root)
     bins = select(df, 'level == "bin"')
     labels = [c.replace(", ", "; ").replace(".", ",").replace("inf", "∞") for c in bins.category]
@@ -147,7 +147,7 @@ def figure_c3_2(root: Path | str = REPO_ROOT) -> Figure:
 
 
 def figure_g_hat(root: Path | str = REPO_ROOT) -> Figure:
-    """C4.2 e T57: ĝ Shin per stagione con gli intervalli, e il valore pooled."""
+    """Ĝ Shin per stagione con gli intervalli, e il valore pooled."""
     df = read_versioned_csv("us_c4_2b_g_hat_inference", root)
     fig = Figure(figsize=(WIDTH, 2.8), layout="constrained")
     ax = fig.subplots()
@@ -170,8 +170,8 @@ def figure_g_hat(root: Path | str = REPO_ROOT) -> Figure:
     return fig
 
 
-def figure_c5(root: Path | str = REPO_ROOT) -> Figure:
-    """C5: allarmi per stagione di validazione di Z-test, ADWIN e Page-Hinkley."""
+def figure_alarms(root: Path | str = REPO_ROOT) -> Figure:
+    """Allarmi per stagione di validazione di Z-test, ADWIN e Page-Hinkley."""
     df = read_versioned_csv("us_c5_2_daily_z_test", root)
     summary = select(df, 'row_type == "summary"')
     seasons = list(dict.fromkeys(summary.season.tolist()))
@@ -196,8 +196,8 @@ def figure_c5(root: Path | str = REPO_ROOT) -> Figure:
     return fig
 
 
-def figure_c6_3(root: Path | str = REPO_ROOT) -> Figure:
-    """C6.3: rovina col floor sul calendario sintetico (sweep di B0/F) e nella configurazione reale."""
+def figure_floor(root: Path | str = REPO_ROOT) -> Figure:
+    """Rovina col floor sul calendario sintetico (sweep di B0/F) e nella configurazione reale."""
     syn = read_versioned_csv("us_c6_3_floor_synthetic", root)
     real = select(read_versioned_csv("us_c6_3_floor_real_config", root), 'row_type == "aggregate"')
     fig = Figure(figsize=(WIDTH, 2.7), layout="constrained")
@@ -225,8 +225,8 @@ def figure_c6_3(root: Path | str = REPO_ROOT) -> Figure:
     return fig
 
 
-def figure_c6_4(root: Path | str = REPO_ROOT) -> Figure:
-    """C6.4 e T44: rigetti sulle 19 stagioni di validazione per statistica e soglia."""
+def figure_heteroskedasticity(root: Path | str = REPO_ROOT) -> Figure:
+    """Rigetti sulle 19 stagioni di validazione per statistica e soglia."""
     a = select(read_versioned_csv("us_c6_4_heteroskedasticity", root), 'row_type == "summary"')
     b = read_versioned_csv("us_c6_4b_variance_change", root)
     bs = select(b, 'row_type == "summary"')
@@ -260,7 +260,7 @@ def figure_c6_4(root: Path | str = REPO_ROOT) -> Figure:
 
 
 def figure_module2(root: Path | str = REPO_ROOT) -> Figure:
-    """S8: decomposizione di δ nella sospensione del 2019-20 e quote alle transizioni (W = 80)."""
+    """Decomposizione di δ nella sospensione del 2019-20 e quote alle transizioni (W = 80)."""
     df = read_versioned_csv("us_c7_3b_known_scenarios", root)
     covid = select(df, 'scenario == "2_covid" and version == "threefold"')
     trans = select(df, 'scenario == "1_transition" and version == "threefold" and window == 80')
@@ -295,7 +295,7 @@ def _forest(ax: object, rows: list[tuple[str, float, float, float]], offset: flo
 
 
 def figure_comparisons(root: Path | str = REPO_ROOT) -> Figure:
-    """S10: confronti sulla log-ricchezza finale, validazione e test 2023-24, per configurazione."""
+    """Confronti sulla log-ricchezza finale, validazione e test 2023-24, per configurazione."""
     val = select(read_versioned_csv("us_c8_4_comparisons", root), 'row_type == "comparison" and metric == "final_log_wealth"')
     test = select(read_versioned_csv("us_c8_5_test_run", root), 'row_type == "comparison" and metric == "final_log_wealth"')
     fig = Figure(figsize=(WIDTH, 3.0), layout="constrained")
@@ -320,7 +320,7 @@ def figure_comparisons(root: Path | str = REPO_ROOT) -> Figure:
 
 
 def figure_robustness(root: Path | str = REPO_ROOT) -> Figure:
-    """S11: τ_b fra Elo e Dixon-Coles, confronti coi due Moduli 1, ĝ per metodo di de-vigging."""
+    """Τ_b fra Elo e Dixon-Coles, confronti coi due Moduli 1, ĝ per metodo di de-vigging."""
     rob = read_versioned_csv("us_c9_2_robustness", root)
     dev = read_versioned_csv("us_c9_3_devig_sensitivity", root)
     fig = Figure(figsize=(WIDTH, 7.6), layout="constrained")
@@ -367,13 +367,13 @@ def figure_robustness(root: Path | str = REPO_ROOT) -> Figure:
 
 
 FIGURES: Final[dict[str, Callable[..., Figure]]] = {
-    "tesi_c2_falso_rigetto": figure_c2,
-    "tesi_c3_1_finestra_dati": figure_c3_1,
-    "tesi_c3_2_divergenza_devig": figure_c3_2,
-    "tesi_c4_2_g_hat": figure_g_hat,
-    "tesi_c5_allarmi": figure_c5,
-    "tesi_c6_3_floor": figure_c6_3,
-    "tesi_c6_4_eteroschedasticita": figure_c6_4,
+    "tesi_falso_rigetto": figure_false_rejection,
+    "tesi_finestra_dati": figure_data_window,
+    "tesi_divergenza_devig": figure_devig_divergence,
+    "tesi_g_hat": figure_g_hat,
+    "tesi_allarmi": figure_alarms,
+    "tesi_floor": figure_floor,
+    "tesi_eteroschedasticita": figure_heteroskedasticity,
     "tesi_modulo2": figure_module2,
     "tesi_confronti": figure_comparisons,
     "tesi_robustezza": figure_robustness,

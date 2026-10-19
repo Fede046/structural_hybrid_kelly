@@ -1,4 +1,4 @@
-"""Test unitari per il modulo shk.stats.drift (Task 27).
+"""Test unitari per il modulo shk.stats.drift.
 
 Verifica sia con test sintetici deterministici sia con test sui dati reali E0
 (saltati se assenti) la correttezza di esecuzione, le proprietà degli indici,
@@ -156,8 +156,8 @@ def test_select_best_candidate_pure_rule():
 
     # Caso 2: a parità di distanza, vince il minor numero totale di allarmi
     # Esempio: totale 1 (dist=|10-38|=28) contro totale 3 (dist=|30-38|=8)? No, cerchiamo distanze uguali:
-    # Per avere |10*T - 38| uguale:
-    # 38 - 10*T1 = 10*T2 - 38 => 10*(T1 + T2) = 76 (non ha soluzioni intere).
+    # Per avere |10*n - 38| uguale:
+    # 38 - 10*n1 = 10*n2 - 38 => 10*(n1 + n2) = 76 (non ha soluzioni intere).
     # Quindi non ci possono essere due somme intere distinte con la stessa distanza da 3.8 / 1.9!
     # Tuttavia, a parità di somma (es. 2 allarmi distribuiti diversamente: (2, 0) vs (1, 1)):
     candidates_2 = [
@@ -336,7 +336,7 @@ def test_real_data_alarm_counts_reproducible(real_data_calibration):
 
 
 # ---------------------------------------------------------------------------
-# Test Unitari Sintetici per Calibrazione e Verifica Z-Test (Task 30)
+# Test Unitari Sintetici per Calibrazione e Verifica Z-Test
 # ---------------------------------------------------------------------------
 
 

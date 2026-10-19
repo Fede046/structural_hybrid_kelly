@@ -1,4 +1,4 @@
-"""Test di T52: supervisore del Modulo 2, bracci C1, C2_global e C2, soglia di C1."""
+"""Test: supervisore del Modulo 2, bracci C1, C2_global e C2, soglia di C1."""
 
 import inspect
 import math
@@ -97,7 +97,7 @@ def test_c1_threshold_order_statistic_and_rank_deficient_resamples():
 
 
 def test_supervisor_matches_module2_and_support_rule_on_frame(training):
-    """Con gli esiti solo dall'ambiente il supervisore riproduce module2_at_date e la regola di T49."""
+    """Con gli esiti solo dall'ambiente il supervisore riproduce module2_at_date e la regola dell'analisi del supporto comune."""
     train, covs, inputs = training
     dummies = [i for i, c in enumerate(covs) if c.startswith("flag_")]
     for season, inp in inputs.items():
@@ -217,7 +217,7 @@ def test_c0_equals_b025(training):
 
 
 def _mutant_run_paired_backtest():
-    """Mutante dell'ambiente: osservazione chiamata prima delle decisioni della data (come in T50)."""
+    """Mutante dell'ambiente: osservazione chiamata prima delle decisioni della data."""
     src = inspect.getsource(environment.run_paired_backtest)
     notify = "        _notify_results(agents, DateResults(date=d_date, probs=d_probs, odds=d_odds, outcomes=d_outcomes_all_m))\n"
     anchor = "        for a_idx, agent in enumerate(agents):\n            decision = agent.decide(view)\n"

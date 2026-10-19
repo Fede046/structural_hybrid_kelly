@@ -1,16 +1,16 @@
-"""Manifesti SHA256 dei dati grezzi e dei risultati (T64, riproducibilità).
+"""Manifesti SHA256 dei dati grezzi e dei risultati (riproducibilità).
 
 Formato di una riga: "<sha256>  <percorso relativo alla radice>", con eventualmente
 "  normalized=<regola>". Le righe che iniziano con "#" sono commenti.
 
 Regole di normalizzazione, per i file che non si riproducono byte per byte per ragioni note
 (decisione del programmatore del 2026-10-18), dichiarate nella riga stessa:
-- "drop_seasons:S1,S2,…": si tolgono le righe la cui colonna season vale una delle stagioni
+- "drop_seasons:<stagione>,<stagione>,…": si tolgono le righe la cui colonna season vale una delle stagioni
   date (per esempio le stagioni di test aggiunte dopo lo sblocco); intestazione e altre righe
   restano byte per byte;
-- "blank_columns:C1,C2,…": le colonne date si svuotano (per esempio i tempi misurati) e il CSV
+- "blank_columns:<colonna>,<colonna>,…": le colonne date si svuotano (per esempio i tempi misurati) e il CSV
   si riscrive con csv.writer e terminatore di riga "\\r\\n", come gli script;
-- "drop_lines:P1,P2,…": si tolgono le righe che iniziano con uno dei prefissi dati (per esempio
+- "drop_lines:<prefisso>,<prefisso>,…": si tolgono le righe che iniziano con uno dei prefissi dati (per esempio
   la riga del file congelato con lo SHA256 grezzo del CSV di potenza, che dipende dai tempi).
 Lo SHA256 normalizzato si calcola allo stesso modo sul file versionato e su quello rigenerato.
 """

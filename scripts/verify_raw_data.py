@@ -1,4 +1,4 @@
-"""Verifica dei CSV grezzi E0 con il manifesto data/raw/E0/MANIFEST.sha256 (T64).
+"""Verifica dei CSV grezzi E0 con il manifesto data/raw/E0/MANIFEST.sha256.
 
 Senza argomenti confronta ogni CSV di data/raw/E0/ con il manifesto: l'esito, file per file,
 va in build/reproduce/verify_raw_data.txt; se un file manca, è diverso o non è nel manifesto lo
@@ -16,8 +16,8 @@ RAW_DIR = REPO_ROOT / "data" / "raw" / "E0"
 MANIFEST = RAW_DIR / "MANIFEST.sha256"
 REPORT = REPO_ROOT / "build" / "reproduce" / "verify_raw_data.txt"
 HEADER = (
-    "SHA256 dei CSV E0 di football-data.co.uk usati dal progetto (T64).",
-    "Un file per stagione, data/raw/E0/<YYYY-YY>.csv, dal 1993-94 al 2023-24 (decisione S3).",
+    "SHA256 dei CSV E0 di football-data.co.uk usati dal progetto.",
+    "Un file per stagione, data/raw/E0/<YYYY-YY>.csv, dal 1993-94 al 2023-24.",
     "Verifica: .venv/Scripts/python.exe scripts/verify_raw_data.py",
 )
 

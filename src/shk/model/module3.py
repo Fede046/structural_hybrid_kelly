@@ -1,4 +1,4 @@
-"""Modulo 3: dall'uscita del Modulo 2 a Var(c), E[c] e λ (T51).
+"""Modulo 3: dall'uscita del Modulo 2 a Var(c), E[c] e λ.
 
 Notazione. Per una scommessa su un esito con quota o, EV vero μ = p·o − 1 e stima
 EV̂ = p̂·o − 1 = μ + o·ε, con ε l'errore della probabilità stimata sull'esito. Con
@@ -26,7 +26,7 @@ un aumento Δ di σ² abbassa la media di δ di Δ·h, h = mean((1 − 1/K)/2 ·
 componente strutturale S < 0 del Modulo 2 (δ peggiorato a composizione fissa) si traduce in
 Δ = −S/h; con S >= 0, Δ = 0.
 
-Candidate (scritte prima della valutazione, piano di T51):
+Candidate (scritte prima della valutazione, piano della scelta del Modulo 3):
 - P1, plug-in per scommessa (controllo negativo, nota 3.2 §7.5): μ̂ = EV̂ della singola
   scommessa, σ̂ dalla dispersione di δ sulla finestra B; λ = λ*(μ̂, o·σ̂_p);
 - P2: μ̂ = media degli EV̂ della finestra B (tutte le candidate, non solo le selezionate,
@@ -36,7 +36,7 @@ Candidate (scritte prima della valutazione, piano di T51):
 Regole comuni: λ in [0, 1]; λ = 0 se ĝ della finestra B (media di δ) è <= 0; "non
 attivo" dà λ = INACTIVE_LAMBDA = 0.25, come C0.
 
-Scelta (T51, criterio del passo 4 su verità sintetica): CHOSEN_CANDIDATE = "P3", usata da
+Scelta (criterio del passo 4 su verità sintetica): CHOSEN_CANDIDATE = "P3", usata da
 module3_lambda, la funzione del Modulo 3.
 """
 
@@ -49,7 +49,7 @@ import scipy.stats
 INACTIVE_LAMBDA: Final[float] = 0.25
 SIGMA2_MIN: Final[float] = 1e-6
 CANDIDATES: Final[tuple[str, ...]] = ("P1", "P2", "P3")
-# Quantità stimate per candidata, per la regola di parità del criterio di T51
+# Quantità stimate per candidata, per la regola di parità del criterio della scelta del Modulo 3
 ESTIMATED_QUANTITIES: Final[dict[str, int]] = {"P1": 2, "P2": 2, "P3": 3}
 
 
@@ -173,7 +173,7 @@ def candidate_lambda(
     return lambda_star(mu, s)
 
 
-# Candidata scelta in T51 con il criterio del passo 4 (results/us_c8_1a_module3_synthetic.csv)
+# Candidata scelta del Modulo 3 con il criterio del passo 4 (results/us_c8_1a_module3_synthetic.csv)
 CHOSEN_CANDIDATE: Final[str] = "P3"
 
 

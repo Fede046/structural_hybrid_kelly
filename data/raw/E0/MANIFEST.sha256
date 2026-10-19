@@ -1,5 +1,5 @@
-# SHA256 dei CSV E0 di football-data.co.uk usati dal progetto (T64).
-# Un file per stagione, data/raw/E0/<YYYY-YY>.csv, dal 1993-94 al 2023-24 (decisione S3).
+# SHA256 dei CSV E0 di football-data.co.uk usati dal progetto.
+# Un file per stagione, data/raw/E0/<YYYY-YY>.csv, dal 1993-94 al 2023-24.
 # Verifica: .venv/Scripts/python.exe scripts/verify_raw_data.py
 431f64f3272c82df9a25ba6abffc1c427b25947b6ff15c52b66ad77bb623c804  data/raw/E0/1993-94.csv
 1a13a383905b009aa0fac6cd4c92da914c7f0aac2b18f4a3c3574879b623b65d  data/raw/E0/1994-95.csv

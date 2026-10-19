@@ -2,9 +2,9 @@
 
 Tre metodi per la soglia della F sul disegno contiguous_2:
 - nominal: quantile 1 - alpha della F(k - 1, N - k);
-- block_bootstrap: moving block bootstrap della serie grezza, senza imporre H0 (T12);
+- block_bootstrap: moving block bootstrap della serie grezza, senza imporre H0;
 - block_bootstrap_centered: moving block bootstrap della serie centrata per gruppo,
-  cioè con H0 di medie uguali imposta prima del ricampionamento (T40).
+  cioè con H0 di medie uguali imposta prima del ricampionamento.
 """
 
 from dataclasses import dataclass
@@ -30,8 +30,8 @@ METHOD_NOMINAL: str = "nominal"
 METHOD_BLOCK_BOOTSTRAP: str = "block_bootstrap"
 METHOD_BLOCK_BOOTSTRAP_CENTERED: str = "block_bootstrap_centered"
 
-# Seed della story S7 (decisione S7): il task in posizione i della story usa
-# SeedSequence(SEED_S7).spawn(N_STORY_TASKS)[i]; T40 è in posizione 0.
+# Seed radice delle infrastrutture statistiche (decisione di progetto): la procedura in posizione i
+# usa SeedSequence(SEED_S7).spawn(N_STORY_TASKS)[i]; la calibrazione centrata è in posizione 0.
 SEED_S7: int = 20261011
 N_STORY_TASKS: int = 5
 T40_STORY_POSITION: int = 0
@@ -675,7 +675,7 @@ def spawn_t40_bootstrap_generators(
     Parametri
     ---------
     seed : int, opzionale
-        Seed della story (default: SEED_S7 = 20261011).
+        Seed radice (default: SEED_S7 = 20261011).
 
     Restituisce
     -----------
@@ -707,7 +707,7 @@ def compute_centered_calibration_details(
     Le serie sono le stesse di compute_nominal_rejection_rates e
     compute_calibrated_rejection_rates: per ogni phi, generate_ar1_series col flusso
     series_rng di spawn_c2_generators(seed). Gli indici del bootstrap vengono da
-    spawn_t40_bootstrap_generators(bootstrap_seed), quindi i flussi di T12 non si spostano.
+    spawn_t40_bootstrap_generators(bootstrap_seed), quindi i flussi della calibrazione non centrata dell'ANOVA non si spostano.
 
     Parametri
     ---------
@@ -771,7 +771,7 @@ def compute_centered_calibrated_rejection_rates(
     seed: int = SEED_C2,
     bootstrap_seed: int = SEED_S7,
 ) -> list[RejectionResult]:
-    """Tasso di falso rigetto con soglia calibrata sulla serie centrata per gruppo (T40).
+    """Tasso di falso rigetto con soglia calibrata sulla serie centrata per gruppo.
 
     Rigetto stretto: F osservata sulla serie originale > soglia calibrata sulla serie
     centrata, serie per serie. Restituisce i record ordinati per L (BLOCK_LENGTHS) e,

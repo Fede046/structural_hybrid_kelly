@@ -1,4 +1,4 @@
-"""Script per l'esecuzione appaiata degli agenti A, B ed E sulle 19 stagioni di validazione (US-C6.2 / Task 35).
+"""Script per l'esecuzione appaiata degli agenti A, B ed E sulle 19 stagioni di validazione.
 
 Scrive results/us_c6_2_paired_backtest.csv e genera la figura a tre pannelli
 thesis/figures/us_c6_2_paired_backtest.png.

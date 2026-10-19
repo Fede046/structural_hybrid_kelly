@@ -317,7 +317,7 @@ def calibrate_all_fits(
     return results
 
 
-# Parametri congelati della calibrazione US-C4.1 (calibrati il 2026-09-29)
+# Parametri congelati della calibrazione dell'Elo (calibrati il 2026-09-29)
 ELO_FITS: Final[dict[str, EloFitParams]] = {
     "2000-01": EloFitParams(
         k=10.318224689650037,

@@ -270,7 +270,7 @@ def test_plugin_staking_validation_errors():
         plugin_staking(np.array([0.60, np.nan]), 1.0, 0.0283)
 
 
-# --- Test per la regola della Baseline D (Task 31 / US-C5.3) ---
+# --- Test per la regola della Baseline D ---
 
 def test_select_baseline_d_bets_positive_edge():
     """Verifica la selezione dell'esito con EV massimo positivo e il calcolo della frazione."""

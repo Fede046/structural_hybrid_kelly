@@ -1,4 +1,4 @@
-"""Test di accettazione di T44: diagnostiche della varianza nel tempo (seguito di C6.4)."""
+"""Test di accettazione: diagnostiche della varianza nel tempo."""
 
 import csv
 import hashlib
@@ -107,7 +107,7 @@ def test_goldfeld_quandt_rows_consistent():
 
 
 def test_figure_exists_and_c6_4_csv_unchanged():
-    """La figura esiste e il CSV di C6.4 non è cambiato."""
+    """La figura esiste e il CSV del test di eteroschedasticità non è cambiato."""
     assert PNG_PATH.is_file() and PNG_PATH.stat().st_size > 0
     assert hashlib.sha256(C6_4_CSV_PATH.read_bytes()).hexdigest() == C6_4_SHA256
 

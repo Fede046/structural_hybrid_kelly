@@ -1,4 +1,4 @@
-"""Script T58: esecuzione unica sul test set 2023-24.
+"""Script: esecuzione unica sul test set 2023-24.
 
 Senza argomenti esegue il 2023-24 (una volta sola) e scrive results/us_c8_5_test_run.csv,
 results/raw/us_c8_5_test_raw.npz (non versionato) e thesis/figures/us_c8_5_test_run.png.
@@ -7,7 +7,7 @@ scrive le uscite in build/scratch/t58/dry_run/, per provare il codice prima dell
 unica. I seed vanno su WORKERS processi; i risultati non dipendono dal loro numero.
 Con `--figure-only` rigenera solo la figura dal CSV già scritto.
 Con `--module1 dixon_coles` usa il Modulo 1 Dixon-Coles e config/frozen_params_dc.toml, e scrive
-le uscite con il suffisso _dc, senza toccare quelle Elo (T60).
+le uscite con il suffisso _dc, senza toccare quelle Elo.
 """
 
 import csv
@@ -61,7 +61,7 @@ def output_paths(dry_run: bool, module1: str = MODULE1_ELO) -> tuple[str, Path, 
 
 
 def run_experiment(dry_run: bool = False, module1: str = MODULE1_ELO) -> None:
-    """Esegue tutte le misure di T58 sulla stagione e scrive CSV, raw e figura."""
+    """Esegue tutte le misure dell'esecuzione sul test 2023-24 sulla stagione e scrive CSV, raw e figura."""
     season, csv_path, raw_path, png_path = output_paths(dry_run, module1)
     for p in (csv_path, raw_path, png_path):
         p.parent.mkdir(parents=True, exist_ok=True)

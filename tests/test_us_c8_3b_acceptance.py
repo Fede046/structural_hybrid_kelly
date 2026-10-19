@@ -1,4 +1,4 @@
-"""Test di accettazione di T53: regola di N_SEEDS sui valori del CSV dell'analisi di potenza."""
+"""Test di accettazione: regola di N_SEEDS sui valori del CSV dell'analisi di potenza."""
 
 import math
 from pathlib import Path

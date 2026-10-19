@@ -1,4 +1,4 @@
-"""Test di accettazione di T45 (US-C7.1): Oaxaca-Blinder su verità nota."""
+"""Test di accettazione: Oaxaca-Blinder su verità nota."""
 
 import csv
 import math

@@ -1,4 +1,4 @@
-"""Test di src/shk/stats/bootstrap.py: lunghezza di Politis-White e stationary bootstrap (T42)."""
+"""Test di src/shk/stats/bootstrap.py: lunghezza di Politis-White e stationary bootstrap."""
 
 import ast
 import math
@@ -45,7 +45,7 @@ def _arch_comparison_series() -> list[tuple[float, int, np.ndarray]]:
 
 
 def test_optimal_block_length_matches_arch():
-    """La lunghezza ottima coincide con arch entro 1e-6 relativo su 24 serie (criterio T42)."""
+    """La lunghezza ottima coincide con arch entro 1e-6 relativo su 24 serie."""
     cases = _arch_comparison_series()
     assert len(cases) >= 20
     for phi, n, x in cases:

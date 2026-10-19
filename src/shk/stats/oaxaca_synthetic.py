@@ -1,4 +1,4 @@
-"""Verità nota per la decomposizione di Oaxaca-Blinder (T45, US-C7.1).
+"""Verità nota per la decomposizione di Oaxaca-Blinder.
 
 Generatore: in ogni gruppo g, n = 190 osservazioni con covariate x1 ~ N(m1_g, 1),
 x2 ~ N(m2_g, 1) indipendenti e una dummy d ~ Bernoulli(p_g); risposta
@@ -11,7 +11,7 @@ C = beta_A'(mu_B - mu_A), S = mu_A'(beta_B - beta_A), I = (mu_B - mu_A)'(beta_B 
 totale = C + S + I; le stime OLS sono corrette per esse anche con errori AR(1), perché
 beta_A stimato è indipendente da x̄_B e beta_g' x̄_g = ȳ_g.
 
-Parametri fissati prima di eseguire (piano di T45):
+Parametri fissati prima di eseguire (piano della validazione sintetica di Oaxaca-Blinder):
 - gruppo A: m = (0, 0), p = 0.30, beta_A = (0.00, 0.10, 0.05, 0.20), sigma = 0.5;
 - (a) misto: B con m = (0.5, -0.3), p = 0.50, beta_B = (0.10, 0.20, 0.05, 0.10);
 - (b) solo composizione: medie di B come (a), beta_B = beta_A;
@@ -20,8 +20,8 @@ Parametri fissati prima di eseguire (piano di T45):
   nei due gruppi, gamma = 0.3 in entrambi, mw_A = 0 e mw_B = 1 (totale vero 0.3, tutto
   nella covariata omessa);
 - (e) come (a), con errori AR(1) phi = 0.5.
-R = 1 000 repliche per caso. Seed: SeedSequence(SEED_S8).spawn(5)[0] (T45 è in posizione 0
-della story S8), diviso con spawn(5), un generatore per caso nell'ordine (a)-(e), usato in
+R = 1 000 repliche per caso. Seed: SeedSequence(SEED_S8).spawn(5)[0] (posizione 0),
+diviso con spawn(5), un generatore per caso nell'ordine (a)-(e), usato in
 sequenza sulle repliche (prima il gruppo A, poi il B; in ogni gruppo x1 e x2, d, w se c'è,
 poi gli errori).
 """
@@ -34,7 +34,7 @@ import numpy as np
 from shk.stats.oaxaca import TWOFOLD_REFERENCES, oaxaca_blinder, oaxaca_iid_standard_errors
 from shk.stats.timeseries import generate_ar1_series
 
-# Seed della story S8 (decisione S7): il task in posizione i usa spawn(5)[i]
+# Seed radice del Modulo 2 (decisione di progetto): la procedura in posizione i usa spawn(5)[i]
 SEED_S8: Final[int] = 20261012
 N_STORY_TASKS: Final[int] = 5
 T45_STORY_POSITION: Final[int] = 0

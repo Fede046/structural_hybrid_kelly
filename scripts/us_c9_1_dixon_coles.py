@@ -1,4 +1,4 @@
-"""Script T59: Dixon-Coles walk-forward, calibrazione di ξ e σ e confronto di validazione con l'Elo (US-C9.1).
+"""Script: Dixon-Coles walk-forward, calibrazione di ξ e σ e confronto di validazione con l'Elo.
 
 Esecuzione completa: ricalcola la calibrazione sul training e verifica che la scelta coincida
 con DC_FITS (altrimenti si ferma), poi previsioni di validazione con DC_FITS, log-loss e ĝ

@@ -1,9 +1,10 @@
-# SHA256 dei CSV di results/ e dei file congelati in config/ (T64).
+# SHA256 dei CSV di results/ e dei file congelati in config/.
 # Formato: <sha256>  <percorso>[  normalized=<regola>]. Regole (decisione del 2026-10-18):
 # drop_seasons: righe delle stagioni date tolte (us_c3_1 aggiunge il test dopo lo sblocco);
-# blank_columns: colonne svuotate (tempi misurati di us_c8_3b_power, TIMING_COLUMNS di T53);
+# blank_columns: colonne svuotate (tempi misurati di us_c8_3b_power, TIMING_COLUMNS di power.py);
 # drop_lines: righe tolte (nei file congelati, lo SHA256 grezzo del CSV di potenza, che dipende dai tempi).
 # Verifica: .venv/Scripts/python.exe scripts/reproduce_all.py (vedi README.md).
+aed7fe8231c00ca838294116461295d9c93968b411a58099307009a6c5516a5d  results/kellybench_2023_24.csv
 ae952f4f131d4e8ecd6650026bd66d435a7dcd658cc2fbf20a377acafe5d6b3f  results/us_c1_1_growth_vs_lambda.csv
 b8c85ce0b2fc3a454a9e3b073ca6004c4ac59a897b1169504bc288183fbb5b48  results/us_c1_2_estimation_error.csv
 7d507b8a64d9cbf3d02e598ca25e546db7e2eed16dfbb19da34071dcfd0f46b1  results/us_c2_anova_autocorrelation.csv

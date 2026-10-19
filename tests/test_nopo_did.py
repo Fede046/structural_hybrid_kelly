@@ -1,4 +1,4 @@
-"""Test di src/shk/stats/nopo.py e della regola fuori supporto alla data (T49)."""
+"""Test di src/shk/stats/nopo.py e della regola fuori supporto alla data."""
 
 import math
 
@@ -32,7 +32,7 @@ def test_nopo_parts_sum_to_total():
 
 
 def test_nopo_full_support_has_zero_out_of_support():
-    """Supporto pieno: le due parti fuori supporto valgono 0 (criterio T49)."""
+    """Supporto pieno: le due parti fuori supporto valgono 0."""
     rng = np.random.default_rng(2)
     ca = np.repeat(np.arange(6), 30)
     cb = np.repeat(np.arange(6), 25)

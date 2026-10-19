@@ -1,4 +1,4 @@
-"""Script per il monitoraggio dello Z-test per giornata e confronto con i detector (US-C5.2 / Task 29 e Task 30).
+"""Script per il monitoraggio dello Z-test per giornata e confronto con i detector.
 
 Calcola lo Z-test per giornata (blocchi di 10 partite) sulle 19 stagioni di validazione
 utilizzando le baseline di training dei rispettivi fit, calcola le soglie calibrate

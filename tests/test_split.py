@@ -483,7 +483,7 @@ loading.load_all_seasons(seasons=selected)
 
 
 def test_guard_no_unfiltered_load_all_seasons_calls_in_scripts_and_tests():
-    """In scripts/ e tests/ nessuna chiamata a load_all_seasons è priva dell'argomento seasons (T41)."""
+    """In scripts/ e tests/ nessuna chiamata a load_all_seasons è priva dell'argomento seasons."""
     import warnings
 
     repo_root = Path(__file__).resolve().parents[1]
@@ -526,7 +526,7 @@ def test_guard_repository_load_all_seasons_occurrences():
                 if refs:
                     files_with_occurrences[rel_path] = refs
 
-    # Solo i tre moduli ammessi possono avere occorrenze; nessuno script ne ha (T41)
+    # Solo i tre moduli ammessi possono avere occorrenze; nessuno script ne ha
     assert set(files_with_occurrences.keys()).issubset(allowed_files)
     assert "src/shk/data/split.py" in files_with_occurrences
     assert not any(path.startswith("scripts/") for path in files_with_occurrences)
@@ -541,7 +541,7 @@ def test_real_config_split_file():
     """Verifica che config/split.toml esista, sia valido e rispetti lo stato del test set.
 
     Prima dello sblocco (test_unlocked = false) il test set è bloccato. Dopo lo sblocco del
-    programmatore (commit successivo al congelamento, decisione S10) test_unlocked_on è una
+    programmatore (commit successivo al congelamento, decisione di progetto) test_unlocked_on è una
     data non anteriore a frozen_on e il ruolo 'test' restituisce il solo 2023-24.
     """
     cfg = read_split_config(DEFAULT_SPLIT_CONFIG_PATH)

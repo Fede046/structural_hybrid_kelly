@@ -1,9 +1,9 @@
-"""Test per il modulo shk.model.residuals (Task 26).
+"""Test per il modulo shk.model.residuals.
 
 Verifica sia con test sintetici deterministici sia con test sui dati reali E0
 (saltati se assenti) la correttezza di schema, ordinamento, log-loss puntuale,
 ripetizione del training tra fit, validazioni difensive e riproduzione esatta
-delle log-loss medie di riferimento di C4.1.
+delle log-loss medie di riferimento delle previsioni Elo walk-forward.
 """
 
 import math
@@ -302,12 +302,12 @@ def test_residuals_real_data_match_counts(real_data_computation):
 
 
 def test_residuals_real_data_log_loss_benchmarks(real_data_computation):
-    """Verifica la coincidenza delle medie di log-loss con i riferimenti di C4.1 entro 5e-7 e con compute_training_log_loss entro 1e-12."""
+    """Verifica la coincidenza delle medie di log-loss con i riferimenti delle previsioni Elo walk-forward entro 5e-7 e con compute_training_log_loss entro 1e-12."""
     res = real_data_computation["df_residuals"]
     schedule = real_data_computation["schedule"]
     df = real_data_computation["df"]
 
-    # Benchmark C4.1 di training
+    # Riferimenti di training delle previsioni Elo walk-forward
     m_tr_2000 = float(res[(res["fit_through"] == "2000-01") & (res["role"] == "training")]["log_loss"].mean())
     m_tr_2010 = float(res[(res["fit_through"] == "2010-11") & (res["role"] == "training")]["log_loss"].mean())
     m_tr_2020 = float(res[(res["fit_through"] == "2020-21") & (res["role"] == "training")]["log_loss"].mean())
@@ -316,7 +316,7 @@ def test_residuals_real_data_log_loss_benchmarks(real_data_computation):
     assert m_tr_2010 == pytest.approx(1.008987, abs=5e-7)
     assert m_tr_2020 == pytest.approx(1.020937, abs=5e-7)
 
-    # Benchmark C4.1 di validazione
+    # Riferimenti di validazione delle previsioni Elo walk-forward
     m_val_2000 = float(res[(res["fit_through"] == "2000-01") & (res["role"] == "validation")]["log_loss"].mean())
     m_val_2010 = float(res[(res["fit_through"] == "2010-11") & (res["role"] == "validation")]["log_loss"].mean())
     m_val_2020 = float(res[(res["fit_through"] == "2020-21") & (res["role"] == "validation")]["log_loss"].mean())
@@ -372,7 +372,7 @@ def test_residuals_no_test_leakage(real_data_computation):
 
 
 def test_load_model_residuals_matches_explicit_chain(real_data_computation):
-    """load_model_residuals coincide con la catena comune scritta per esteso (T42)."""
+    """load_model_residuals coincide con la catena comune scritta per esteso."""
     data = load_model_residuals()
     pd.testing.assert_frame_equal(data.df, real_data_computation["df"])
     assert data.schedule == real_data_computation["schedule"]

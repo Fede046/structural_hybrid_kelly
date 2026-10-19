@@ -1,4 +1,4 @@
-"""Modulo per l'esecuzione appaiata degli agenti A, B ed E sulle stagioni di validazione (US-C6.2 / Task 35).
+"""Modulo per l'esecuzione appaiata degli agenti A, B ed E sulle stagioni di validazione.
 
 Coordina l'esecuzione degli agenti Kelly pieno (A), Kelly frazionario (B 0.25 e 0.10)
 e puntata minima (E) su 19 stagioni di validazione sotto tre configurazioni di floor:

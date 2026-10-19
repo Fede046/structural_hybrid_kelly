@@ -1,8 +1,8 @@
-"""Analisi di potenza per il numero di seed di S10 (T53, nota 3.2 §7.3).
+"""Analisi di potenza per il numero di seed SEED_S10 (nota 3.2 §7.3).
 
 Sulle tre stagioni di training, per ogni seed (stagione ricostruita per stationary bootstrap
 delle date con L_PW, season_bootstrap.reconstruct_season) si esegue l'ambiente con gli
-agenti dell'esecuzione di prova di T52 (training_agents.run_training_season: W = 80,
+agenti dell'esecuzione di prova sul training (training_agents.run_training_season: W = 80,
 κ = 0.5, soglia di C1 del fit a L_PW) nella configurazione principale B0/F = 22 000
 (£0.01 su £220). Differenze appaiate sulla log-ricchezza finale: d1 = C1 − C0 e
 d2 = C2 − C1.
@@ -13,14 +13,14 @@ Regola del passo 4 (fissata nel task, non si cambia dopo il risultato):
 - Δ = |media di d1 su seed e stagioni|;
 - semiampiezza al 95% della differenza C2 − C1 pooled su 19 stagioni con N seed per
   stagione (stagioni come cluster indipendenti, variabilità interna dai seed, decisione
-  S10): z·σ/sqrt(19·N), con z = quantile 0.975 della normale;
+  di progetto): z·σ/sqrt(19·N), con z = quantile 0.975 della normale;
 - N_SEEDS = minimo multiplo di 100 con semiampiezza ≤ 0.2·Δ, cioè 100·ceil(N_min/100) con
   N_min = (z·σ/(0.2·Δ))²/19; se Δ < 1e-6 o N_SEEDS > 5 000, N_SEEDS = 1 000; in ogni caso
   N_SEEDS ≥ 500.
 
-Seed: SeedSequence(SEED_S9).spawn(5)[3] (T53 in posizione 3), spawn(numero di stagioni) in
+Seed: SeedSequence(SEED_S9).spawn(5)[3] (posizione 3), spawn(numero di stagioni) in
 ordine cronologico, spawn(N_POWER_SEEDS) per seed. Il tempo per esecuzione si misura
-dentro evaluate_power, perché il task chiede nel CSV il tempo stimato del run di S10:
+dentro evaluate_power, perché il task chiede nel CSV il tempo stimato del run delle esecuzioni congelate:
 (N_SEEDS + 1)·19·3 esecuzioni (seed più realizzazione osservata, tre configurazioni).
 """
 
@@ -95,9 +95,9 @@ def _empty() -> dict[str, object]:
 def evaluate_power(frame: pd.DataFrame, covariates: Sequence[str], seed: int | np.random.SeedSequence = SEED_S9,
                    n_seeds: int = N_POWER_SEEDS,
                    threshold_seed: int | np.random.SeedSequence = SEED_S9) -> list[dict[str, object]]:
-    """Seed ricostruiti, differenze appaiate, regola di N_SEEDS e stima del tempo di S10.
+    """Seed ricostruiti, differenze appaiate, regola di N_SEEDS e stima del tempo delle esecuzioni congelate.
 
-    threshold_seed: seed delle soglie di C1 (threshold_records, T52).
+    threshold_seed: seed delle soglie di C1 (threshold_records).
 
     Solleva
     -------
