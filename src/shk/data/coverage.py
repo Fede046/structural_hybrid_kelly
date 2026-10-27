@@ -1,12 +1,42 @@
 """Modulo per l'audit di copertura di quote, risultati e bookmaker per stagione."""
 
+# Defaultdict
+# È una sottoclasese di  dicit che non solleva KeyError quando accedi a una chiave insesistente. Invece crea autmaticamente un valore di default per quella chiave.
+# d = defaultdict(list)
+# d["frutta"].append("mela")   # "frutta" non esiste → crea [] automaticamente
+# Normalemente sarebbe:
+# d = {}
+# d["frutta"].append("mela")  # ❌ KeyError: 'frutta'
+
+
+
 from collections import defaultdict
+
+# Importa due strumenti di type hinting (annotazioni di tipo) dal modulo standard typing.
+
+# Final -> Dichiare una costante che non può essere riassegnata. 
+# Esempio: MAX_RETRIES: Final = 3. Non impedisce la modifica a runtime, 
+# ma i type checker (mypy, pyright) segnalano un errore se provi a riassegnarla.
+
+# NamedTuple
+# classe base per creare tuple con campi nominati e tipizzati, immutabili e leggeri.
+# 
+# Tupla -> sequenza ordinata immutabile di valori python 
+# Ordinata: gli elementi hanno una posizione, si accede per indice (t[0] → 1).
+# Immutabile: dopo la creazione non puoi modificare, aggiungere o rimuovere elementi. t[0] = 5 dà TypeError.
+# Eterogenea: può contenere tipi diversi insieme.
+# Hashable (se contiene solo elementi hashable): può essere usata come chiave di dizionario o elemento di un set, cosa che con le liste non si può fare.
+
+# Una tupla normale ti obbliga a ricordare cosa significa ogni posizione (p[0] è x o y?). 
+# NamedTuple aggiunge nomi ai campi (p.x), mantenendo tutti i vantaggi della tupla: immutabilità, unpacking e leggerezza.
+
 from typing import Final, NamedTuple
 
 import numpy as np
 import pandas as pd
 
 # Colonne ufficiali del file CSV di copertura
+# tupla di lunghezza arbitraria, con tutti gli elementi di tipo str
 COVERAGE_CSV_COLUMNS: Final[tuple[str, ...]] = (
     "season",
     "group_type",
