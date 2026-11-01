@@ -122,6 +122,8 @@ def test_spawn_t55_sequences_scheme():
 def test_raw_file_seeds_and_c0_equals_b025():
     """Ogni agente ha N_SEEDS seed per stagione e configurazione; C0 = B_0.25 entro 1e-12 ovunque."""
     params = load_frozen_params()
+    if not RAW_PATH.exists():
+        pytest.skip(f"Missing {RAW_PATH}: results/raw non è versionato (si rigenera con gli script)")
     res = load_raw(RAW_PATH)
     n_seeds = int(params.fixed["n_seeds"])
     assert res.seeds.shape == (19, 3, len(AGENT_ORDER), len(METRICS), n_seeds)
@@ -140,6 +142,8 @@ def test_raw_file_seeds_and_c0_equals_b025():
 
 def test_observed_b025_reproduces_c6_2():
     """Con F = 0, B_0.25 sulla realizzazione osservata riproduce il backtest appaiato (−10.580 su 6 234 puntate)."""
+    if not RAW_PATH.exists():
+        pytest.skip(f"Missing {RAW_PATH}: results/raw non è versionato (si rigenera con gli script)")
     res = load_raw(RAW_PATH)
     c62 = pd.read_csv(C62_PATH)
     ref = c62[(c62["row_type"] == "summary") & (c62["config"] == "none") & (c62["agent"] == "B_0.25")].iloc[0]
