@@ -4,6 +4,7 @@ from pathlib import Path
 
 import numpy as np
 import pandas as pd
+import pytest
 
 from shk.model.frozen_agents import AGENT_ORDER
 from shk.model.frozen_params import load_frozen_params
@@ -36,6 +37,8 @@ def test_c0_equals_b025():
     """C0 coincide con B_0.25 entro 1e-12, su seed block, seed iid e realizzazione osservata."""
     b, c0 = AGENT_ORDER.index("B_0.25"), AGENT_ORDER.index("C0")
     for path in (RAW_PATH, RAW_IID_PATH):
+        if not path.exists():
+            pytest.skip(f"Missing {path}: results/raw non è versionato (si rigenera con gli script)")
         res = load_raw(path)
         assert res.seasons == (TEST_SEASON,)
         for arr in (res.seeds, res.observed):
@@ -50,6 +53,8 @@ def test_csv_and_figure_exist_with_all_parts():
         assert (df["row_type"] == kind).any(), kind
     n_seeds = int(load_frozen_params().fixed["n_seeds"])
     assert (df.query("row_type == 'summary'")["n_seeds"] == n_seeds).all()
+    if not RAW_PATH.exists():
+        pytest.skip(f"Missing {RAW_PATH}: results/raw non è versionato (si rigenera con gli script)")
     res = load_raw(RAW_PATH)
     assert res.seeds.shape[-1] == n_seeds and res.seeds.shape[3] == len(METRICS)
     assert PNG_PATH.is_file() and PNG_PATH.stat().st_size > 0

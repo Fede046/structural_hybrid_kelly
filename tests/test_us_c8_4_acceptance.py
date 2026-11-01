@@ -5,6 +5,7 @@ from pathlib import Path
 
 import numpy as np
 import pandas as pd
+import pytest
 
 from shk.model.comparisons import COMPARISONS, PRIMARY_METRICS, season_differences
 from shk.model.comparisons_run import COMPARISON_COLUMNS, t56_sequences
@@ -51,6 +52,8 @@ def test_main_interval_is_t_corrected():
 
 def test_decomposition_of_c2_minus_c0():
     """C2 − C0 = (C1 − C0) + (C2 − C1) entro 1e-12 sulle stime puntuali; il CSV riporta le stesse stime."""
+    if not RAW_PATH.exists():
+        pytest.skip(f"Missing {RAW_PATH}: results/raw non è versionato (si rigenera con gli script)")
     block = load_raw(RAW_PATH)
     comp = pd.read_csv(CSV_PATH).query("row_type == 'comparison'")
     for ci, config in enumerate(CONFIG_NAMES):
