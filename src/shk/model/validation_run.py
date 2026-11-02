@@ -222,13 +222,13 @@ def _value(x: float) -> object:
     return "" if isinstance(x, float) and math.isnan(x) else x
 
 
-def summary_records(result: ValidationResult) -> list[dict[str, object]]:
-    """Righe "summary" per agente × configurazione × stagione."""
+def summary_records(result: ValidationResult, agents: Sequence[str] = AGENT_ORDER) -> list[dict[str, object]]:
+    """Righe "summary" per agente × configurazione × stagione; agents nell'ordine del terzo asse delle metriche."""
     m = {name: i for i, name in enumerate(METRICS)}
     records = []
     for si, season in enumerate(result.seasons):
         for ci, (config, min_stake) in enumerate(CONFIGURATIONS):
-            for ai, agent in enumerate(AGENT_ORDER):
+            for ai, agent in enumerate(agents):
                 seeds = result.seeds[si, ci, ai]
                 obs = result.observed[si, ci, ai]
                 lw = seeds[m["final_log_wealth"]]

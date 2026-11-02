@@ -146,6 +146,8 @@ I detector dicono quando qualcosa cambia, non quanto né di che tipo.
 
 Non c'è evidenza di una varianza che cresce durante la stagione oltre quella già presente nel training. Per questo l'allarme dell'agente si basa sulla componente strutturale di Oaxaca-Blinder e non su un test di eteroschedasticità.
 
+Lo schema del relatore mette invece prima l'allarme ANOVA e poi Oaxaca. È implementato a parte come agente C3 (`thesis/agenti_e_architettura.md` §3.7, `results/us_c10_scheme_validation_summary.csv`). L'allarme scatta circa 1,6 volte per stagione. C3 migliora di poco B_0.25 e non lo peggiora mai in mediana, ma resta dietro a C1, C2 e D_PH: il modello non batte il mercato, e quegli agenti puntano meno.
+
 ### 4.5 Il floor rende possibile la rovina
 - **Senza floor.** La rovina è esattamente zero, sul calendario sintetico e su quello reale.
 - **Con il floor**, sul calendario reale:

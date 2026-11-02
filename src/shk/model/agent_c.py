@@ -41,6 +41,23 @@ tengono le prime 2W posizioni come finestre A e B; T = −S della three-fold. I
 ricampionamenti con un disegno a rango non pieno (stato "rank_deficient" del Modulo 2) si
 scartano; soglia = statistica d'ordine ceil((1 − α)(B_validi + 1)) di T sui validi, con
 α = 0.05 e B = 999.
+
+Schema del relatore (C3, SchemeAgent; mail del prof. Roccetti, 2026-11): il Modulo 2 monitora
+con l'ANOVA i residui δ e dà l'allarme; il Modulo 3 usa Oaxaca-Blinder per decidere la puntata.
+- Allarme alla data d, sulle finestre A e B di δ (partite con Date < d, le stesse del Modulo 2):
+  F dell'ANOVA a una via sulla media, contata solo se la media di B è minore di quella di A
+  (peggioramento), oppure F di Brown-Forsythe (ANOVA sulle deviazioni assolute dalla mediana,
+  eteroschedasticità), contata solo se la dispersione di B è maggiore di quella di A.
+  Allarme se una delle due supera la sua soglia; con meno di 2W partite non c'è allarme.
+- Diagnosi con allarme: errore strutturale se il Modulo 2 è attivo e T = −S supera la soglia di
+  C1 alla stessa W (componente strutturale significativamente negativa); altrimenti errore di
+  composizione (dati), anche con Modulo 2 a rango non pieno.
+- λ: senza allarme 0.25 (come C0); composizione 0.25·κ; strutturale 0 finché dura l'allarme
+  (C3) oppure fino a fine stagione (C3_stop: «finché il modello non viene ri-parametrizzato»,
+  e nella stagione il Modulo 1 non si ri-parametrizza).
+Soglie dell'allarme (calibrate_scheme_thresholds): come la soglia di C1, moving block bootstrap
+della serie di δ del fit, prime 2W posizioni come finestre A e B, B = 999; ogni F con segno ha
+livello α/2 (Bonferroni), così l'allarme ha livello α = 0.05 al più.
 """
 
 import math
@@ -59,10 +76,18 @@ from shk.model.stateful_agents import adaptive_multiplier
 from shk.stats.calibration import compute_order_statistic_index, moving_block_indices
 from shk.stats.false_rejection import ALPHA
 from shk.stats.nopo import out_of_support_mask
+from shk.stats.anova import oneway_anova_vectorized
 from shk.stats.oaxaca import three_fold_batch
+from shk.stats.variance_change import brown_forsythe
 
 C0_LAMBDA: Final[float] = BASE_LAMBDA
 C1_N_BOOT: Final[int] = 999
+SCHEME_STOP_CLEAR: Final[str] = "until_clear"
+SCHEME_STOP_SEASON: Final[str] = "until_season_end"
+SCHEME_STOPS: Final[tuple[str, ...]] = (SCHEME_STOP_CLEAR, SCHEME_STOP_SEASON)
+DIAGNOSIS_NONE: Final[str] = "none"
+DIAGNOSIS_COMPOSITIONAL: Final[str] = "compositional"
+DIAGNOSIS_STRUCTURAL: Final[str] = "structural"
 
 
 class SupervisorState(NamedTuple):
@@ -202,6 +227,15 @@ class Module2Supervisor:
     def cutoff(self, decision_date: np.datetime64) -> np.datetime64:
         """Data di taglio passata a module2_at_date: si usano le partite con Date < taglio."""
         return decision_date
+
+    def delta_windows(self, decision_date: np.datetime64) -> tuple[np.ndarray, np.ndarray] | None:
+        """δ delle finestre A e B (partite osservate con Date < d); None con meno di 2W partite."""
+        cut = np.datetime64(self.cutoff(np.datetime64(decision_date, "ns")), "ns")
+        observed = np.flatnonzero(self._observed)
+        eligible = observed[self._dates[observed] < cut]
+        if eligible.shape[0] < 2 * self._window:
+            return None
+        return self._delta[eligible[-2 * self._window:-self._window]], self._delta[eligible[-self._window:]]
 
     def _window_data(self, rows: np.ndarray) -> WindowData:
         return WindowData(self._p_hat[rows], self._q[rows], self._outcome[rows], self._ev_candidate[rows])
@@ -390,6 +424,161 @@ class GradedAgent(Agent):
     def observe_results(self, results: DateResults) -> None:
         """Inoltra gli esiti della data regolata al supervisore."""
         self._supervisor.observe(results)
+
+
+class SchemeAgent(Agent):
+    """C3 e C3_stop: schema del relatore, allarme ANOVA sui residui δ e risposta dalla three-fold (vedi modulo).
+
+    Parametri
+    ---------
+    name : str
+        Nome dell'agente.
+    supervisor : Module2Supervisor
+        Supervisore condiviso dell'esecuzione.
+    kappa : float
+        Riduzione di λ con errore di composizione, in [0, 1].
+    mean_threshold, dispersion_threshold : float
+        Soglie dell'F di media e dell'F di Brown-Forsythe con segno (calibrate_scheme_thresholds).
+    structural_threshold : float
+        Soglia di T = −S oltre la quale l'errore è strutturale (la soglia di C1 alla stessa W).
+    stop : str
+        SCHEME_STOP_CLEAR (λ = 0 finché dura l'allarme) o SCHEME_STOP_SEASON (λ = 0 fino a
+        fine stagione: nella stagione il Modulo 1 non si ri-parametrizza).
+    base_lambda : float, default 0.25
+        λ senza allarme.
+    """
+
+    def __init__(self, name: str, supervisor: Module2Supervisor, kappa: float, mean_threshold: float,
+                 dispersion_threshold: float, structural_threshold: float, stop: str,
+                 base_lambda: float = BASE_LAMBDA) -> None:
+        super().__init__(name)
+        if not isinstance(supervisor, Module2Supervisor):
+            raise TypeError("supervisor must be a Module2Supervisor")
+        for label, value in (("kappa", kappa), ("base_lambda", base_lambda)):
+            if isinstance(value, bool) or not isinstance(value, (float, np.floating)) or not 0.0 <= value <= 1.0:
+                raise ValueError(f"{label} must be a float in [0, 1], got {value!r}")
+        for label, value in (("mean_threshold", mean_threshold), ("dispersion_threshold", dispersion_threshold),
+                             ("structural_threshold", structural_threshold)):
+            if isinstance(value, bool) or not isinstance(value, (float, np.floating)) or not math.isfinite(value):
+                raise ValueError(f"{label} must be a finite float, got {value!r}")
+        if stop not in SCHEME_STOPS:
+            raise ValueError(f"stop must be one of {SCHEME_STOPS}, got {stop!r}")
+        self._supervisor = supervisor
+        self._kappa = float(kappa)
+        self._mean_threshold = float(mean_threshold)
+        self._dispersion_threshold = float(dispersion_threshold)
+        self._structural_threshold = float(structural_threshold)
+        self._stop = stop
+        self._base_lambda = float(base_lambda)
+        self._stopped = False
+        self._n_onsets = 0
+        self._previous_alarm = False
+        self._lambda_by_date: dict[np.datetime64, float] = {}
+        self._diagnosis_by_date: dict[np.datetime64, str] = {}
+
+    @property
+    def n_onsets(self) -> int:
+        """Accensioni dell'allarme ANOVA fino all'ultima data di decisione."""
+        return self._n_onsets
+
+    @property
+    def lambda_by_date(self) -> dict[np.datetime64, float]:
+        """λ applicato a ogni data di decisione."""
+        return dict(self._lambda_by_date)
+
+    @property
+    def diagnosis_by_date(self) -> dict[np.datetime64, str]:
+        """Diagnosi a ogni data di decisione: "none", "compositional" o "structural"."""
+        return dict(self._diagnosis_by_date)
+
+    def _diagnose(self, day: np.datetime64) -> str:
+        windows = self._supervisor.delta_windows(day)
+        if windows is None:
+            return DIAGNOSIS_NONE
+        f_mean, f_dispersion = scheme_statistics(windows[0], windows[1])
+        if not (f_mean > self._mean_threshold or f_dispersion > self._dispersion_threshold):
+            return DIAGNOSIS_NONE
+        out = self._supervisor.state_at(day).output
+        if out.state == STATE_ACTIVE and -out.result.structural > self._structural_threshold:
+            return DIAGNOSIS_STRUCTURAL
+        return DIAGNOSIS_COMPOSITIONAL
+
+    def stake_fractions(self, view: DateView, p_hat: np.ndarray, b: np.ndarray) -> np.ndarray:
+        """kelly_staking con λ dalla diagnosi della data, aggiornato una volta per data."""
+        day = np.datetime64(view.date, "ns")
+        if day not in self._lambda_by_date:
+            diagnosis = self._diagnose(day)
+            alarm = diagnosis != DIAGNOSIS_NONE
+            if alarm and not self._previous_alarm:
+                self._n_onsets += 1
+            self._previous_alarm = alarm
+            if diagnosis == DIAGNOSIS_STRUCTURAL and self._stop == SCHEME_STOP_SEASON:
+                self._stopped = True
+            if self._stopped or diagnosis == DIAGNOSIS_STRUCTURAL:
+                lam = 0.0
+            elif diagnosis == DIAGNOSIS_COMPOSITIONAL:
+                lam = self._base_lambda * self._kappa
+            else:
+                lam = self._base_lambda
+            self._diagnosis_by_date[day] = diagnosis
+            self._lambda_by_date[day] = lam
+        lam_arr = np.full(p_hat.shape[0], self._lambda_by_date[day])
+        return _kelly_fractions(p_hat, b, lam_arr)
+
+    def observe_results(self, results: DateResults) -> None:
+        """Inoltra gli esiti della data regolata al supervisore."""
+        self._supervisor.observe(results)
+
+
+def scheme_statistics(delta_a: np.ndarray, delta_b: np.ndarray) -> tuple[np.ndarray | float, np.ndarray | float]:
+    """F di media e F di Brown-Forsythe fra le finestre A e B, con segno (vedi modulo).
+
+    Parametri
+    ---------
+    delta_a, delta_b : np.ndarray
+        δ delle finestre, (W,) oppure lotto (B, W).
+
+    Restituisce
+    -----------
+    tuple
+        (F della media se la media di B è minore di quella di A, altrimenti 0;
+        F di Brown-Forsythe se la dispersione di B è maggiore di quella di A, altrimenti 0),
+        float per finestre 1D, altrimenti ndarray (B,).
+    """
+    a = np.asarray(delta_a, dtype=np.float64)
+    b = np.asarray(delta_b, dtype=np.float64)
+    if a.shape != b.shape or a.ndim not in (1, 2) or a.shape[-1] < 2:
+        raise ValueError(f"delta_a and delta_b must have the same shape (W,) or (B, W), W >= 2, got {a.shape}, {b.shape}")
+    w = a.shape[-1]
+    labels = np.repeat(np.array([0, 1], dtype=np.int64), w)
+    f_mean = oneway_anova_vectorized(np.concatenate([a, b], axis=-1), labels)
+    worse = b.mean(axis=-1) < a.mean(axis=-1)
+    f_disp = brown_forsythe(np.stack([a, b], axis=-2))
+    spread_a = np.abs(a - np.median(a, axis=-1, keepdims=True)).mean(axis=-1)
+    spread_b = np.abs(b - np.median(b, axis=-1, keepdims=True)).mean(axis=-1)
+    wider = spread_b > spread_a
+    if a.ndim == 1:
+        return (float(f_mean) if worse else 0.0), (float(f_disp) if wider else 0.0)
+    return np.where(worse, f_mean, 0.0), np.where(wider, f_disp, 0.0)
+
+
+def calibrate_scheme_thresholds(
+    delta: np.ndarray,
+    window: int,
+    block_length: int,
+    rng: np.random.Generator,
+    n_boot: int = C1_N_BOOT,
+    alpha: float = ALPHA,
+) -> tuple[float, float]:
+    """Soglie (media, dispersione) dell'allarme di C3 al livello α/2 ciascuna sotto H₀ (vedi modulo)."""
+    y = np.asarray(delta, dtype=np.float64)
+    n = y.shape[0]
+    if 2 * window > n:
+        raise ValueError(f"need delta with length >= 2W, got {n}, W = {window}")
+    idx = moving_block_indices(n, block_length, n_boot, rng)[:, :2 * window]
+    f_mean, f_disp = scheme_statistics(y[idx[:, :window]], y[idx[:, window:]])
+    k = compute_order_statistic_index(n_boot, alpha / 2.0)
+    return float(np.sort(f_mean)[k - 1]), float(np.sort(f_disp)[k - 1])
 
 
 def c1_null_statistics(
