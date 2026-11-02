@@ -107,6 +107,8 @@ STEPS: tuple[Step, ...] = (
          needs=(_raw("us_c8_3_validation_raw"),)),
     Step("elo", "us_c8_4_comparisons", outputs=(_r("us_c8_4_comparisons"),), slow=True,
          needs=(_raw("us_c8_3_validation_raw"),)),
+    Step("elo", "us_c10_scheme_validation",
+         outputs=(_r("us_c10_scheme_thresholds"), _r("us_c10_scheme_validation_summary")), slow=True),
     Step("elo", "us_c8_5_test_run", outputs=(_r("us_c8_5_test_run"),), test_set=True),
     Step("elo", "kellybench_2023_24", outputs=(_r("kellybench_2023_24"),), test_set=True),
     Step("dixon_coles", "us_c9_1_dixon_coles", outputs=(_r("us_c9_1_dixon_coles"),)),

@@ -29,7 +29,7 @@ from shk.kelly.agents import (
     MinimumStakeAgent,
 )
 from shk.kelly.environment import FALLBACK_POLICIES
-from shk.model.agent_c import C1_N_BOOT, C1Agent, GradedAgent, Module2Supervisor, SupervisorHistory
+from shk.model.agent_c import C1_N_BOOT, C1Agent, GradedAgent, Module2Supervisor, SchemeAgent, SupervisorHistory
 from shk.model.frozen_params import FrozenParams
 from shk.model.module3 import CHOSEN_CANDIDATE, INACTIVE_LAMBDA
 from shk.model.training_agents import SeasonInput
@@ -122,8 +122,8 @@ def build_frozen_agents(params: FrozenParams, min_stake: float, supervisors: Map
 
 
 def share_lambda_zero(agent: Agent) -> float:
-    """Quota di date con λ = 0 per C1, C2_global, C2 e D; NaN per gli altri agenti."""
-    if isinstance(agent, C1Agent):
+    """Quota di date con λ = 0 per C1, C2_global, C2, C3 e D; NaN per gli altri agenti."""
+    if isinstance(agent, (C1Agent, SchemeAgent)):
         values = list(agent.lambda_by_date.values())
         return float(np.mean(np.array(values) == 0.0)) if values else math.nan
     if isinstance(agent, GradedAgent):
@@ -136,8 +136,8 @@ def share_lambda_zero(agent: Agent) -> float:
 
 
 def n_alarms(agent: Agent) -> float:
-    """Allarmi: accensioni per C1, allarmi del detector per D; NaN per gli altri agenti."""
-    if isinstance(agent, C1Agent):
+    """Allarmi: accensioni per C1 e C3, allarmi del detector per D; NaN per gli altri agenti."""
+    if isinstance(agent, (C1Agent, SchemeAgent)):
         return float(agent.n_onsets)
     if isinstance(agent, RecordingDAgent):
         return float(agent.n_alarms)
