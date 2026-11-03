@@ -34,6 +34,10 @@ ripiego, che restano quelli di Agent.decide):
 - C2 (GradedAgent, abstain=True): come C2_global, con frazione 0 sulle partite fuori
   supporto.
 Frazione sull'esito selezionato: kelly_staking(p̂, o − 1, λ), elemento per elemento.
+Con una regola del lavoratore (shk.kelly.outcome_rules.with_outcome_rule) l'esito è quello
+della regola; C2 usa allora, per il Modulo 3, l'EV̂ dell'esito candidato della regola sulla
+finestra B (Module2Supervisor.window_candidate_ev) e si astiene sulle partite selezionate
+dalla regola. Con R1, il default, tutto coincide con i bracci di sopra.
 
 Soglia di C1 (calibrate_c1_threshold): moving block bootstrap della serie di training del
 fit, con le righe (covariate, δ) ricampionate insieme; dei ricampionamenti di lunghezza n si
@@ -48,7 +52,9 @@ con l'ANOVA i residui δ e dà l'allarme; il Modulo 3 usa Oaxaca-Blinder per dec
   F dell'ANOVA a una via sulla media, contata solo se la media di B è minore di quella di A
   (peggioramento), oppure F di Brown-Forsythe (ANOVA sulle deviazioni assolute dalla mediana,
   eteroschedasticità), contata solo se la dispersione di B è maggiore di quella di A.
-  Allarme se una delle due supera la sua soglia; con meno di 2W partite non c'è allarme.
+  Allarme se una delle due supera la sua soglia (C3, C3_stop), oppure, alla lettera della mail
+  («la media degli errori cresce e la varianza esplode»), se le superano entrambe (C3_and);
+  con meno di 2W partite non c'è allarme.
 - Diagnosi con allarme: errore strutturale se il Modulo 2 è attivo e T = −S supera la soglia di
   C1 alla stessa W (componente strutturale significativamente negativa); altrimenti errore di
   composizione (dati), anche con Modulo 2 a rango non pieno.
@@ -57,11 +63,14 @@ con l'ANOVA i residui δ e dà l'allarme; il Modulo 3 usa Oaxaca-Blinder per dec
   e nella stagione il Modulo 1 non si ri-parametrizza).
 Soglie dell'allarme (calibrate_scheme_thresholds): come la soglia di C1, moving block bootstrap
 della serie di δ del fit, prime 2W posizioni come finestre A e B, B = 999; ogni F con segno ha
-livello α/2 (Bonferroni), così l'allarme ha livello α = 0.05 al più.
+livello α/2 (Bonferroni), così l'allarme ha livello α = 0.05 al più. Per C3_and
+(calibrate_scheme_and_thresholds), sugli stessi ricampionamenti: le due soglie sono statistiche
+d'ordine allo stesso indice k, il più basso per cui la quota di ricampionamenti con entrambe le
+F oltre soglia è ancora <= α.
 """
 
 import math
-from collections.abc import Sequence
+from collections.abc import Callable, Sequence
 from typing import Final, NamedTuple
 
 import numpy as np
@@ -85,6 +94,9 @@ C1_N_BOOT: Final[int] = 999
 SCHEME_STOP_CLEAR: Final[str] = "until_clear"
 SCHEME_STOP_SEASON: Final[str] = "until_season_end"
 SCHEME_STOPS: Final[tuple[str, ...]] = (SCHEME_STOP_CLEAR, SCHEME_STOP_SEASON)
+SCHEME_ALARM_OR: Final[str] = "or"
+SCHEME_ALARM_AND: Final[str] = "and"
+SCHEME_ALARMS: Final[tuple[str, ...]] = (SCHEME_ALARM_OR, SCHEME_ALARM_AND)
 DIAGNOSIS_NONE: Final[str] = "none"
 DIAGNOSIS_COMPOSITIONAL: Final[str] = "compositional"
 DIAGNOSIS_STRUCTURAL: Final[str] = "structural"
@@ -189,6 +201,7 @@ class Module2Supervisor:
         self._q = np.full((n, 3), np.nan)
         self._outcome = np.full(n, -1, dtype=np.int64)
         self._ev_candidate = np.full(n, np.nan)
+        self._odds = np.full((n, 3), np.nan)
         self._observed_dates: set[np.datetime64] = set()
         self._cache: dict[np.datetime64, SupervisorState] = {}
         if n_hist:
@@ -208,6 +221,7 @@ class Module2Supervisor:
         self._q[rows] = q
         self._outcome[rows] = realized
         self._ev_candidate[rows] = estimated_expected_values(probs, odds).max(axis=1)
+        self._odds[rows] = odds
         self._observed[rows] = True
 
     def observe(self, results: DateResults) -> None:
@@ -236,6 +250,18 @@ class Module2Supervisor:
         if eligible.shape[0] < 2 * self._window:
             return None
         return self._delta[eligible[-2 * self._window:-self._window]], self._delta[eligible[-self._window:]]
+
+    def window_candidate_ev(self, decision_date: np.datetime64, rule: Callable[[np.ndarray, np.ndarray], np.ndarray]) -> np.ndarray | None:
+        """EV̂ dell'esito candidato della regola (shk.kelly.outcome_rules) sulla finestra B; None con meno di 2W partite."""
+        cut = np.datetime64(self.cutoff(np.datetime64(decision_date, "ns")), "ns")
+        observed = np.flatnonzero(self._observed)
+        eligible = observed[self._dates[observed] < cut]
+        if eligible.shape[0] < 2 * self._window:
+            return None
+        rows = eligible[-self._window:]
+        probs, odds = self._p_hat[rows], self._odds[rows]
+        ev = estimated_expected_values(probs, odds)
+        return ev[np.arange(rows.shape[0]), rule(probs, odds)]
 
     def _window_data(self, rows: np.ndarray) -> WindowData:
         return WindowData(self._p_hat[rows], self._q[rows], self._outcome[rows], self._ev_candidate[rows])
@@ -275,10 +301,10 @@ class Module2Supervisor:
         return state
 
 
-def _selected_rows(view: DateView) -> np.ndarray:
-    """Partite selezionate da Agent.decide (EV stimato massimo > 0), nell'ordine della data."""
+def _selected_rows(view: DateView, candidates: np.ndarray) -> np.ndarray:
+    """Partite selezionate da Agent.decide (EV stimato dell'esito candidato > 0), nell'ordine della data."""
     ev = estimated_expected_values(view.probs, view.odds)
-    return np.flatnonzero(ev.max(axis=1) > 0.0)
+    return np.flatnonzero(ev[np.arange(ev.shape[0]), candidates] > 0.0)
 
 
 def _kelly_fractions(p_hat: np.ndarray, b: np.ndarray, lam: np.ndarray) -> np.ndarray:
@@ -404,19 +430,23 @@ class GradedAgent(Agent):
         out = state.output
         active = out.state == STATE_ACTIVE
         structural = float(out.result.structural) if active else 0.0
+        window_b = state.window_b
+        rule = getattr(type(self), "outcome_rule", None)
+        if rule is not None and window_b is not None:
+            window_b = window_b._replace(ev_candidate=self._supervisor.window_candidate_ev(day, rule))
         odds_bet = np.asarray(b, dtype=np.float64) + 1.0
-        lam = module3_lambda(active, state.window_a, state.window_b, structural, odds_bet,
+        lam = module3_lambda(active, state.window_a, window_b, structural, odds_bet,
                              np.asarray(p_hat, dtype=np.float64) * odds_bet - 1.0)
+        candidates = self.candidate_outcomes(view)
         if day not in self._lambda_zero_by_date:
             ev = estimated_expected_values(view.probs, view.odds)
-            best = ev.argmax(axis=1)
             rows = np.arange(ev.shape[0])
-            lam_all = module3_lambda(active, state.window_a, state.window_b, structural,
-                                     np.asarray(view.odds)[rows, best], ev[rows, best])
+            lam_all = module3_lambda(active, state.window_a, window_b, structural,
+                                     np.asarray(view.odds)[rows, candidates], ev[rows, candidates])
             self._lambda_zero_by_date[day] = bool(np.all(lam_all == 0.0))
         fractions = _kelly_fractions(p_hat, b, lam)
         if self._abstain and state.out_of_support is not None:
-            outside = state.out_of_support[_selected_rows(view)]
+            outside = state.out_of_support[_selected_rows(view, candidates)]
             self._n_abstained += int(outside.sum())
             fractions[outside] = 0.0
         return fractions
@@ -446,11 +476,13 @@ class SchemeAgent(Agent):
         fine stagione: nella stagione il Modulo 1 non si ri-parametrizza).
     base_lambda : float, default 0.25
         λ senza allarme.
+    alarm : str, default SCHEME_ALARM_OR
+        SCHEME_ALARM_OR (una delle due F oltre soglia) o SCHEME_ALARM_AND (entrambe).
     """
 
     def __init__(self, name: str, supervisor: Module2Supervisor, kappa: float, mean_threshold: float,
                  dispersion_threshold: float, structural_threshold: float, stop: str,
-                 base_lambda: float = BASE_LAMBDA) -> None:
+                 base_lambda: float = BASE_LAMBDA, alarm: str = SCHEME_ALARM_OR) -> None:
         super().__init__(name)
         if not isinstance(supervisor, Module2Supervisor):
             raise TypeError("supervisor must be a Module2Supervisor")
@@ -463,6 +495,9 @@ class SchemeAgent(Agent):
                 raise ValueError(f"{label} must be a finite float, got {value!r}")
         if stop not in SCHEME_STOPS:
             raise ValueError(f"stop must be one of {SCHEME_STOPS}, got {stop!r}")
+        if alarm not in SCHEME_ALARMS:
+            raise ValueError(f"alarm must be one of {SCHEME_ALARMS}, got {alarm!r}")
+        self._alarm = alarm
         self._supervisor = supervisor
         self._kappa = float(kappa)
         self._mean_threshold = float(mean_threshold)
@@ -496,7 +531,8 @@ class SchemeAgent(Agent):
         if windows is None:
             return DIAGNOSIS_NONE
         f_mean, f_dispersion = scheme_statistics(windows[0], windows[1])
-        if not (f_mean > self._mean_threshold or f_dispersion > self._dispersion_threshold):
+        exceed = (f_mean > self._mean_threshold, f_dispersion > self._dispersion_threshold)
+        if not (all(exceed) if self._alarm == SCHEME_ALARM_AND else any(exceed)):
             return DIAGNOSIS_NONE
         out = self._supervisor.state_at(day).output
         if out.state == STATE_ACTIVE and -out.result.structural > self._structural_threshold:
@@ -579,6 +615,31 @@ def calibrate_scheme_thresholds(
     f_mean, f_disp = scheme_statistics(y[idx[:, :window]], y[idx[:, window:]])
     k = compute_order_statistic_index(n_boot, alpha / 2.0)
     return float(np.sort(f_mean)[k - 1]), float(np.sort(f_disp)[k - 1])
+
+
+def calibrate_scheme_and_thresholds(
+    delta: np.ndarray,
+    window: int,
+    block_length: int,
+    rng: np.random.Generator,
+    n_boot: int = C1_N_BOOT,
+    alpha: float = ALPHA,
+) -> tuple[float, float]:
+    """Soglie (media, dispersione) dell'allarme congiunto di C3_and: quota congiunta <= α sotto H₀ (vedi modulo)."""
+    y = np.asarray(delta, dtype=np.float64)
+    n = y.shape[0]
+    if 2 * window > n:
+        raise ValueError(f"need delta with length >= 2W, got {n}, W = {window}")
+    idx = moving_block_indices(n, block_length, n_boot, rng)[:, :2 * window]
+    f_mean, f_disp = scheme_statistics(y[idx[:, :window]], y[idx[:, window:]])
+    sorted_mean, sorted_disp = np.sort(f_mean), np.sort(f_disp)
+    best = (float(sorted_mean[-1]), float(sorted_disp[-1]))
+    for k in range(n_boot - 1, 0, -1):
+        mean_thr, disp_thr = float(sorted_mean[k - 1]), float(sorted_disp[k - 1])
+        if np.mean((f_mean > mean_thr) & (f_disp > disp_thr)) > alpha:
+            break
+        best = (mean_thr, disp_thr)
+    return best
 
 
 def c1_null_statistics(
