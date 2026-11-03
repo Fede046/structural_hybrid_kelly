@@ -134,3 +134,39 @@ def test_delta_windows_use_only_earlier_dates():
     np.testing.assert_array_equal(deltas[0], full[1:4])
     np.testing.assert_array_equal(deltas[1], full[4:7])
     assert sup.delta_windows(days[5]) is None
+
+
+def test_and_thresholds_keep_joint_rate_at_alpha():
+    """Allarme "e": quota congiunta <= α alle soglie, > α all'indice d'ordine successivo."""
+    from shk.model.agent_c import calibrate_scheme_and_thresholds
+
+    delta = np.random.default_rng(5).normal(0.0, 0.3, 200)
+    w, length = 30, 6
+    mean_thr, disp_thr = calibrate_scheme_and_thresholds(delta, w, length, np.random.default_rng(6))
+    idx = moving_block_indices(200, length, 999, np.random.default_rng(6))[:, :2 * w]
+    fm, fd = scheme_statistics(delta[idx[:, :w]], delta[idx[:, w:]])
+    assert np.mean((fm > mean_thr) & (fd > disp_thr)) <= 0.05
+    k = int(np.flatnonzero(np.sort(fm) == mean_thr)[0])
+    assert np.sort(fd)[k] == disp_thr
+    assert np.mean((fm > np.sort(fm)[k - 1]) & (fd > np.sort(fd)[k - 1])) > 0.05
+
+
+def test_and_alarm_needs_both_statistics():
+    """C3_and: allarme solo se peggiorano sia la media sia la dispersione."""
+    from shk.model.agent_c import SCHEME_ALARM_AND
+
+    days = _days(3)
+    a = np.array([0.0, 0.1, -0.1, 0.05])
+    mean_only = (a, a - 1.0)              # media peggiore, stessa dispersione
+    both = (a, np.array([-3.0, 1.0, -2.5, 0.5]))  # media peggiore e dispersione maggiore
+    windows = [mean_only, both, QUIET]
+    probs = np.array([[0.6, 0.25, 0.15]])
+    odds = np.array([[2.0, 3.6, 7.0]])
+    agent = SchemeAgent("C3_and", _ScriptedSupervisor(days, windows, [None, None, None]), 0.5, 0.5, 0.5, 0.1,
+                        SCHEME_STOP_CLEAR, alarm=SCHEME_ALARM_AND)
+    for d in days:
+        agent.decide(DateView(d, probs, odds))
+    assert [agent.diagnosis_by_date[d] for d in days] == [DIAGNOSIS_NONE, DIAGNOSIS_COMPOSITIONAL, DIAGNOSIS_NONE]
+    with pytest.raises(ValueError):
+        SchemeAgent("x", _ScriptedSupervisor(days, windows, [None] * 3), 0.5, 0.5, 0.5, 0.1, SCHEME_STOP_CLEAR,
+                    alarm="xor")

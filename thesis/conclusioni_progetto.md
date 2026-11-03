@@ -8,8 +8,10 @@ Formule, parametri e seed sono descritti per esteso in `thesis/metodi_implementa
 
 La proposta di partenza è un agente gerarchico. Su di essa si costruisce il resto:
 - **Modulo 1, il lavoratore**: prevede le probabilità 1X2 di ogni partita.
-- **Modulo 2, il supervisore**: osserva come cambia l'errore del Modulo 1 nel tempo. Con la decomposizione di Oaxaca-Blinder separa la parte del cambiamento dovuta a una diversa composizione delle partite (compositiva) da quella dovuta a un cambiamento della relazione fra covariate ed errore (strutturale).
-- **Modulo 3, il ricalibratore**: traduce la diagnosi del supervisore nella frazione di Kelly da puntare.
+- **Modulo 2, il supervisore**: osserva come cambia l'errore del Modulo 1 nel tempo e, con l'ANOVA sui residui, dà l'allarme.
+- **Modulo 3, il ricalibratore**: con la decomposizione di Oaxaca-Blinder separa la parte del cambiamento dovuta a una diversa composizione delle partite (compositiva, errore nei dati) da quella dovuta a un cambiamento della relazione fra covariate ed errore (strutturale), e ne ricava la frazione di Kelly da puntare.
+
+I nomi seguono lo schema del relatore. Nel codice, e nelle sezioni 3.4 e 3.5, «Modulo 2» indica la decomposizione di Oaxaca-Blinder e «Modulo 3» la formula λ*. Lo schema completo, con l'allarme ANOVA, è l'agente C3 (§4.4 e `thesis/agenti_e_architettura.md` §1 e §3.7).
 
 L'agente è confrontato, sulle stesse partite e con le stesse quote, con le regole di puntata classiche e con un supervisore basato su drift detector standard. Così si misura che cosa aggiunge ciascun pezzo: è un'ablazione dell'architettura a più componenti. L'obiettivo misurato è il profilo di rischio e di crescita del bankroll, non soltanto il rendimento.
 
@@ -50,7 +52,7 @@ L'agente è confrontato, sulle stesse partite e con le stesse quote, con le rego
 - **Lo stimatore.** ĝ = media su tutte le partite di ln p̂(esito) − ln q(esito): positivo se il modello assegna all'esito realizzato più probabilità del mercato.
 - **Lo stesso test con qualunque modello.** Se ĝ è negativo, nessuna regola di puntata può creare un edge: si può solo perdere meno.
 
-### 3.4 Modulo 2: il supervisore
+### 3.4 Oaxaca-Blinder sui residui («Modulo 2» nel codice)
 - **Variabile osservata.** δ = ln p̂(esito) − ln q(esito) per partita: la stessa quantità di ĝ, partita per partita.
 - **Covariate**, tutte note prima della partita:
   - log-rapporto delle quote casa/trasferta;
@@ -68,7 +70,7 @@ L'agente è confrontato, sulle stesse partite e con le stesse quote, con le rego
 - **Allarme strutturale.** Scatta quando il degrado a composizione fissa, T = −S, supera una soglia calibrata col block bootstrap sotto l'ipotesi nulla.
 - **Supporto comune.** Una partita è "fuori supporto" se nella finestra di riferimento ci sono meno di 5 partite con caratteristiche simili; è il caso tipico delle neopromosse.
 
-### 3.5 Modulo 3: dal supervisore alla frazione
+### 3.5 Dalla diagnosi alla frazione («Modulo 3» nel codice)
 - **Formula.** La frazione ottima con stima rumorosa è λ* = E[c]/E[c²], con c = f̂/f* il rapporto fra frazione stimata e frazione vera.
   - Rispetto alla forma 1/(1 + Var(c)), questa tiene conto che la frazione stimata è troncata a zero: non si punta quando l'EV stimato è negativo.
 - **La componente strutturale aumenta la varianza.** La varianza dell'errore di stima si ricava dalla dispersione di δ; una componente strutturale negativa la aumenta, e λ* si riduce.
@@ -146,7 +148,7 @@ I detector dicono quando qualcosa cambia, non quanto né di che tipo.
 
 Non c'è evidenza di una varianza che cresce durante la stagione oltre quella già presente nel training. Per questo l'allarme dell'agente si basa sulla componente strutturale di Oaxaca-Blinder e non su un test di eteroschedasticità.
 
-Lo schema del relatore mette invece prima l'allarme ANOVA e poi Oaxaca. È implementato a parte come agente C3 (`thesis/agenti_e_architettura.md` §3.7, `results/us_c10_scheme_validation_summary.csv`). L'allarme scatta circa 1,6 volte per stagione. C3 migliora di poco B_0.25 e non lo peggiora mai in mediana, ma resta dietro a C1, C2 e D_PH: il modello non batte il mercato, e quegli agenti puntano meno.
+Lo schema del relatore mette invece prima l'allarme ANOVA e poi Oaxaca. È implementato a parte come agente C3 (`thesis/agenti_e_architettura.md` §3.7, `results/us_c10_scheme_validation_summary.csv`). L'allarme scatta circa 1,6 volte per stagione. La variante C3_and, che chiede insieme media peggiore e varianza maggiore, dà quasi lo stesso risultato. C3 migliora di poco B_0.25 e non lo peggiora mai in mediana, ma resta dietro a C1, C2 e D_PH: il modello non batte il mercato, e quegli agenti puntano meno.
 
 ### 4.5 Il floor rende possibile la rovina
 - **Senza floor.** La rovina è esattamente zero, sul calendario sintetico e su quello reale.
@@ -188,6 +190,11 @@ Differenze di log-ricchezza finale, configurazione £0.01:
 - **Rilevare e graduare:** quasi tutto il beneficio viene dal rilevare il degrado; il graduare aggiunge poco. A £0.01 è significativo solo sul test; in validazione lo è con il floor da £1 (+0.105, IC [0.043; 0.168]).
 - **Contro la baseline con ADWIN:** C2 vince, ma ADWIN non dà allarmi e quella baseline coincide col quarto di Kelly.
 - **Contro Page-Hinkley e la puntata minima:** C2 perde sia contro la baseline con Page-Hinkley sia contro E. Con un edge negativo, la politica migliore è puntare il meno possibile.
+
+**Il lavoratore sceglie l'esito.** Come chiesto dal relatore, il lavoratore può anche scegliere l'esito con tre regole: EV massimo (R1, quella usata finora), maggior vantaggio sul mercato (R2), esito più probabile (R3). Ogni regola è provata da sola, con il freno fisso λ = 0,25 e con i supervisori C1, C2 e C3 (`thesis/agenti_e_architettura.md` §3.8, `results/us_c11_worker_rules_summary.csv`).
+- R3 perde meno di R1 in 13 stagioni su 19, perché punta su circa metà delle partite; R2 è come R1, un po' peggio.
+- Per ogni regola C1 e C2 battono il freno fisso in 15–18 stagioni su 19: il valore del supervisore non dipende dalla regola.
+- Nessuna regola dà un guadagno: la migliore combinazione, R3 con C2, ha una somma delle mediane di −3,41.
 
 ### 4.8 Robustezza
 - **Modulo 1.** Il ranking degli agenti è stabile fra Elo e Dixon-Coles: τ di Kendall 0.857 in validazione e 0.762 sul test. I confronti danno la stessa conclusione in 138 casi su 160 in validazione e 140 su 160 sul test.
@@ -240,7 +247,7 @@ Differenze di log-ricchezza finale, configurazione £0.01:
 ## 6. Limiti e parti non implementate
 
 **Scelte semplificative**
-- Una sola puntata per partita, sull'esito a EV massimo; nessun Kelly multi-esito né ottimizzazione congiunta delle puntate della stessa data.
+- Una sola puntata per partita, sull'esito a EV massimo (le regole alternative R2 e R3 sono in §4.7); nessun Kelly multi-esito né ottimizzazione congiunta delle puntate della stessa data.
 - Scenari: al posto dei cinque di KellyBench, tre stagioni di training, 19 di validazione e il 2023-24. La variante "literature" del 2023-24 non è ricostruibile dai dati pubblici.
 - Il valore del floor (£0.01 o £1) non è verificato sul codice di KellyBench: per questo i risultati sono riportati con entrambi.
 

@@ -9,6 +9,7 @@ Riporta formule, parametri, seed, filtri ed esclusioni; non riporta risultati, c
 - Una riga che inizia con "Formula:" riporta una formula come è implementata, con il riferimento alla funzione o alla classe che la calcola.
 - Un parametro ha la forma `` `modulo:NOME = valore` `` (costante del codice), `` `modulo:funzione(argomento) = valore` `` (valore di default di un argomento) oppure `` `config/<file>.toml:sezione.chiave = valore` `` (file congelato o di split). Il valore è scritto come letterale Python.
 - `tests/test_metodi_implementati.py` risolve ogni riferimento con un import e confronta ogni parametro col codice o col file.
+- «Modulo 2» e «Modulo 3» seguono i nomi del codice: `shk.model.module2` (Oaxaca-Blinder) e `shk.model.module3` (λ*). Nello schema del relatore Oaxaca-Blinder appartiene al Modulo 3 e il Modulo 2 è l'allarme ANOVA (agente C3); la corrispondenza è in `thesis/agenti_e_architettura.md` §1.
 - Le decisioni di progetto si citano con la data in cui sono state prese. "Scelta delegata" indica una scelta fatta su delega del programmatore, con un criterio fissato prima dei risultati.
 - Codifica degli esiti in tutto il codice: 0 = casa (H), 1 = pareggio (D), 2 = trasferta (A).
 - Le differenze con le note di tesi sono quelle registrate nel backlog o nei moduli e ricontrollate nel testo della nota; una sezione senza il paragrafo "Differenze con le note" non ne ha di registrate.

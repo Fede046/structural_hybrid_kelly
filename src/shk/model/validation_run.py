@@ -349,12 +349,12 @@ def with_history_records(frame: pd.DataFrame, result: ValidationResult,
     return records
 
 
-def save_raw(path: Path | str, result: ValidationResult) -> None:
-    """Uscite per seed e realizzazione osservata in un file npz compresso."""
+def save_raw(path: Path | str, result: ValidationResult, agents: tuple[str, ...] = AGENT_ORDER) -> None:
+    """Uscite per seed e realizzazione osservata in un file npz compresso; agents nell'ordine dell'asse agente."""
     np.savez_compressed(
         path, seeds=result.seeds, observed=result.observed, seasons=np.array(result.seasons),
         fits=np.array(result.fits), n_dates=result.n_dates, l_pw=result.l_pw,
-        configs=np.array(CONFIG_NAMES), agents=np.array(AGENT_ORDER), metrics=np.array(METRICS),
+        configs=np.array(CONFIG_NAMES), agents=np.array(agents), metrics=np.array(METRICS),
     )
 
 
