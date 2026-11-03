@@ -6,8 +6,10 @@ Premier League (divisione E0, stagioni dal 1993-94 al 2023-24) con quote B365 pr
 
 L'impianto ha tre moduli:
 - **Modulo 1**: il modello previsivo walk-forward. È un Elo-Davidson; Dixon-Coles è il secondo modello di confronto.
-- **Modulo 2**: la scomposizione di Oaxaca-Blinder dei residui δ = ln p̂ − ln q, per riconoscere il degrado strutturale del modello.
-- **Modulo 3**: la frazione di Kelly λ che ne discende.
+- **Modulo 2, il supervisore**: monitora i residui δ = ln p̂ − ln q con l'ANOVA e dà l'allarme.
+- **Modulo 3, il ricalibratore**: con la scomposizione di Oaxaca-Blinder distingue un errore nei dati da un degrado strutturale e ne ricava la frazione di Kelly λ.
+
+Nel codice i nomi sono storici: `shk.model.module2` contiene Oaxaca-Blinder, `shk.model.module3` la formula di λ. La corrispondenza è in `thesis/agenti_e_architettura.md` §1.
 
 Gli agenti di scommessa (A, B, C0, C1, C2, D, E) si confrontano in backtest appaiati su validazione e test. Ci sono anche drift detection (ADWIN, Page-Hinkley), test di eteroschedasticità e analisi di sensibilità (Dixon-Coles e metodo di de-vigging).
 

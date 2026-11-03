@@ -56,7 +56,7 @@ def run_experiment(module1: str = MODULE1_ELO, n_seeds: int | None = None) -> No
 
     result = evaluate_scheme(frame, params_path, thresholds, n_seeds=n_seeds, workers=WORKERS,
                              seed=s10_seed(module1))
-    save_raw(raw_path, result)
+    save_raw(raw_path, result, SCHEME_ARMS)
     with open(csv_path, mode="w", newline="", encoding="utf-8") as f:
         writer = csv.DictWriter(f, fieldnames=list(SUMMARY_COLUMNS))
         writer.writeheader()
