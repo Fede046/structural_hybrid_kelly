@@ -9,7 +9,7 @@ L'impianto ha tre moduli:
 - **Modulo 2, il supervisore**: monitora i residui δ = ln p̂ − ln q con l'ANOVA e dà l'allarme.
 - **Modulo 3, il ricalibratore**: con la scomposizione di Oaxaca-Blinder distingue un errore nei dati da un degrado strutturale e ne ricava la frazione di Kelly λ.
 
-Nel codice i nomi sono storici: `shk.model.module2` contiene Oaxaca-Blinder, `shk.model.module3` la formula di λ. La corrispondenza è in `thesis/agenti_e_architettura.md` §1.
+Nel codice i nomi sono storici: `shk.model.module2` contiene Oaxaca-Blinder, `shk.model.module3` la formula di λ. La corrispondenza è in `thesis/agenti_e_architettura.md` §1; il confronto punto per punto con lo schema del relatore è in `thesis/schema_relatore.md`.
 
 Gli agenti di scommessa (A, B, C0, C1, C2, D, E) si confrontano in backtest appaiati su validazione e test. Ci sono anche drift detection (ADWIN, Page-Hinkley), test di eteroschedasticità e analisi di sensibilità (Dixon-Coles e metodo di de-vigging).
 
@@ -131,6 +131,8 @@ Per ogni script di `scripts/`: il file che produce in `results/` (con la figura 
 | `us_c8_3_validation.py` | `us_c8_3_validation_summary.csv` | Esecuzione con i parametri congelati sulle 19 stagioni di validazione |
 | `us_c8_3_validation_with_history.py` | `us_c8_3_validation_with_history.csv` | Sensibilità con la catena del Modulo 2 che attraversa le stagioni |
 | `us_c8_4_comparisons.py` | `us_c8_4_comparisons.csv` | Confronti fra agenti: intervalli, effect size, falsi allarmi |
+| `us_c10_scheme_validation.py` | `us_c10_scheme_thresholds.csv`, `us_c10_scheme_validation_summary.csv` | Lo schema del relatore (C3, C3_stop, C3_and) sulle 19 stagioni di validazione |
+| `us_c11_worker_rules.py` | `us_c11_worker_rules_summary.csv` | Il lavoratore sceglie l'esito (R1, R2, R3), da solo, con freno fisso e con i supervisori |
 | `us_c8_5_test_run.py` | `us_c8_5_test_run.csv` | Esecuzione unica sul test set 2023-24 |
 | `kellybench_2023_24.py` | `kellybench_2023_24.csv` | Stagione 2023-24 giocata come in KellyBench, partendo da £100 000 |
 | `us_c9_1_dixon_coles.py` | `us_c9_1_dixon_coles.csv` | Dixon-Coles walk-forward: calibrazione e confronto con l'Elo |

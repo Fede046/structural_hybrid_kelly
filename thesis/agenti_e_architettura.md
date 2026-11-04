@@ -31,7 +31,7 @@ Lo schema completo, ANOVA → Oaxaca → puntata, è implementato da C3 (§3.7).
 - C1 usa la parte strutturale di Oaxaca direttamente come allarme, quindi fonde i Moduli 2 e 3;
 - C2 non ha allarme: il Modulo 3 gradua λ in modo continuo.
 
-L'ANOVA è stata tolta da C1 e C2 perché, con soglie corrette per l'autocorrelazione, l'eteroschedasticità non si osserva (`conclusioni_progetto.md` §4.4).
+L'ANOVA è stata tolta da C1 e C2 perché, con soglie corrette per l'autocorrelazione, l'eteroschedasticità non si osserva (`conclusioni_progetto.md` §4.4). Il confronto punto per punto fra lo schema del relatore e il progetto è in `thesis/schema_relatore.md`.
 - **Gli agenti** sono le regole di puntata. Tutti usano lo stesso p̂ e le stesse quote: cambia solo come decidono quanto puntare. Il confronto isola quindi il valore della regola di puntata.
 
 ## 2. Cosa fanno tutti gli agenti

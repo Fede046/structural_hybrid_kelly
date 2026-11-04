@@ -11,7 +11,7 @@ La proposta di partenza è un agente gerarchico. Su di essa si costruisce il res
 - **Modulo 2, il supervisore**: osserva come cambia l'errore del Modulo 1 nel tempo e, con l'ANOVA sui residui, dà l'allarme.
 - **Modulo 3, il ricalibratore**: con la decomposizione di Oaxaca-Blinder separa la parte del cambiamento dovuta a una diversa composizione delle partite (compositiva, errore nei dati) da quella dovuta a un cambiamento della relazione fra covariate ed errore (strutturale), e ne ricava la frazione di Kelly da puntare.
 
-I nomi seguono lo schema del relatore. Nel codice, e nelle sezioni 3.4 e 3.5, «Modulo 2» indica la decomposizione di Oaxaca-Blinder e «Modulo 3» la formula λ*. Lo schema completo, con l'allarme ANOVA, è l'agente C3 (§4.4 e `thesis/agenti_e_architettura.md` §1 e §3.7).
+I nomi seguono lo schema del relatore. Nel codice, e nelle sezioni 3.4 e 3.5, «Modulo 2» indica la decomposizione di Oaxaca-Blinder e «Modulo 3» la formula λ*. Lo schema completo, con l'allarme ANOVA, è l'agente C3 (§4.4 e `thesis/agenti_e_architettura.md` §1 e §3.7). Il confronto punto per punto con lo schema è in `thesis/schema_relatore.md`.
 
 L'agente è confrontato, sulle stesse partite e con le stesse quote, con le regole di puntata classiche e con un supervisore basato su drift detector standard. Così si misura che cosa aggiunge ciascun pezzo: è un'ablazione dell'architettura a più componenti. L'obiettivo misurato è il profilo di rischio e di crescita del bankroll, non soltanto il rendimento.
 
