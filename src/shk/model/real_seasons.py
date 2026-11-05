@@ -42,6 +42,8 @@ REAL_SOURCES: Final[tuple[RealSource, ...]] = (
                {a: "R3_brake" for a in ("R3_brake", "R3_C3_ref", "R3_C3_ref_stop")}),
     RealSource("elo_refit", "us_c18_elo_refit_summary",
                {a: "B_0.25" for a in ("B_0.25", "C3_ref", "C3_ref_stop")}),
+    RealSource("extra_fit", "us_c20_training_fits_summary",
+               {a: "B_0.25" for a in ("B_0.25", "C3_ref", "C3_ref_stop")}),
 )
 
 REAL_COLUMNS: Final[tuple[str, ...]] = (
