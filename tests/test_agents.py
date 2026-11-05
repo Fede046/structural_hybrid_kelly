@@ -1,4 +1,4 @@
-"""Test per il modulo shk.kelly.agents: viste di data, decisioni e agenti A, B, E."""
+"""Test per il modulo shk.kelly.agents: viste di data, decisioni e agenti A e B_0.25."""
 
 import ast
 import dataclasses
@@ -10,27 +10,32 @@ import pytest
 
 from shk.kelly.agents import (
     AGENT_A_LAMBDA,
-    AGENT_B_LAMBDAS,
+    AGENT_B_LAMBDA,
     NO_BET,
     Agent,
     AgentDecision,
     DateView,
     FractionalKellyAgent,
-    MinimumStakeAgent,
     estimated_expected_values,
 )
-from shk.kelly.staking import OUTCOME_LABELS, select_baseline_d_bets
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
 KELLY_DIR = REPO_ROOT / "src" / "shk" / "kelly"
 AGENTS_PATH = KELLY_DIR / "agents.py"
 
-# Seed e numero di viste casuali per l'equivalenza con la Baseline D e la coerenza fra agenti
+# Seed e numero di viste casuali per la coerenza fra agenti
 SEED_T33 = 20261009
 N_MIXED_VIEWS = 160
 N_NON_POSITIVE_VIEWS = 80
 
 DATE = np.datetime64("2015-09-12")
+
+
+class _ZeroStakeAgent(Agent):
+    """Agente di prova senza puntate volontarie: frazioni tutte nulle, solo il ripiego dell'ambiente."""
+
+    def stake_fractions(self, view: DateView, p_hat: np.ndarray, b: np.ndarray) -> np.ndarray:
+        return np.zeros(p_hat.shape[0], dtype=np.float64)
 
 
 # ---------------------------------------------------------------------------
@@ -350,13 +355,13 @@ def test_agent_name_validations() -> None:
 
     for bad_name in (123, None, b"E"):
         with pytest.raises(TypeError, match="name must be a str"):
-            MinimumStakeAgent(bad_name)  # type: ignore[arg-type]
+            _ZeroStakeAgent(bad_name)  # type: ignore[arg-type]
     with pytest.raises(ValueError, match="non-empty"):
-        MinimumStakeAgent("")
+        _ZeroStakeAgent("")
     with pytest.raises(ValueError, match="non-empty"):
         FractionalKellyAgent("", 0.25)
 
-    agent = MinimumStakeAgent("E")
+    agent = _ZeroStakeAgent("E")
     assert agent.name == "E"
     with pytest.raises(AttributeError):
         agent.name = "F"  # type: ignore[misc]
@@ -364,7 +369,7 @@ def test_agent_name_validations() -> None:
 
 def test_decide_rejects_non_date_view() -> None:
     """Verifica che decide sollevi TypeError se non riceve una DateView."""
-    agent = MinimumStakeAgent("E")
+    agent = _ZeroStakeAgent("E")
     with pytest.raises(TypeError, match="view must be a DateView"):
         agent.decide((DATE, np.array([[0.5, 0.25, 0.25]]), np.array([[2.0, 4.0, 4.0]])))  # type: ignore[arg-type]
 
@@ -583,61 +588,15 @@ def test_subclass_allowed_overrides() -> None:
 
 
 # ---------------------------------------------------------------------------
-# Criterio 5: equivalenza con select_baseline_d_bets
-# ---------------------------------------------------------------------------
-
-
-@pytest.mark.parametrize("lam", [AGENT_A_LAMBDA, *AGENT_B_LAMBDAS])
-def test_equivalence_with_baseline_d(lam: float) -> None:
-    """Verifica esiti e frazioni identici a select_baseline_d_bets con lambda costante.
-
-    Codifica allineata: l'esito stringa di BaselineDBets diventa il suo indice in
-    OUTCOME_LABELS (H = 0, D = 1, A = 2), e NO_BET dove l'EV stimato dell'esito scelto,
-    probs[j, idx] * bets.odds[j] - 1, non è positivo.
-    """
-    views = _random_views()
-    agent = FractionalKellyAgent("kelly", lam)
-    n_views_with_bets = 0
-    n_views_without_bets = 0
-    mismatches: list[int] = []
-
-    for view_index, view in enumerate(views):
-        decision = agent.decide(view)
-        n_matches = view.probs.shape[0]
-        bets = select_baseline_d_bets(
-            np.array(view.probs), np.array(view.odds), np.full(n_matches, lam, dtype=np.float64)
-        )
-        label_index = np.array([OUTCOME_LABELS.index(o) for o in bets.outcomes], dtype=np.int64)
-        chosen_ev = view.probs[np.arange(n_matches), label_index] * bets.odds - 1.0
-        expected_outcomes = np.where(chosen_ev > 0.0, label_index, NO_BET)
-
-        if not (
-            np.array_equal(decision.outcomes, expected_outcomes)
-            and np.array_equal(decision.fractions, bets.fractions)
-        ):
-            mismatches.append(view_index)
-
-        if np.any(decision.outcomes != NO_BET):
-            n_views_with_bets += 1
-        else:
-            n_views_without_bets += 1
-
-    assert len(views) >= 200
-    assert mismatches == [], f"Views differing from select_baseline_d_bets: {mismatches}"
-    assert n_views_with_bets > 0
-    assert n_views_without_bets >= N_NON_POSITIVE_VIEWS
-
-
-# ---------------------------------------------------------------------------
 # Criterio 6: coerenza fra A, B ed E
 # ---------------------------------------------------------------------------
 
 
 def test_agents_consistency_on_random_views() -> None:
-    """Verifica esiti e ripiego identici, frazioni di B = lam * frazioni di A, frazioni di E nulle."""
+    """Verifica esiti e ripiego identici, frazioni di B = lam * frazioni di A, frazioni senza puntate nulle."""
     agent_a = FractionalKellyAgent("A", AGENT_A_LAMBDA)
-    agents_b = [FractionalKellyAgent(f"B_{lam}", lam) for lam in AGENT_B_LAMBDAS]
-    agent_e = MinimumStakeAgent("E")
+    agents_b = [FractionalKellyAgent("B_0.25", AGENT_B_LAMBDA)]
+    agent_e = _ZeroStakeAgent("E")
 
     for view in _random_views():
         decision_a = agent_a.decide(view)
@@ -672,8 +631,8 @@ def test_tie_within_match_selection_order() -> None:
     )
     for agent in (
         FractionalKellyAgent("A", AGENT_A_LAMBDA),
-        FractionalKellyAgent("B", AGENT_B_LAMBDAS[0]),
-        MinimumStakeAgent("E"),
+        FractionalKellyAgent("B", AGENT_B_LAMBDA),
+        _ZeroStakeAgent("E"),
     ):
         decision = agent.decide(view)
         assert np.array_equal(decision.outcomes, np.array([0, 1, 0]))
@@ -717,8 +676,8 @@ def test_date_without_positive_ev() -> None:
     )
     for agent in (
         FractionalKellyAgent("A", AGENT_A_LAMBDA),
-        FractionalKellyAgent("B", AGENT_B_LAMBDAS[1]),
-        MinimumStakeAgent("E"),
+        FractionalKellyAgent("B", 0.10),
+        _ZeroStakeAgent("E"),
     ):
         decision = agent.decide(view)
         assert np.array_equal(decision.outcomes, np.array([NO_BET, NO_BET]))
@@ -736,8 +695,8 @@ def test_decide_does_not_modify_view_and_is_deterministic() -> None:
     views = _random_views()[::20] + [_make_view(POSITIVE_VIEW_PROBS, POSITIVE_VIEW_ODDS)]
     agents = (
         FractionalKellyAgent("A", AGENT_A_LAMBDA),
-        FractionalKellyAgent("B", AGENT_B_LAMBDAS[0]),
-        MinimumStakeAgent("E"),
+        FractionalKellyAgent("B", AGENT_B_LAMBDA),
+        _ZeroStakeAgent("E"),
     )
     for view in views:
         probs_before = np.array(view.probs)

@@ -2,8 +2,7 @@
 
 Parametri solo da config/frozen_params.toml. Scrive:
 - results/raw/us_c8_3_validation_raw.npz, uscite per seed e realizzazione osservata (non versionato);
-- results/us_c8_3_validation_summary.csv, sintesi per agente × configurazione × stagione e
-  partite con Modulo 2 non attivo per stagione e braccio;
+- results/us_c8_3_validation_summary.csv, sintesi per agente (A, B_0.25) × configurazione × stagione;
 - thesis/figures/us_c8_3_validation_summary.png.
 Le stagioni girano su WORKERS processi; i risultati non dipendono dal numero di processi.
 Con --figure-only rigenera solo la figura dal file npz già scritto.
@@ -21,7 +20,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 
 from shk.model.frozen_agents import AGENT_ORDER
-from shk.model.frozen_params import frozen_params_path, load_frozen_params
+from shk.model.frozen_params import frozen_params_path
 from shk.model.module1 import MODULE1_ELO, module1_from_argv, with_module1_suffix
 from shk.model.module1_seeds import s10_seed
 from shk.model.module2_data import build_module2_frame
@@ -31,11 +30,9 @@ from shk.model.validation_run import (
     METRICS,
     SUMMARY_COLUMNS,
     evaluate_validation,
-    inactive_records,
     load_raw,
     save_raw,
     summary_records,
-    validation_inputs,
 )
 
 WORKERS = 5
@@ -59,8 +56,7 @@ def run_experiment(module1: str = MODULE1_ELO) -> None:
     frame = build_module2_frame(load_model_residuals(module1=module1))
     result = evaluate_validation(frame, params_path=params_path, workers=WORKERS, seed=s10_seed(module1))
     save_raw(raw_path, result)
-    params = load_frozen_params(params_path)
-    records = summary_records(result) + inactive_records(params, validation_inputs(frame, list(params.fixed["covariates"])))
+    records = summary_records(result)
     with open(csv_path, mode="w", newline="", encoding="utf-8") as f:
         writer = csv.DictWriter(f, fieldnames=list(SUMMARY_COLUMNS))
         writer.writeheader()
@@ -73,7 +69,7 @@ def make_figure(result, png_path: Path) -> None:
     """Figura a tre pannelli dalle uscite per seed e dalla realizzazione osservata."""
     lw = METRICS.index("final_log_wealth")
     ruined = METRICS.index("ruined")
-    agents = [a for a in AGENT_ORDER if a != "E"]
+    agents = list(AGENT_ORDER)
     fig, (ax_a, ax_b, ax_c) = plt.subplots(1, 3, figsize=(22, 6.5))
     main = CONFIG_NAMES.index("gbp_0.01")
 

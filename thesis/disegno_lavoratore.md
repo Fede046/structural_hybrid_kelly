@@ -1,10 +1,10 @@
 # Disegno: il lavoratore sceglie esito e puntata (opzione A)
 
-Stato (3 novembre 2026): la fase 1 con l'Elo è implementata ed eseguita; i risultati sono in `thesis/agenti_e_architettura.md` §3.8. Il punto di estensione si chiama `candidate_outcomes(view)` (in `src/shk/kelly/agents.py`), le regole sono in `src/shk/kelly/outcome_rules.py` e gli agenti in `src/shk/model/worker_run.py`. Alle quattro versioni di §6 si è aggiunta la quinta, con il supervisore C3. Restano da fare la fase 1 con Dixon-Coles e la fase 2 con l'LLM.
+Stato (5 novembre 2026): la fase 1 con l'Elo è implementata ed eseguita; i risultati sono in `thesis/agenti_e_architettura.md` §4. Il punto di estensione si chiama `candidate_outcomes(view)` (in `src/shk/kelly/agents.py`), le regole sono in `src/shk/kelly/outcome_rules.py` e gli agenti in `src/shk/model/worker_run.py`. Il supervisore è lo schema del relatore (C3); i supervisori C1 e C2 previsti all'inizio in §6 non fanno più parte del progetto (sono sul branch `confronti-controllo`). Restano da fare la fase 1 con Dixon-Coles e la fase 2 con l'LLM.
 
 ## 1. Decisione presa
 
-Il professore ha scelto l'opzione (A): il supervisore (moduli 2 e 3) si dimostra su lavoratori classici (Elo, Dixon-Coles) e su un LLM che sceglie esito e puntata, senza costruire da sé i modelli. Il supervisore interviene sulla puntata. L'agente autonomo come quello di KellyBench, che scrive i propri modelli, è sviluppo futuro e va dichiarato come limite nella tesi.
+Il professore ha scelto l'opzione (A): il supervisore e il ricalibratore (moduli 2 e 3) si dimostrano su lavoratori classici (Elo, Dixon-Coles) e su un LLM che sceglie esito e puntata, senza costruire da sé i modelli. Il supervisore interviene sulla puntata. L'agente autonomo come quello di KellyBench, che scrive i propri modelli, è sviluppo futuro e va dichiarato come limite nella tesi.
 
 ## 2. Che cosa cambia rispetto a oggi
 
@@ -36,20 +36,19 @@ flowchart LR
 
 ## 5. Il supervisore
 
-Il Modulo 2 lavora su δ = ln p̂(esito reale) − ln q(esito reale), che non dipende dalla regola di scelta: le soglie e le finestre congelate sul training con l'Elo restano valide per i lavoratori classici con le stesse p̂. L'unico punto che dipende dalla scelta è il Modulo 3, che usa l'EV della scommessa scelta invece dell'EV massimo.
+Il supervisore lavora su δ = ln p̂(esito reale) − ln q(esito reale), che non dipende dalla regola di scelta: le soglie e le finestre congelate sul training con l'Elo restano valide per i lavoratori classici con le stesse p̂.
 
 Per l'LLM i parametri congelati sono stati scelti con il comportamento dell'Elo e non sono ricalibrati: va dichiarato.
 
 ## 6. Valutazione
 
-Per ogni lavoratore si confrontano quattro versioni, sulle stesse partite e con le stesse quote:
+Per ogni lavoratore si confrontano tre versioni, sulle stesse partite e con le stesse quote:
 
 | Versione | Frazione |
 |---|---|
 | Lavoratore da solo | f = f_w |
 | Freno costante | f = 0,25 · f_w |
-| Supervisore C1 | f = λ_C1 · f_w |
-| Supervisore C2 | f = λ_C2 · f_w |
+| Schema del relatore (C3) | f = λ_C3 · f_w |
 
 Il confronto che conta è tra il freno costante e il supervisore: se il supervisore non batte un freno fisso, il suo valore non è dimostrato. Il confronto (a) contro (b), cioè scelta fissa contro scelta del lavoratore, si legge sulle differenze di log-ricchezza, drawdown e rovina, con gli stessi intervalli bootstrap del progetto.
 

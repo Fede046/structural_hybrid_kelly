@@ -3,7 +3,7 @@
 import numpy as np
 import pytest
 
-from shk.kelly.agents import Agent, DateResults, DateView, FractionalKellyAgent, NO_BET, estimated_expected_values
+from shk.kelly.agents import Agent, DateView, FractionalKellyAgent, NO_BET, estimated_expected_values
 from shk.kelly.outcome_rules import (
     OUTCOME_RULES,
     max_edge_outcomes,
@@ -12,7 +12,7 @@ from shk.kelly.outcome_rules import (
     with_outcome_rule,
 )
 from shk.market.devig import devig_probabilities
-from shk.model.agent_c import C1Agent, GradedAgent, Module2Supervisor
+from shk.model.agent_c import SchemeAgent
 
 DAY = np.datetime64("2010-08-14", "ns")
 # Partita 0: EV massimo sul pareggio, p̂ massima sulla casa (EV casa < 0); partita 1: nessun EV > 0
@@ -86,23 +86,5 @@ def test_with_outcome_rule_builds_agent_subclass():
     assert list(agent.decide(DateView(DAY, PROBS, ODDS)).outcomes) == [NO_BET, NO_BET]
     with pytest.raises(ValueError):
         with_outcome_rule(FractionalKellyAgent, "R4")
-    # Funziona con gli agenti del supervisore (candidate_outcomes è ammesso dalla base)
-    assert issubclass(with_outcome_rule(C1Agent, "R2"), C1Agent)
-    assert issubclass(with_outcome_rule(GradedAgent, "R2"), GradedAgent)
-
-
-def test_window_candidate_ev_follows_rule():
-    """EV̂ candidato della finestra B: con R1 coincide con quello del Modulo 3, con R3 è l'EV di argmax p̂."""
-    rng = np.random.default_rng(4)
-    days = (np.datetime64("2010-08-14") + np.arange(9) * np.timedelta64(7, "D")).astype("datetime64[ns]")
-    sup = Module2Supervisor("s", days, rng.normal(size=(9, 1)), ["c"], 3)
-    probs = rng.dirichlet([4, 3, 3], size=9)
-    odds = 1.0 / (rng.dirichlet([4, 3, 3], size=9) * 1.05)
-    for i, d in enumerate(days):
-        sup.observe(DateResults(d, probs[i:i + 1], odds[i:i + 1], np.array([[i % 3]])))
-    ev = estimated_expected_values(probs, odds)
-    rows = np.arange(5, 8)
-    np.testing.assert_array_equal(sup.window_candidate_ev(days[8], max_ev_outcomes), ev[rows].max(axis=1))
-    np.testing.assert_array_equal(sup.window_candidate_ev(days[8], max_prob_outcomes),
-                                  ev[rows, probs[rows].argmax(axis=1)])
-    assert sup.window_candidate_ev(days[5], max_ev_outcomes) is None
+    # Funziona con l'agente dello schema (candidate_outcomes è ammesso dalla base)
+    assert issubclass(with_outcome_rule(SchemeAgent, "R2"), SchemeAgent)

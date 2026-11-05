@@ -41,7 +41,7 @@ from shk.data.split import read_split_config
 from shk.market.divergence import ODDS_BIN_LABELS, assign_odds_bin
 from shk.model.elo_fit import ELO_FITS, derive_fit_schedule, parse_season_start_year
 from shk.model.comparisons import t_cluster_interval
-from shk.model.module3_synthetic import N_STORY_TASKS
+from shk.model.task_seeds import N_STORY_TASKS
 from shk.model.residuals import load_match_frame
 from shk.model.scoring import (
     ALL_DEVIG_METHODS,
