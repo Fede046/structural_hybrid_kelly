@@ -114,8 +114,11 @@ Per ogni script di `scripts/`: il file che produce in `results/` (con la figura 
 | `us_c8_3_validation.py` | `us_c8_3_validation_summary.csv` | Esecuzione di A e B_0.25 sulle 19 stagioni di validazione |
 | `us_c10_scheme_validation.py` | `us_c10_scheme_thresholds.csv`, `us_c10_scheme_validation_summary.csv` | Lo schema del relatore (C3, C3_stop, C3_and) sulle 19 stagioni di validazione |
 | `us_c11_worker_rules.py` | `us_c11_worker_rules_summary.csv` | Il lavoratore sceglie l'esito (R1, R2, R3), da solo, con freno fisso e con lo schema |
+| `us_c12_anova_power.py` | `us_c12_anova_power.csv` | Verifica dell'allarme ANOVA dello schema: frequenza sui dati reali e potenza con cambiamenti inseriti |
+| `us_c13_scheme_reference.py` | `us_c13_scheme_reference_thresholds.csv`, `us_c13_scheme_reference_summary.csv` | Lo schema con riferimento fisso (C3_ref, C3_ref_stop): allarme e diagnosi contro la stagione di calibrazione |
 | `us_c8_5_test_run.py` | `us_c8_5_test_run.csv` | Esecuzione unica sul test set 2023-24: ĝ, Oaxaca-Blinder, A e B_0.25 |
-| `kellybench_2023_24.py` | `kellybench_2023_24.csv` | Stagione 2023-24 giocata come in KellyBench, partendo da £100 000, con lo schema eseguito una volta |
+| `kellybench_2023_24.py` | `kellybench_2023_24.csv` | Stagione 2023-24 giocata come in KellyBench, partendo da £100 000, con lo schema e la sua variante con riferimento fisso eseguiti una volta |
+| `us_c14_test_scheme_seeds.py` | `us_c14_test_scheme_seeds_summary.csv` | Lo schema sul 2023-24 su 500 stagioni ricostruite, appaiate con l'esecuzione unica (esplorativo) |
 | `us_c9_1_dixon_coles.py` | `us_c9_1_dixon_coles.csv` | Dixon-Coles walk-forward: calibrazione e confronto con l'Elo |
 
 Note:

@@ -73,13 +73,14 @@ def scheme_thresholds(train: pd.DataFrame, params: FrozenParams,
     w = scheme_window(params)
     out = {}
     for inp, g in zip(inputs, gens):
-        length = _fit_block_length(inp)
+        length = fit_block_length(inp)
         out[inp.season] = (calibrate_scheme_thresholds(inp.delta, w, length, np.random.default_rng(g))
                            + calibrate_scheme_and_thresholds(inp.delta, w, length, np.random.default_rng(g)))
     return out
 
 
-def _fit_block_length(inp: SeasonInput) -> int:
+def fit_block_length(inp: SeasonInput) -> int:
+    """L_PW circolare arrotondata della serie di δ del fit, per le soglie dell'allarme."""
     return round_block_length(optimal_block_length(inp.delta).circular)
 
 
@@ -90,7 +91,7 @@ def threshold_records(train: pd.DataFrame, params: FrozenParams,
     out = []
     for fit, (mean_thr, disp_thr, and_mean, and_disp) in thresholds.items():
         inp = season_input_from_frame(train, fit, covariates)
-        out.append({"fit": fit, "window": scheme_window(params), "block_length": _fit_block_length(inp),
+        out.append({"fit": fit, "window": scheme_window(params), "block_length": fit_block_length(inp),
                     "mean_threshold": mean_thr, "dispersion_threshold": disp_thr,
                     "structural_threshold": float(params.c1_thresholds[fit]),
                     "and_mean_threshold": and_mean, "and_dispersion_threshold": and_disp})

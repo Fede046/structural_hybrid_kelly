@@ -75,6 +75,7 @@ Lo schema è confrontato, sulle stesse partite e con le stesse quote, con lo ste
 - **Diagnosi (ricalibratore).** Con l'allarme, errore strutturale se T = −S supera la soglia, altrimenti errore di composizione.
 - **Puntata.** λ = 0.25 senza allarme, 0.1875 con errore di composizione, 0 con errore strutturale: finché dura l'allarme (C3, C3_and) o fino a fine stagione (C3_stop). La puntata è λ volte il Kelly pieno sull'esito scelto.
 - **Parametri.** W, κ e la soglia strutturale sono congelati; le sole quantità calibrate per lo schema sono le soglie dell'allarme.
+- **Variante con riferimento fisso (C3_ref, C3_ref_stop).** Le ultime 40 partite si confrontano con la stagione di calibrazione del modello invece che con le 40 precedenti, sia nell'allarme sia nella diagnosi; soglie calibrate sul training allo stesso modo. Scelta dopo aver visto le frequenze d'allarme sulla validazione (§4.7).
 
 ### 3.6 Agenti confrontati
 
@@ -83,6 +84,7 @@ Lo schema è confrontato, sulle stesse partite e con le stesse quote, con lo ste
 | A | Kelly pieno: il lavoratore da solo |
 | B_0.25 | Quarto di Kelly: il lavoratore senza supervisore |
 | C3, C3_stop, C3_and | Lo schema del relatore (§3.5) |
+| C3_ref, C3_ref_stop | Lo schema con il confronto con la stagione di calibrazione (§3.5) |
 
 - **Selezione e ripiego.** Tutti gli agenti scelgono per ogni partita l'esito con EV stimato massimo e puntano solo se l'EV è positivo (le regole alternative del lavoratore sono in §4.7). Il supervisore cambia solo le frazioni, mai le previsioni né la scelta dell'esito: così il confronto isola la regola di puntata.
 
@@ -132,6 +134,11 @@ Sulle 19 stagioni di validazione sono attesi 1.9 allarmi falsi per stagione:
 
 Non c'è evidenza di una varianza che cresce durante la stagione oltre quella già presente nel training. È il segnale su cui si basa l'allarme dello schema del relatore, che quindi scatta poco: circa 1,6 volte per stagione (§4.7).
 
+**L'allarme ANOVA funziona, il segnale è troppo piccolo** (`results/us_c12_anova_power.csv`):
+- sui dati reali l'allarme è acceso nel 4.8% delle date, il livello dei falsi allarmi (5%); con la log-loss al posto di δ nel 5.0%;
+- con un peggioramento inserito a metà stagione, le stagioni con allarme nelle 10 date successive passano dal 32% (nessun cambiamento) al 68% con la media peggiore di 0.10 e al 95% con 0.20; con la varianza ×2 al 53%;
+- con 40 partite contro 40 la media deve peggiorare di almeno 0.07–0.11 per essere vista, contro uno svantaggio medio del modello di circa 0.02.
+
 ### 4.5 Il floor rende possibile la rovina
 - **Senza floor.** La rovina è esattamente zero, sul calendario sintetico e su quello reale.
 - **Con il floor**, sul calendario reale:
@@ -167,11 +174,14 @@ Somma sulle 19 stagioni di validazione della mediana di ln W_T, configurazione �
 | C3 | −10.62 | 1.6 | 1.5% |
 | C3_stop | −7.51 | 1.6 | 26% |
 | C3_and | −10.67 | 1.5 | 1.4% |
+| C3_ref | −9.19 | 4.5 | 15% |
+| C3_ref_stop | −4.50 | 4.5 | 64% |
 
 - **C3 contro B_0.25:** mai peggiore in mediana, migliore in 5 stagioni su 19.
 - **C3_stop contro B_0.25:** mai peggiore, migliore in 9 stagioni su 19.
 - **C3_and:** quasi come C3; migliore di B_0.25 in 8 stagioni su 19.
-- **Lettura.** Lo schema funziona come descritto, ma interviene poco: il segnale che cerca è raro (§4.4), e dopo l'allarme torna al quarto di Kelly. Con un vantaggio negativo ogni riduzione della puntata riduce la perdita, per questo la versione che resta ferma fino a fine stagione è la migliore.
+- **C3_ref e C3_ref_stop contro B_0.25:** migliori in 15 stagioni su 19, peggiori in 2 (`results/us_c13_scheme_reference_summary.csv`).
+- **Lettura.** Con le finestre adiacenti lo schema interviene poco: fra due periodi vicini il segnale è sotto il rumore (§4.4). Il peggioramento c'è, ma è lento e si accumula fra le stagioni: δ diventa più disperso e peggiora in media man mano che il modello invecchia, mentre la log-loss non peggiora, cioè è il mercato a superare il modello. Il confronto con la stagione di calibrazione lo vede e fa puntare meno nelle stagioni in cui il modello è vecchio (2016-20 con il fit 2010-11). Con un vantaggio negativo ogni riduzione della puntata riduce comunque la perdita: C3_ref_stop non punta nel 64% delle date. La variante è stata scelta dopo aver visto la validazione; sul 2023-24 è stata eseguita una volta, in modo esplorativo (§4.9).
 
 **Il lavoratore sceglie l'esito.** Come chiesto dal relatore, il lavoratore può anche scegliere l'esito con tre regole: EV massimo (R1, quella usata finora), maggior vantaggio sul mercato (R2), esito più probabile (R3). Ogni regola è provata da sola, con il freno fisso λ = 0,25 e con lo schema C3 (`thesis/agenti_e_architettura.md` §4, `results/us_c11_worker_rules_summary.csv`).
 - R3 perde meno di R1 in 13 stagioni su 19, perché punta su circa metà delle partite; R2 è come R1, un po' peggio.
@@ -199,12 +209,15 @@ Somma sulle 19 stagioni di validazione della mediana di ln W_T, configurazione �
 | C3, schema del relatore | £24 424 | −75.6% | 75.6% | −20.2% |
 | C3_stop | £24 424 | −75.6% | 75.6% | −20.2% |
 | C3_and | £26 755 | −73.2% | 73.2% | −20.0% |
+| C3_ref, C3_ref_stop | £24 944 | −75.1% | 75.1% | −19.7% |
 
 Lo schema è stato costruito dopo l'esecuzione unica sul test, quindi le sue righe sono un'esecuzione esplorativa, fatta una sola volta con i parametri congelati.
 
 **Lettura.**
 - **Il quadro di KellyBench si riproduce.** Puntare con un modello che non batte il mercato fa perdere, e la perdita cresce con la frazione: Kelly pieno azzera quasi il bankroll, come i modelli che nel paper vanno in rovina. Con £100 000 nessun agente va in rovina in senso stretto.
 - **Lo schema cambia poco il quarto di Kelly**, come in validazione: l'allarme è raro e nella stagione non separa C3 da C3_stop.
+- **Anche la variante con riferimento fisso cambia poco**, ed è coerente con la validazione: il modello del 2023-24 è calibrato sul 2020-21, la dispersione di δ è quella della calibrazione e l'allarme scatta nell'1% delle date, come nel 2021-23.
+- **Su 500 stagioni ricostruite del 2023-24** (`results/us_c14_test_scheme_seeds_summary.csv`, senza floor, capitale riportato a £100 000) la mediana del quarto di Kelly è £24 564; lo schema fa meglio nel 59–77% dei seed, e le versioni ferme fino a fine stagione arrivano a £41 169 (C3_stop) e £51 185 (C3_ref_stop). Nelle stagioni ricostruite l'allarme scatta 2–3 volte, perché il ricampionamento delle date crea più spesso periodi di errori anomali.
 
 ## 5. Lettura rispetto all'ipotesi iniziale
 
@@ -214,9 +227,9 @@ Lo schema è stato costruito dopo l'esecuzione unica sul test, quindi le sue rig
 | L'ANOVA e lo Z-test nominali sono inaffidabili su serie autocorrelate; la calibrazione col block bootstrap è il rimedio | confermata, con il limite dei blocchi lunghi |
 | Il segno di ĝ non dipende dal modello previsivo né dal metodo di de-vigging | confermata |
 | Il modello batte il mercato | non confermata: ĝ < 0 ovunque |
-| L'eteroschedasticità crescente segnala il degrado | non confermata: con soglie corrette non si osserva |
+| L'eteroschedasticità crescente segnala il degrado | non dentro la stagione; sì rispetto alla stagione di calibrazione: la dispersione di δ cresce con l'età del modello |
 | La decomposizione distingue in modo netto il cambiamento compositivo da quello strutturale sui dati reali | non confermata, anche se l'implementazione è corretta sui dati sintetici |
-| Lo schema del relatore riduce le perdite rispetto al lavoratore senza supervisore | in parte: mai peggiore, ma il guadagno è piccolo, tranne con lo stop fino a fine stagione |
+| Lo schema del relatore riduce le perdite rispetto al lavoratore senza supervisore | con le finestre adiacenti poco; con il confronto con la stagione di calibrazione sì, in 15 stagioni su 19 (variante scelta dopo aver visto la validazione) |
 | L'agente batte il mercato | non confermata, anche nella stagione 2023-24 giocata come in KellyBench con £100 000 |
 
 ## 6. Limiti e parti non implementate

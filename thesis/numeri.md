@@ -132,6 +132,21 @@ Ogni voce è una cella di un CSV elencato in `results/MANIFEST.sha256`:
 | modulo2_did_pooled_inf | DiD pooled, IC 95%, estremo inferiore | -0.0397 | nat per partita | results/us_c7_4_did_support.csv | `row_type == "did" and season == "pooled"` | lower | f3c7bf4d25ac73d0bb5e24213d8919c4167b9c908c23be7c10256873cdcab6c7 |
 | modulo2_did_pooled_sup | DiD pooled, IC 95%, estremo superiore | 0.0025 | nat per partita | results/us_c7_4_did_support.csv | `row_type == "did" and season == "pooled"` | upper | f3c7bf4d25ac73d0bb5e24213d8919c4167b9c908c23be7c10256873cdcab6c7 |
 
+## Allarme ANOVA dello schema: potenza
+
+| id | descrizione | valore | unità | CSV | selezione | colonna | SHA256 |
+|---|---|---|---|---|---|---|---|
+| schema_potenza_none | Stagioni con allarme nelle 10 date dopo il cambiamento: nessun cambiamento | 0.32 | quota di stagioni | results/us_c12_anova_power.csv | `row_type == "power" and scenario == "none"` | share_seasons_with_alarm | 97cee63b5ece40c94a94ef2de42dbea85c4882a594924b6434dd081117053dc3 |
+| schema_potenza_mean_005 | Stagioni con allarme nelle 10 date dopo il cambiamento: media peggiore di 0.05 | 0.42 | quota di stagioni | results/us_c12_anova_power.csv | `row_type == "power" and scenario == "mean_-0.05"` | share_seasons_with_alarm | 97cee63b5ece40c94a94ef2de42dbea85c4882a594924b6434dd081117053dc3 |
+| schema_potenza_mean_010 | Stagioni con allarme nelle 10 date dopo il cambiamento: media peggiore di 0.10 | 0.68 | quota di stagioni | results/us_c12_anova_power.csv | `row_type == "power" and scenario == "mean_-0.10"` | share_seasons_with_alarm | 97cee63b5ece40c94a94ef2de42dbea85c4882a594924b6434dd081117053dc3 |
+| schema_potenza_mean_020 | Stagioni con allarme nelle 10 date dopo il cambiamento: media peggiore di 0.20 | 0.95 | quota di stagioni | results/us_c12_anova_power.csv | `row_type == "power" and scenario == "mean_-0.20"` | share_seasons_with_alarm | 97cee63b5ece40c94a94ef2de42dbea85c4882a594924b6434dd081117053dc3 |
+| schema_potenza_variance_x15 | Stagioni con allarme nelle 10 date dopo il cambiamento: varianza ×1.5 | 0.42 | quota di stagioni | results/us_c12_anova_power.csv | `row_type == "power" and scenario == "variance_x1.5"` | share_seasons_with_alarm | 97cee63b5ece40c94a94ef2de42dbea85c4882a594924b6434dd081117053dc3 |
+| schema_potenza_variance_x2 | Stagioni con allarme nelle 10 date dopo il cambiamento: varianza ×2 | 0.53 | quota di stagioni | results/us_c12_anova_power.csv | `row_type == "power" and scenario == "variance_x2"` | share_seasons_with_alarm | 97cee63b5ece40c94a94ef2de42dbea85c4882a594924b6434dd081117053dc3 |
+| schema_potenza_mean_010_variance_x2 | Stagioni con allarme nelle 10 date dopo il cambiamento: media peggiore di 0.10 e varianza ×2 | 0.68 | quota di stagioni | results/us_c12_anova_power.csv | `row_type == "power" and scenario == "mean_-0.10_variance_x2"` | share_seasons_with_alarm | 97cee63b5ece40c94a94ef2de42dbea85c4882a594924b6434dd081117053dc3 |
+| schema_mde_2000_01 | Peggioramento minimo della media di δ rilevabile, fit 2000-01 | 0.069 | nat per partita | results/us_c12_anova_power.csv | `row_type == "mde" and fit_through == "2000-01"` | min_detectable_worsening | 97cee63b5ece40c94a94ef2de42dbea85c4882a594924b6434dd081117053dc3 |
+| schema_mde_2010_11 | Peggioramento minimo della media di δ rilevabile, fit 2010-11 | 0.088 | nat per partita | results/us_c12_anova_power.csv | `row_type == "mde" and fit_through == "2010-11"` | min_detectable_worsening | 97cee63b5ece40c94a94ef2de42dbea85c4882a594924b6434dd081117053dc3 |
+| schema_mde_2020_21 | Peggioramento minimo della media di δ rilevabile, fit 2020-21 | 0.107 | nat per partita | results/us_c12_anova_power.csv | `row_type == "mde" and fit_through == "2020-21"` | min_detectable_worsening | 97cee63b5ece40c94a94ef2de42dbea85c4882a594924b6434dd081117053dc3 |
+
 ## Test set 2023-24
 
 | id | descrizione | valore | unità | CSV | selezione | colonna | SHA256 |
