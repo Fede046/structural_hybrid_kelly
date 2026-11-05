@@ -118,6 +118,9 @@ Per ogni script di `scripts/`: il file che produce in `results/` (con la figura 
 | `us_c13_scheme_reference.py` | `us_c13_scheme_reference_thresholds.csv`, `us_c13_scheme_reference_summary.csv` | Lo schema con riferimento fisso (C3_ref, C3_ref_stop): allarme e diagnosi contro la stagione di calibrazione |
 | `us_c15_oaxaca_position.py` | `us_c15_oaxaca_position.csv` | Robustezza di Oaxaca-Blinder nello schema: con e senza la covariata «position» |
 | `us_c16_oaxaca_expected.py` | `us_c16_oaxaca_expected.csv` | Oaxaca-Blinder dello schema sull'errore atteso E_q[δ] invece che su δ realizzato |
+| `us_c17_r3_reference.py` | `us_c17_r3_reference_summary.csv` | Il lavoratore R3 (esito più probabile) con lo schema a riferimento fisso |
+| `us_c18_elo_refit.py` | `us_c18_elo_refit_params.csv`, `us_c18_elo_refit_aging.csv`, `us_c18_elo_refit_thresholds.csv`, `us_c18_elo_refit_summary.csv` | Ri-parametrizzazione annuale dell'Elo: invecchiamento del modello e schema a riferimento fisso sul modello ricalibrato |
+| `us_c19_real_seasons.py` | `us_c19_real_seasons.csv` | Risultato principale: gli agenti sulle 19 stagioni vere di validazione, con i confronti appaiati stagione per stagione (dalle sintesi già versionate) |
 | `us_c8_5_test_run.py` | `us_c8_5_test_run.csv` | Esecuzione unica sul test set 2023-24: ĝ, Oaxaca-Blinder, A e B_0.25 |
 | `kellybench_2023_24.py` | `kellybench_2023_24.csv` | Stagione 2023-24 giocata come in KellyBench, partendo da £100 000, con lo schema e la sua variante con riferimento fisso eseguiti una volta |
 | `us_c14_test_scheme_seeds.py` | `us_c14_test_scheme_seeds_summary.csv` | Lo schema sul 2023-24 su 500 stagioni ricostruite, appaiate con l'esecuzione unica (esplorativo) |
