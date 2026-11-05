@@ -43,6 +43,7 @@ Per ogni data della stagione l'ambiente chiede a ogni agente le frazioni da punt
 | **C3** | Allarme ANOVA, poi Oaxaca: 0,25, 0,1875 oppure 0 | Lo schema del relatore |
 | **C3_stop** | Come C3, ma dopo un errore strutturale 0 fino a fine stagione | Lettura alla lettera di «finché il modello non viene ri-parametrizzato» |
 | **C3_and** | Come C3, con l'allarme solo se peggiorano media e varianza insieme | Lettura alla lettera di «la media degli errori cresce e la varianza esplode» |
+| **C3_ref**, **C3_ref_stop** | Come C3 e C3_stop, ma confrontando le ultime 40 partite con la stagione di calibrazione del modello | Il confronto con il momento in cui il modello «era a posto» (§3.4) |
 
 ### 3.1 Un esempio concreto
 
@@ -114,6 +115,12 @@ C3 implementa esattamente questo ordine.
 - **C3_and contro C3.** Il risultato è quasi lo stesso. L'allarme congiunto non è più raro (1,5 accensioni per stagione), perché le sue soglie sono più basse. Rispetto a B_0.25, C3_and è migliore in 8 stagioni su 19 e mai peggiore; rispetto a C3 la differenza appaiata è +0,03 sul totale (meglio in 4 stagioni, peggio in 1).
 - **Lettura.** Il modello non batte il mercato in nessuna stagione, quindi ogni riduzione della puntata riduce la perdita. Lo schema funziona come previsto: riduce poco con errori di composizione e azzera con errori strutturali. Il segnale che cerca, però, è raro, e quando l'allarme si spegne lo schema torna al quarto di Kelly: per questo migliora poco il lavoratore senza supervisore, tranne nella versione che resta ferma fino a fine stagione.
 
+**Perché l'allarme scatta poco** (`scripts/us_c12_anova_power.py`, `results/us_c12_anova_power.csv`). Non è un errore dell'implementazione: l'ANOVA funziona, ma fra due finestre vicine non c'è un cambiamento abbastanza grande da superare il rumore. Il cambiamento c'è fra una stagione e l'altra, e lo vede il confronto con la stagione di calibrazione (§3.4).
+- **Sui dati reali gli allarmi sono quelli del caso.** Nelle date con almeno 80 partite alle spalle l'allarme è acceso nel 4,8% dei casi: 2,6% per la media e 2,2% per la dispersione, cioè il livello fissato (2,5% + 2,5%).
+- **Con un cambiamento vero l'ANOVA lo trova.** Inserendo un peggioramento nei δ reali a metà stagione (partita 190), le stagioni con allarme nelle 10 date successive sono: 32% senza cambiamento (solo falsi allarmi), 42% con la media peggiore di 0,05, 68% con 0,10, 95% con 0,20; 42% con la varianza ×1,5, 53% con la varianza ×2.
+- **Il rumore è grande rispetto al segnale.** Con 40 partite contro 40, la media deve peggiorare di almeno 0,07–0,11 (secondo il fit) perché la F superi la soglia, mentre lo svantaggio medio del modello rispetto al mercato è circa 0,02 per partita.
+- **Non dipende dal residuo scelto.** Con la log-loss del modello al posto di δ l'allarme è acceso nel 5,0% delle date, di nuovo il livello del caso.
+
 **Il 2023-24.** Lo schema è stato costruito dopo l'esecuzione unica sul test, quando il 2023-24 era già stato visto. È stato eseguito una volta sola sulla stagione giocata come in KellyBench (£100 000, floor £0,01, esiti veri), con i parametri congelati: è un risultato esplorativo, non una conferma (`results/kellybench_2023_24.csv`).
 
 | Agente | Bankroll finale | Rendimento | Puntate |
@@ -123,8 +130,65 @@ C3 implementa esattamente questo ordine.
 | C3 | £24 424 | −75,6% | 361 |
 | C3_stop | £24 424 | −75,6% | 361 |
 | C3_and | £26 755 | −73,2% | 352 |
+| C3_ref | £24 944 | −75,1% | 361 |
+| C3_ref_stop | £24 944 | −75,1% | 361 |
 
-Come in validazione, lo schema cambia poco il risultato del quarto di Kelly; C3 e C3_stop coincidono perché nella stagione non c'è un errore strutturale che li separi.
+Come in validazione, lo schema cambia poco il risultato del quarto di Kelly; C3 e C3_stop coincidono perché nella stagione non c'è un errore strutturale che li separi. C3_ref e C3_ref_stop (§3.4) sono stati eseguiti dopo, anche loro una sola volta: il modello del 2023-24 è calibrato sul 2020-21, la dispersione di δ è quella della calibrazione (0,181 contro 0,186) e l'allarme scatta nell'1% delle date, quindi cambiano poco anche loro.
+
+**Il 2023-24 su 500 stagioni ricostruite** (`scripts/us_c14_test_scheme_seeds.py`, `results/us_c14_test_scheme_seeds_summary.csv`; seed "block" dell'esecuzione unica, quindi A e B_0.25 coincidono con essa; senza floor, capitale riportato a £100 000):
+
+| Agente | Stagione vera | Mediana | 5%–95% | Seed migliori di B_0.25 |
+|---|---|---|---|---|
+| A | £14 | £16 | £0–£1 564 | 0% |
+| B_0.25 | £24 358 | £24 564 | £8 555–£71 172 | – |
+| C3 | £24 424 | £25 750 | £8 701–£74 411 | 60% |
+| C3_stop | £24 424 | £41 169 | £11 991–£106 895 | 73% |
+| C3_and | £26 755 | £26 124 | £8 907–£72 300 | 69% |
+| C3_ref | £24 944 | £26 391 | £9 158–£71 336 | 59% |
+| C3_ref_stop | £24 944 | £51 185 | £18 409–£100 497 | 77% |
+
+Sulle stagioni ricostruite l'allarme scatta 2–2,8 volte per stagione, contro quasi nessuna volta nella stagione vera: il ricampionamento delle date ripete alcune giornate e crea più spesso periodi di errori anomali. Le versioni ferme fino a fine stagione ne approfittano di più.
+
+### 3.4 C3_ref e C3_ref_stop: il confronto con la stagione di calibrazione
+
+**L'idea.** Il modello peggiora lentamente, di stagione in stagione, perché si ri-parametrizza solo ai fit. Due finestre di 40 partite vicine sono degradate allo stesso modo, e la loro differenza resta sotto il rumore (§3.3). La variante confronta invece le ultime 40 partite con **la stagione su cui il modello è stato calibrato** (la stagione di training del fit, 380 partite), cioè con il momento in cui il modello «era a posto».
+
+**Come funziona.** Tutto il resto è come in C3:
+- allarme con l'ANOVA sulla media e con Brown-Forsythe sulla dispersione, con segno, fra la stagione di calibrazione e le ultime 40 partite (gruppi di dimensione diversa);
+- diagnosi con la three-fold di Oaxaca-Blinder fra gli stessi due gruppi;
+- λ = 0,25, 0,1875 o 0, finché dura l'allarme (C3_ref) o fino a fine stagione (C3_ref_stop).
+
+Le soglie di media, dispersione e componente strutturale sono calibrate sul training (`results/us_c13_scheme_reference_thresholds.csv`): si ricampionano a blocchi 40 righe della stagione di calibrazione e si confrontano con la stagione intera, al 2,5% per media e dispersione e al 5% per −S. W = 40 e κ = 0,75 restano quelli congelati.
+
+**È una variante scelta dopo.** L'ho trovata provando segnali diversi sulla validazione e guardando solo quanto spesso scattava l'allarme, non i rendimenti: con le finestre adiacenti l'allarme è al livello del caso con qualunque misura dell'errore (δ, log-loss, Brier) e finestra (40, 80, 120); con il riferimento fisso e δ scatta molto più spesso, e con la log-loss no.
+
+**Il segnale.** L'allarme cresce con l'età del modello. Per il modello calibrato sul 2010-11 (quota di date con allarme, W = 40):
+
+| Stagione | Allarme sulla media | Allarme sulla dispersione |
+|---|---|---|
+| 2011-12 | 17% | 43% |
+| 2014-15 | 2% | 0% |
+| 2016-17 | 30% | 65% |
+| 2017-18 | 27% | 73% |
+| 2018-19 | 49% | 66% |
+| 2019-20 | 5% | 76% |
+
+La dispersione di δ passa da 0,136 nella stagione di calibrazione a 0,19–0,20 nel 2017-20. La log-loss del modello, invece, non peggiora rispetto alla calibrazione: è il mercato che migliora e lascia indietro il modello.
+
+**Risultati sulla validazione** (`scripts/us_c13_scheme_reference.py`, 19 stagioni × 500 seed, gli stessi delle altre esecuzioni; B_0.25 coincide bit per bit, configurazione £0,01):
+
+| Agente | Somma delle mediane di ln W_T | Accensioni per stagione | Date con λ = 0 |
+|---|---|---|---|
+| B_0.25 | −10,87 | – | – |
+| C3 | −10,62 | 1,6 | 1,5% |
+| C3_stop | −7,51 | 1,6 | 26% |
+| C3_ref | −9,19 | 4,5 | 15% |
+| C3_ref_stop | −4,50 | 4,5 | 64% |
+
+- **C3_ref contro B_0.25:** migliore in 15 stagioni su 19, peggiore in 2; totale più alto nel 90% dei seed. Contro C3: migliore in 14, peggiore in 3.
+- **C3_ref_stop contro B_0.25:** migliore in 15 stagioni su 19, peggiore in 2; totale più alto nel 97% dei seed. Contro C3_stop: migliore in 16, peggiore in 2.
+- **Dove guadagna.** Soprattutto nelle stagioni in cui il modello è vecchio (2016-20 con il fit 2010-11), cioè proprio dove l'allarme è più acceso.
+- **Cautele.** La variante è stata scelta dopo aver visto la validazione (solo le frequenze d'allarme). Con un vantaggio negativo puntare meno aiuta comunque: C3_ref_stop non punta nel 64% delle date. Sul 2023-24, eseguita una volta in modo esplorativo, cambia poco (§3.3).
 
 ## 4. Il lavoratore sceglie l'esito: regole R1, R2, R3
 

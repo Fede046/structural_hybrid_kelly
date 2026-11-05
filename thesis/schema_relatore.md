@@ -13,7 +13,8 @@ Questo documento descrive come ho realizzato la soluzione Structural-Hybrid che 
 - Il supervisore agisce con un moltiplicatore sulla puntata del lavoratore, come da sua preferenza.
 - Il lavoratore può anche scegliere l'esito su cui puntare, con tre regole diverse.
 - Il lavoratore LLM (opzione A) è predisposto ma non ancora eseguito.
-- Risultato principale: il modello previsivo non batte il mercato, quindi ogni agente che punta perde. Lo schema limita un po' le perdite rispetto al lavoratore senza supervisore.
+- Risultato principale: il modello previsivo non batte il mercato, quindi ogni agente che punta perde.
+- Se il supervisore confronta gli errori recenti con quelli delle 40 partite precedenti, lo schema interviene poco. Se li confronta con quelli della stagione su cui il modello è stato calibrato, si accorge che il modello invecchia e il mercato lo supera: punta meno proprio allora e conserva molto più capitale (fino al 79% a fine stagione, contro il 56% del lavoratore senza supervisore).
 
 ## 2. Lo schema realizzato
 
@@ -25,6 +26,10 @@ Questo documento descrive come ho realizzato la soluzione Structural-Hybrid che 
 
 Ho provato due versioni dell'allarme: nella prima basta che peggiori la media o che cresca la dispersione; nella seconda devono succedere tutte e due le cose insieme («la media degli errori cresce e la varianza esplode»).
 
+Ho provato anche due modi di scegliere il confronto:
+- **le 40 partite precedenti**, cioè il confronto fra un periodo e quello subito prima;
+- **la stagione su cui il modello è stato calibrato**, cioè il confronto fra gli errori di oggi e quelli del momento in cui il modello «era a posto». Il modello peggiora lentamente, di stagione in stagione: il confronto con il periodo subito prima non lo vede, quello con la stagione di calibrazione sì.
+
 Le soglie non sono quelle nominali dell'ANOVA, perché le serie di errori sono autocorrelate. In quel caso l'ANOVA nominale dà molti falsi allarmi: in simulazione fino al 40% invece del 5%. Ho quindi calibrato le soglie sulle stagioni di training con un bootstrap a blocchi, così i falsi allarmi restano al più al 5%.
 
 **Modulo 3, il ricalibratore.** Quando scatta l'allarme, la decomposizione di Blinder-Oaxaca divide il peggioramento dei residui in due parti:
@@ -33,11 +38,11 @@ Le soglie non sono quelle nominali dell'ANOVA, perché le serie di errori sono a
 
 Se la parte strutturale supera una soglia calibrata, l'errore è strutturale; altrimenti è un errore nei dati. La puntata diventa:
 
-| Situazione | Frazione della puntata di Kelly |
-|---|---|
-| Nessun allarme | 0,25 (quarto di Kelly) |
-| Errore nei dati | 0,19, finché dura l'allarme |
-| Errore strutturale | 0 |
+| Situazione         | Frazione della puntata di Kelly |
+| ------------------ | ------------------------------- |
+| Nessun allarme     | 0,25 (quarto di Kelly)          |
+| Errore nei dati    | 0,19, finché dura l'allarme     |
+| Errore strutturale | 0                               |
 
 Per l'errore strutturale ho seguito due letture di «finché il modello non viene ri-parametrizzato»:
 - si torna a puntare quando l'allarme si spegne;
@@ -72,34 +77,43 @@ In tutti i casi si punta solo se il valore atteso stimato è positivo, e il supe
 
 Capitale rimasto a fine stagione, in una stagione tipica delle 19 di validazione:
 
-| Agente | Quando scatta l'allarme | Dopo un errore strutturale | Capitale rimasto |
-|---|---|---|---|
-| Lavoratore da solo, Kelly pieno | – | – | 0,2% |
-| Lavoratore con il quarto di Kelly, senza supervisore | – | – | 56% |
-| Schema | Peggiora la media o cresce la varianza | Riprende quando l'allarme si spegne | 57% |
-| Schema | Peggiorano media e varianza insieme | Riprende quando l'allarme si spegne | 57% |
-| Schema | Peggiora la media o cresce la varianza | Fermo fino a fine stagione | 67% |
+| Agente | Confronto con | Quando scatta l'allarme | Dopo un errore strutturale | Capitale rimasto |
+|---|---|---|---|---|
+| Lavoratore da solo, Kelly pieno | – | – | – | 0,2% |
+| Lavoratore con il quarto di Kelly, senza supervisore | – | – | – | 56% |
+| Schema | 40 partite precedenti | Peggiora la media o cresce la varianza | Riprende quando l'allarme si spegne | 57% |
+| Schema | 40 partite precedenti | Peggiorano media e varianza insieme | Riprende quando l'allarme si spegne | 57% |
+| Schema | 40 partite precedenti | Peggiora la media o cresce la varianza | Fermo fino a fine stagione | 67% |
+| Schema | Stagione di calibrazione | Peggiora la media o cresce la varianza | Riprende quando l'allarme si spegne | 62% |
+| Schema | Stagione di calibrazione | Peggiora la media o cresce la varianza | Fermo fino a fine stagione | 79% |
 
 Il lavoratore qui sceglie l'esito con il valore atteso più alto. Per ogni agente: mediana sulle 500 simulazioni di ogni stagione, poi media geometrica sulle 19 stagioni.
 
 **Che cosa si vede:**
-- **Lo schema funziona come previsto, ma interviene poco.** Il segnale che cerca, una varianza degli errori che cresce, sui dati reali è raro: l'allarme scatta circa 1,6 volte per stagione. Lo schema non fa mai peggio del lavoratore senza supervisore; la versione che resta ferma fino a fine stagione fa meglio in 9 stagioni su 19.
+- **Confrontando con le 40 partite precedenti, lo schema interviene poco.** L'allarme scatta circa 1,6 volte per stagione, quanto ci si aspetta dai soli falsi allarmi. Ho verificato che non è un errore: se nei dati inserisco un peggioramento abbastanza forte, l'ANOVA lo trova; i cambiamenti da un periodo al successivo sono troppo piccoli per 40 partite contro 40. Lo schema non fa mai peggio del lavoratore senza supervisore; la versione che resta ferma fino a fine stagione fa meglio in 9 stagioni su 19.
+- **Confrontando con la stagione di calibrazione, il segnale che lei si aspettava c'è.** Gli errori del modello rispetto al mercato peggiorano in media e soprattutto diventano più dispersi man mano che il modello invecchia: per il modello calibrato sul 2010-11 la dispersione passa da 0,136 a 0,19–0,20 nelle stagioni 2017-20, e nelle stagioni dal 2016-17 al 2019-20 l'allarme sulla dispersione è acceso in due giornate su tre o più. L'allarme scatta circa 4,5 volte per stagione e lo schema batte il lavoratore senza supervisore in 15 stagioni su 19 (peggio in 2). Il guadagno maggiore arriva nelle stagioni in cui il modello è più vecchio. L'errore del modello da solo, senza il confronto con il mercato, non peggiora: è il mercato che migliora e lo lascia indietro, un cambiamento strutturale nel senso del suo schema.
+- **Due cautele su questo risultato.** Ho scelto questo confronto dopo aver visto, sulle stagioni di valutazione, quanto spesso scattava l'allarme (non i guadagni); nella tesi lo dichiarerò. E con un vantaggio negativo puntare meno aiuta comunque: la versione ferma fino a fine stagione non punta nel 64% delle giornate.
 - **Sui dati reali Oaxaca separa poco i due tipi di errore.** Sui dati simulati la decomposizione funziona. Nella sospensione per il Covid del 2019-20, dove mi aspettavo un errore strutturale, la parte strutturale è quasi nulla.
-- **Più si riduce la puntata, meno si perde.** Con un vantaggio negativo, ogni riduzione della puntata riduce la perdita. Per questo la versione che resta ferma fino a fine stagione è la migliore delle tre: le altre, quando l'allarme si spegne, tornano al quarto di Kelly.
-- **Lo schema funziona con tutte e tre le regole di scelta dell'esito.** Non fa mai peggio del lavoratore senza supervisore e fa meglio in 5–6 stagioni su 19.
+- **Più si riduce la puntata, meno si perde.** Con un vantaggio negativo, ogni riduzione della puntata riduce la perdita. Per questo le versioni che restano ferme fino a fine stagione sono le migliori: le altre, quando l'allarme si spegne, tornano al quarto di Kelly.
+- **Lo schema funziona con tutte e tre le regole di scelta dell'esito** (prova fatta con il confronto con le 40 partite precedenti). Non fa mai peggio del lavoratore senza supervisore e fa meglio in 5–6 stagioni su 19.
 - **La regola migliore è puntare sull'esito più probabile.** Si scommette su circa metà delle partite e si perde meno: con lo schema resta il 67% del capitale, invece del 57% con la regola del valore atteso più alto.
 
-**La stagione 2023-24, quella di KellyBench.** L'ho giocata come in KellyBench: esiti veri, giornata per giornata, partendo da £100 000. Avevo già usato questa stagione come test prima di costruire lo schema, quindi il risultato dello schema è solo esplorativo: l'ho eseguito una volta sola, senza cambiare nessun parametro.
+**La stagione 2023-24, quella di KellyBench.** L'ho giocata come in KellyBench, partendo da £100 000. Avevo già usato questa stagione come test prima di costruire lo schema, quindi i risultati dello schema sono solo esplorativi e non ho cambiato nessun parametro. Una sola stagione dice poco, quindi oltre alla stagione vera l'ho giocata su 500 stagioni ricostruite, ricampionando le giornate come per la valutazione (senza puntata minima, perché così il risultato in sterline non dipende dal capitale iniziale).
 
-| Agente | Capitale finale |
-|---|---|
-| Lavoratore da solo, Kelly pieno | £14 |
-| Lavoratore con il quarto di Kelly, senza supervisore | £24 358 |
-| Schema, allarme se peggiora la media o cresce la varianza | £24 424 |
-| Schema, come sopra ma fermo fino a fine stagione | £24 424 |
-| Schema, allarme solo se peggiorano media e varianza insieme | £26 755 |
+| Agente                                                                             | Stagione vera | Mediana delle 500 stagioni | 90% delle stagioni fra | Stagioni in cui fa meglio del quarto di Kelly |
+| ---------------------------------------------------------------------------------- | ------------- | -------------------------- | ---------------------- | --------------------------------------------- |
+| Lavoratore da solo, Kelly pieno                                                    | £14           | £16                        | £0 e £1 564            | 0%                                            |
+| Lavoratore con il quarto di Kelly, senza supervisore                               | £24 358       | £24 564                    | £8 555 e £71 172       | –                                             |
+| Schema, 40 partite precedenti, allarme se peggiora la media o cresce la varianza   | £24 424       | £25 750                    | £8 701 e £74 411       | 60%                                           |
+| Come sopra, fermo fino a fine stagione                                             | £24 424       | £41 169                    | £11 991 e £106 895     | 73%                                           |
+| Schema, 40 partite precedenti, allarme solo se peggiorano media e varianza insieme | £26 755       | £26 124                    | £8 907 e £72 300       | 69%                                           |
+| Schema, confronto con la stagione di calibrazione                                  | £24 944       | £26 391                    | £9 158 e £71 336       | 59%                                           |
+| Come sopra, fermo fino a fine stagione                                             | £24 944       | £51 185                    | £18 409 e £100 497     | 77%                                           |
 
-Come nelle 19 stagioni di validazione, lo schema cambia poco il risultato del quarto di Kelly.
+Che cosa si vede:
+- **Nella stagione vera lo schema cambia poco**, in tutte le versioni. Il modello usato nel 2023-24 è calibrato sul 2020-21, quindi è ancora «giovane»: la dispersione dei suoi errori è la stessa della stagione di calibrazione (0,181 contro 0,186) e l'allarme scatta solo nell'1% delle giornate.
+- **Sulle stagioni ricostruite lo schema fa meglio del quarto di Kelly nel 59–77% dei casi.** Le versioni che restano ferme fino a fine stagione conservano molto più capitale: la mediana passa da £24 564 a £41 169 e £51 185.
+- **La differenza fra stagione vera e ricostruite** viene dal ricampionamento: una stagione ricostruita ripete alcune giornate e ne salta altre, e questo crea più spesso un periodo di errori anomali che fa scattare l'allarme (2–3 accensioni per stagione invece di quasi nessuna). La stagione vera è una sola fra quelle possibili, e lì l'allarme non è scattato.
 
 ## 6. Altre analisi di supporto
 
@@ -110,7 +124,7 @@ Ho fatto anche alcune analisi che lo schema non prevede, ma che aiutano a legger
 - con soglie calibrate col bootstrap i rigetti scendono a zero;
 - i test sulla varianza che cresce nel corso della stagione (Breusch-Pagan sul tempo, Goldfeld-Quandt, ARCH) rigettano in 0–3 stagioni su 19.
 
-Questo spiega perché l'allarme dello schema scatta di rado.
+Questo spiega perché l'allarme scatta di rado quando confronta due periodi vicini: dentro una stagione la varianza non cresce. Cresce invece fra una stagione e l'altra, ed è ciò che vede il confronto con la stagione di calibrazione.
 
 **Z-test per giornata.** È un modo più semplice di dare l'allarme: confronta l'errore medio di ogni giornata con quello del training. Sulle 19 stagioni, con 1,9 falsi allarmi attesi per stagione (36 in tutto), la soglia nominale dà 53 allarmi e quella calibrata 43. Anche qui, quindi, gli allarmi sono di poco sopra quelli attesi per caso.
 
@@ -134,6 +148,6 @@ Questo spiega perché l'allarme dello schema scatta di rado.
 1. **La puntata dell'LLM.** Il supervisore deve moltiplicare per 0,25 la puntata proposta dall'LLM anche senza allarme, come per i lavoratori classici? Oppure deve intervenire solo con l'allarme, lasciando invariata la puntata dell'LLM finché va tutto bene?
 2. **Un tetto alla puntata dell'LLM.** Pensavo di non permettere più del 10% del capitale su una singola partita. Le va bene?
 3. **La ri-parametrizzazione.** Lei aveva indicato il moltiplicatore come prima scelta: basta quello, o vuole che implementi anche la ri-parametrizzazione del modello dopo un errore strutturale?
-4. **La versione principale.** Nella tesi presenterei come versione principale quella in cui basta che peggiori la media o che cresca la varianza, e si riprende a puntare quando l'allarme si spegne, con le altre come varianti. Le sembra corretto?
+4. **La versione principale.** Nella tesi presenterei come versione principale quella che confronta gli errori recenti con la stagione di calibrazione del modello, con allarme se peggiora la media o cresce la varianza, e le altre come varianti. Le sembra corretto?
 
 Il codice e tutti i risultati sono riproducibili e a sua disposizione.
