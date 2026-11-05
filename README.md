@@ -120,6 +120,7 @@ Per ogni script di `scripts/`: il file che produce in `results/` (con la figura 
 | `us_c16_oaxaca_expected.py` | `us_c16_oaxaca_expected.csv` | Oaxaca-Blinder dello schema sull'errore atteso E_q[δ] invece che su δ realizzato |
 | `us_c17_r3_reference.py` | `us_c17_r3_reference_summary.csv` | Il lavoratore R3 (esito più probabile) con lo schema a riferimento fisso |
 | `us_c18_elo_refit.py` | `us_c18_elo_refit_params.csv`, `us_c18_elo_refit_aging.csv`, `us_c18_elo_refit_thresholds.csv`, `us_c18_elo_refit_summary.csv` | Ri-parametrizzazione annuale dell'Elo: invecchiamento del modello e schema a riferimento fisso sul modello ricalibrato |
+| `us_c20_training_fits.py` | `us_c20_training_fits_errors.csv`, `us_c20_training_fits_summary.csv` | Verifiche sulle stagioni di training: il 2021-23 senza il Covid nel fit, e un fit aggiuntivo 2015-16 con lo schema a riferimento fisso (va eseguito prima di us_c19) |
 | `us_c19_real_seasons.py` | `us_c19_real_seasons.csv` | Risultato principale: gli agenti sulle 19 stagioni vere di validazione, con i confronti appaiati stagione per stagione (dalle sintesi già versionate) |
 | `us_c8_5_test_run.py` | `us_c8_5_test_run.csv` | Esecuzione unica sul test set 2023-24: ĝ, Oaxaca-Blinder, A e B_0.25 |
 | `kellybench_2023_24.py` | `kellybench_2023_24.csv` | Stagione 2023-24 giocata come in KellyBench, partendo da £100 000, con lo schema e la sua variante con riferimento fisso eseguiti una volta |

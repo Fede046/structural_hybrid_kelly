@@ -92,7 +92,7 @@ def refit_param_records(data: ModelResidualsData, fits: dict[str, EloFitParams])
             for fit, entry in sorted(data.schedule.items(), key=lambda kv: parse_season_start_year(kv[0]))]
 
 
-def _season_stats(frame: pd.DataFrame) -> pd.DataFrame:
+def season_model_stats(frame: pd.DataFrame) -> pd.DataFrame:
     probs = frame[["p_home", "p_draw", "p_away"]].to_numpy()
     q = frame[["q_home", "q_draw", "q_away"]].to_numpy()
     p_obs = np.where(frame["FTR"].to_numpy()[:, None] == np.array(["H", "D", "A"]), probs, 0.0).sum(axis=1)
@@ -106,8 +106,8 @@ def _season_stats(frame: pd.DataFrame) -> pd.DataFrame:
 
 def refit_aging_records(frozen_frame: pd.DataFrame, refit_frame: pd.DataFrame) -> list[dict]:
     """Per stagione di validazione: ĝ, errore atteso medio e log-loss del modello congelato e ricalibrato."""
-    fz = _season_stats(frozen_frame[frozen_frame["role"] == "validation"])
-    rf = _season_stats(refit_frame[refit_frame["role"] == "validation"])
+    fz = season_model_stats(frozen_frame[frozen_frame["role"] == "validation"])
+    rf = season_model_stats(refit_frame[refit_frame["role"] == "validation"])
     if list(fz.index) != list(rf.index) or not (fz["n_matches"] == rf["n_matches"]).all():
         raise ValueError("frozen and refit validation frames cover different matches")
     return [{"season": s, "n_matches": int(fz.at[s, "n_matches"]), "frozen_fit": fz.at[s, "fit"],

@@ -198,6 +198,7 @@ Stagioni vere di validazione, configurazione £0.01 (`results/us_c19_real_season
 - Con lo schema a riferimento fisso R3 conserva più capitale (`results/us_c17_r3_reference_summary.csv`): sulle stagioni vere capitale tipico 77% con R3_C3_ref_stop, contro 71% di C3_ref_stop con R1 e 68% di R3 con il freno fisso; meglio di quest'ultimo in 13 stagioni su 19, peggio in 6 (sulle ricostruite 87%, 79% e 66%). Combinazione scelta dopo aver visto la validazione.
 
 ### 4.8 Robustezza
+- **Stagioni di training** (`results/us_c20_training_fits_errors.csv`, `results/us_c20_training_fits_summary.csv`). Il 2020-21, stagione del Covid, è nel training per la regola di una stagione ogni dieci anni e abbassa h del fit 2020-21 a 78. Prevedere il 2021-23 senza di esso (fit 2010-11) peggiora ĝ da −0.032 a −0.040: il fattore campo si era già ridotto prima del 2020. Un fit aggiuntivo sul 2015-16 per il 2016-20 migliora ĝ (da −0.031 a −0.025) e la log-loss, ma non il capitale (B_0.25 dal 57% al 54%, C3_ref_stop dal 71% al 70% sulle stagioni vere); C3_ref_stop batte B_0.25 in 17 stagioni vere su 19. Le conclusioni non dipendono dalle stagioni di training.
 - **Modulo 1.** Con Dixon-Coles il modello migliora la log-loss ma ĝ resta negativo (§4.1); l'esecuzione congelata con Dixon-Coles è in `results/us_c8_3_validation_summary_dc.csv`.
 - **De-vigging.** Il segno di ĝ è lo stesso con tutti e cinque i metodi, pooled e sul test.
 
