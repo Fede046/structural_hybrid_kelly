@@ -13,7 +13,6 @@ from shk.kelly.agents import (
     AgentDecision,
     DateView,
     FractionalKellyAgent,
-    MinimumStakeAgent,
     estimated_expected_values,
 )
 from shk.kelly.backtest import backtest_log_wealth
@@ -24,6 +23,13 @@ from shk.kelly.environment import (
     place_date_stakes,
     run_paired_backtest,
 )
+
+
+class _ZeroStakeAgent(Agent):
+    """Agente di prova senza puntate volontarie: frazioni tutte nulle, solo il ripiego dell'ambiente."""
+
+    def stake_fractions(self, view: DateView, p_hat: np.ndarray, b: np.ndarray) -> np.ndarray:
+        return np.zeros(p_hat.shape[0], dtype=np.float64)
 
 
 # ==============================================================================
@@ -171,7 +177,7 @@ def test_c01_run_paired_backtest_type_validation() -> None:
     probs = np.array([[0.6, 0.2, 0.2]], dtype=np.float64)
     odds = np.array([[2.0, 3.5, 3.5]], dtype=np.float64)
     outcomes = np.array([[0]], dtype=np.int64)
-    agent = MinimumStakeAgent("E")
+    agent = _ZeroStakeAgent("E")
 
     # agents
     with pytest.raises(TypeError, match="agents must be a tuple or list"):
@@ -208,8 +214,8 @@ def test_c01_run_paired_backtest_value_validation() -> None:
     probs = np.array([[0.6, 0.2, 0.2], [0.5, 0.3, 0.2]], dtype=np.float64)
     odds = np.array([[2.0, 3.5, 3.5], [2.1, 3.0, 3.0]], dtype=np.float64)
     outcomes = np.array([[0, 1], [2, 0]], dtype=np.int64)
-    agent1 = MinimumStakeAgent("E1")
-    agent2 = MinimumStakeAgent("E2")
+    agent1 = _ZeroStakeAgent("E1")
+    agent2 = _ZeroStakeAgent("E2")
 
     # agents vuoto
     with pytest.raises(ValueError, match="agents must contain at least one Agent"):
@@ -217,7 +223,7 @@ def test_c01_run_paired_backtest_value_validation() -> None:
 
     # nomi duplicati
     with pytest.raises(ValueError, match="All agent names must be distinct"):
-        run_paired_backtest([agent1, MinimumStakeAgent("E1")], dates, probs, odds, outcomes, 0.0)
+        run_paired_backtest([agent1, _ZeroStakeAgent("E1")], dates, probs, odds, outcomes, 0.0)
 
     # dates con NaT
     dates_nat = np.array(["2024-01-01", "NaT"], dtype="datetime64[D]")
@@ -395,7 +401,7 @@ def test_c05_placed_bets_ge_floor_and_every_date_bet() -> None:
 
 
 def test_c05_fallback_and_minimum_stake_agent() -> None:
-    """Senza puntate volontarie c'è 1 puntata da F sul ripiego, e MinimumStakeAgent punta F a data."""
+    """Senza puntate volontarie c'è 1 puntata da F sul ripiego, e _ZeroStakeAgent punta F a data."""
     dates = np.array(["2024-01-01", "2024-01-02"], dtype="datetime64[D]")
     probs = np.array([[0.33, 0.33, 0.34], [0.33, 0.34, 0.33]], dtype=np.float64)
     odds = np.array([[2.0, 2.0, 2.0], [2.0, 2.0, 2.0]], dtype=np.float64)
@@ -403,7 +409,7 @@ def test_c05_fallback_and_minimum_stake_agent() -> None:
     outcomes = np.array([[2, 1]], dtype=np.int64)
 
     agent_kelly = FractionalKellyAgent("A", lam=1.0)
-    agent_min = MinimumStakeAgent("E")
+    agent_min = _ZeroStakeAgent("E")
 
     f_stake = 0.10
     runs = run_paired_backtest(
@@ -492,7 +498,7 @@ def test_c05_all_replicas_ruin_before_end() -> None:
     # Tutte e due le repliche perdono alla prima data
     outcomes = np.array([[1, 0, 0], [1, 0, 0]], dtype=np.int64)
 
-    agent = MinimumStakeAgent("E")
+    agent = _ZeroStakeAgent("E")
     # Con F = 1.0, puntano 1.0 alla data 0, perdono, finiscono a 0.0, entrambe rovinate a data 1
     runs = run_paired_backtest([agent], dates, probs, odds, outcomes, min_stake=1.0)
     run = runs[0]
@@ -650,7 +656,7 @@ def test_c08_ast_check_specification_point_6() -> None:
 
     tree = ast.parse(source, filename=str(env_path))
 
-    concrete_agent_names = {"FractionalKellyAgent", "MinimumStakeAgent"}
+    concrete_agent_names = {"FractionalKellyAgent"}
 
     for node in ast.walk(tree):
         # Nessun import da shk.model o shk.data
@@ -688,7 +694,7 @@ def test_c09_vectorization_matches_single_row_run() -> None:
 
     agent_a = FractionalKellyAgent("A", lam=1.0)
     agent_b = FractionalKellyAgent("B", lam=0.25)
-    agent_e = MinimumStakeAgent("E")
+    agent_e = _ZeroStakeAgent("E")
     agents = [agent_a, agent_b, agent_e]
 
     f_stake = 0.05

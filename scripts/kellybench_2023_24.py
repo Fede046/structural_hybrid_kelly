@@ -1,7 +1,7 @@
 """Script: stagione 2023-24 giocata come in KellyBench, partendo da £100 000.
 
-Gli agenti con i parametri congelati e il Modulo 1 Elo giocano gli esiti veri del 2023-24, data per
-data, senza floor e con floor di £0.01 e £1 (shk.model.kellybench_run). Scrive
+A, B_0.25 e lo schema del relatore (C3, C3_stop, C3_and; una sola volta, esplorativo), con i
+parametri congelati e il Modulo 1 Elo, giocano gli esiti veri del 2023-24, data per data, senza floor e con floor di £0.01 e £1 (shk.model.kellybench_run). Scrive
 results/kellybench_2023_24.csv e thesis/figures/kellybench_2023_24.png.
 Con `--figure-only` rigenera solo la figura dal CSV già scritto.
 """
@@ -15,8 +15,7 @@ matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 import pandas as pd
 
-from shk.model.frozen_agents import AGENT_ORDER
-from shk.model.kellybench_run import KELLYBENCH_BANKROLL_GBP, KELLYBENCH_COLUMNS, evaluate_kellybench
+from shk.model.kellybench_run import KELLYBENCH_ARMS, KELLYBENCH_BANKROLL_GBP, KELLYBENCH_COLUMNS, evaluate_kellybench
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
 CSV_PATH = REPO_ROOT / "results" / "kellybench_2023_24.csv"
@@ -38,7 +37,7 @@ def make_figure(df: pd.DataFrame, path: Path = PNG_PATH) -> None:
     fig, (ax_a, ax_b) = plt.subplots(1, 2, figsize=(14, 5.5), gridspec_kw={"width_ratios": (1.6, 1)})
     path_rows = df[(df["row_type"] == "path") & (df["config"] == "gbp_0.01")].copy()
     path_rows["date"] = pd.to_datetime(path_rows["date"])
-    for agent in AGENT_ORDER:
+    for agent in KELLYBENCH_ARMS:
         part = path_rows[path_rows["agent"] == agent]
         if len(part):
             ax_a.plot(part["date"], part["bankroll_gbp"], label=agent, lw=1.2)
@@ -50,7 +49,7 @@ def make_figure(df: pd.DataFrame, path: Path = PNG_PATH) -> None:
     ax_a.legend(ncols=2, fontsize=8)
     ax_a.grid(alpha=0.3)
     summary = df[df["row_type"] == "summary"]
-    agents = [a for a in AGENT_ORDER if a in set(summary["agent"])]
+    agents = [a for a in KELLYBENCH_ARMS if a in set(summary["agent"])]
     width = 0.27
     for k, config in enumerate(CONFIG_LABELS):
         part = summary[summary["config"] == config].set_index("agent")

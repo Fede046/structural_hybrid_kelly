@@ -1,18 +1,16 @@
-"""Schema del relatore (C3, C3_stop) sulle 19 stagioni di validazione, accanto all'esecuzione congelata.
+"""Schema del relatore (C3, C3_stop, C3_and) sulle 19 stagioni di validazione, accanto all'esecuzione congelata.
 
-Gli agenti di agent_c.SchemeAgent si aggiungono dopo il congelamento e non toccano
-config/frozen_params.toml né le uscite dell'esecuzione congelata. Dal file congelato prendono:
-W = c1_window e κ = c1_kappa (C3 è la versione dello schema del relatore di C1: cambiano solo
-l'allarme e la risposta), la soglia di C1 del fit come soglia della componente strutturale,
-λ base = c0_lambda, politica del ripiego e configurazioni. Le sole quantità nuove sono le soglie
-dell'allarme ANOVA, calibrate sul training (scheme_thresholds) come la soglia di C1: serie di δ
-del fit, lunghezza di blocco L_PW, B = 999.
+Gli agenti di agent_c.SchemeAgent non toccano config/frozen_params.toml né le uscite
+dell'esecuzione congelata. Dal file congelato prendono: W = c1_window, κ = c1_kappa, la soglia
+strutturale del fit (c1_thresholds), λ base = c0_lambda, politica del ripiego e configurazioni.
+Le sole quantità nuove sono le soglie dell'allarme ANOVA, calibrate sul training
+(scheme_thresholds): serie di δ del fit, lunghezza di blocco L_PW, B = 999.
 
 Seed delle soglie: story_task_sequence(SEED_S12, posizione del Modulo 1, N_STORY_TASKS), poi
 spawn(numero di fit) in ordine cronologico. Seed delle stagioni: gli stessi dell'esecuzione
 congelata (spawn_t55_sequences dalla radice s10_seed del Modulo 1), quindi le esecuzioni sono
-appaiate con quelle congelate; B_0.25 e C1 si rieseguono come riferimento e coincidono con
-l'esecuzione congelata.
+appaiate con quelle congelate; B_0.25 si riesegue come riferimento e coincide con l'esecuzione
+congelata.
 """
 
 from collections.abc import Callable, Mapping, Sequence
@@ -23,26 +21,24 @@ from typing import Final
 import numpy as np
 import pandas as pd
 
-from shk.kelly.agents import AGENT_B_LAMBDAS, Agent, FractionalKellyAgent
+from shk.kelly.agents import AGENT_B_LAMBDA, Agent, FractionalKellyAgent
 from shk.kelly.environment import run_paired_backtest
 from shk.model.agent_c import (
     SCHEME_ALARM_AND,
     SCHEME_STOP_CLEAR,
     SCHEME_STOP_SEASON,
-    C1Agent,
     Module2Supervisor,
     SchemeAgent,
     calibrate_scheme_and_thresholds,
     calibrate_scheme_thresholds,
 )
-from shk.model.frozen_agents import check_frozen_constants
+from shk.model.frozen_agents import build_supervisor, check_frozen_constants, scheme_window
 from shk.model.frozen_params import FrozenParams, load_frozen_params
 from shk.model.module1 import MODULE1_IDS, check_module1
-from shk.model.module3_synthetic import N_STORY_TASKS
 from shk.model.paired_backtest import CONFIGURATIONS
 from shk.model.season_bootstrap import reconstruct_season, season_block_length
-from shk.model.task_seeds import story_task_sequence
-from shk.model.training_agents import SeasonInput, season_input_from_frame, training_seasons
+from shk.model.task_seeds import N_STORY_TASKS, story_task_sequence
+from shk.model.season_input import SeasonInput, season_input_from_frame, training_seasons
 from shk.model.validation_run import (
     METRICS,
     SEED_S10,
@@ -55,18 +51,13 @@ from shk.model.validation_run import (
 from shk.stats.bootstrap import optimal_block_length, round_block_length
 
 SEED_S12: Final[int] = 20261102
-SCHEME_ARMS: Final[tuple[str, ...]] = ("B_0.25", "C1", "C3", "C3_stop", "C3_and")
+SCHEME_ARMS: Final[tuple[str, ...]] = ("B_0.25", "C3", "C3_stop", "C3_and")
 THRESHOLD_COLUMNS: Final[tuple[str, ...]] = (
     "fit", "window", "block_length", "mean_threshold", "dispersion_threshold", "structural_threshold",
     "and_mean_threshold", "and_dispersion_threshold",
 )
 # Soglie di C3 per fit: (media, dispersione) dell'allarme "o", poi (media, dispersione) dell'allarme "e"
 SchemeThresholds = Mapping[str, tuple[float, float, float, float]]
-
-
-def scheme_window(params: FrozenParams) -> int:
-    """W di C3: quella congelata di C1."""
-    return int(params.calibrated["c1_window"])
 
 
 def scheme_thresholds(train: pd.DataFrame, params: FrozenParams,
@@ -108,7 +99,7 @@ def threshold_records(train: pd.DataFrame, params: FrozenParams,
 
 def build_scheme_agents(params: FrozenParams, thresholds: SchemeThresholds,
                         supervisor: Module2Supervisor, fit: str, arms: Sequence[str] = SCHEME_ARMS) -> list[Agent]:
-    """Agenti di SCHEME_ARMS: B_0.25 e C1 come nell'esecuzione congelata, C3, C3_stop e C3_and."""
+    """Agenti di SCHEME_ARMS: B_0.25 come nell'esecuzione congelata, C3, C3_stop e C3_and."""
     c, f = params.calibrated, params.fixed
     kappa, base = float(c["c1_kappa"]), float(f["c0_lambda"])
     structural = float(params.c1_thresholds[fit])
@@ -118,8 +109,7 @@ def build_scheme_agents(params: FrozenParams, thresholds: SchemeThresholds,
         return SchemeAgent(name, supervisor, kappa, mean_thr, disp_thr, structural, stop, base_lambda=base)
 
     builders = {
-        "B_0.25": lambda: FractionalKellyAgent("B_0.25", lam=AGENT_B_LAMBDAS[0]),
-        "C1": lambda: C1Agent("C1", supervisor, kappa, structural, base_lambda=base),
+        "B_0.25": lambda: FractionalKellyAgent("B_0.25", lam=AGENT_B_LAMBDA),
         "C3": lambda: scheme("C3", SCHEME_STOP_CLEAR),
         "C3_stop": lambda: scheme("C3_stop", SCHEME_STOP_SEASON),
         "C3_and": lambda: SchemeAgent("C3_and", supervisor, kappa, and_mean, and_disp, structural, SCHEME_STOP_CLEAR,
@@ -131,8 +121,7 @@ def build_scheme_agents(params: FrozenParams, thresholds: SchemeThresholds,
 def run_scheme_instance(params: FrozenParams, thresholds: SchemeThresholds, inp: SeasonInput,
                         fit: str, arms: Sequence[str] = SCHEME_ARMS) -> np.ndarray:
     """Una stagione nelle tre configurazioni: (C, len(arms), M); supervisore condiviso fra le configurazioni."""
-    supervisor = Module2Supervisor(inp.season, inp.dates, inp.x, list(params.fixed["covariates"]),
-                                   scheme_window(params))
+    supervisor = build_supervisor(params, inp)
     out = np.full((len(CONFIGURATIONS), len(arms), len(METRICS)), np.nan)
     for ci, (_, min_stake) in enumerate(CONFIGURATIONS):
         agents = build_scheme_agents(params, thresholds, supervisor, fit, arms)

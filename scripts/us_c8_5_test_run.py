@@ -30,9 +30,6 @@ from shk.model.test_run import (
     TEST_SEASON,
     agent_summary_records,
     check_records,
-    comparison_records_single,
-    drift_records,
-    e_roi_records,
     evaluate_agents,
     g_hat_records,
     load_season_data,
@@ -70,15 +67,12 @@ def run_experiment(dry_run: bool = False, module1: str = MODULE1_ELO) -> None:
     seed = s10_seed(module1)
     records = check_records(sd)
     records += g_hat_records(sd, t58_sequences(seed)[3].spawn(2)[0])
-    records += drift_records(sd)
     records += module2_records(sd)
     result = evaluate_agents(sd, workers=WORKERS, seed=seed)
     save_raw(raw_path, result.block)
     save_raw(raw_path.with_name(raw_path.stem + "_iid.npz"), result.iid)
     records += agent_summary_records(result)
-    records += comparison_records_single(result, seed=seed)
     records += stratum_records(sd, seed=seed)
-    records += e_roi_records(result)
     with open(csv_path, mode="w", newline="", encoding="utf-8") as f:
         writer = csv.DictWriter(f, fieldnames=list(TEST_RUN_COLUMNS))
         writer.writeheader()
@@ -126,8 +120,7 @@ def make_figure(df: pd.DataFrame, png_path: Path, season: str) -> None:
     dl, dh = st["delta_low"].astype(float).to_numpy(), st["delta_high"].astype(float).to_numpy()
     ax_c.errorbar(x - 0.1, d, yerr=[np.maximum(d - dl, 0), np.maximum(dh - d, 0)], fmt="o", capsize=3, label="δ̄")
     ax_c2 = ax_c.twinx()
-    ax_c2.bar(x + 0.15, st["mean_fraction_c2"].astype(float), 0.25, color="tab:green", alpha=0.5, label="frazione C2")
-    ax_c2.bar(x + 0.4, st["mean_fraction_b025"].astype(float), 0.25, color="tab:gray", alpha=0.5,
+    ax_c2.bar(x + 0.25, st["mean_fraction_b025"].astype(float), 0.3, color="tab:gray", alpha=0.5,
               label="frazione B_0.25")
     ax_c.axhline(0.0, color="black", linewidth=0.8)
     ax_c.set_xticks(x)

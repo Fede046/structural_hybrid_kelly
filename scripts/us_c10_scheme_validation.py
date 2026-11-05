@@ -1,7 +1,7 @@
-"""Script: schema del relatore (C3, C3_stop) sulle 19 stagioni di validazione.
+"""Script: schema del relatore (C3, C3_stop, C3_and) sulle 19 stagioni di validazione.
 
 Soglie dell'allarme ANOVA calibrate sul training (shk.model.scheme_run), poi esecuzione
-appaiata con gli stessi seed dell'esecuzione congelata, con B_0.25 e C1 come riferimento.
+appaiata con gli stessi seed dell'esecuzione congelata, con B_0.25 come riferimento.
 Non tocca config/frozen_params.toml né le uscite di us_c8_3. Scrive:
 - results/us_c10_scheme_thresholds.csv, soglie per fit;
 - results/raw/us_c10_scheme_validation_raw.npz, uscite per seed (non versionato);

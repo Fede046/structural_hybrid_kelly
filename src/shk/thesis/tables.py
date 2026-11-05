@@ -5,12 +5,11 @@ Temi e tabelle:
 - finestra effettiva dei dati: tab_finestra_dati;
 - divergenza fra metodi di de-vigging: tab_divergenza_devig;
 - ĝ del Modulo 1 contro il mercato: tab_g_hat;
-- "perché ANOVA e non ADWIN": tab_allarmi;
+- Z-test per giornata: tab_allarmi;
 - floor: tab_floor_reale e tab_floor_sintetico;
 - eteroschedasticità: tab_eteroschedasticita;
-- Modulo 2: tab_modulo2_covid e tab_modulo2_transizioni;
-- confronti fra agenti: tab_confronti;
-- robustezza: tab_dixon_coles, tab_ranking, tab_confronti_dc e tab_devig.
+- Oaxaca-Blinder sui residui: tab_modulo2_covid e tab_modulo2_transizioni;
+- robustezza: tab_dixon_coles.
 Un tema ha più tabelle quando le sue grandezze hanno forme diverse.
 
 Le funzioni selezionano righe, le riordinano o le rimodellano e formattano i valori: nessuna
@@ -24,8 +23,8 @@ from typing import Final
 
 import pandas as pd
 
-from shk.thesis.labels import AGENTS, CONFIGS, METHODS, METRICS, MODELS, SERIES, comparison
-from shk.thesis.latex import Cell, Column, ThesisTable, format_number, integer, interval, latex_escape, num, text
+from shk.thesis.labels import AGENTS, CONFIGS, METHODS, MODELS, SERIES
+from shk.thesis.latex import Cell, Column, ThesisTable, format_number, integer, interval, num, text
 from shk.thesis.sources import REPO_ROOT, read_versioned_csv, versioned_csv
 
 CONFIG_ORDER: Final[tuple[str, ...]] = ("gbp_0.01", "gbp_1", "none")
@@ -227,11 +226,10 @@ def table_g_hat(root: Path | str = REPO_ROOT) -> ThesisTable:
 
 
 def table_alarms(root: Path | str = REPO_ROOT) -> ThesisTable:
-    """Allarmi di Z-test, ADWIN e Page-Hinkley sulle 19 stagioni di validazione."""
+    """Allarmi dello Z-test per giornata sulle 19 stagioni di validazione."""
     src = versioned_csv("us_c5_2_daily_z_test", root)
     df = select(read_versioned_csv(src.name, root), 'row_type == "overall"')
-    names = {"z_nominal": ("Z nominale", "Z nominale"), "adwin": ("ADWIN", "ADWIN"),
-             "page_hinkley": ("Page-Hinkley", "Page-Hinkley")}
+    names = {"z_nominal": ("Z nominale", "Z nominale")}
     rows = []
     for _, r in df.iterrows():
         if r.method == "z_block_bootstrap":
@@ -243,12 +241,11 @@ def table_alarms(root: Path | str = REPO_ROOT) -> ThesisTable:
         r"Serie: log-loss per partita del Modulo 1 (Elo). Z-test per matchday (blocchi di 10 partite) con "
         r"$\mu_f$ e $\sigma_f$ del training del fit; soglia nominale $|Z| > 1{,}96$; soglia calibrata col moving "
         r"block bootstrap della serie di training del fit ($B = 999$).",
-        "ADWIN (delta 0,002) e Page-Hinkley (delta 0,05, threshold 5) di river, tarati sul training, "
-        "alimentati con la stessa serie. Attesi: 1,9 allarmi per stagione ($\\alpha = 0{,}05$ su 38 matchday).",
+        "Attesi: 1,9 allarmi per stagione ($\\alpha = 0{,}05$ su 38 matchday).",
     )
     return ThesisTable(
         name="tab_allarmi",
-        caption="Allarmi sulle 19 stagioni di validazione: Z-test per matchday, ADWIN e Page-Hinkley",
+        caption="Allarmi sulle 19 stagioni di validazione: Z-test per matchday",
         columns=(
             Column("Metodo", ("metodo",), "l"),
             Column("Allarmi", ("allarmi (19 stagioni)",)),
@@ -463,50 +460,6 @@ def table_module2_transitions(root: Path | str = REPO_ROOT) -> ThesisTable:
     )
 
 
-def table_comparisons(root: Path | str = REPO_ROOT) -> ThesisTable:
-    """Confronti appaiati sulla log-ricchezza finale, in validazione e nel 2023-24."""
-    src_v = versioned_csv("us_c8_4_comparisons", root)
-    src_t = versioned_csv("us_c8_5_test_run", root)
-    val = select(read_versioned_csv(src_v.name, root), 'row_type == "comparison" and metric == "final_log_wealth"')
-    test = select(read_versioned_csv(src_t.name, root), 'row_type == "comparison" and metric == "final_log_wealth"')
-    rows = []
-    for config in CONFIG_ORDER:
-        for _, r in select(val, f'config == "{config}"').iterrows():
-            t = one(test, f'config == "{config}" and comparison == {_q(r.comparison)}')
-            lab = comparison(r.comparison)
-            rows.append((_config(config), text(lab.latex, lab.plain), num(r.estimate, 3, signed=True),
-                         interval(r.ci_block_low, r.ci_block_high, 3), num(r.width_ratio_block_iid, 2),
-                         num(t.estimate, 3, signed=True), interval(t.ci_low, t.ci_high, 3)))
-    cov = one(read_versioned_csv(src_v.name, root), 'row_type == "coverage" and source == "seeds_resampled"')
-    notes = (
-        "Differenza pooled della log-ricchezza finale: media sulle stagioni della media sui seed delle differenze "
-        "appaiate. C1 $-$ C0: rilevare; C2 $-$ C1: graduare.",
-        r"Validazione: IC al 95\% dal bootstrap a due livelli (stagioni e seed), "
-        r"$\hat D \pm t_{0{,}975,\,S-1}\sqrt{S/(S-1)}\,\mathrm{se}_{\mathrm{boot}}$; rapporto: ampiezza block su "
-        rf"ampiezza iid. Copertura del metodo sul run prescritto: {format_number(cov.coverage, 3)} col percentile, "
-        rf"{format_number(cov.coverage_corrected, 3)} con la correzione.",
-        r"Test 2023-24: una stagione, IC al 95\% dai soli seed.",
-    )
-    return ThesisTable(
-        name="tab_confronti",
-        caption="Confronti appaiati fra agenti sulla log-ricchezza finale, in validazione e sul test set",
-        columns=(
-            Column("Configurazione", ("configurazione",), "l", group=True),
-            Column("Confronto", ("confronto",), "l"),
-            Column("Stima", ("validazione stima",)),
-            Column(r"IC 95\%", ("validazione IC 95% inf.", "validazione IC 95% sup."), "c"),
-            Column("Block/iid", ("validazione rapporto ampiezze block/iid",)),
-            Column("Stima", ("test stima",)),
-            Column(r"IC 95\%", ("test IC 95% inf.", "test IC 95% sup."), "c"),
-        ),
-        rows=tuple(rows),
-        sources=(src_v, src_t),
-        notes=notes,
-        header_groups=(("", 2), ("Validazione (19 stagioni)", 3), ("Test 2023-24", 2)),
-        tabcolsep="4pt",
-    )
-
-
 def table_dixon_coles(root: Path | str = REPO_ROOT) -> ThesisTable:
     """Log-loss e ĝ di Elo e Dixon-Coles, in validazione e nel 2023-24."""
     src_v = versioned_csv("us_c9_1_dixon_coles", root)
@@ -561,123 +514,6 @@ def table_dixon_coles(root: Path | str = REPO_ROOT) -> ThesisTable:
     )
 
 
-def table_ranking(root: Path | str = REPO_ROOT) -> ThesisTable:
-    """Τ-b di Kendall fra i ranking degli agenti con Elo e con Dixon-Coles."""
-    src = versioned_csv("us_c9_2_robustness", root)
-    tau = select(read_versioned_csv(src.name, root), 'row_type == "tau"')
-    configs = ("none", "gbp_0.01", "gbp_1")
-    rows = []
-    for metric in _ordered(tau.metric):
-        cells = [_label(METRICS, metric)]
-        for dataset in ("validation", "test"):
-            for config in configs:
-                cells.append(num(one(tau, f'dataset == "{dataset}" and config == "{config}" and metric == "{metric}"').tau, 3))
-        rows.append(tuple(cells))
-    ref = one(tau, 'dataset == "validation" and config == "gbp_0.01" and metric == "final_log_wealth"')
-    notes = (
-        r"$\tau_b$ di Kendall, con i pari, fra il ranking degli agenti col Modulo 1 Elo e quello con Dixon-Coles "
-        "(9 agenti senza floor, 10 col floor); statistica per agente: mediana sui seed per stagione, poi media "
-        "sulle stagioni (metriche per seed), o media sulle stagioni (metriche per stagione).",
-        r"Esempio di intervallo, validazione, \pounds{}0,01, log-ricchezza finale: "
-        rf"{interval(ref.ci_low, ref.ci_high, 3).latex} (correzione $t$ per cluster). ``---'': $\tau$ non definito "
-        "(tutti gli agenti pari).",
-    )
-    return ThesisTable(
-        name="tab_ranking",
-        caption=r"Robustezza del ranking degli agenti al Modulo 1: $\tau_b$ di Kendall fra Elo e Dixon-Coles",
-        columns=(Column("Metrica", ("metrica",), "l"),) + tuple(
-            Column(CONFIGS[c].latex.replace(r"senza floor ($F = 0$)", r"$F = 0$"), (f"{d} {CONFIGS[c].plain}",))
-            for d in ("validazione", "test") for c in configs
-        ),
-        rows=tuple(rows),
-        sources=(src,),
-        notes=notes,
-        header_groups=(("", 1), ("Validazione", 3), ("Test 2023-24", 3)),
-    )
-
-
-def table_comparisons_dc(root: Path | str = REPO_ROOT) -> ThesisTable:
-    """Confronti fra agenti con Elo e con Dixon-Coles, configurazione £0.01."""
-    src = versioned_csv("us_c9_2_robustness", root)
-    df = select(read_versioned_csv(src.name, root),
-                'row_type == "comparison" and metric == "final_log_wealth" and config == "gbp_0.01"')
-    rows = []
-    for dataset, name in (("validation", "validazione"), ("test", "test 2023-24")):
-        for _, r in select(df, f'dataset == "{dataset}"').iterrows():
-            lab = comparison(r.comparison)
-            rows.append((text(name), text(lab.latex, lab.plain), num(r.estimate_elo, 3, signed=True),
-                         interval(r.ci_low_elo, r.ci_high_elo, 3), num(r.estimate_dc, 3, signed=True),
-                         interval(r.ci_low_dc, r.ci_high_dc, 3),
-                         text("sì" if bool(r.same_conclusion) else "no", str(bool(r.same_conclusion)))))
-    notes = (
-        r"Configurazione principale \pounds{}0,01 ($B_0/F = 22\,000$), log-ricchezza finale. Validazione: IC al "
-        r"95\% con la correzione $t$ per cluster; test 2023-24: IC dai soli seed.",
-        "Stessa conclusione: l'intervallo esclude 0 con lo stesso segno, o non lo esclude, con i due modelli.",
-    )
-    return ThesisTable(
-        name="tab_confronti_dc",
-        caption="Confronti appaiati con il Modulo 1 Elo e con Dixon-Coles",
-        columns=(
-            Column("Insieme", ("insieme",), "l", group=True),
-            Column("Confronto", ("confronto",), "l"),
-            Column("Stima", ("Elo stima",)),
-            Column(r"IC 95\%", ("Elo IC 95% inf.", "Elo IC 95% sup."), "c"),
-            Column("Stima", ("Dixon-Coles stima",)),
-            Column(r"IC 95\%", ("Dixon-Coles IC 95% inf.", "Dixon-Coles IC 95% sup."), "c"),
-            Column("Stessa concl.", ("stessa conclusione",), "c"),
-        ),
-        rows=tuple(rows),
-        sources=(src,),
-        notes=notes,
-        header_groups=(("", 2), ("Elo", 2), ("Dixon-Coles", 2), ("", 1)),
-        tabcolsep="4pt",
-    )
-
-
-def table_devig(root: Path | str = REPO_ROOT) -> ThesisTable:
-    """Ĝ per metodo di de-vigging, in validazione e nel 2023-24, e conclusioni instabili."""
-    src = versioned_csv("us_c9_3_devig_sensitivity", root)
-    df = read_versioned_csv(src.name, root)
-    g = select(df, 'row_type == "g_hat" and (season == "pooled" or season == "2023-24")')
-    rows = []
-    for dataset, name in (("validation", "validazione"), ("test", "test 2023-24")):
-        part = select(g, f'dataset == "{dataset}"')
-        for method in _ordered(part.method):
-            cells = [text(name), _label(METHODS, method)]
-            for series in ("b365_prematch", "pinnacle_closing"):
-                r = one(part, f'method == "{method}" and series == "{series}"')
-                cells += [num(r.estimate, 4), interval(r.ci_low, r.ci_high, 4)]
-            rows.append(tuple(cells))
-    unstable = select(df, 'row_type == "conclusion" and stable == False')
-    listed = "; ".join(
-        rf"{'validazione' if r.dataset == 'validation' else 'test 2023-24'}, {CONFIGS[r.config].latex}, "
-        rf"{comparison(r.comparison).latex}, {METRICS[r.metric].latex} "
-        rf"(\texttt{{{latex_escape(r.signs_by_method)}}})"
-        for _, r in unstable.iterrows()
-    )
-    notes = (
-        r"Validazione: pooled sulle stagioni, IC al 95\% con la correzione $t$ per cluster; test 2023-24: "
-        "stationary bootstrap della stagione. Shin è il metodo principale.",
-        f"Conclusioni dei confronti che cambiano segno fra i metodi: {listed}.",
-    )
-    return ThesisTable(
-        name="tab_devig",
-        caption=r"Sensibilità di $\hat g$ al metodo di de-vigging",
-        columns=(
-            Column("Insieme", ("insieme",), "l", group=True),
-            Column("Metodo", ("metodo",), "l"),
-            Column(r"$\hat g$", ("B365 g_hat",)),
-            Column(r"IC 95\%", ("B365 IC 95% inf.", "B365 IC 95% sup."), "c"),
-            Column(r"$\hat g$", ("Pinnacle g_hat",)),
-            Column(r"IC 95\%", ("Pinnacle IC 95% inf.", "Pinnacle IC 95% sup."), "c"),
-        ),
-        rows=tuple(rows),
-        sources=(src,),
-        notes=notes,
-        header_groups=(("", 2), ("B365 pre-partita", 2), ("Pinnacle chiusura", 2)),
-    )
-
-
 TABLES: Final[dict[str, Callable[..., ThesisTable]]] = {
     "tab_falso_rigetto": table_false_rejection,
     "tab_finestra_dati": table_data_window,
@@ -689,11 +525,7 @@ TABLES: Final[dict[str, Callable[..., ThesisTable]]] = {
     "tab_eteroschedasticita": table_heteroskedasticity,
     "tab_modulo2_covid": table_module2_covid,
     "tab_modulo2_transizioni": table_module2_transitions,
-    "tab_confronti": table_comparisons,
     "tab_dixon_coles": table_dixon_coles,
-    "tab_ranking": table_ranking,
-    "tab_confronti_dc": table_comparisons_dc,
-    "tab_devig": table_devig,
 }
 
 

@@ -15,7 +15,7 @@ Decomposizione di Ñopo (2008) a quattro parti, per i gruppi A (riferimento) e B
 - struttura nel supporto: Σ_c w_B,c (ȳ_B,c − ȳ_A,c).
 Le quattro parti sommano a Δ.
 
-Regola "fuori supporto" (decisione dell'analisi del supporto comune, riusata da C2 nella calibrazione degli agenti): una partita da prevedere è
+Regola "fuori supporto" (decisione dell'analisi del supporto comune): una partita da prevedere è
 fuori supporto se la sua cella, costruita con i bordi dei quintili della finestra A, ha meno
 di MIN_CELL_COUNT = 5 partite della finestra A.
 """

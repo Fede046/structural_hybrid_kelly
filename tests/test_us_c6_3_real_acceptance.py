@@ -30,7 +30,6 @@ from shk.model.floor_real_config import (
     M_REPLICAS,
     Z_99,
     SeasonRunArtifact,
-    compute_agent_e_analytic_roi,
     compute_aggregate_metrics,
     evaluate_floor_real_config,
     outcomes_by_inversion,
@@ -133,46 +132,6 @@ def test_no_floor_zero_ruin_and_min_wealth_positive() -> None:
 
 
 # ==============================================================================
-# Criterio 3: Controllo della verita' per E con F = £1 e F = £0.01
-# ==============================================================================
-
-
-def test_agent_e_truth_check_and_no_ruin() -> None:
-    """Verifica per E che ruin_rate == 0 e che mean_roi disti meno di 2.576 SE dal valore analitico."""
-    if not CSV_PATH.exists():
-        pytest.skip("CSV non ancora generato")
-
-    df_csv = pd.read_csv(CSV_PATH)
-    e_seasons = df_csv[
-        (df_csv["row_type"] == "season")
-        & (df_csv["agent"] == "E")
-        & (df_csv["config"].isin(["gbp_0.01", "gbp_1"]))
-    ]
-    assert len(e_seasons) == 38, f"Attese 38 righe di stagione per E, trovate {len(e_seasons)}"
-
-    # Nessuna replica di E e' in rovina
-    assert (
-        e_seasons["ruin_rate"] == 0.0
-    ).all(), "Trovata rovina per l'agente E!"
-
-    failures: list[str] = []
-    for _, row in e_seasons.iterrows():
-        mean_roi = float(row["mean_roi"])
-        analytic_roi = float(row["analytic_expected_roi"])
-        se_roi = float(row["se_roi"])
-        threshold = Z_99 * se_roi
-
-        diff = abs(mean_roi - analytic_roi)
-        if diff >= threshold:
-            failures.append(
-                f"Stagione {row['season']} ({row['config']}): diff {diff:.6f} >= 2.576*SE ({threshold:.6f})"
-            )
-
-    if failures:
-        pytest.fail("Controllo verita' per E fallito:\n" + "\n".join(failures))
-
-
-# ==============================================================================
 # Criterio 4: Appaiamento e identita' conteggi puntate con F = 0
 # ==============================================================================
 
@@ -218,14 +177,11 @@ def test_pairing_outcomes_and_bet_counts() -> None:
 
     run_a = next(r for r in runs_none if r.name == "A")
     run_b25 = next(r for r in runs_none if r.name == "B_0.25")
-    run_b10 = next(r for r in runs_none if r.name == "B_0.10")
-
-    # In ogni replica: n_bets(A) + n_dropped(A) == n_bets(B_0.25) == n_bets(B_0.10)
+    # In ogni replica: n_bets(A) + n_dropped(A) == n_bets(B_0.25)
     for rep in range(m):
         tot_a = int(run_a.n_bets[rep] + run_a.n_dropped[rep])
         tot_b25 = int(run_b25.n_bets[rep])
-        tot_b10 = int(run_b10.n_bets[rep])
-        assert tot_a == tot_b25 == tot_b10, f"Replica {rep}: {tot_a} vs {tot_b25} vs {tot_b10}"
+        assert tot_a == tot_b25, f"Replica {rep}: {tot_a} vs {tot_b25}"
 
 
 # ==============================================================================
@@ -240,7 +196,7 @@ def test_aggregate_recalculation() -> None:
 
     df_csv = pd.read_csv(CSV_PATH)
     df_agg = df_csv[df_csv["row_type"] == "aggregate"]
-    assert len(df_agg) == 11, f"Attese 11 righe aggregate, trovate {len(df_agg)}"
+    assert len(df_agg) == 6, f"Attese 6 righe aggregate, trovate {len(df_agg)}"
 
     for _, agg_row in df_agg.iterrows():
         cfg = agg_row["config"]
@@ -283,12 +239,6 @@ def test_aggregate_recalculation() -> None:
         assert math.isclose(float(agg_row["ruin_rate_ci_lower"]), expected_ci_lower, rel_tol=1e-12)
         assert math.isclose(float(agg_row["ruin_rate_ci_upper"]), expected_ci_upper, rel_tol=1e-12)
 
-        # 4. Per E: analytic_expected_roi
-        if ag == "E":
-            expected_analytic = float(sub_seasons["analytic_expected_roi"].astype(float).mean())
-            assert math.isclose(
-                float(agg_row["analytic_expected_roi"]), expected_analytic, rel_tol=1e-12
-            )
 
 
 # ==============================================================================
@@ -305,12 +255,12 @@ def test_csv_and_png_schema_and_internal_consistency() -> None:
 
     df_csv = pd.read_csv(CSV_PATH)
     assert tuple(df_csv.columns) == FLOOR_REAL_CSV_COLUMNS
-    assert len(df_csv) == 220, f"Attese 220 righe nel CSV, trovate {len(df_csv)}"
+    assert len(df_csv) == 120, f"Attese 120 righe nel CSV, trovate {len(df_csv)}"
 
     season_rows = df_csv[df_csv["row_type"] == "season"]
     agg_rows = df_csv[df_csv["row_type"] == "aggregate"]
-    assert len(season_rows) == 209
-    assert len(agg_rows) == 11
+    assert len(season_rows) == 114
+    assert len(agg_rows) == 6
 
     # Integrita' PNG: magic bytes e dimensione minima (> 10 KB)
     with open(FIG_PATH, "rb") as f:
