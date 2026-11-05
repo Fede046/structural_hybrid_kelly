@@ -278,6 +278,42 @@ Con le finestre adiacenti le diagnosi strutturali quasi spariscono, quindi C3_st
 - **Lo schema resta utile:** C3_ref è meglio di B_0.25 in 15 stagioni su 19 e C3_ref_stop in 17 (sulle stagioni vere 13 e 12, peggio in 4 e 5). L'allarme scatta un po' meno (4,0 volte per stagione contro 4,5), perché il riferimento è sempre la stagione appena passata.
 - **Lettura:** in questa forma la seconda opzione del relatore va peggio del moltiplicatore. Una ri-parametrizzazione su più stagioni, o solo dopo un errore strutturale, non è stata provata.
 
+### 3.7 Le stagioni di training: il Covid e un fit aggiuntivo
+
+**Il problema.** Le stagioni di training sono una ogni dieci anni (2000-01, 2010-11, 2020-21, `config/split.toml`): il 2020-21, giocato quasi tutto a porte chiuse, c'è per questa regola, non per scelta. Il fit congelato 2020-21 è calibrato sulle tre stagioni insieme (schema espansivo) e ha h = 78, contro 126–128 dei fit precedenti; da solo il 2020-21 dà h = 0 (§3.6). Il fit 2010-11 prevede invece nove stagioni. Lo split non cambia; ci sono due verifiche (modulo `shk.model.training_fits`, script `scripts/us_c20_training_fits.py`, errori in `results/us_c20_training_fits_errors.csv`, schema in `results/us_c20_training_fits_summary.csv`).
+
+**Covid.** Il 2021-22 e il 2022-23 previsti dal fit 2010-11, che non contiene il 2020-21, al posto del fit congelato 2020-21:
+
+| 2021-22 e 2022-23 | Fit 2020-21 (congelato) | Fit 2010-11 (senza Covid) |
+|---|---|---|
+| ĝ | −0,0322 | −0,0396 |
+| Errore atteso | −0,0264 | −0,0363 |
+| Log-loss | 0,9833 | 0,9908 |
+| Vittorie in casa previste (mercato 44,0%, reali 45,7%) | 44,6% | 47,7% |
+
+Senza il Covid il modello va peggio: il fit 2010-11 sopravvaluta il fattore campo, che si era ridotto già prima del 2020. Il punto debole è la distanza dall'ultimo fit, non il Covid.
+
+**Fit aggiuntivo 2015-16.** Calibrato come i fit congelati (2000-01, 2010-11 e 2015-16 insieme): K = 20,95, h = 102,9, ν = 0,871. Prevede le stagioni dal 2016-17 al 2019-20 al posto del fit 2010-11; le altre 15 stagioni restano identiche bit per bit (lo script lo verifica). Il 2015-16 resta stagione di validazione, prevista dal fit 2010-11.
+
+| 2016-17 … 2019-20 | Fit 2010-11 (congelato) | Fit 2015-16 |
+|---|---|---|
+| ĝ | −0,0307 | −0,0254 |
+| Errore atteso | −0,0343 | −0,0263 |
+| Log-loss | 0,9601 | 0,9547 |
+| Vittorie in casa previste (mercato 44,9%, reali 46,9%) | 47,7% | 45,4% |
+
+Il modello migliora in tre stagioni su quattro (il 2016-17 peggiora). Lo schema a riferimento fisso, con soglie e stagione di calibrazione congelate per i fit esistenti e calibrate sul 2015-16 per il nuovo (seed `SEED_S20`), 500 seed appaiati con us_c13 (stagioni vere, £0,01, dalla tabella di us_c19):
+
+| Agente | Congelato, 19 stagioni | Con il fit 2015-16, 19 stagioni | Congelato, 2016-20 | Con il fit 2015-16, 2016-20 |
+|---|---|---|---|---|
+| B_0.25 | 57% | 54% | 74% | 57% |
+| C3_ref | 62% | 60% | 79% | 68% |
+| C3_ref_stop | 71% | 70% | 74% | 72% |
+
+- **Un modello migliore non porta più capitale.** Nel 2016-20 le squadre di casa vincevano più di quanto dicesse il mercato (46,9% contro 44,9%). Il fit 2010-11 dava loro più del mercato (47,7%), più vicino alla frequenza reale, e su quelle puntate guadagnava; il fit 2015-16 è più vicino al mercato (45,4%) e perde quel vantaggio, anche se nel complesso prevede meglio (log-loss più bassa).
+- **Lo schema regge e diventa più netto:** con il fit 2015-16 C3_ref_stop batte B_0.25 in 17 stagioni vere su 19 (peggio in 2) e C3_ref in 15 (peggio in 4), contro 14 e 14 del modello congelato.
+- **Lettura:** le conclusioni non dipendono dalle stagioni di training. È una verifica scelta dopo aver visto i dati; lo split congelato resta quello di riferimento.
+
 ## 4. Il lavoratore sceglie l'esito: regole R1, R2, R3
 
 Il relatore ha chiesto di far scegliere l'esito anche al lavoratore («proverei anche a differenziare») e ha scelto l'opzione A: lavoratori classici più un LLM, con il supervisore che agisce sulla puntata. Il disegno è in `thesis/disegno_lavoratore.md`; qui c'è la fase 1, con i lavoratori classici.

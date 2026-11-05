@@ -100,6 +100,8 @@ STEPS: tuple[Step, ...] = (
     Step("elo", "us_c17_r3_reference", outputs=(_r("us_c17_r3_reference_summary"),), slow=True),
     Step("elo", "us_c18_elo_refit",
          outputs=tuple(_r(f"us_c18_elo_refit_{n}") for n in ("params", "aging", "thresholds", "summary")), slow=True),
+    Step("elo", "us_c20_training_fits",
+         outputs=(_r("us_c20_training_fits_errors"), _r("us_c20_training_fits_summary")), slow=True),
     Step("elo", "us_c19_real_seasons", outputs=(_r("us_c19_real_seasons"),)),
     Step("elo", "us_c8_5_test_run", outputs=(_r("us_c8_5_test_run"),), test_set=True),
     Step("elo", "kellybench_2023_24", outputs=(_r("kellybench_2023_24"),), test_set=True),
