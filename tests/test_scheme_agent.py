@@ -168,3 +168,67 @@ def test_and_alarm_needs_both_statistics():
     with pytest.raises(ValueError):
         SchemeAgent("x", _ScriptedSupervisor(days, windows, [None] * 3), 0.5, 0.5, 0.5, 0.1, SCHEME_STOP_CLEAR,
                     alarm="xor")
+
+
+def test_reference_statistics_match_scipy_with_sign():
+    """Riferimento fisso: F con gruppi di dimensione diversa = f_oneway e levene(median), con il segno."""
+    from shk.model.agent_c import reference_statistics
+
+    rng = np.random.default_rng(7)
+    ref = rng.normal(0.0, 0.2, 380)
+    win = rng.normal(-0.2, 0.5, 40)
+    f_mean, f_disp = reference_statistics(ref, win)
+    assert f_mean == pytest.approx(scipy.stats.f_oneway(ref, win).statistic, rel=1e-10)
+    assert f_disp == pytest.approx(scipy.stats.levene(ref, win, center="median").statistic, rel=1e-10)
+    assert reference_statistics(ref, rng.normal(0.3, 0.05, 40)) == (0.0, 0.0)
+    batch = rng.normal(size=(4, 40))
+    fm, fd = reference_statistics(ref, batch)
+    for i in range(4):
+        assert (fm[i], fd[i]) == pytest.approx(reference_statistics(ref, batch[i]), rel=1e-12)
+
+
+def test_reference_thresholds_are_order_statistics():
+    """Soglie della variante: media e dispersione a α/2, T = −S a α sui ricampionamenti a rango pieno."""
+    from shk.model.agent_c import calibrate_reference_thresholds, reference_statistics
+    from shk.stats.oaxaca import three_fold_batch
+
+    rng = np.random.default_rng(8)
+    n, w, length = 150, 30, 5
+    x = rng.normal(size=(n, 2))
+    delta = 0.1 * x[:, 0] + rng.normal(0.0, 0.3, n)
+    mean_thr, disp_thr, struct_thr = calibrate_reference_thresholds(x, delta, w, length, np.random.default_rng(9))
+    idx = moving_block_indices(n, length, 999, np.random.default_rng(9))[:, :w]
+    fm, fd = reference_statistics(delta, delta[idx])
+    k = compute_order_statistic_index(999, 0.025)
+    assert (mean_thr, disp_thr) == (np.sort(fm)[k - 1], np.sort(fd)[k - 1])
+    tf = three_fold_batch(np.repeat(x[None], 999, axis=0), np.repeat(delta[None], 999, axis=0), x[idx], delta[idx])
+    t = np.sort(-tf.structural[tf.valid])
+    assert struct_thr == t[compute_order_statistic_index(t.shape[0], 0.05) - 1]
+
+
+def test_supervisor_reference_diagnostics_and_reference_agent():
+    """Diagnostica contro il riferimento: None prima di W partite, poi le F e T sulle ultime W; lo schema la usa."""
+    from shk.model.agent_c import ReferenceData, reference_statistics
+    from shk.stats.oaxaca import three_fold_batch
+
+    rng = np.random.default_rng(10)
+    days = _days(12)
+    x = rng.normal(size=(12, 1))
+    ref = ReferenceData(rng.normal(size=(60, 1)), rng.normal(0.0, 0.1, 60))
+    sup = Module2Supervisor("s", days, x, ["c"], 4, reference=ref)
+    probs = np.array([[0.5, 0.3, 0.2]])
+    odds = np.array([[1.9, 3.4, 4.5]])
+    assert sup.reference_diagnostics(days[4]) is None
+    for i, d in enumerate(days):
+        sup.observe(DateResults(d, probs, odds, np.array([[i % 3]])))
+    f_mean, f_disp, t = sup.reference_diagnostics(days[10])
+    rows = np.arange(6, 10)
+    assert (f_mean, f_disp) == reference_statistics(ref.delta, sup._delta[rows])
+    tf = three_fold_batch(ref.x[None], ref.delta[None], x[rows][None], sup._delta[rows][None])
+    assert t == pytest.approx(-tf.structural[0]) if tf.valid[0] else math.isnan(t)
+    agent = SchemeAgent("C3_ref", sup, 0.5, -1.0, -1.0, 1e9, SCHEME_STOP_CLEAR, reference=True)
+    agent.decide(DateView(days[10], probs, odds))
+    assert agent.diagnosis_by_date[days[10]] in (DIAGNOSIS_COMPOSITIONAL, DIAGNOSIS_NONE)
+    with pytest.raises(ValueError):
+        SchemeAgent("x", Module2Supervisor("s", days, x, ["c"], 4), 0.5, 1.0, 1.0, 0.1, SCHEME_STOP_CLEAR,
+                    reference=True)

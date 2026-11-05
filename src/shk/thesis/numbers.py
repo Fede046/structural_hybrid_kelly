@@ -58,6 +58,7 @@ THEMES: Final[dict[str, str]] = {
     "floor": "Floor",
     "eteroschedasticita": "Eteroschedasticità",
     "modulo2": "Oaxaca-Blinder sui residui",
+    "schema": "Allarme ANOVA dello schema: potenza",
     "confronti": "Test set 2023-24",
     "robustezza": "Robustezza: Dixon-Coles",
 }
@@ -74,6 +75,7 @@ _H: Final[str] = "us_c6_4_heteroskedasticity"
 _V: Final[str] = "us_c6_4b_variance_change"
 _K: Final[str] = "us_c7_3b_known_scenarios"
 _DID: Final[str] = "us_c7_4_did_support"
+_PW: Final[str] = "us_c12_anova_power"
 _T: Final[str] = "us_c8_5_test_run"
 _TDC: Final[str] = "us_c8_5_test_run_dc"
 _DC: Final[str] = "us_c9_1_dixon_coles"
@@ -273,6 +275,27 @@ NUMBERS: Final[tuple[NumberSpec, ...]] = (
                'row_type == "did" and season == "pooled"', "lower", 4, "nat per partita"),
     NumberSpec("modulo2", "modulo2_did_pooled_sup", "DiD pooled, IC 95%, estremo superiore", _DID,
                'row_type == "did" and season == "pooled"', "upper", 4, "nat per partita"),
+    # Allarme ANOVA dello schema: potenza
+    NumberSpec("schema", "schema_potenza_none", "Stagioni con allarme nelle 10 date dopo il cambiamento: nessun cambiamento", _PW,
+               'row_type == "power" and scenario == "none"', "share_seasons_with_alarm", 2, "quota di stagioni"),
+    NumberSpec("schema", "schema_potenza_mean_005", "Stagioni con allarme nelle 10 date dopo il cambiamento: media peggiore di 0.05", _PW,
+               'row_type == "power" and scenario == "mean_-0.05"', "share_seasons_with_alarm", 2, "quota di stagioni"),
+    NumberSpec("schema", "schema_potenza_mean_010", "Stagioni con allarme nelle 10 date dopo il cambiamento: media peggiore di 0.10", _PW,
+               'row_type == "power" and scenario == "mean_-0.10"', "share_seasons_with_alarm", 2, "quota di stagioni"),
+    NumberSpec("schema", "schema_potenza_mean_020", "Stagioni con allarme nelle 10 date dopo il cambiamento: media peggiore di 0.20", _PW,
+               'row_type == "power" and scenario == "mean_-0.20"', "share_seasons_with_alarm", 2, "quota di stagioni"),
+    NumberSpec("schema", "schema_potenza_variance_x15", "Stagioni con allarme nelle 10 date dopo il cambiamento: varianza ×1.5", _PW,
+               'row_type == "power" and scenario == "variance_x1.5"', "share_seasons_with_alarm", 2, "quota di stagioni"),
+    NumberSpec("schema", "schema_potenza_variance_x2", "Stagioni con allarme nelle 10 date dopo il cambiamento: varianza ×2", _PW,
+               'row_type == "power" and scenario == "variance_x2"', "share_seasons_with_alarm", 2, "quota di stagioni"),
+    NumberSpec("schema", "schema_potenza_mean_010_variance_x2", "Stagioni con allarme nelle 10 date dopo il cambiamento: media peggiore di 0.10 e varianza ×2", _PW,
+               'row_type == "power" and scenario == "mean_-0.10_variance_x2"', "share_seasons_with_alarm", 2, "quota di stagioni"),
+    NumberSpec("schema", "schema_mde_2000_01", "Peggioramento minimo della media di δ rilevabile, fit 2000-01", _PW,
+               'row_type == "mde" and fit_through == "2000-01"', "min_detectable_worsening", 3, "nat per partita"),
+    NumberSpec("schema", "schema_mde_2010_11", "Peggioramento minimo della media di δ rilevabile, fit 2010-11", _PW,
+               'row_type == "mde" and fit_through == "2010-11"', "min_detectable_worsening", 3, "nat per partita"),
+    NumberSpec("schema", "schema_mde_2020_21", "Peggioramento minimo della media di δ rilevabile, fit 2020-21", _PW,
+               'row_type == "mde" and fit_through == "2020-21"', "min_detectable_worsening", 3, "nat per partita"),
     # Test set 2023-24
     NumberSpec("confronti", "test_log_loss", "Log-loss del Modulo 1 (Elo) sul 2023-24", _T,
                'row_type == "log_loss" and series == "b365_prematch"', "estimate", 3, "nat per partita"),

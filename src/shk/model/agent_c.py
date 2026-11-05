@@ -35,6 +35,17 @@ regola del lavoratore (shk.kelly.outcome_rules.with_outcome_rule) l'esito è que
 W, κ e la soglia strutturale sono i valori congelati in config/frozen_params.toml (chiavi c1_*:
 vengono dalla calibrazione del 2026-10, documentata sul branch confronti-controllo).
 
+Variante con riferimento fisso (C3_ref, C3_ref_stop; decisione del 2026-11-05): la finestra A non
+è più quella delle W partite precedenti ma la stagione di calibrazione del Modulo 1 (la stagione di
+training del fit, ReferenceData), fissa per tutta la stagione; B resta l'ultima finestra di W
+partite con Date < d. Allarme con F della media e di Brown-Forsythe con segno fra gruppi di
+dimensione diversa (reference_statistics); diagnosi con la three-fold fra il riferimento e B
+(Module2Supervisor.reference_diagnostics). Soglie di media, dispersione e componente strutturale
+calibrate insieme (calibrate_reference_thresholds): moving block bootstrap della stagione di
+calibrazione, B = W righe (covariate e δ insieme) ricampionate contro la stagione intera; media e
+dispersione al livello α/2, T = −S al livello α sui ricampionamenti a rango pieno. È una variante
+scelta dopo aver visto le frequenze d'allarme sulla validazione (non i rendimenti).
+
 Soglie dell'allarme (calibrate_scheme_thresholds): moving block bootstrap della serie di δ del
 fit, dei ricampionamenti di lunghezza n si tengono le prime 2W posizioni come finestre A e B,
 B = 999; ogni F con segno ha livello α/2 (Bonferroni), così l'allarme ha livello α = 0.05 al più.
@@ -45,7 +56,7 @@ entrambe le F oltre soglia è ancora <= α.
 
 import math
 from collections.abc import Sequence
-from typing import Final
+from typing import Final, NamedTuple
 
 import numpy as np
 import pandas as pd
@@ -57,6 +68,7 @@ from shk.model.module2 import STATE_ACTIVE, STATE_NOT_ACTIVE, Module2Data, Modul
 from shk.stats.calibration import compute_order_statistic_index, moving_block_indices
 from shk.stats.false_rejection import ALPHA
 from shk.stats.anova import oneway_anova_vectorized
+from shk.stats.oaxaca import three_fold_batch
 from shk.stats.variance_change import brown_forsythe
 
 N_BOOT: Final[int] = 999
@@ -69,6 +81,13 @@ SCHEME_ALARMS: Final[tuple[str, ...]] = (SCHEME_ALARM_OR, SCHEME_ALARM_AND)
 DIAGNOSIS_NONE: Final[str] = "none"
 DIAGNOSIS_COMPOSITIONAL: Final[str] = "compositional"
 DIAGNOSIS_STRUCTURAL: Final[str] = "structural"
+
+
+class ReferenceData(NamedTuple):
+    """Partite della stagione di calibrazione del Modulo 1, riferimento fisso della variante C3_ref."""
+
+    x: np.ndarray      # (n, k) covariate pre-partita
+    delta: np.ndarray  # (n,) δ
 
 
 class Module2Supervisor:
@@ -88,6 +107,8 @@ class Module2Supervisor:
         W delle finestre A e B.
     devig_method : str, default "shin"
         Metodo di de-vigging di q per δ (decisione di progetto).
+    reference : ReferenceData o None, default None
+        Stagione di calibrazione per la variante con riferimento fisso (reference_diagnostics).
 
     Solleva
     -------
@@ -103,6 +124,7 @@ class Module2Supervisor:
         covariate_names: Sequence[str],
         window: int,
         devig_method: str = "shin",
+        reference: ReferenceData | None = None,
     ) -> None:
         self._devig_method = devig_method
         d = np.asarray(dates).astype("datetime64[ns]")
@@ -124,6 +146,14 @@ class Module2Supervisor:
         self._delta = np.full(n, np.nan)
         self._observed_dates: set[np.datetime64] = set()
         self._cache: dict[np.datetime64, Module2Output] = {}
+        if reference is not None:
+            rx = np.asarray(reference.x, dtype=np.float64)
+            rd = np.asarray(reference.delta, dtype=np.float64)
+            if rx.ndim != 2 or rx.shape != (rd.shape[0], len(names)) or rd.shape[0] < 2 * len(names) + 2:
+                raise ValueError("reference must have x (n, k) and delta (n,) with the supervisor's covariates")
+            reference = ReferenceData(rx, rd)
+        self._reference = reference
+        self._reference_cache: dict[np.datetime64, tuple[float, float, float] | None] = {}
 
     @property
     def window(self) -> int:
@@ -163,6 +193,28 @@ class Module2Supervisor:
         if eligible.shape[0] < 2 * self._window:
             return None
         return self._delta[eligible[-2 * self._window:-self._window]], self._delta[eligible[-self._window:]]
+
+    def reference_diagnostics(self, decision_date: np.datetime64) -> tuple[float, float, float] | None:
+        """(F della media, F di dispersione, T = −S) fra il riferimento fisso e le ultime W partite con Date < d.
+
+        None con meno di W partite; T è NaN se un disegno ha rango non pieno (in cache per data).
+        """
+        if self._reference is None:
+            raise ValueError("the supervisor has no reference")
+        day = np.datetime64(decision_date, "ns")
+        if day in self._reference_cache:
+            return self._reference_cache[day]
+        eligible = self._eligible(day)
+        if eligible.shape[0] < self._window:
+            out = None
+        else:
+            rows = eligible[-self._window:]
+            f_mean, f_disp = reference_statistics(self._reference.delta, self._delta[rows])
+            tf = three_fold_batch(self._reference.x[None], self._reference.delta[None], self._x[rows][None],
+                                  self._delta[rows][None])
+            out = (float(f_mean), float(f_disp), float(-tf.structural[0]) if bool(tf.valid[0]) else math.nan)
+        self._reference_cache[day] = out
+        return out
 
     def state_at(self, decision_date: np.datetime64) -> Module2Output:
         """Uscita di Oaxaca-Blinder (module2_at_date) sulle partite osservate con Date < d (in cache)."""
@@ -217,11 +269,13 @@ class SchemeAgent(Agent):
         λ senza allarme.
     alarm : str, default SCHEME_ALARM_OR
         SCHEME_ALARM_OR (una delle due F oltre soglia) o SCHEME_ALARM_AND (entrambe).
+    reference : bool, default False
+        Se True, allarme e diagnosi contro il riferimento fisso del supervisore (C3_ref, vedi modulo).
     """
 
     def __init__(self, name: str, supervisor: Module2Supervisor, kappa: float, mean_threshold: float,
                  dispersion_threshold: float, structural_threshold: float, stop: str,
-                 base_lambda: float = BASE_LAMBDA, alarm: str = SCHEME_ALARM_OR) -> None:
+                 base_lambda: float = BASE_LAMBDA, alarm: str = SCHEME_ALARM_OR, reference: bool = False) -> None:
         super().__init__(name)
         if not isinstance(supervisor, Module2Supervisor):
             raise TypeError("supervisor must be a Module2Supervisor")
@@ -236,7 +290,10 @@ class SchemeAgent(Agent):
             raise ValueError(f"stop must be one of {SCHEME_STOPS}, got {stop!r}")
         if alarm not in SCHEME_ALARMS:
             raise ValueError(f"alarm must be one of {SCHEME_ALARMS}, got {alarm!r}")
+        if reference and supervisor._reference is None:
+            raise ValueError("reference=True needs a supervisor with a reference")
         self._alarm = alarm
+        self._reference = bool(reference)
         self._supervisor = supervisor
         self._kappa = float(kappa)
         self._mean_threshold = float(mean_threshold)
@@ -265,13 +322,21 @@ class SchemeAgent(Agent):
         """Diagnosi a ogni data di decisione: "none", "compositional" o "structural"."""
         return dict(self._diagnosis_by_date)
 
+    def _alarm_on(self, f_mean: float, f_dispersion: float) -> bool:
+        exceed = (f_mean > self._mean_threshold, f_dispersion > self._dispersion_threshold)
+        return all(exceed) if self._alarm == SCHEME_ALARM_AND else any(exceed)
+
     def _diagnose(self, day: np.datetime64) -> str:
+        if self._reference:
+            diag = self._supervisor.reference_diagnostics(day)
+            if diag is None or not self._alarm_on(diag[0], diag[1]):
+                return DIAGNOSIS_NONE
+            return DIAGNOSIS_STRUCTURAL if diag[2] > self._structural_threshold else DIAGNOSIS_COMPOSITIONAL
         windows = self._supervisor.delta_windows(day)
         if windows is None:
             return DIAGNOSIS_NONE
         f_mean, f_dispersion = scheme_statistics(windows[0], windows[1])
-        exceed = (f_mean > self._mean_threshold, f_dispersion > self._dispersion_threshold)
-        if not (all(exceed) if self._alarm == SCHEME_ALARM_AND else any(exceed)):
+        if not self._alarm_on(f_mean, f_dispersion):
             return DIAGNOSIS_NONE
         out = self._supervisor.state_at(day)
         if out.state == STATE_ACTIVE and -out.result.structural > self._structural_threshold:
@@ -379,3 +444,61 @@ def calibrate_scheme_and_thresholds(
             break
         best = (mean_thr, disp_thr)
     return best
+
+
+def reference_statistics(reference: np.ndarray, window: np.ndarray) -> tuple[np.ndarray | float, np.ndarray | float]:
+    """F della media e F di Brown-Forsythe con segno fra il riferimento (n_A,) e la finestra (W,) o (B, W).
+
+    ANOVA a una via con due gruppi di dimensione diversa; la F della media conta solo se la media
+    della finestra è minore di quella del riferimento, la F di dispersione solo se la deviazione
+    assoluta media dalla mediana della finestra è maggiore.
+    """
+    a = np.asarray(reference, dtype=np.float64)
+    b = np.asarray(window, dtype=np.float64)
+    if a.ndim != 1 or b.ndim not in (1, 2) or a.shape[0] < 2 or b.shape[-1] < 2:
+        raise ValueError(f"reference must be (n,) and window (W,) or (B, W), got {a.shape}, {b.shape}")
+
+    def oneway(ga: np.ndarray, gb: np.ndarray) -> np.ndarray:
+        na, nb = ga.shape[-1], gb.shape[-1]
+        ma, mb = ga.mean(axis=-1), gb.mean(axis=-1)
+        grand = (na * ma + nb * mb) / (na + nb)
+        between = na * (ma - grand) ** 2 + nb * (mb - grand) ** 2
+        within = ((ga - ma[..., None]) ** 2).sum(axis=-1) + ((gb - mb[..., None]) ** 2).sum(axis=-1)
+        return between / (within / (na + nb - 2))
+
+    za = np.abs(a - np.median(a))
+    zb = np.abs(b - np.median(b, axis=-1, keepdims=True))
+    f_mean = oneway(a, b)
+    f_disp = oneway(za, zb)
+    worse = b.mean(axis=-1) < a.mean()
+    wider = zb.mean(axis=-1) > za.mean()
+    if b.ndim == 1:
+        return (float(f_mean) if worse else 0.0), (float(f_disp) if wider else 0.0)
+    return np.where(worse, f_mean, 0.0), np.where(wider, f_disp, 0.0)
+
+
+def calibrate_reference_thresholds(
+    x: np.ndarray,
+    delta: np.ndarray,
+    window: int,
+    block_length: int,
+    rng: np.random.Generator,
+    n_boot: int = N_BOOT,
+    alpha: float = ALPHA,
+) -> tuple[float, float, float]:
+    """Soglie (media, dispersione, T = −S) della variante con riferimento fisso (vedi modulo)."""
+    xa = np.asarray(x, dtype=np.float64)
+    ya = np.asarray(delta, dtype=np.float64)
+    n = ya.shape[0]
+    if xa.shape[0] != n or window > n:
+        raise ValueError(f"need x and delta with the same length >= W, got {xa.shape[0]}, {n}, W = {window}")
+    idx = moving_block_indices(n, block_length, n_boot, rng)[:, :window]
+    f_mean, f_disp = reference_statistics(ya, ya[idx])
+    k = compute_order_statistic_index(n_boot, alpha / 2.0)
+    tf = three_fold_batch(np.ascontiguousarray(np.broadcast_to(xa, (n_boot,) + xa.shape)),
+                          np.ascontiguousarray(np.broadcast_to(ya, (n_boot, n))), xa[idx], ya[idx])
+    t = -tf.structural[tf.valid]
+    if t.shape[0] < 1:
+        raise ValueError("no full-rank bootstrap resample")
+    ks = compute_order_statistic_index(t.shape[0], alpha)
+    return float(np.sort(f_mean)[k - 1]), float(np.sort(f_disp)[k - 1]), float(np.sort(t)[ks - 1])
