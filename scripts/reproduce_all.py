@@ -95,6 +95,8 @@ STEPS: tuple[Step, ...] = (
     Step("elo", "us_c12_anova_power", outputs=(_r("us_c12_anova_power"),)),
     Step("elo", "us_c13_scheme_reference",
          outputs=(_r("us_c13_scheme_reference_thresholds"), _r("us_c13_scheme_reference_summary")), slow=True),
+    Step("elo", "us_c15_oaxaca_position", outputs=(_r("us_c15_oaxaca_position"),), slow=True),
+    Step("elo", "us_c16_oaxaca_expected", outputs=(_r("us_c16_oaxaca_expected"),), slow=True),
     Step("elo", "us_c8_5_test_run", outputs=(_r("us_c8_5_test_run"),), test_set=True),
     Step("elo", "kellybench_2023_24", outputs=(_r("kellybench_2023_24"),), test_set=True),
     Step("elo", "us_c14_test_scheme_seeds", outputs=(_r("us_c14_test_scheme_seeds_summary"),), test_set=True),
