@@ -99,6 +99,7 @@ Lo schema è confrontato, sulle stesse partite e con le stesse quote, con lo ste
 
 ### 3.8 Inferenza
 - **Il problema n = 1.** Una stagione è una sola traiettoria, autocorrelata e dipendente dal percorso.
+- **Il risultato principale è la stagione vera** (decisione del 2026-11-05, `results/us_c19_real_seasons.csv`): ognuna delle 19 stagioni di validazione giocata una volta, come in KellyBench; i confronti fra agenti sono appaiati stagione per stagione (stagioni meglio e peggio). Le stagioni ricostruite usano partite, quote e risultati veri, ma ripetono alcune giornate e ne saltano altre: alterano la sequenza nel tempo che il supervisore osserva, quindi servono solo a misurare l'incertezza.
 - **I seed.** Ogni seed è una stagione ricostruita per stationary bootstrap delle date: ogni data porta con sé tutte le sue partite.
   - La lunghezza media dei blocchi è scelta automaticamente con il metodo di Politis-White.
   - 500 seed per stagione, numero congelato da un'analisi di potenza sul training.
@@ -171,28 +172,30 @@ Sui dati reali le due componenti non si separano dove la teoria lo prevede: è i
 - scomponendo l'errore atteso E_q[δ] = −KL(q ‖ p̂) invece di δ realizzato (`results/us_c16_oaxaca_expected.csv`) le covariate spiegano il 41% invece del 2.5%, e la diagnosi diventa coerente: 5% di diagnosi strutturali fra finestre adiacenti, 47% rispetto alla stagione di calibrazione. Il capitale resta simile (C3_ref 62% contro 61%, C3_ref_stop 76% contro 78%).
 
 ### 4.7 Lo schema del relatore contro il lavoratore senza supervisore
-Somma sulle 19 stagioni di validazione della mediana di ln W_T, configurazione £0.01, 500 seed appaiati (`results/us_c10_scheme_validation_summary.csv`):
+Stagioni vere di validazione, configurazione £0.01 (`results/us_c19_real_seasons.csv`). Capitale tipico = exp(media sulle 19 stagioni di ln W_T); «meglio / peggio» rispetto a B_0.25, stagione per stagione. Per confronto, la somma sulle stagioni della mediana di ln W_T sulle 500 stagioni ricostruite (`results/us_c10_scheme_validation_summary.csv`, `results/us_c13_scheme_reference_summary.csv`).
 
-| Agente | Somma delle mediane | Accensioni per stagione | Date con λ = 0 |
-|---|---|---|---|
-| A, Kelly pieno | −116.89 | – | – |
-| B_0.25, quarto di Kelly | −10.87 | – | – |
-| C3 | −10.62 | 1.6 | 1.5% |
-| C3_stop | −7.51 | 1.6 | 26% |
-| C3_and | −10.67 | 1.5 | 1.4% |
-| C3_ref | −9.19 | 4.5 | 15% |
-| C3_ref_stop | −4.50 | 4.5 | 64% |
+| Agente | Capitale tipico, stagioni vere | Meglio / peggio | Accensioni per stagione | Date con λ = 0 | Somma delle mediane, ricostruite |
+|---|---|---|---|---|---|
+| A, Kelly pieno | 0.2% | 0 / 19 | – | – | −116.89 |
+| B_0.25, quarto di Kelly | 57% | – | – | – | −10.87 |
+| C3 | 60% | 10 / 6 | 1.6 | 2% | −10.62 |
+| C3_stop | 71% | 12 / 4 | 1.6 | 34% | −7.51 |
+| C3_and | 56% | 6 / 7 | 1.3 | 1% | −10.67 |
+| C3_ref | 62% | 14 / 5 | 4.8 | 13% | −9.19 |
+| C3_ref_stop | 71% | 14 / 5 | 4.8 | 59% | −4.50 |
 
-- **C3 contro B_0.25:** mai peggiore in mediana, migliore in 5 stagioni su 19.
-- **C3_stop contro B_0.25:** mai peggiore, migliore in 9 stagioni su 19.
-- **C3_and:** quasi come C3; migliore di B_0.25 in 8 stagioni su 19.
-- **C3_ref e C3_ref_stop contro B_0.25:** migliori in 15 stagioni su 19, peggiori in 2 (`results/us_c13_scheme_reference_summary.csv`).
+- **C3 contro B_0.25:** migliore in 10 stagioni vere su 19, peggiore in 6 (sulle ricostruite, in mediana delle differenze appaiate, mai peggiore e migliore in 5).
+- **C3_stop contro B_0.25:** migliore in 12, peggiore in 4 (ricostruite: mai peggiore, migliore in 9).
+- **C3_and:** quasi come C3; migliore di B_0.25 in 6 stagioni vere, peggiore in 7 (ricostruite: migliore in 8).
+- **C3_ref e C3_ref_stop contro B_0.25:** migliori in 14 stagioni vere su 19, peggiori in 5 (ricostruite: migliori in 15, peggiori in 2). Il guadagno non si concentra nelle stagioni in cui il modello è più vecchio: lo fa solo sulle ricostruite, e solo per C3_ref.
+- **Le versioni ferme fino a fine stagione guadagnano meno sulle stagioni vere** (C3_ref_stop 71% contro 79% sulle ricostruite): il ricampionamento crea più spesso periodi di errori anomali che accendono l'allarme.
 - **Lettura.** Con le finestre adiacenti lo schema interviene poco: fra due periodi vicini il segnale è sotto il rumore (§4.4). Il peggioramento c'è, ma è lento e si accumula fra le stagioni: δ diventa più disperso e peggiora in media man mano che il modello invecchia, mentre la log-loss non peggiora, cioè è il mercato a superare il modello. Il confronto con la stagione di calibrazione lo vede e fa puntare meno nelle stagioni in cui il modello è vecchio (2016-20 con il fit 2010-11). Con un vantaggio negativo ogni riduzione della puntata riduce comunque la perdita: C3_ref_stop non punta nel 64% delle date. La variante è stata scelta dopo aver visto la validazione; sul 2023-24 è stata eseguita una volta, in modo esplorativo (§4.9).
 
 **Il lavoratore sceglie l'esito.** Come chiesto dal relatore, il lavoratore può anche scegliere l'esito con tre regole: EV massimo (R1, quella usata finora), maggior vantaggio sul mercato (R2), esito più probabile (R3). Ogni regola è provata da sola, con il freno fisso λ = 0,25 e con lo schema C3 (`thesis/agenti_e_architettura.md` §4, `results/us_c11_worker_rules_summary.csv`).
 - R3 perde meno di R1 in 13 stagioni su 19, perché punta su circa metà delle partite; R2 è come R1, un po' peggio.
-- Per ogni regola lo schema non è mai peggiore del freno fisso ed è migliore in 5–6 stagioni su 19.
-- Nessuna regola dà un guadagno: la migliore combinazione, R3 con lo schema, ha una somma delle mediane di −7.60.
+- Per ogni regola lo schema è migliore del freno fisso in 10–11 stagioni vere su 19 e peggiore in 5–6 (sulle ricostruite mai peggiore, migliore in 5–6).
+- Nessuna regola dà un guadagno: la migliore combinazione con le finestre adiacenti, R3 con lo schema, ha una somma delle mediane di −7.60.
+- Con lo schema a riferimento fisso R3 conserva più capitale (`results/us_c17_r3_reference_summary.csv`): sulle stagioni vere capitale tipico 77% con R3_C3_ref_stop, contro 71% di C3_ref_stop con R1 e 68% di R3 con il freno fisso; meglio di quest'ultimo in 13 stagioni su 19, peggio in 6 (sulle ricostruite 87%, 79% e 66%). Combinazione scelta dopo aver visto la validazione.
 
 ### 4.8 Robustezza
 - **Modulo 1.** Con Dixon-Coles il modello migliora la log-loss ma ĝ resta negativo (§4.1); l'esecuzione congelata con Dixon-Coles è in `results/us_c8_3_validation_summary_dc.csv`.
@@ -235,14 +238,14 @@ Lo schema è stato costruito dopo l'esecuzione unica sul test, quindi le sue rig
 | Il modello batte il mercato | non confermata: ĝ < 0 ovunque |
 | L'eteroschedasticità crescente segnala il degrado | non dentro la stagione; sì rispetto alla stagione di calibrazione: la dispersione di δ cresce con l'età del modello |
 | La decomposizione distingue in modo netto il cambiamento compositivo da quello strutturale sui dati reali | non confermata, anche se l'implementazione è corretta sui dati sintetici |
-| Lo schema del relatore riduce le perdite rispetto al lavoratore senza supervisore | con le finestre adiacenti poco; con il confronto con la stagione di calibrazione sì, in 15 stagioni su 19 (variante scelta dopo aver visto la validazione) |
+| Lo schema del relatore riduce le perdite rispetto al lavoratore senza supervisore | con le finestre adiacenti poco; con il confronto con la stagione di calibrazione sì, in 14 stagioni vere su 19, peggio in 5 (variante scelta dopo aver visto la validazione) |
 | L'agente batte il mercato | non confermata, anche nella stagione 2023-24 giocata come in KellyBench con £100 000 |
 
 ## 6. Limiti e parti non implementate
 
 **Scelte semplificative**
 - Una sola puntata per partita, sull'esito a EV massimo (le regole alternative R2 e R3 sono in §4.7); nessun Kelly multi-esito né ottimizzazione congiunta delle puntate della stessa data.
-- Dopo un errore strutturale lo schema azzera la puntata, ma non ri-parametrizza né cambia il modello: il relatore ha indicato il moltiplicatore sulla puntata come prima scelta.
+- Dopo un errore strutturale lo schema azzera la puntata, ma non ri-parametrizza né cambia il modello: il relatore ha indicato il moltiplicatore sulla puntata come prima scelta. La ri-parametrizzazione annuale (ricalibrare l'Elo sulla stagione precedente) è stata provata e va peggio del modello congelato (`results/us_c19_real_seasons.csv`, stagioni vere: C3_ref_stop 67% contro 71%, B_0.25 46% contro 57%); una ri-parametrizzazione subito dopo l'allarme non è implementata.
 - Scenari: al posto dei cinque di KellyBench, tre stagioni di training, 19 di validazione e il 2023-24. La variante "literature" del 2023-24 non è ricostruibile dai dati pubblici.
 - Il valore del floor (£0.01 o £1) non è verificato sul codice di KellyBench: per questo i risultati sono riportati con entrambi.
 
