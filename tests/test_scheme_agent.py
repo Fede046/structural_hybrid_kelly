@@ -232,3 +232,24 @@ def test_supervisor_reference_diagnostics_and_reference_agent():
     with pytest.raises(ValueError):
         SchemeAgent("x", Module2Supervisor("s", days, x, ["c"], 4), 0.5, 1.0, 1.0, 0.1, SCHEME_STOP_CLEAR,
                     reference=True)
+
+
+def test_expected_delta_is_minus_kl_and_supervisor_option():
+    """E_q[δ] = −KL(q ‖ p̂) ≤ 0, zero se p̂ = q; il supervisore lo usa per Oaxaca solo se richiesto."""
+    from shk.model.agent_c import OAXACA_EXPECTED, ReferenceData, expected_delta
+
+    q = np.array([[0.5, 0.3, 0.2], [0.2, 0.3, 0.5]])
+    p = np.array([[0.4, 0.35, 0.25], [0.2, 0.3, 0.5]])
+    ed = expected_delta(p, q)
+    assert ed[0] == pytest.approx(-scipy.stats.entropy(q[0], p[0]))
+    assert ed[1] == pytest.approx(0.0, abs=1e-15)
+    days = _days(4)
+    x = np.zeros((4, 1))
+    with pytest.raises(ValueError):
+        Module2Supervisor("s", days, x, ["c"], 3, oaxaca_response="nope")
+    with pytest.raises(ValueError):
+        Module2Supervisor("s", days, x, ["c"], 3, reference=ReferenceData(np.zeros((20, 1)), np.zeros(20)),
+                          oaxaca_response=OAXACA_EXPECTED)
+    sup = Module2Supervisor("s", days, x, ["c"], 3, oaxaca_response=OAXACA_EXPECTED)
+    sup.observe(DateResults(days[0], np.array([[0.5, 0.3, 0.2]]), np.array([[1.9, 3.4, 4.5]]), np.array([[0]])))
+    assert np.isfinite(sup._expected[0]) and sup._expected[0] <= 0.0

@@ -83,11 +83,24 @@ DIAGNOSIS_COMPOSITIONAL: Final[str] = "compositional"
 DIAGNOSIS_STRUCTURAL: Final[str] = "structural"
 
 
+OAXACA_REALIZED: Final[str] = "realized"
+OAXACA_EXPECTED: Final[str] = "expected"
+OAXACA_RESPONSES: Final[tuple[str, ...]] = (OAXACA_REALIZED, OAXACA_EXPECTED)
+
+
 class ReferenceData(NamedTuple):
     """Partite della stagione di calibrazione del Modulo 1, riferimento fisso della variante C3_ref."""
 
-    x: np.ndarray      # (n, k) covariate pre-partita
-    delta: np.ndarray  # (n,) δ
+    x: np.ndarray                         # (n, k) covariate pre-partita
+    delta: np.ndarray                     # (n,) δ
+    expected: np.ndarray | None = None    # (n,) E_q[δ], per la diagnosi con l'errore atteso
+
+
+def expected_delta(probs: np.ndarray, q: np.ndarray) -> np.ndarray:
+    """Errore atteso E_q[δ] = Σ_j q_j ln(p̂_j / q_j) per partita (= −KL(q ‖ p̂), non dipende dall'esito)."""
+    p = np.asarray(probs, dtype=np.float64)
+    qq = np.asarray(q, dtype=np.float64)
+    return (qq * np.log(p / qq)).sum(axis=-1)
 
 
 class Module2Supervisor:
@@ -109,6 +122,9 @@ class Module2Supervisor:
         Metodo di de-vigging di q per δ (decisione di progetto).
     reference : ReferenceData o None, default None
         Stagione di calibrazione per la variante con riferimento fisso (reference_diagnostics).
+    oaxaca_response : str, default OAXACA_REALIZED
+        Risposta della diagnosi di Oaxaca-Blinder: δ realizzato (OAXACA_REALIZED) oppure l'errore
+        atteso E_q[δ] (OAXACA_EXPECTED, expected_delta). L'allarme ANOVA usa sempre δ realizzato.
 
     Solleva
     -------
@@ -125,6 +141,7 @@ class Module2Supervisor:
         window: int,
         devig_method: str = "shin",
         reference: ReferenceData | None = None,
+        oaxaca_response: str = OAXACA_REALIZED,
     ) -> None:
         self._devig_method = devig_method
         d = np.asarray(dates).astype("datetime64[ns]")
@@ -144,6 +161,10 @@ class Module2Supervisor:
         self._window = int(window)
         self._observed = np.zeros(n, dtype=bool)
         self._delta = np.full(n, np.nan)
+        if oaxaca_response not in OAXACA_RESPONSES:
+            raise ValueError(f"oaxaca_response must be one of {OAXACA_RESPONSES}, got {oaxaca_response!r}")
+        self._oaxaca_response = oaxaca_response
+        self._expected = np.full(n, np.nan)
         self._observed_dates: set[np.datetime64] = set()
         self._cache: dict[np.datetime64, Module2Output] = {}
         if reference is not None:
@@ -151,7 +172,10 @@ class Module2Supervisor:
             rd = np.asarray(reference.delta, dtype=np.float64)
             if rx.ndim != 2 or rx.shape != (rd.shape[0], len(names)) or rd.shape[0] < 2 * len(names) + 2:
                 raise ValueError("reference must have x (n, k) and delta (n,) with the supervisor's covariates")
-            reference = ReferenceData(rx, rd)
+            re = None if reference.expected is None else np.asarray(reference.expected, dtype=np.float64)
+            if oaxaca_response == OAXACA_EXPECTED and (re is None or re.shape != rd.shape):
+                raise ValueError("an expected-error diagnosis needs reference.expected with the shape of delta")
+            reference = ReferenceData(rx, rd, re)
         self._reference = reference
         self._reference_cache: dict[np.datetime64, tuple[float, float, float] | None] = {}
 
@@ -175,8 +199,12 @@ class Module2Supervisor:
         q = devig_probabilities(np.asarray(results.odds, dtype=np.float64), self._devig_method)
         idx = np.arange(rows.shape[0])
         self._delta[rows] = np.log(probs[idx, realized]) - np.log(q[idx, realized])
+        self._expected[rows] = expected_delta(probs, q)
         self._observed[rows] = True
         self._observed_dates.add(day)
+
+    def _oaxaca_y(self) -> np.ndarray:
+        return self._expected if self._oaxaca_response == OAXACA_EXPECTED else self._delta
 
     def cutoff(self, decision_date: np.datetime64) -> np.datetime64:
         """Data di taglio: si usano le partite con Date < taglio."""
@@ -210,8 +238,9 @@ class Module2Supervisor:
         else:
             rows = eligible[-self._window:]
             f_mean, f_disp = reference_statistics(self._reference.delta, self._delta[rows])
-            tf = three_fold_batch(self._reference.x[None], self._reference.delta[None], self._x[rows][None],
-                                  self._delta[rows][None])
+            ref_y = self._reference.expected if self._oaxaca_response == OAXACA_EXPECTED else self._reference.delta
+            tf = three_fold_batch(self._reference.x[None], ref_y[None], self._x[rows][None],
+                                  self._oaxaca_y()[rows][None])
             out = (float(f_mean), float(f_disp), float(-tf.structural[0]) if bool(tf.valid[0]) else math.nan)
         self._reference_cache[day] = out
         return out
@@ -231,7 +260,7 @@ class Module2Supervisor:
                 seasons=np.full(observed.shape[0], self._season, dtype=object),
                 dates=self._dates[observed],
                 chain=np.zeros(observed.shape[0], dtype=np.int64),
-                delta=self._delta[observed],
+                delta=self._oaxaca_y()[observed],
                 x=self._x[observed],
                 covariates=self._names,
             )

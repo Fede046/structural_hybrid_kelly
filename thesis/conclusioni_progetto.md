@@ -164,6 +164,12 @@ Non c'è evidenza di una varianza che cresce durante la stagione oltre quella gi
 
 Sui dati reali le due componenti non si separano dove la teoria lo prevede: è il risultato da discutere.
 
+**Perché** (`results/us_c15_oaxaca_position.csv`):
+- le covariate spiegano lo 0.025 della varianza di δ (R² mediano per stagione), quindi la componente compositiva resta piccola per costruzione;
+- nelle finestre adiacenti «position» non si sovrappone fra A e B: la decomposizione estrapola e le componenti compositiva, strutturale e interazione hanno deviazione standard 0.117, 0.124 e 0.164 contro 0.049 del totale; senza «position» scendono a 0.014, 0.049 e 0.019;
+- togliendo «position» dallo schema le diagnosi strutturali scendono dal 51% al 42% delle giornate con allarme (dal 42% al 32% con il riferimento fisso), ma il capitale non migliora (per esempio C3_ref_stop dal 78% al 74% su 100 seed): la specificazione congelata resta;
+- scomponendo l'errore atteso E_q[δ] = −KL(q ‖ p̂) invece di δ realizzato (`results/us_c16_oaxaca_expected.csv`) le covariate spiegano il 41% invece del 2.5%, e la diagnosi diventa coerente: 5% di diagnosi strutturali fra finestre adiacenti, 47% rispetto alla stagione di calibrazione. Il capitale resta simile (C3_ref 62% contro 61%, C3_ref_stop 76% contro 78%).
+
 ### 4.7 Lo schema del relatore contro il lavoratore senza supervisore
 Somma sulle 19 stagioni di validazione della mediana di ln W_T, configurazione £0.01, 500 seed appaiati (`results/us_c10_scheme_validation_summary.csv`):
 

@@ -190,6 +190,55 @@ La dispersione di δ passa da 0,136 nella stagione di calibrazione a 0,19–0,20
 - **Dove guadagna.** Soprattutto nelle stagioni in cui il modello è vecchio (2016-20 con il fit 2010-11), cioè proprio dove l'allarme è più acceso.
 - **Cautele.** La variante è stata scelta dopo aver visto la validazione (solo le frequenze d'allarme). Con un vantaggio negativo puntare meno aiuta comunque: C3_ref_stop non punta nel 64% delle date. Sul 2023-24, eseguita una volta in modo esplorativo, cambia poco (§3.3).
 
+### 3.5 Perché Oaxaca-Blinder separa poco i due tipi di errore
+
+Verifica in `scripts/us_c15_oaxaca_position.py`, `results/us_c15_oaxaca_position.csv`.
+
+**1. Le covariate spiegano quasi niente di δ.** L'R² della regressione di δ sulle covariate congelate è 0,025 in mediana fra le stagioni: δ dipende quasi tutto dall'esito uscito, non dal tipo di partita. La componente compositiva resta quindi piccola per costruzione, e quasi tutto il cambiamento finisce nella strutturale (soprattutto lo spostamento dell'intercetta).
+
+**2. «position» non si sovrappone fra finestre adiacenti.** La finestra A contiene le partite precedenti alla B (per esempio 1–40 e 41–80), quindi la decomposizione estrapola l'effetto della posizione. Sulle finestre adiacenti della validazione (deviazione standard delle componenti):
+
+| Componente | Con «position» | Senza «position» |
+|---|---|---|
+| Totale | 0,049 | 0,049 |
+| Compositiva | 0,117 | 0,014 |
+| Strutturale | 0,124 | 0,049 |
+| Interazione | 0,164 | 0,019 |
+
+Con «position» compositiva e interazione si compensano (correlazione −0,71). Con il riferimento fisso il problema è minore, perché le ultime W partite cadono dentro le posizioni della stagione di calibrazione.
+
+**Lo schema senza «position».** Soglie di media e dispersione invariate, soglia strutturale ricalibrata sul training; 100 seed appaiati. Gli allarmi non cambiano (l'ANOVA non usa le covariate); cambia la diagnosi:
+
+| Disegno | Giornate con allarme (stagioni osservate) | Strutturali, con «position» | Strutturali, senza |
+|---|---|---|---|
+| Finestre adiacenti (C3) | 77 | 51% | 42% |
+| Riferimento fisso (C3_ref) | 608 | 42% | 32% |
+
+| Agente | Capitale tipico, con «position» | Senza «position» |
+|---|---|---|
+| B_0.25 | 54,5% | – |
+| C3 | 55,2% | 55,1% |
+| C3_stop | 65,5% | 64,1% |
+| C3_ref | 60,7% | 60,4% |
+| C3_ref_stop | 78,3% | 73,6% |
+
+Senza «position» la diagnosi è più stabile e meno spesso strutturale, quindi lo schema punta di più e, con un vantaggio negativo, perde un po' di più. La conclusione non dipende da questa covariata, e lo schema tiene la specificazione congelata, scelta prima dei risultati.
+
+**Oaxaca sull'errore atteso** (`scripts/us_c16_oaxaca_expected.py`, `results/us_c16_oaxaca_expected.csv`). Il rimedio al primo problema è cambiare la risposta: invece di δ realizzato si scompone l'errore atteso E_q[δ] = Σ q·ln(p̂/q) = −KL(q ‖ p̂), la distanza fra modello e mercato prima della partita, che non dipende dall'esito. La sua media coincide con quella di δ (−0,022), come deve essere se il mercato è calibrato. L'allarme ANOVA resta su δ realizzato; cambia solo la diagnosi, con soglie strutturali ricalibrate sul training.
+- **Le covariate spiegano molto di più:** R² mediano 0,41 contro 0,025.
+- **Le componenti non sono più dominate dal rumore:** sulle finestre adiacenti senza «position» le deviazioni standard di compositiva, strutturale e interazione sono 0,0036, 0,0046 e 0,0020, contro 0,0059 del totale.
+- **La diagnosi diventa coerente con la teoria:** con le finestre adiacenti solo il 5% delle giornate con allarme risulta strutturale (fra due periodi vicini cambiano le partite, non il modello); con il riferimento fisso il 47% (rispetto alla calibrazione il modello è cambiato).
+- **Il capitale non migliora** (100 seed appaiati):
+
+| Agente | Errore atteso | Errore realizzato |
+|---|---|---|
+| C3 | 55,1% | 55,2% |
+| C3_stop | 58,7% | 65,5% |
+| C3_ref | 61,9% | 60,7% |
+| C3_ref_stop | 76,4% | 78,3% |
+
+Con le finestre adiacenti le diagnosi strutturali quasi spariscono, quindi C3_stop si ferma di rado e perde di più. La separazione fra i due tipi di errore diventa credibile, ma con un vantaggio negativo conviene comunque fermarsi spesso. È una variante scelta dopo aver visto i dati; misura la distanza dal mercato, non dalla realtà.
+
 ## 4. Il lavoratore sceglie l'esito: regole R1, R2, R3
 
 Il relatore ha chiesto di far scegliere l'esito anche al lavoratore («proverei anche a differenziare») e ha scelto l'opzione A: lavoratori classici più un LLM, con il supervisore che agisce sulla puntata. Il disegno è in `thesis/disegno_lavoratore.md`; qui c'è la fase 1, con i lavoratori classici.
