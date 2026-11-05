@@ -1,14 +1,13 @@
 """Esecuzione appaiata congelata sulle 19 stagioni di validazione.
 
 Parametri solo da config/frozen_params.toml (load_frozen_params; costanti interne verificate
-con check_frozen_constants). Agenti in AGENT_ORDER, configurazioni CONFIGURATIONS (F = 0,
-£0.01, £1). Catena del Modulo 2 tagliata alla stagione, come nella calibrazione.
+con check_frozen_constants). Agenti in AGENT_ORDER (A e B_0.25), configurazioni
+CONFIGURATIONS (F = 0, £0.01, £1). Lo schema del relatore si esegue sugli stessi seed in
+shk.model.scheme_run.
 
 Seed (decisione di progetto): stagione ricostruita per stationary bootstrap delle date a L_PW della
 serie per data della media di δ della stagione. Gli stessi seed per tutti gli agenti
-e le configurazioni; i supervisori del Modulo 2 e le q di Shin si condividono fra le tre
-configurazioni dello stesso seed (stesse uscite, meno calcolo). In più la realizzazione
-osservata. SEED_S10 = 20261014 (definito qui, primo modulo che lo usa):
+e le configurazioni. In più la realizzazione osservata. SEED_S10 = 20261014 (definito qui, primo modulo che lo usa):
 SeedSequence(SEED_S10).spawn(5)[0] (posizione 0), spawn(19) per stagione in ordine
 cronologico, spawn(N_SEEDS) per seed.
 
@@ -16,8 +15,7 @@ Metriche per agente (METRICS): log-ricchezza finale (−inf se W_T = 0), rovina 
 della data di rovina (−1 se nessuna), drawdown massimo, tempo di recupero con la censura
 (se il picco non è recuperato vale D − t*, durata osservata senza recupero, con recovered =
 0), numero di puntate, forzate, alzate al floor e scartate, quota di date con λ = 0 e
-allarmi (C1: accensioni; D: allarmi del detector). NaN dove la metrica non si applica o
-l'agente non c'è (E con F = 0).
+accensioni dell'allarme (solo schema). NaN dove la metrica non si applica.
 
 Sintesi per agente × configurazione × stagione: mediana, quantili 5% e 95% e media della
 log-ricchezza finale sui seed, tasso di rovina, g_CE(γ) per γ ∈ {1, 2, 5} (decisione di progetto:
@@ -37,27 +35,13 @@ from scipy.special import logsumexp
 
 from shk.kelly.environment import AgentRun, run_paired_backtest
 from shk.kelly.metrics import wealth_max_drawdown, wealth_recovery_time
-from shk.model.agent_c import SupervisorHistory
-from shk.model.covariate_inspection import MODULE2_WINDOWS
 from shk.model.elo_fit import parse_season_start_year
-from shk.model.frozen_agents import (
-    AGENT_ORDER,
-    SUPERVISED_ARMS,
-    arm_windows,
-    build_frozen_agents,
-    build_supervisors,
-    check_frozen_constants,
-    n_alarms,
-    share_lambda_zero,
-)
+from shk.model.frozen_agents import AGENT_ORDER, build_frozen_agents, check_frozen_constants, n_alarms, share_lambda_zero
 from shk.model.frozen_params import FROZEN_PARAMS_PATH, FrozenParams, load_frozen_params
-from shk.model.module2 import season_chain_ids
-from shk.model.module3_synthetic import N_STORY_TASKS
 from shk.model.paired_backtest import CONFIGURATIONS
 from shk.model.season_bootstrap import reconstruct_season, season_block_length
-from shk.model.task_seeds import story_task_sequence
-from shk.model.training_agents import SeasonInput, season_input_from_frame
-from shk.model.training_calibration import SharedShin
+from shk.model.task_seeds import N_STORY_TASKS, story_task_sequence
+from shk.model.season_input import SeasonInput, season_input_from_frame
 
 SEED_S10: Final[int] = 20261014
 T55_STORY_POSITION: Final[int] = 0
@@ -67,8 +51,6 @@ METRICS: Final[tuple[str, ...]] = (
     "n_bets", "n_forced", "n_floored", "n_dropped", "share_lambda_zero", "n_alarms",
 )
 GAMMAS: Final[tuple[float, ...]] = (1.0, 2.0, 5.0)
-FLAG_PROMOTED: Final[str] = "flag_promoted"
-HISTORY_ROWS: Final[int] = 2 * max(MODULE2_WINDOWS)
 
 SUMMARY_COLUMNS: Final[tuple[str, ...]] = (
     "row_type", "season", "fit_through", "config", "min_stake", "agent", "n_dates", "l_pw", "n_seeds",
@@ -76,16 +58,7 @@ SUMMARY_COLUMNS: Final[tuple[str, ...]] = (
     "g_ce_1", "g_ce_2", "g_ce_5", "median_max_drawdown", "mean_n_bets", "mean_share_lambda_zero", "mean_n_alarms",
     "observed_log_wealth", "observed_max_drawdown", "observed_n_bets", "observed_ruined",
     "observed_share_lambda_zero", "observed_n_alarms",
-    "arm", "window", "n_matches", "n_inactive", "n_promoted", "n_promoted_inactive",
 )
-WITH_HISTORY_COLUMNS: Final[tuple[str, ...]] = (
-    "season", "fit_through", "config", "min_stake", "arm", "window", "history_rows",
-    "log_wealth_with_history", "log_wealth_cut_chain", "max_drawdown_with_history", "max_drawdown_cut_chain",
-    "n_bets_with_history", "n_bets_cut_chain", "share_lambda_zero_with_history", "share_lambda_zero_cut_chain",
-    "n_alarms_with_history", "n_alarms_cut_chain", "n_inactive_with_history", "n_inactive_cut_chain",
-)
-
-
 class ValidationSeason(NamedTuple):
     """Stagione di validazione con il fit che la prevede."""
 
@@ -147,17 +120,11 @@ def run_metrics(run: AgentRun, agent: object) -> np.ndarray:
     ])
 
 
-def run_instance(params: FrozenParams, inp: SeasonInput, fit: str, history: SupervisorHistory | None = None,
-                 arms: Sequence[str] = AGENT_ORDER, devig_method: str = "shin") -> np.ndarray:
-    """Una stagione (seed o realizzazione osservata) nelle tre configurazioni: (C, len(arms), M).
-
-    devig_method: metodo di q per il Modulo 2 e per D (Shin; gli altri per la sensibilità al de-vigging).
-    """
-    supervisors = build_supervisors(params, inp, history, devig_method)
-    shin = SharedShin(devig_method)
+def run_instance(params: FrozenParams, inp: SeasonInput, arms: Sequence[str] = AGENT_ORDER) -> np.ndarray:
+    """Una stagione (seed o realizzazione osservata) nelle tre configurazioni: (C, len(arms), M)."""
     out = np.full((len(CONFIGURATIONS), len(arms), len(METRICS)), np.nan)
     for ci, (_, min_stake) in enumerate(CONFIGURATIONS):
-        agents = build_frozen_agents(params, min_stake, supervisors, shin, fit, arms)
+        agents = build_frozen_agents(arms)
         runs = run_paired_backtest(agents, inp.dates, inp.probs, inp.odds, inp.outcomes, min_stake,
                                    fallback_policy=params.fixed["fallback_policy"])
         for run, agent in zip(runs, agents):
@@ -165,8 +132,8 @@ def run_instance(params: FrozenParams, inp: SeasonInput, fit: str, history: Supe
     return out
 
 
-def run_validation_season(params_path: str, season: ValidationSeason, seed_seqs: Sequence[np.random.SeedSequence],
-                          devig_method: str = "shin") -> tuple[np.ndarray, np.ndarray, int]:
+def run_validation_season(params_path: str, season: ValidationSeason,
+                          seed_seqs: Sequence[np.random.SeedSequence]) -> tuple[np.ndarray, np.ndarray, int]:
     """Seed e realizzazione osservata di una stagione; (seed (C, A, M, N), osservata (C, A, M), L_PW)."""
     params = load_frozen_params(params_path)
     check_frozen_constants(params)
@@ -175,24 +142,21 @@ def run_validation_season(params_path: str, season: ValidationSeason, seed_seqs:
     seeds = np.full((len(CONFIGURATIONS), len(AGENT_ORDER), len(METRICS), len(seed_seqs)), np.nan)
     for k, ss in enumerate(seed_seqs):
         rec = reconstruct_season(season.inp, np.random.default_rng(ss), l_pw, covariates=covariates)
-        seeds[..., k] = run_instance(params, rec, season.fit, devig_method=devig_method)
-    observed = run_instance(params, season.inp, season.fit, devig_method=devig_method)
+        seeds[..., k] = run_instance(params, rec)
+    observed = run_instance(params, season.inp)
     return seeds, observed, l_pw
 
 
 def evaluate_validation(frame: pd.DataFrame, params_path: Path | str = FROZEN_PARAMS_PATH,
                         n_seeds: int | None = None, workers: int = 1,
-                        seed: int | np.random.SeedSequence = SEED_S10, devig_method: str = "shin") -> ValidationResult:
-    """Tutte le stagioni di validazione; con workers > 1 le stagioni vanno su processi separati.
-
-    devig_method: metodo di q nel Modulo 2 e in D; il DataFrame deve essere costruito con lo stesso.
-    """
+                        seed: int | np.random.SeedSequence = SEED_S10) -> ValidationResult:
+    """Tutte le stagioni di validazione; con workers > 1 le stagioni vanno su processi separati."""
     params = load_frozen_params(params_path)
     check_frozen_constants(params)
     seasons = validation_inputs(frame, list(params.fixed["covariates"]))
     n = int(params.fixed["n_seeds"]) if n_seeds is None else n_seeds
     seqs = spawn_t55_sequences(len(seasons), n, seed)
-    args = [(str(params_path), s, q, devig_method) for s, q in zip(seasons, seqs)]
+    args = [(str(params_path), s, q) for s, q in zip(seasons, seqs)]
     if workers > 1:
         with ProcessPoolExecutor(max_workers=workers) as pool:
             outputs = list(pool.map(run_validation_season, *zip(*args)))
@@ -255,97 +219,6 @@ def summary_records(result: ValidationResult, agents: Sequence[str] = AGENT_ORDE
                 for gamma, col in zip(GAMMAS, ("g_ce_1", "g_ce_2", "g_ce_5")):
                     rec[col] = certainty_equivalent(lw, d, gamma)
                 records.append(rec)
-    return records
-
-
-def inactive_counts(inp: SeasonInput, window: int, covariates: Sequence[str],
-                    history_rows: int = 0) -> tuple[int, int, int]:
-    """(partite con Modulo 2 non attivo, partite con neopromosse, di queste quelle non attive).
-
-    Non attivo: meno di 2W partite anteriori alla data della partita, contando la storia.
-    """
-    dates = inp.dates
-    eligible = np.searchsorted(dates, dates, side="left") + history_rows
-    inactive = eligible < 2 * window
-    promoted = inp.x[:, list(covariates).index(FLAG_PROMOTED)] > 0.5
-    return int(inactive.sum()), int(promoted.sum()), int((inactive & promoted).sum())
-
-
-def inactive_records(params: FrozenParams, seasons: Sequence[ValidationSeason]) -> list[dict[str, object]]:
-    """Righe "module2_inactive" per stagione e braccio, sulla realizzazione osservata."""
-    covariates = list(params.fixed["covariates"])
-    records = []
-    for s in seasons:
-        for arm, w in arm_windows(params).items():
-            n_inactive, n_prom, n_prom_inactive = inactive_counts(s.inp, w, covariates)
-            rec = {c: "" for c in SUMMARY_COLUMNS}
-            rec.update(row_type="module2_inactive", season=s.inp.season, fit_through=s.fit, arm=arm, window=w,
-                       n_matches=int(s.inp.dates.shape[0]), n_inactive=n_inactive, n_promoted=n_prom,
-                       n_promoted_inactive=n_prom_inactive)
-            records.append(rec)
-    return records
-
-
-def chain_history(frame: pd.DataFrame, season: str, covariates: Sequence[str],
-                  max_rows: int = HISTORY_ROWS) -> SupervisorHistory:
-    """Ultime max_rows partite delle stagioni precedenti della stessa catena (decisione di progetto).
-
-    Il Modulo 2 usa solo le ultime 2W partite anteriori (finestre A e B e regola fuori
-    supporto sulla finestra A), quindi con max_rows = 2·max(W) il risultato è lo stesso che
-    con tutta la catena.
-    """
-    chains = season_chain_ids(list(set(frame["season"])))
-    year = parse_season_start_year(season)
-    prev = frame[(frame["season"].map(chains) == chains[season])
-                 & (frame["season"].map(parse_season_start_year) < year)]
-    prev = prev.assign(_y=prev["season"].map(parse_season_start_year)).sort_values(["_y", "Date"], kind="stable")
-    prev = prev.iloc[-max_rows:] if max_rows else prev.iloc[:0]
-    outcomes = prev["FTR"].map({"H": 0, "D": 1, "A": 2}).to_numpy(dtype=np.int64)
-    return SupervisorHistory(
-        dates=prev["Date"].to_numpy(dtype="datetime64[ns]"),
-        x=prev[list(covariates)].to_numpy(dtype=np.float64),
-        probs=prev[["p_home", "p_draw", "p_away"]].to_numpy(dtype=np.float64),
-        odds=prev[["odds_home", "odds_draw", "odds_away"]].to_numpy(dtype=np.float64),
-        outcomes=outcomes,
-    )
-
-
-def with_history_records(frame: pd.DataFrame, result: ValidationResult,
-                         params_path: Path | str = FROZEN_PARAMS_PATH) -> list[dict[str, object]]:
-    """Sensibilità: C1, C2_global e C2 sulla realizzazione osservata con la catena che attraversa le stagioni.
-
-    frame: righe di training e di validazione del DataFrame del Modulo 2 (le stagioni con δ).
-    """
-    params = load_frozen_params(params_path)
-    check_frozen_constants(params)
-    covariates = list(params.fixed["covariates"])
-    seasons = validation_inputs(frame, covariates)
-    m = {name: i for i, name in enumerate(METRICS)}
-    windows = arm_windows(params)
-    records = []
-    for si, s in enumerate(seasons):
-        history = chain_history(frame, s.inp.season, covariates)
-        out = run_instance(params, s.inp, s.fit, history, arms=SUPERVISED_ARMS)
-        for ci, (config, min_stake) in enumerate(CONFIGURATIONS):
-            for ai, arm in enumerate(SUPERVISED_ARMS):
-                cut = result.observed[si, ci, AGENT_ORDER.index(arm)]
-                hist = out[ci, ai]
-                records.append({
-                    "season": s.inp.season, "fit_through": s.fit, "config": config, "min_stake": min_stake,
-                    "arm": arm, "window": windows[arm], "history_rows": int(history.dates.shape[0]),
-                    "log_wealth_with_history": float(hist[m["final_log_wealth"]]),
-                    "log_wealth_cut_chain": float(cut[m["final_log_wealth"]]),
-                    "max_drawdown_with_history": float(hist[m["max_drawdown"]]),
-                    "max_drawdown_cut_chain": float(cut[m["max_drawdown"]]),
-                    "n_bets_with_history": int(hist[m["n_bets"]]), "n_bets_cut_chain": int(cut[m["n_bets"]]),
-                    "share_lambda_zero_with_history": float(hist[m["share_lambda_zero"]]),
-                    "share_lambda_zero_cut_chain": float(cut[m["share_lambda_zero"]]),
-                    "n_alarms_with_history": _value(float(hist[m["n_alarms"]])),
-                    "n_alarms_cut_chain": _value(float(cut[m["n_alarms"]])),
-                    "n_inactive_with_history": inactive_counts(s.inp, windows[arm], covariates,
-                                                               int(history.dates.shape[0]))[0],
-                    "n_inactive_cut_chain": inactive_counts(s.inp, windows[arm], covariates)[0],
-                })
     return records
 
 

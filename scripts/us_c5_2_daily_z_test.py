@@ -1,9 +1,8 @@
-"""Script per il monitoraggio dello Z-test per giornata e confronto con i detector.
+"""Script per il monitoraggio dello Z-test per giornata.
 
 Calcola lo Z-test per giornata (blocchi di 10 partite) sulle 19 stagioni di validazione
 utilizzando le baseline di training dei rispettivi fit, calcola le soglie calibrate
-per moving block bootstrap (L in {7, 20, 40}) e confronta gli allarmi nominali e calibrati
-con quelli di ADWIN e Page-Hinkley.
+per moving block bootstrap (L in {7, 20, 40}) e confronta gli allarmi nominali e calibrati.
 
 Genera:
 - results/us_c5_2_daily_z_test.csv: file CSV con 860 righe (matchday, summary, overall, verification);
@@ -55,18 +54,12 @@ def run_experiment() -> None:
     )
 
     z_alarms: list[int] = []
-    adwin_alarms: list[int] = []
-    ph_alarms: list[int] = []
     calib_alarms: dict[int, list[int]] = {l_val: [] for l_val in BLOCK_LENGTHS}
 
     for s in val_seasons:
         z_row = next(r for r in summary_rows if r["season"] == s and r["method"] == "z_nominal")
-        adwin_row = next(r for r in summary_rows if r["season"] == s and r["method"] == "adwin")
-        ph_row = next(r for r in summary_rows if r["season"] == s and r["method"] == "page_hinkley")
 
         z_alarms.append(int(z_row["n_alarms"]))
-        adwin_alarms.append(int(adwin_row["n_alarms"]))
-        ph_alarms.append(int(ph_row["n_alarms"]))
 
         for l_val in BLOCK_LENGTHS:
             c_row = next(
@@ -77,37 +70,12 @@ def run_experiment() -> None:
             )
             calib_alarms[l_val].append(int(c_row["n_alarms"]))
 
-    # 4. Generazione figura a due pannelli (2x1) con etichette in italiano
-    fig, (ax1, ax2) = plt.subplots(2, 1, figsize=(14, 10))
+    # 4. Generazione figura con etichette in italiano
+    fig, ax2 = plt.subplots(1, 1, figsize=(14, 5.5))
 
     x = np.arange(len(val_seasons))
 
-    # --- Pannello A: Z nominale vs ADWIN vs Page-Hinkley ---
-    width_a = 0.26
-    ax1.bar(x - width_a, z_alarms, width_a, label="Z-test nominale (α = 0.05)", color="#1f77b4", alpha=0.88)
-    ax1.bar(x, adwin_alarms, width_a, label="ADWIN (tarato)", color="#2ca02c", alpha=0.88)
-    ax1.bar(x + width_a, ph_alarms, width_a, label="Page-Hinkley (tarato)", color="#ff7f0e", alpha=0.88)
-
-    ax1.axhline(
-        1.9,
-        color="#d62728",
-        linestyle="--",
-        linewidth=1.5,
-        label="Allarmi attesi per stagione (1.9)",
-    )
-    ax1.set_ylabel("Numero di allarmi", fontsize=11)
-    ax1.set_title(
-        "A: Allarmi per stagione di validazione: Z-test nominale vs ADWIN e Page-Hinkley",
-        fontsize=12,
-        fontweight="bold",
-    )
-    ax1.set_xticks(x)
-    ax1.set_xticklabels(val_seasons, rotation=45, ha="right", fontsize=9)
-    ax1.set_ylim(bottom=0)
-    ax1.legend(frameon=True, fontsize=9, loc="upper right")
-    ax1.grid(axis="y", linestyle=":", alpha=0.5)
-
-    # --- Pannello B: Z nominale vs Z calibrato per ciascuna L ---
+    # --- Z nominale vs Z calibrato per ciascuna L ---
     width_b = 0.20
     colors_b = {7: "#2ca02c", 20: "#9467bd", 40: "#8c564b"}
     ax2.bar(x - 1.5 * width_b, z_alarms, width_b, label="Z-test nominale (α = 0.05)", color="#1f77b4", alpha=0.88)
@@ -132,7 +100,7 @@ def run_experiment() -> None:
     ax2.set_xlabel("Stagione di validazione", fontsize=11)
     ax2.set_ylabel("Numero di allarmi", fontsize=11)
     ax2.set_title(
-        "B: Allarmi per stagione di validazione: Z-test nominale vs Z-test calibrato per ciascuna L",
+        "Allarmi per stagione di validazione: Z-test nominale vs Z-test calibrato per ciascuna L",
         fontsize=12,
         fontweight="bold",
     )

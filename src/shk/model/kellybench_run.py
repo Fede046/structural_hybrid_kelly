@@ -13,15 +13,20 @@ configurazioni con B0 = £220.
 
 È un'esecuzione descrittiva aggiuntiva sul test set, con gli stessi agenti, lo stesso fit (2020-21)
 e gli stessi parametri dell'esecuzione unica: nessun parametro si sceglie o si cambia qui. Senza
-floor la log-ricchezza non dipende dalla scala, e coincide con quella della realizzazione
-osservata dell'esecuzione unica.
+floor la log-ricchezza di A e B_0.25 non dipende dalla scala, e coincide con quella della
+realizzazione osservata dell'esecuzione unica.
+
+Schema del relatore (C3, C3_stop, C3_and; decisione del 2026-11-05): eseguito qui una volta sola
+sul 2023-24, con i parametri congelati e le soglie dell'allarme calibrate sul training come in
+us_c10_scheme_validation (scheme_run.scheme_thresholds). Lo schema è stato costruito dopo
+l'esecuzione unica, quando il 2023-24 era già stato visto: il risultato è esplorativo, non una
+conferma.
 
 Uscite (KELLYBENCH_COLUMNS):
 - righe "summary", per configurazione e agente: bankroll iniziale e finale in £, rendimento della
   stagione, log-ricchezza finale, drawdown massimo, numero di puntate (totali, forzate, alzate al
   floor, scartate), totale puntato in £, rendimento per sterlina puntata, rovina e data di rovina;
 - righe "path": bankroll in £ dopo ogni data, per configurazione e agente.
-E esiste solo con F > 0, come nelle altre esecuzioni.
 """
 
 import math
@@ -32,13 +37,16 @@ import numpy as np
 
 from shk.kelly.environment import run_paired_backtest
 from shk.kelly.metrics import wealth_max_drawdown
-from shk.model.frozen_agents import AGENT_ORDER, build_frozen_agents, build_supervisors, check_frozen_constants
+from shk.model.frozen_agents import AGENT_ORDER, build_frozen_agents, build_supervisor, check_frozen_constants
 from shk.model.frozen_params import load_frozen_params
 from shk.model.module1 import MODULE1_ELO
+from shk.model.module2_data import build_module2_frame
+from shk.model.scheme_run import SchemeThresholds, build_scheme_agents, scheme_thresholds
 from shk.model.test_run import TEST_FIT, TEST_SEASON, SeasonData, load_season_data, season_params_path
-from shk.model.training_calibration import SharedShin
 
 KELLYBENCH_BANKROLL_GBP: Final[float] = 100_000.0
+SCHEME_TEST_ARMS: Final[tuple[str, ...]] = ("C3", "C3_stop", "C3_and")
+KELLYBENCH_ARMS: Final[tuple[str, ...]] = AGENT_ORDER + SCHEME_TEST_ARMS
 FLOORS_GBP: Final[tuple[tuple[str, float], ...]] = (("none", 0.0), ("gbp_0.01", 0.01), ("gbp_1", 1.0))
 KELLYBENCH_COLUMNS: Final[tuple[str, ...]] = (
     "row_type", "config", "floor_gbp", "min_stake", "agent", "date", "initial_bankroll_gbp", "bankroll_gbp",
@@ -51,9 +59,13 @@ def _date(value: np.datetime64) -> str:
     return str(np.datetime_as_string(value, unit="D"))
 
 
-def kellybench_records(sd: SeasonData, floors: Sequence[tuple[str, float]] = FLOORS_GBP,
+def kellybench_records(sd: SeasonData, thresholds: SchemeThresholds | None = None,
+                       floors: Sequence[tuple[str, float]] = FLOORS_GBP,
                        bankroll_gbp: float = KELLYBENCH_BANKROLL_GBP) -> list[dict[str, object]]:
     """Righe "summary" e "path" della stagione per ogni configurazione di floor.
+
+    Con thresholds (soglie dell'allarme per fit) gioca anche lo schema del relatore (SCHEME_TEST_ARMS),
+    con un supervisore condiviso fra le configurazioni.
 
     Solleva
     -------
@@ -64,14 +76,15 @@ def kellybench_records(sd: SeasonData, floors: Sequence[tuple[str, float]] = FLO
         raise ValueError(f"bankroll_gbp must be positive, got {bankroll_gbp}")
     params = load_frozen_params(season_params_path(sd))
     check_frozen_constants(params)
-    supervisors = build_supervisors(params, sd.inp, None, sd.devig_method)
-    shin = SharedShin(sd.devig_method)
+    supervisor = build_supervisor(params, sd.inp, sd.devig_method) if thresholds is not None else None
     records: list[dict[str, object]] = []
     for config, floor_gbp in floors:
         if floor_gbp < 0.0:
             raise ValueError(f"floor must be non-negative, got {floor_gbp}")
         min_stake = floor_gbp / bankroll_gbp
-        agents = build_frozen_agents(params, min_stake, supervisors, shin, sd.fit, AGENT_ORDER)
+        agents = build_frozen_agents(AGENT_ORDER)
+        if supervisor is not None:
+            agents += build_scheme_agents(params, thresholds, supervisor, sd.fit, SCHEME_TEST_ARMS)
         runs = run_paired_backtest(agents, sd.inp.dates, sd.inp.probs, sd.inp.odds, sd.inp.outcomes, min_stake,
                                    record_stakes=True, fallback_policy=params.fixed["fallback_policy"])
         for run in runs:
@@ -98,5 +111,9 @@ def kellybench_records(sd: SeasonData, floors: Sequence[tuple[str, float]] = FLO
 
 
 def evaluate_kellybench(module1: str = MODULE1_ELO) -> list[dict[str, object]]:
-    """Carica il 2023-24 con il fit 2020-21 ed esegue le tre configurazioni di floor."""
-    return kellybench_records(load_season_data(TEST_SEASON, TEST_FIT, module1))
+    """Carica il 2023-24 con il fit 2020-21, calibra le soglie dello schema sul training ed esegue le tre configurazioni di floor."""
+    sd = load_season_data(TEST_SEASON, TEST_FIT, module1)
+    frame = build_module2_frame(sd.residuals, devig_method=sd.devig_method)
+    params = load_frozen_params(season_params_path(sd))
+    thresholds = scheme_thresholds(frame[frame["role"] == "training"], params)
+    return kellybench_records(sd, thresholds)

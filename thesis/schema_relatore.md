@@ -1,86 +1,139 @@
-# Lo schema del relatore e il progetto
+# Structural-Hybrid Kelly: che cosa ho realizzato
 
-Questo documento confronta, punto per punto, la soluzione Structural-Hybrid proposta dal relatore con quello che il progetto implementa: che cosa è fatto alla lettera, che cosa è interpretato, che cosa manca e che cosa dicono i risultati.
+Federico Malservigi, novembre 2026
 
-Le richieste del relatore sono riassunte con parole mie: le sue mail sono riservate e non sono riportate. I dettagli tecnici sono in `thesis/agenti_e_architettura.md` e i risultati in `thesis/conclusioni_progetto.md`; qui ci sono solo i rimandi.
+Questo documento descrive come ho realizzato la soluzione Structural-Hybrid che mi ha proposto, come ho applicato le sue indicazioni e che cosa mostrano i risultati. Alla fine ci sono alcune domande su cui mi servirebbe una sua scelta prima di andare avanti.
 
-## 1. Lo schema in breve
+## 1. In sintesi
 
-**La proposta.** Un agente gerarchico, in cui chi scommette è solo il braccio e un agente di secondo livello controlla il rischio:
-- **Modulo 1, il lavoratore:** fa le previsioni, con modelli classici o con un LLM.
-- **Modulo 2, il supervisore:** controlla i residui del lavoratore con l'ANOVA. Quando l'eteroschedasticità aumenta, cioè la media degli errori cresce e la varianza esplode, dà l'allarme.
-- **Modulo 3, il ricalibratore:** con la decomposizione di Blinder-Oaxaca capisce che tipo di errore è:
-  - un errore nei dati (per esempio un infortunio improvviso): si riduce un po' la puntata;
-  - un errore strutturale (il mercato è cambiato, la squadra è cambiata): il rischio va quasi a zero finché il modello non viene ri-parametrizzato, oppure si cambia modello.
+- Ho realizzato lo schema com'era nella proposta:
+  - il lavoratore prevede;
+  - il supervisore controlla i residui con l'ANOVA e dà l'allarme;
+  - il ricalibratore usa Blinder-Oaxaca per distinguere un errore nei dati da un errore strutturale e decide la puntata.
+- Il supervisore agisce con un moltiplicatore sulla puntata del lavoratore, come da sua preferenza.
+- Il lavoratore può anche scegliere l'esito su cui puntare, con tre regole diverse.
+- Il lavoratore LLM (opzione A) è predisposto ma non ancora eseguito.
+- Risultato principale: il modello previsivo non batte il mercato, quindi ogni agente che punta perde. Lo schema limita un po' le perdite rispetto al lavoratore senza supervisore.
 
-L'ipotesi del relatore è che un agente così, consapevole dei propri limiti, non solo non fallisca ma batta il mercato.
+## 2. Lo schema realizzato
 
-**Le tre risposte successive**, a domande mie:
-1. **Che cosa fa l'allarme strutturale?** Un moltiplicatore che riduce la puntata del lavoratore, oppure far ri-parametrizzare il modello: vanno bene entrambi, con preferenza per il moltiplicatore.
-2. **Chi sceglie l'esito su cui puntare?** Il relatore propone di provare anche a far scegliere l'esito al lavoratore, invece della sola regola fissa.
-3. **Su che lavoratore si dimostra il supervisore?** Opzione A: lavoratori classici (Elo, Dixon-Coles) e un LLM che sceglie esito e puntata senza costruirsi i modelli, con il supervisore che agisce sulla puntata. L'agente autonomo come quello di KellyBench (opzione B) non è richiesto.
+**Modulo 1, il lavoratore.** Due modelli classici, Elo e Dixon-Coles, danno le probabilità di vittoria in casa, pareggio e vittoria in trasferta di ogni partita. La puntata proposta dal lavoratore è la frazione di Kelly calcolata su quelle probabilità.
 
-## 2. Confronto punto per punto
+**Modulo 2, il supervisore.** Dopo ogni partita guarda l'errore del lavoratore rispetto al mercato. Il residuo confronta due probabilità dell'esito reale, in scala logaritmica: quella data dal modello e quella implicita nelle quote, depurata dal margine del bookmaker. A ogni giornata il supervisore confronta le ultime 40 partite con le 40 precedenti, con due test:
+- l'ANOVA a una via sulla media dei residui segnala se gli errori recenti sono peggiori;
+- il test di Brown-Forsythe, cioè l'ANOVA sulle distanze dalla mediana, segnala se la dispersione è aumentata, quindi l'eteroschedasticità.
 
-| Richiesta | Come è implementata | Dove | Stato |
+Ho provato due versioni dell'allarme: nella prima basta che peggiori la media o che cresca la dispersione; nella seconda devono succedere tutte e due le cose insieme («la media degli errori cresce e la varianza esplode»).
+
+Le soglie non sono quelle nominali dell'ANOVA, perché le serie di errori sono autocorrelate. In quel caso l'ANOVA nominale dà molti falsi allarmi: in simulazione fino al 40% invece del 5%. Ho quindi calibrato le soglie sulle stagioni di training con un bootstrap a blocchi, così i falsi allarmi restano al più al 5%.
+
+**Modulo 3, il ricalibratore.** Quando scatta l'allarme, la decomposizione di Blinder-Oaxaca divide il peggioramento dei residui in due parti:
+- una dovuta a partite diverse (composizione, cioè errore nei dati);
+- una dovuta a un cambiamento della relazione fra le caratteristiche delle partite e l'errore (struttura).
+
+Se la parte strutturale supera una soglia calibrata, l'errore è strutturale; altrimenti è un errore nei dati. La puntata diventa:
+
+| Situazione | Frazione della puntata di Kelly |
+|---|---|
+| Nessun allarme | 0,25 (quarto di Kelly) |
+| Errore nei dati | 0,19, finché dura l'allarme |
+| Errore strutturale | 0 |
+
+Per l'errore strutturale ho seguito due letture di «finché il modello non viene ri-parametrizzato»:
+- si torna a puntare quando l'allarme si spegne;
+- si resta fermi fino a fine stagione, perché nel mio impianto il modello viene ri-parametrizzato solo fra una stagione e l'altra.
+
+## 3. Come ho applicato le sue indicazioni
+
+**Moltiplicatore o ri-parametrizzazione.** Ho realizzato il moltiplicatore: il supervisore scala la puntata proposta dal lavoratore e non tocca il modello. Non ho implementato né la ri-parametrizzazione del modello dopo un allarme né il cambio di modello.
+
+**La scelta dell'esito.** Prima l'esito su cui puntare seguiva una regola fissa. Ora il lavoratore può sceglierlo con tre regole:
+- l'esito con il valore atteso più alto, cioè la regola di prima;
+- l'esito in cui il modello si discosta di più dal mercato;
+- l'esito più probabile secondo il modello.
+
+In tutti i casi si punta solo se il valore atteso stimato è positivo, e il supervisore agisce sulla puntata.
+
+**Opzione A.** I lavoratori classici sono pronti; per ora li ho provati con l'Elo. Il lavoratore LLM sceglierà esito e puntata a partire da data, squadre, forma recente e classifica, senza vedere le quote. 
+
+## 4. Come ho valutato
+
+- **Dati.** Premier League, quote Bet365, stagioni dal 2000-01 al 2023-24.
+- **Separazione dei dati.** Ho calibrato tutti i parametri su tre stagioni di training (2000-01, 2010-11, 2020-21) e poi li ho congelati. La valutazione è sulle altre 19 stagioni, dal 2002-03 al 2022-23. Il 2023-24, la stagione di KellyBench, l'ho usato come test una volta sola, alla fine. Lo schema l'ho costruito dopo, e su quella stagione l'ho provato una sola volta (§5).
+- **Ambiente.** Ho riprodotto le regole di KellyBench: si gioca giornata per giornata, con una puntata minima obbligatoria, e si usano solo informazioni disponibili prima della partita.
+- **Simulazioni.** Ogni stagione è giocata 500 volte. Ogni volta la stagione è ricostruita ricampionando le giornate, così si ottiene una distribuzione dei risultati e non un solo valore.
+- **Riferimento.** Per vedere che cosa aggiunge il supervisore, lo schema è confrontato con lo stesso lavoratore senza supervisore, sulle stesse partite e con le stesse simulazioni:
+  - con il Kelly pieno, cioè il lavoratore da solo;
+  - con il quarto di Kelly fisso, cioè la puntata dello schema quando non c'è allarme.
+
+## 5. Risultati
+
+**Il modello non batte il mercato.** In media il modello assegna all'esito che si verifica una probabilità più bassa di quella del mercato. Lo misuro con la media, su tutte le partite, della differenza fra i logaritmi delle due probabilità: −0,022 con le quote Bet365, intervallo al 95% da −0,030 a −0,015. Resta negativa con Dixon-Coles e con tutti i metodi per togliere il margine dalle quote. Quindi ogni agente che punta perde in media, e il supervisore può solo ridurre la perdita.
+
+Capitale rimasto a fine stagione, in una stagione tipica delle 19 di validazione:
+
+| Agente | Quando scatta l'allarme | Dopo un errore strutturale | Capitale rimasto |
 |---|---|---|---|
-| Lavoratore con modelli classici | Elo e Dixon-Coles danno le probabilità 1X2 di ogni partita | `src/shk/model/module1.py`; `conclusioni_progetto.md` §3.2 | Fatto |
-| Lavoratore LLM | DeepSeek Flash, con data, squadre, forma recente e classifica, senza quote | `src/shk/model/llm_module1.py` (predisposto, non versionato) | Da fare: fase 2 |
-| Supervisore: ANOVA sui residui | Agente C3. Due test fra le ultime 40 partite e le 40 precedenti: ANOVA a una via sulla media degli errori e Brown-Forsythe (ANOVA sulle distanze dalla mediana) sulla dispersione | `src/shk/model/agent_c.py` (`scheme_statistics`); `agenti_e_architettura.md` §3.7 | Fatto |
-| Allarme quando media e varianza crescono | C3 dà l'allarme se uno dei due test supera la soglia; C3_and, alla lettera, solo se la superano tutti e due | `agent_c.py` (`SchemeAgent`, `alarm`) | Fatto, in due versioni |
-| Ricalibratore: Oaxaca separa dato e struttura | Decomposizione three-fold dei residui; errore strutturale se la componente strutturale supera la soglia calibrata, altrimenti errore di composizione | `src/shk/stats/oaxaca.py`, `src/shk/model/module2.py` | Fatto |
-| Errore nei dati: ridurre un po' la puntata | λ da 0,25 a 0,25 · 0,75 = 0,1875 finché dura l'allarme | `SchemeAgent` | Fatto |
-| Errore strutturale: rischio quasi a zero finché il modello non è ri-parametrizzato | λ = 0. C3 riparte quando l'allarme si spegne; C3_stop resta a zero fino a fine stagione, perché il Modulo 1 si ri-parametrizza solo ai fit | `SchemeAgent` (`stop`) | Fatto, in due letture |
-| Errore strutturale: cambiare modello | – | – | Non implementato |
-| Risposta 1: moltiplicatore sulla puntata | La puntata è f = λ · f_w: il supervisore scala la frazione proposta dal lavoratore senza toccarlo | `src/shk/kelly/agents.py` | Fatto |
-| Risposta 1: ri-parametrizzare il modello dopo l'allarme | Il Modulo 1 si ricalibra solo ai fit 2000-01, 2010-11, 2020-21, mai per un allarme | – | Non implementato (seconda scelta del relatore) |
-| Risposta 2: il lavoratore sceglie l'esito | Tre regole: EV massimo (R1, quella di prima), maggior vantaggio sul mercato (R2), esito più probabile (R3), ciascuna da sola, con freno fisso e con i supervisori | `src/shk/kelly/outcome_rules.py`, `src/shk/model/worker_run.py`; `agenti_e_architettura.md` §3.8 | Fatto con l'Elo; Dixon-Coles da fare |
-| Risposta 3: opzione A | Lavoratori classici fatti; LLM da fare. L'opzione B è dichiarata come limite | `thesis/disegno_lavoratore.md` | In corso |
+| Lavoratore da solo, Kelly pieno | – | – | 0,2% |
+| Lavoratore con il quarto di Kelly, senza supervisore | – | – | 56% |
+| Schema | Peggiora la media o cresce la varianza | Riprende quando l'allarme si spegne | 57% |
+| Schema | Peggiorano media e varianza insieme | Riprende quando l'allarme si spegne | 57% |
+| Schema | Peggiora la media o cresce la varianza | Fermo fino a fine stagione | 67% |
 
-## 3. Le scelte di interpretazione
+Il lavoratore qui sceglie l'esito con il valore atteso più alto. Per ogni agente: mediana sulle 500 simulazioni di ogni stagione, poi media geometrica sulle 19 stagioni.
 
-Lo schema non fissa alcuni dettagli. Queste sono le scelte fatte, con il motivo:
-- **Che cosa sono i residui.** δ = ln p̂(esito reale) − ln q(esito reale), dove q è la probabilità del mercato senza margine (de-vigging di Shin). Misura quanto il modello sbaglia rispetto al mercato, che è ciò che conta per scommettere.
-- **«Eteroschedasticità che aumenta».** Conta solo se le partite recenti sono più disperse delle precedenti; allo stesso modo, il test sulla media conta solo se gli errori recenti sono peggiori. Un miglioramento non deve far scattare l'allarme.
-- **Le soglie.** Le soglie nominali dell'ANOVA non valgono su serie di errori autocorrelate (`conclusioni_progetto.md` §4.2). Sono calibrate sul training con il block bootstrap, al 5% di falsi allarmi in tutto.
-- **La puntata senza allarme.** Lo schema non dice quanto puntare quando va tutto bene. Si usa il quarto di Kelly (λ = 0,25), la stessa base degli altri agenti.
-- **«Ridurre un po'».** κ = 0,75 e la soglia della componente strutturale sono quelli già congelati per C1: C3 non ha parametri calibrati di nuovo.
-- **«Finché il modello non viene ri-parametrizzato».** Due letture: fino a quando l'allarme si spegne (C3) o fino a fine stagione (C3_stop).
+**Che cosa si vede:**
+- **Lo schema funziona come previsto, ma interviene poco.** Il segnale che cerca, una varianza degli errori che cresce, sui dati reali è raro: l'allarme scatta circa 1,6 volte per stagione. Lo schema non fa mai peggio del lavoratore senza supervisore; la versione che resta ferma fino a fine stagione fa meglio in 9 stagioni su 19.
+- **Sui dati reali Oaxaca separa poco i due tipi di errore.** Sui dati simulati la decomposizione funziona. Nella sospensione per il Covid del 2019-20, dove mi aspettavo un errore strutturale, la parte strutturale è quasi nulla.
+- **Più si riduce la puntata, meno si perde.** Con un vantaggio negativo, ogni riduzione della puntata riduce la perdita. Per questo la versione che resta ferma fino a fine stagione è la migliore delle tre: le altre, quando l'allarme si spegne, tornano al quarto di Kelly.
+- **Lo schema funziona con tutte e tre le regole di scelta dell'esito.** Non fa mai peggio del lavoratore senza supervisore e fa meglio in 5–6 stagioni su 19.
+- **La regola migliore è puntare sull'esito più probabile.** Si scommette su circa metà delle partite e si perde meno: con lo schema resta il 67% del capitale, invece del 57% con la regola del valore atteso più alto.
 
-## 4. Che cosa c'è in più rispetto allo schema
+**La stagione 2023-24, quella di KellyBench.** L'ho giocata come in KellyBench: esiti veri, giornata per giornata, partendo da £100 000. Avevo già usato questa stagione come test prima di costruire lo schema, quindi il risultato dello schema è solo esplorativo: l'ho eseguito una volta sola, senza cambiare nessun parametro.
 
-Il progetto contiene anche agenti che non vengono dallo schema ma dalle note di progetto. Servono da confronto (ablazione):
-- **C1:** usa direttamente la componente strutturale di Oaxaca come allarme, senza ANOVA, e riduce λ a ogni allarme.
-- **C2:** non ha allarme; gradua λ in modo continuo con la formula λ*.
-- **D_ADWIN, D_PH:** lo stesso Kelly frazionario con un detector di drift standard al posto del supervisore.
-- **A, B, C0, E:** Kelly pieno, Kelly frazionario fisso e puntata minima.
+| Agente | Capitale finale |
+|---|---|
+| Lavoratore da solo, Kelly pieno | £14 |
+| Lavoratore con il quarto di Kelly, senza supervisore | £24 358 |
+| Schema, allarme se peggiora la media o cresce la varianza | £24 424 |
+| Schema, come sopra ma fermo fino a fine stagione | £24 424 |
+| Schema, allarme solo se peggiorano media e varianza insieme | £26 755 |
 
-C1 e C2 non hanno l'ANOVA perché, con soglie corrette, l'eteroschedasticità crescente non si osserva (`conclusioni_progetto.md` §4.4). C3 rimette l'ANOVA per seguire lo schema.
+Come nelle 19 stagioni di validazione, lo schema cambia poco il risultato del quarto di Kelly.
 
-**I nomi nel codice.** Per ragioni storiche nel codice «Modulo 2» è Oaxaca-Blinder (`shk.model.module2`) e «Modulo 3» è la formula λ* (`shk.model.module3`). Nei documenti si usano i nomi del relatore; la corrispondenza è in `agenti_e_architettura.md` §1.
+## 6. Altre analisi di supporto
 
-## 5. Le ipotesi dello schema alla prova
+Ho fatto anche alcune analisi che lo schema non prevede, ma che aiutano a leggerne i risultati.
 
-Risultati sulle 19 stagioni di validazione, 500 seed, floor di £0,01 (somma sulle stagioni della mediana di ln W_T). C3 non è stato eseguito sul test 2023-24, già usato una volta.
+**Test di eteroschedasticità sui residui.** Per capire se il segnale che lo schema cerca esiste davvero, ho applicato ai residui del modello i test classici:
+- Breusch-Pagan e White con le soglie nominali rigettano in tutte le 19 stagioni, ma solo perché la varianza dell'errore dipende per costruzione da quanto è incerta la previsione;
+- con soglie calibrate col bootstrap i rigetti scendono a zero;
+- i test sulla varianza che cresce nel corso della stagione (Breusch-Pagan sul tempo, Goldfeld-Quandt, ARCH) rigettano in 0–3 stagioni su 19.
 
-| Ipotesi dello schema | Esito | Dove |
-|---|---|---|
-| L'agente batte il mercato | No. Il vantaggio stimato del modello sul mercato è negativo, con l'Elo e con Dixon-Coles; nessun agente che punta guadagna | `conclusioni_progetto.md` §4.1 |
-| L'eteroschedasticità crescente segnala il degrado | Poco. Con soglie corrette i test sulla varianza rigettano in 0–3 stagioni su 19; l'allarme di C3 scatta circa 1,6 volte per stagione | §4.4 |
-| Oaxaca distingue errore nei dati ed errore strutturale | Sui dati sintetici sì; sui dati reali le due componenti non si separano dove ci si aspetta (per esempio la sospensione Covid) | §4.6 |
-| Lo schema limita le perdite | Un poco. Rispetto al quarto di Kelly fisso (−10,87), C3 arriva a −10,62 e C3_stop a −7,51, senza mai fare peggio in mediana. Gli agenti che puntano meno perdono meno: C1 −5,14, C2 −5,02, D_PH −3,43 | `agenti_e_architettura.md` §3.7 |
-| Con l'allarme congiunto (media e varianza) va meglio | No: C3_and dà −10,67, quasi come C3 | §3.7 |
-| Il supervisore funziona con lavoratori diversi | Sì: con le tre regole di scelta dell'esito, C1 e C2 battono il freno fisso in 15–18 stagioni su 19; C3 non è mai peggiore | §3.8 |
+Questo spiega perché l'allarme dello schema scatta di rado.
 
-**Lettura.** Lo schema è implementato e si comporta come descritto: riduce poco la puntata con errori di composizione e la azzera con errori strutturali. Il suo effetto è piccolo per due ragioni:
-- il segnale che cerca, una varianza degli errori che esplode, sui dati reali è raro;
-- il modello non batte il mercato, quindi vince chi punta meno, e lo schema punta di più degli agenti che riducono λ in modo permanente (C1) o continuo (C2).
+**Z-test per giornata.** È un modo più semplice di dare l'allarme: confronta l'errore medio di ogni giornata con quello del training. Sulle 19 stagioni, con 1,9 falsi allarmi attesi per stagione (36 in tutto), la soglia nominale dà 53 allarmi e quella calibrata 43. Anche qui, quindi, gli allarmi sono di poco sopra quelli attesi per caso.
 
-## 6. Che cosa resta da fare
+**Le squadre neopromosse.** Mi aspettavo che fossero il caso tipico di errore nei dati, perché il modello le conosce poco. Ho confrontato l'errore sulle loro partite a inizio stagione e nel resto della stagione, al netto delle altre squadre (differenza nelle differenze): −0,019, con intervallo al 95% da −0,040 a +0,003. La differenza non è significativa.
 
-- **Fase 1 con Dixon-Coles:** le stesse regole del lavoratore con l'altro modello classico.
-- **Fase 2, il lavoratore LLM:** sceglie esito e puntata senza vedere le quote, sul 2023-24, in modo esplorativo. Prima vanno decise due cose (`disegno_lavoratore.md` §8):
-  - come si combinano λ e la puntata proposta dall'LLM;
-  - il tetto alla puntata, proposto al 10% del bankroll.
-- **Ri-parametrizzare o cambiare modello dopo un allarme strutturale:** non implementato. Il relatore preferisce il moltiplicatore sulla puntata, che è fatto; questa parte è facoltativa.
-- **Opzione B**, l'agente autonomo come quello di KellyBench: fuori dal perimetro della tesi, da dichiarare come limite.
+**La puntata minima obbligatoria e la rovina.** KellyBench obbliga a puntare almeno un minimo a ogni giornata. Ho verificato che questa regola rende possibile la rovina, che con Kelly puro non può avvenire. Con il capitale iniziale di £220 dello scenario di KellyBench:
+- senza puntata minima nessun agente va in rovina;
+- con una puntata minima di £0,01 il Kelly pieno va in rovina nel 17,9% dei casi, con £1 nel 69,0%;
+- il quarto di Kelly va in rovina solo con £1, nello 0,5% dei casi.
+
+## 7. Che cosa resta da fare
+
+- Le stesse prove dei lavoratori con il modello Dixon-Coles.
+- Il lavoratore LLM, sulla stagione 2023-24, in modo esplorativo, per due motivi:
+  - quella stagione è già stata usata come test;
+  - l'LLM potrebbe conoscerne i risultati dal proprio addestramento.
+- La stesura dei capitoli della tesi.
+
+## 8. Domande per lei
+
+1. **La puntata dell'LLM.** Il supervisore deve moltiplicare per 0,25 la puntata proposta dall'LLM anche senza allarme, come per i lavoratori classici? Oppure deve intervenire solo con l'allarme, lasciando invariata la puntata dell'LLM finché va tutto bene?
+2. **Un tetto alla puntata dell'LLM.** Pensavo di non permettere più del 10% del capitale su una singola partita. Le va bene?
+3. **La ri-parametrizzazione.** Lei aveva indicato il moltiplicatore come prima scelta: basta quello, o vuole che implementi anche la ri-parametrizzazione del modello dopo un errore strutturale?
+4. **La versione principale.** Nella tesi presenterei come versione principale quella in cui basta che peggiori la media o che cresca la varianza, e si riprende a puntare quando l'allarme si spegne, con le altre come varianti. Le sembra corretto?
+
+Il codice e tutti i risultati sono riproducibili e a sua disposizione.

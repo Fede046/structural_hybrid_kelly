@@ -24,9 +24,9 @@ from shk.kelly.staking import kelly_staking
 # Codice dell'esito per le partite senza puntata volontaria
 NO_BET: Final[int] = -1
 
-# Moltiplicatori di Kelly degli agenti A (Kelly pieno) e B (Kelly frazionario)
+# Moltiplicatori di Kelly degli agenti A (Kelly pieno) e B_0.25 (quarto di Kelly)
 AGENT_A_LAMBDA: Final[float] = 1.0
-AGENT_B_LAMBDAS: Final[tuple[float, ...]] = (0.25, 0.10)
+AGENT_B_LAMBDA: Final[float] = 0.25
 
 # Numero di esiti del mercato 1X2 e tolleranza sulla somma delle probabilità di riga
 _N_OUTCOMES: Final[int] = 3
@@ -613,8 +613,7 @@ class Agent(abc.ABC):
 class FractionalKellyAgent(Agent):
     """Agente a Kelly frazionario: frazione = kelly_staking(p_hat, b, lam).
 
-    L'agente A usa lam = AGENT_A_LAMBDA (1.0), gli agenti B i valori di AGENT_B_LAMBDAS
-    (0.25 e 0.10). Con lam = 1 e p_hat = 1 la frazione vale 1 e decide solleva ValueError.
+    L'agente A usa lam = AGENT_A_LAMBDA (1.0), l'agente B_0.25 lam = AGENT_B_LAMBDA (0.25). Con lam = 1 e p_hat = 1 la frazione vale 1 e decide solleva ValueError.
 
     Parametri
     ---------
@@ -666,7 +665,7 @@ class FractionalKellyAgent(Agent):
         """Calcola le frazioni con kelly_staking, un esito selezionato alla volta.
 
         kelly_staking accetta b solo scalare (math.isfinite(b)), quindi la chiamata avviene
-        elemento per elemento, come in select_baseline_d_bets.
+        elemento per elemento.
 
         Parametri
         ---------
@@ -687,43 +686,3 @@ class FractionalKellyAgent(Agent):
         for i in range(n_selected):
             fractions[i] = kelly_staking(float(p_hat[i]), float(b[i]), lam=self._lam)
         return fractions
-
-
-class MinimumStakeAgent(Agent):
-    """Agente E: nessuna puntata volontaria, frazioni tutte nulle.
-
-    La puntata minima dell'agente verrà dal ripiego obbligatorio dell'ambiente.
-
-    Parametri
-    ---------
-    name : str
-        Nome non vuoto dell'agente.
-
-    Solleva
-    -------
-    TypeError
-        Se name non è una stringa.
-    ValueError
-        Se name è la stringa vuota.
-    """
-
-    def stake_fractions(
-        self, view: DateView, p_hat: np.ndarray, b: np.ndarray
-    ) -> np.ndarray:
-        """Restituisce frazioni nulle per tutti gli esiti selezionati.
-
-        Parametri
-        ---------
-        view : DateView
-            Vista in sola lettura delle partite della data (non usata dalla regola).
-        p_hat : np.ndarray
-            Array float64 (k,) delle probabilità stimate degli esiti selezionati.
-        b : np.ndarray
-            Array float64 (k,) delle quote nette degli esiti selezionati (non usate).
-
-        Restituisce
-        -----------
-        np.ndarray
-            Array float64 (k,) di zeri.
-        """
-        return np.zeros(p_hat.shape[0], dtype=np.float64)

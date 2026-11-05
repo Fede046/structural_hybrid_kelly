@@ -11,8 +11,7 @@ ha parametri liberi:
 Parità risolte da np.argmax nell'ordine H, D, A.
 
 with_outcome_rule(cls, rule) costruisce la sottoclasse di un agente che usa la regola in
-candidate_outcomes ed espone la regola come attributo di classe outcome_rule, che il
-supervisore usa per l'EV candidato delle finestre del Modulo 3.
+candidate_outcomes ed espone la regola come attributo di classe outcome_rule.
 """
 
 from collections.abc import Callable

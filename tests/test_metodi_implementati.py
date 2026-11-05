@@ -35,13 +35,13 @@ SECTIONS = (
     "## 2. De-vigging",
     "## 3. Modulo 1 Elo e Dixon-Coles",
     "## 4. ĝ",
-    "## 5. Detector e Baseline D",
+    "## 5. Z-test per giornata",
     "## 6. Ambiente e floor",
     "## 7. Agenti",
     "## 8. Modulo 2",
-    "## 9. Modulo 3",
+    "## 9. Schema del relatore",
     "## 10. Seed e bootstrap",
-    "## 11. Calibrazione e congelamento",
+    "## 11. Parametri congelati",
     "## 12. Intervalli",
     "## Indice: aree del progetto e file",
 )
@@ -125,7 +125,7 @@ def test_code_parameters_match_the_code():
 
 def test_frozen_file_parameters_match_the_files():
     params = TOML_PARAM.findall(_text())
-    assert len(params) >= 30
+    assert len(params) >= 15
     wrong = []
     for file, path, literal in params:
         data = tomllib.loads((REPO_ROOT / file).read_text(encoding="utf-8"))

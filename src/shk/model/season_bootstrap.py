@@ -23,7 +23,7 @@ from typing import NamedTuple
 
 import numpy as np
 
-from shk.model.training_agents import SeasonInput
+from shk.model.season_input import SeasonInput
 from shk.stats.bootstrap import optimal_block_length, round_block_length
 
 POSITION_COVARIATE = "position"

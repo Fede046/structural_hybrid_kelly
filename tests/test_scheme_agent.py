@@ -1,4 +1,4 @@
-"""Test: agente dello schema del relatore (C3, C3_stop), statistiche e soglie dell'allarme ANOVA."""
+"""Test: agente dello schema del relatore (C3, C3_stop, C3_and), statistiche e soglie dell'allarme ANOVA."""
 
 import math
 from types import SimpleNamespace
@@ -16,7 +16,6 @@ from shk.model.agent_c import (
     SCHEME_STOP_SEASON,
     Module2Supervisor,
     SchemeAgent,
-    SupervisorState,
     calibrate_scheme_thresholds,
     scheme_statistics,
 )
@@ -38,12 +37,11 @@ class _ScriptedSupervisor(Module2Supervisor):
     def delta_windows(self, decision_date: np.datetime64):
         return self._windows[np.datetime64(decision_date, "ns")]
 
-    def state_at(self, decision_date: np.datetime64) -> SupervisorState:
+    def state_at(self, decision_date: np.datetime64) -> Module2Output:
         s = self._structural[np.datetime64(decision_date, "ns")]
         state = STATE_ACTIVE if s is not None else "not_active"
         result = SimpleNamespace(structural=s) if s is not None else None
-        out = Module2Output("s", None, 3, state, 0, 0, 0, math.nan, math.nan, result, math.nan)
-        return SupervisorState(out, None, None, None)
+        return Module2Output("s", None, 3, state, 0, 0, 0, math.nan, math.nan, result, math.nan)
 
 
 def test_scheme_statistics_match_scipy_with_sign():

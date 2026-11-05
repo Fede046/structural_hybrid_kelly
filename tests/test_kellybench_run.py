@@ -13,6 +13,7 @@ import pytest
 
 from shk.model.frozen_agents import AGENT_ORDER
 from shk.model.kellybench_run import (
+    KELLYBENCH_ARMS,
     FLOORS_GBP,
     KELLYBENCH_BANKROLL_GBP,
     KELLYBENCH_COLUMNS,
@@ -36,8 +37,7 @@ def test_csv_shape_and_bankroll(frame):
     summary = frame[frame["row_type"] == "summary"]
     for config, floor in FLOORS_GBP:
         part = summary[summary["config"] == config]
-        expected = [a for a in AGENT_ORDER if a != "E" or floor > 0.0]
-        assert part["agent"].tolist() == expected
+        assert part["agent"].tolist() == list(KELLYBENCH_ARMS)
     assert (summary["initial_bankroll_gbp"] == KELLYBENCH_BANKROLL_GBP).all()
     final = KELLYBENCH_BANKROLL_GBP * np.exp(summary["final_log_wealth"])
     assert np.allclose(summary["bankroll_gbp"], final, rtol=1e-9)
@@ -48,11 +48,11 @@ def test_csv_shape_and_bankroll(frame):
 
 
 def test_without_floor_matches_the_single_test_run(frame):
-    """Senza floor la log-ricchezza non dipende dalla scala: coincide con l'esecuzione unica."""
+    """Senza floor la log-ricchezza di A e B_0.25 non dipende dalla scala: coincide con l'esecuzione unica."""
     summary = frame[(frame["row_type"] == "summary") & (frame["config"] == "none")].set_index("agent")
     test_run = pd.read_csv(TEST_RUN_CSV)
     observed = test_run[(test_run["row_type"] == "summary") & (test_run["config"] == "none")].set_index("agent")
-    for agent in summary.index:
+    for agent in AGENT_ORDER:
         assert math.isclose(summary.loc[agent, "final_log_wealth"], observed.loc[agent, "observed_log_wealth"],
                             rel_tol=0.0, abs_tol=1e-12)
 

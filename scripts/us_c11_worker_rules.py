@@ -1,6 +1,6 @@
 """Script: lavoratori classici che scelgono l'esito (R1, R2, R3) sulle 19 stagioni di validazione.
 
-Per ogni regola cinque versioni: da solo (Kelly pieno), freno costante 0.25, C1, C2, C3
+Per ogni regola tre versioni: da solo (Kelly pieno), freno costante 0.25, schema del relatore C3
 (shk.model.worker_run). Soglie dell'allarme di C3 come in us_c10; stessi seed dell'esecuzione
 congelata, quindi tutto è appaiato con us_c8_3 (R1 la riproduce bit per bit). Scrive:
 - results/raw/us_c11_worker_rules_raw.npz, uscite per seed (non versionato);

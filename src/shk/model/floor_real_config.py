@@ -1,7 +1,7 @@
 """Modulo per l'analisi Monte Carlo del floor nella configurazione reale.
 
 Questo modulo implementa il test del floor sul calendario e sulle quote reali delle
-19 stagioni di validazione: gli agenti A, B_0.25, B_0.10 ed E giocano sulle previsioni
+19 stagioni di validazione: gli agenti A e B_0.25 giocano sulle previsioni
 e quote B365 reali, ma gli esiti sono estratti dalle probabilita' de-viggati proporzionali
 del mercato (verita').
 """
@@ -13,13 +13,12 @@ from typing import Final, Sequence
 import numpy as np
 import pandas as pd
 
-from shk.kelly.agents import MinimumStakeAgent
-from shk.kelly.environment import AgentRun, DateView, run_paired_backtest
+from shk.kelly.environment import run_paired_backtest
 from shk.kelly.floor import SEED_C6
 from shk.kelly.metrics import wealth_max_drawdown
 from shk.market.devig import devig_proportional
 from shk.model.elo_fit import parse_season_start_year
-from shk.model.monitoring import assemble_baseline_d_season_input
+from shk.model.monitoring import assemble_season_backtest_input
 from shk.model.paired_backtest import CONFIGURATIONS, build_season_agents
 
 M_REPLICAS: Final[int] = 1_000
@@ -47,8 +46,6 @@ FLOOR_REAL_CSV_COLUMNS: Final[tuple[str, ...]] = (
     "median_max_drawdown",
     "floored_bets_share",
     "prob_replica_floored",
-    "analytic_expected_roi",
-    "se_roi",
 )
 
 
@@ -135,71 +132,6 @@ def sample_match_outcomes(
     return outcomes_by_inversion(q, u)
 
 
-def compute_agent_e_analytic_roi(
-    dates: np.ndarray,
-    odds: np.ndarray,
-    probs: np.ndarray,
-    min_stake: float,
-) -> float:
-    """Calcola il ROI atteso analitico di E su una stagione: F * sum_d (1 / S_d - 1).
-
-    Per ogni data distinta, identifica la partita di ripiego scelta da E
-    (l'esito con massimo EV stimato), calcola l'overround S_d della partita,
-    e accumula F * (1 / S_d - 1).
-
-    Parametri
-    ---------
-    dates : np.ndarray
-        Array 1D datetime64 con le date delle partite.
-    odds : np.ndarray
-        Matrice (N, 3) con le quote decimali lorde.
-    probs : np.ndarray
-        Matrice (N, 3) con le probabilita' stimate dal modello.
-    min_stake : float
-        Puntata minima fissa F >= 0.
-
-    Restituisce
-    -----------
-    float
-        ROI atteso analitico della stagione.
-
-    Solleva
-    -------
-    TypeError
-        Se gli argomenti non rispettano i tipi attesi.
-    ValueError
-        Se min_stake < 0.
-    """
-    if not isinstance(dates, np.ndarray) or not np.issubdtype(dates.dtype, np.datetime64):
-        raise TypeError("dates must be a numpy.ndarray with datetime64 dtype")
-    if not isinstance(odds, np.ndarray) or not isinstance(probs, np.ndarray):
-        raise TypeError("odds and probs must be numpy.ndarray")
-    if isinstance(min_stake, bool) or not isinstance(min_stake, (float, np.floating)):
-        raise TypeError(f"min_stake must be a float, got {type(min_stake).__name__}")
-    if min_stake < 0.0:
-        raise ValueError(f"min_stake must be non-negative, got {min_stake}")
-
-    if min_stake == 0.0 or dates.shape[0] == 0:
-        return 0.0
-
-    agent_e = MinimumStakeAgent("E")
-    unique_dates, split_indices = np.unique(dates, return_index=True)
-    sort_order = np.argsort(split_indices)
-    unique_dates = unique_dates[sort_order]
-
-    roi_sum = 0.0
-    for d in unique_dates:
-        mask = dates == d
-        view = DateView(date=d, probs=probs[mask], odds=odds[mask])
-        decision = agent_e.decide(view)
-        fallback_match = decision.fallback_match
-        fallback_odds = view.odds[fallback_match, :]
-        s_d = float(np.sum(1.0 / fallback_odds))
-        roi_sum += min_stake * (1.0 / s_d - 1.0)
-
-    return float(roi_sum)
-
-
 @dataclass(frozen=True)
 class SeasonRunArtifact:
     """Artefatto contenente i risultati di simulazione per una stagione."""
@@ -216,7 +148,6 @@ class SeasonRunArtifact:
     max_drawdown: np.ndarray
     n_bets: np.ndarray
     n_floored: np.ndarray
-    analytic_expected_roi: float | None
 
 
 def compute_season_metrics(
@@ -255,13 +186,6 @@ def compute_season_metrics(
     floored_share = float(tot_floored / tot_bets) if tot_bets > 0 else 0.0
     prob_floored = float(np.mean(artifact.n_floored > 0))
 
-    if artifact.agent_name == "E" and artifact.analytic_expected_roi is not None:
-        analytic_roi_val: str | float = float(artifact.analytic_expected_roi)
-        se_roi_val: str | float = float(np.std(roi_arr, ddof=1) / math.sqrt(m_count))
-    else:
-        analytic_roi_val = ""
-        se_roi_val = ""
-
     return {
         "row_type": "season",
         "config": artifact.config_name,
@@ -283,8 +207,6 @@ def compute_season_metrics(
         "median_max_drawdown": med_dd,
         "floored_bets_share": floored_share,
         "prob_replica_floored": prob_floored,
-        "analytic_expected_roi": analytic_roi_val,
-        "se_roi": se_roi_val,
     }
 
 
@@ -343,17 +265,6 @@ def compute_aggregate_metrics(
     floored_share = float(tot_floored / tot_bets) if tot_bets > 0 else 0.0
     prob_floored = float(np.mean(all_n_floored > 0))
 
-    if agent_name == "E" and first.analytic_expected_roi is not None:
-        analytic_roi_val: str | float = float(
-            np.mean([float(a.analytic_expected_roi) for a in artifacts])
-        )
-        se_roi_val: str | float = float(
-            np.std(roi_arr, ddof=1) / math.sqrt(total_trajectories)
-        )
-    else:
-        analytic_roi_val = ""
-        se_roi_val = ""
-
     return {
         "row_type": "aggregate",
         "config": config_name,
@@ -375,8 +286,6 @@ def compute_aggregate_metrics(
         "median_max_drawdown": med_dd,
         "floored_bets_share": floored_share,
         "prob_replica_floored": prob_floored,
-        "analytic_expected_roi": analytic_roi_val,
-        "se_roi": se_roi_val,
     }
 
 
@@ -448,7 +357,7 @@ def evaluate_floor_real_config(
     season_rows: list[dict[str, str | int | float]] = []
 
     for s_idx, (season, fit_through) in enumerate(val_seasons_with_fit):
-        s_input = assemble_baseline_d_season_input(
+        s_input = assemble_season_backtest_input(
             df_residuals=df_residuals,
             df_raw=df,
             season=season,
@@ -480,16 +389,6 @@ def evaluate_floor_real_config(
                 min_overall_w = float(np.min(w_mat))
                 max_dd = wealth_max_drawdown(w_mat)
 
-                if run.name == "E":
-                    analytic_roi_val = compute_agent_e_analytic_roi(
-                        dates=s_input.dates,
-                        odds=s_input.odds,
-                        probs=s_input.probs,
-                        min_stake=min_stake_val,
-                    )
-                else:
-                    analytic_roi_val = None
-
                 art = SeasonRunArtifact(
                     season=season,
                     fit_through=fit_through,
@@ -503,7 +402,6 @@ def evaluate_floor_real_config(
                     max_drawdown=max_dd,
                     n_bets=run.n_bets.copy(),
                     n_floored=run.n_floored.copy(),
-                    analytic_expected_roi=analytic_roi_val,
                 )
 
                 group_artifacts[(config_name, run.name)].append(art)

@@ -15,7 +15,7 @@ from shk.model.season_bootstrap import (
     season_block_length,
     season_dates,
 )
-from shk.model.training_agents import SeasonInput, season_input_from_frame, training_seasons
+from shk.model.season_input import SeasonInput, season_input_from_frame, training_seasons
 from shk.stats.bootstrap import stationary_bootstrap_indices
 
 COVS = ("c1", "position", "flag_x")

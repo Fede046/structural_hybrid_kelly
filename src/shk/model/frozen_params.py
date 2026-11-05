@@ -1,17 +1,19 @@
-"""File di congelamento dei parametri della calibrazione degli agenti e loader unico per le esecuzioni congelate.
+"""Loader unico dei parametri congelati per le esecuzioni congelate.
 
-config/frozen_params.toml si scrive una sola volta, nella calibrazione sul training (write_frozen_params rifiuta di
-sovrascrivere un file esistente), e poi non si tocca più. Il programmatore lo committa
-prima dell'esecuzione congelata sulla validazione. Le esecuzioni congelate leggono i parametri solo da qui, con load_frozen_params, che verifica che
-il file contenga esattamente le chiavi richieste.
+config/frozen_params.toml è stato scritto una sola volta, dalla calibrazione sul training del
+2026-10, e poi non si è più toccato. La calibrazione sceglieva anche i parametri degli agenti di
+confronto (C1, C2, D), che non fanno più parte del progetto: script e codice sono sul branch
+confronti-controllo. Il file resta invariato come dato d'ingresso; lo schema del relatore ne usa
+W (c1_window), κ (c1_kappa) e la soglia strutturale per fit ([c1_thresholds]).
+load_frozen_params verifica che il file contenga esattamente le chiavi richieste.
 
 Sezioni:
 - frozen_on: data del congelamento;
-- [sources]: SHA256 dei CSV della specificazione delle covariate, del Modulo 2 su finestre scorrevoli e dell'analisi di potenza da cui dipendono i parametri;
+- [sources]: SHA256 dei CSV da cui dipendevano i parametri;
 - [calibrated]: parametri liberi scelti sul training;
 - [calibration]: obiettivo, configurazione, seed e log della calibrazione;
 - [fixed]: parametri fissati per costruzione, con la loro origine nei commenti del file;
-- [c1_thresholds]: soglia di C1 per fit alla W scelta per C1, a L_PW;
+- [c1_thresholds]: soglia strutturale per fit alla W congelata, a L_PW;
 - [not_calibrated_on_training]: parametri non calibrati sul training, con il motivo (vuota).
 
 Con Dixon-Coles come Modulo 1 il file è config/frozen_params_dc.toml;
@@ -21,7 +23,6 @@ e vale "elo".
 """
 
 import datetime
-import math
 import tomllib
 from collections.abc import Mapping
 from dataclasses import dataclass
@@ -78,26 +79,6 @@ class FrozenParams:
     not_calibrated_on_training: Mapping[str, str]
     module1: str = MODULE1_ELO
 
-    def adwin_params(self) -> dict[str, Any]:
-        """Parametri completi di ADWIN per D_ADWIN."""
-        return {
-            "delta": self.calibrated["d_adwin_delta"],
-            "clock": self.fixed["d_adwin_clock"],
-            "max_buckets": self.fixed["d_adwin_max_buckets"],
-            "min_window_length": self.fixed["d_adwin_min_window_length"],
-            "grace_period": self.fixed["d_adwin_grace_period"],
-        }
-
-    def page_hinkley_params(self) -> dict[str, Any]:
-        """Parametri completi di Page-Hinkley per D_PH."""
-        return {
-            "min_instances": self.fixed["d_page_hinkley_min_instances"],
-            "delta": self.calibrated["d_page_hinkley_delta"],
-            "threshold": self.calibrated["d_page_hinkley_threshold"],
-            "alpha": self.fixed["d_page_hinkley_alpha"],
-            "mode": self.fixed["d_page_hinkley_mode"],
-        }
-
 
 def check_keys(data: Mapping[str, Any]) -> None:
     """Verifica che il contenuto abbia esattamente le chiavi richieste.
@@ -147,63 +128,3 @@ def load_frozen_params(path: Path | str = FROZEN_PARAMS_PATH) -> FrozenParams:
         **{s: MappingProxyType(dict(data[s])) for s in SECTION_KEYS},
         module1=data.get(MODULE1_KEY, MODULE1_ELO),
     )
-
-
-def _toml_value(value: Any) -> str:
-    if isinstance(value, bool):
-        return "true" if value else "false"
-    if isinstance(value, int):
-        return str(value)
-    if isinstance(value, float):
-        if not math.isfinite(value):
-            raise ValueError(f"non-finite float {value} cannot be frozen")
-        return repr(value)
-    if isinstance(value, str):
-        if '"' in value or "\\" in value or "\n" in value:
-            raise ValueError(f"unsupported string {value!r}")
-        return f'"{value}"'
-    if isinstance(value, (list, tuple)):
-        return "[" + ", ".join(_toml_value(v) for v in value) + "]"
-    raise TypeError(f"unsupported TOML value {type(value).__name__}")
-
-
-def render_frozen_params(frozen_on: datetime.date, sections: Mapping[str, Mapping[str, Any]],
-                         comments: Mapping[str, str], header: str, module1: str = MODULE1_ELO) -> str:
-    """Testo TOML del file di congelamento; comments: commento per "sezione.chiave".
-
-    Con un Modulo 1 diverso dall'Elo scrive anche la chiave module1, dopo frozen_on.
-    """
-    extra = {} if check_module1(module1) == MODULE1_ELO else {MODULE1_KEY: module1}
-    data_check = {"frozen_on": frozen_on, **extra, **sections}
-    check_keys(data_check)
-    lines = [f"# {line}" if line else "#" for line in header.splitlines()]
-    lines += ["", f"frozen_on = {frozen_on.isoformat()}"]
-    if extra:
-        lines.append(f"{MODULE1_KEY} = {_toml_value(module1)}")
-    for section in SECTION_KEYS:
-        lines += ["", f"[{section}]"]
-        for key, value in sections[section].items():
-            note = comments.get(f"{section}.{key}")
-            if note:
-                lines += [f"# {line}" for line in note.splitlines()]
-            name = f'"{key}"' if not key.replace("_", "").isalnum() else key
-            lines.append(f"{name} = {_toml_value(value)}")
-    text = "\n".join(lines) + "\n"
-    tomllib.loads(text)
-    return text
-
-
-def write_frozen_params(path: Path | str, text: str) -> None:
-    """Scrive il file di congelamento; rifiuta di sovrascrivere un file esistente.
-
-    Solleva
-    -------
-    FileExistsError
-        Se il file esiste già.
-    """
-    target = Path(path)
-    if target.exists():
-        raise FileExistsError(f"{target} already exists: frozen parameters are written only once")
-    target.parent.mkdir(parents=True, exist_ok=True)
-    with open(target, mode="x", encoding="utf-8", newline="\n") as f:
-        f.write(text)

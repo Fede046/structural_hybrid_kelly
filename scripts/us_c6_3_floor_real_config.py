@@ -1,6 +1,6 @@
 """Script per l'esecuzione del backtest Monte Carlo del floor reale.
 
-Esegue gli agenti A, B_0.25, B_0.10 ed E sul calendario e quote reali con esiti estratti
+Esegue gli agenti A e B_0.25 sul calendario e quote reali con esiti estratti
 dalle probabilita' proporzionali di mercato (verita'). Produce il CSV dei risultati
 e la figura a 3 pannelli in italiano. Nessun print: misurazione del tempo dall'esterno.
 """
@@ -47,7 +47,7 @@ def _plot_three_panels(
         "gbp_0.01": "Floor £0.01 (F = 0.01/220)",
         "gbp_1": "Floor £1.00 (F = 1/220)",
     }
-    agents_order = ["A", "B_0.25", "B_0.10", "E"]
+    agents_order = ["A", "B_0.25"]
 
     # -------------------------------------------------------------------------
     # Pannello A: Tasso di rovina aggregato
@@ -107,8 +107,6 @@ def _plot_three_panels(
 
     for ag in agents_order:
         for cfg_name, min_s in CONFIGURATIONS:
-            if cfg_name == "none" and ag == "E":
-                continue
             arts = group_artifacts.get((cfg_name, ag), [])
             if not arts:
                 continue
@@ -150,8 +148,6 @@ def _plot_three_panels(
     legend_handles = []
     for ag in agents_order:
         for cfg_name, _ in CONFIGURATIONS:
-            if cfg_name == "none" and ag == "E":
-                continue
             arts = group_artifacts.get((cfg_name, ag), [])
             all_w = np.concatenate([a.final_wealth for a in arts]) if arts else np.array([])
             n_zeros = int(np.sum(all_w <= 0.0))

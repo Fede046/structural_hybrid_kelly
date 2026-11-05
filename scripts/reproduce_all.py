@@ -1,10 +1,10 @@
 """Esecutore unico: rigenera i risultati e li confronta con results/MANIFEST.sha256.
 
 Esegue gli script nell'ordine delle dipendenze, per gruppi (decisione del programmatore del
-2026-10-18: il run completo dura circa 20 h e si fa in più riprese, ciascuna sotto le 12 h):
-- elo: dalle simulazioni di Kelly alle esecuzioni congelate, con il Modulo 1 Elo (circa 6 h);
-- dixon_coles: Dixon-Coles walk-forward, calibrazione con Dixon-Coles e robustezza del ranking (circa 6 h);
-- devig: validazioni con i cinque metodi di de-vigging e la tabella di sensibilità (circa 8 h).
+2026-10-18: il run completo si fa in più riprese):
+- elo: dalle simulazioni di Kelly alle esecuzioni congelate e allo schema del relatore, con il
+  Modulo 1 Elo;
+- dixon_coles: Dixon-Coles walk-forward ed esecuzione congelata con Dixon-Coles.
 Opzioni:
 - --group NOME (ripetibile; senza, tutti i gruppi);
 - --skip-slow salta i passi lenti (più di circa 10 minuti), che restano solo verificati;
@@ -14,14 +14,12 @@ Opzioni:
 - --compare-only non esegue nulla: confronta il manifesto con i file presenti e, per i gruppi
   indicati, con i file congelati già rigenerati in build/reproduce/.
 
-Le esecuzioni sul 2023-24 (l'esecuzione unica e i test della robustezza del ranking e della sensibilità al de-vigging) non si rieseguono (decisione del
-2026-10-18): i loro CSV si verificano soltanto. Le tabelle che leggono le uscite per seed del
-2023-24 (us_c9_2_robustness, us_c9_3_devig_sensitivity) si ricostruiscono solo se quelle uscite
-ci sono in results/raw/, altrimenti si verificano soltanto.
+Le esecuzioni sul 2023-24 non si rieseguono (decisione del 2026-10-18): i loro CSV si verificano
+soltanto.
 
-La calibrazione sul training (e quella con Dixon-Coles) gira con --log-to build/reproduce/…: il log si
-confronta con la riga del manifesto del log versionato, e il testo del file congelato con quella
-di config/frozen_params*.toml.
+I file congelati config/frozen_params*.toml sono dati d'ingresso: la calibrazione che li ha
+scritti è sul branch confronti-controllo, insieme agli agenti di confronto (C1, C2, D, E). Qui si
+verifica solo il loro SHA256.
 
 Esiti in build/reproduce/: un file di uscita per passo in logs/ e il rapporto report.txt (passi
 eseguiti, saltati o solo verificati; confronto con il manifesto). Se un passo fallisce o un file
@@ -38,17 +36,13 @@ from typing import NamedTuple
 
 from shk.data.manifest import ManifestEntry, build_entries, check_entries, read_manifest, write_manifest
 from shk.data.split import read_split_config
-from shk.market.devig import DEVIG_METHOD_NAMES
-from shk.model.power import TIMING_COLUMNS
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
 OUT_DIR = REPO_ROOT / "build" / "reproduce"
 MANIFEST = REPO_ROOT / "results" / "MANIFEST.sha256"
 ENVIRONMENT = REPO_ROOT / "results" / "environment.txt"
-GROUPS = ("elo", "dixon_coles", "devig")
+GROUPS = ("elo", "dixon_coles")
 DC = ("--module1", "dixon_coles")
-CAL_LOG = "build/reproduce/us_c8_2_calibration_log.csv"
-CAL_LOG_DC = "build/reproduce/us_c9_2a_calibration_log_dc.csv"
 
 
 class Step(NamedTuple):
@@ -82,9 +76,7 @@ STEPS: tuple[Step, ...] = (
     Step("elo", "us_c4_2_g_hat", outputs=(_r("us_c4_2_g_hat"),)),
     Step("elo", "us_c4_2b_g_hat_inference", outputs=(_r("us_c4_2b_g_hat_inference"),), slow=True),
     Step("elo", "us_c4_3_calibration", outputs=(_r("us_c4_3_calibration"),)),
-    Step("elo", "us_c5_1_drift_detectors", outputs=(_r("us_c5_1_drift_detectors"),)),
     Step("elo", "us_c5_2_daily_z_test", outputs=(_r("us_c5_2_daily_z_test"),)),
-    Step("elo", "us_c5_3_baseline_d", outputs=(_r("us_c5_3_baseline_d"),)),
     Step("elo", "us_c6_2_paired_backtest", outputs=(_r("us_c6_2_paired_backtest"),)),
     Step("elo", "us_c6_3_floor_synthetic", outputs=(_r("us_c6_3_floor_synthetic"),)),
     Step("elo", "us_c6_3_floor_real_config", outputs=(_r("us_c6_3_floor_real_config"),)),
@@ -95,18 +87,8 @@ STEPS: tuple[Step, ...] = (
     Step("elo", "us_c7_3_module2", outputs=(_r("us_c7_3_module2"), _r("us_c7_3_module2_ci"))),
     Step("elo", "us_c7_3b_known_scenarios", outputs=(_r("us_c7_3b_known_scenarios"),)),
     Step("elo", "us_c7_4_did_support", outputs=(_r("us_c7_4_did_support"),)),
-    Step("elo", "us_c8_1a_module3_synthetic", outputs=(_r("us_c8_1a_module3_synthetic"),)),
-    Step("elo", "us_c8_1b_agents_training", outputs=(_r("us_c8_1b_agents_training"),)),
     Step("elo", "us_c8_3a_block_length", outputs=(_r("us_c8_3a_block_length"),)),
-    Step("elo", "us_c8_3b_power", outputs=(_r("us_c8_3b_power"),), slow=True),
-    Step("elo", "us_c8_2_calibration", ("--log-to", CAL_LOG), outputs=(_r("us_c8_2_calibration_log"),),
-         slow=True, replaces=((_r("us_c8_2_calibration_log"), CAL_LOG),
-                              ("config/frozen_params.toml", CAL_LOG.replace(".csv", ".toml")))),
     Step("elo", "us_c8_3_validation", outputs=(_r("us_c8_3_validation_summary"),), slow=True),
-    Step("elo", "us_c8_3_validation_with_history", outputs=(_r("us_c8_3_validation_with_history"),),
-         needs=(_raw("us_c8_3_validation_raw"),)),
-    Step("elo", "us_c8_4_comparisons", outputs=(_r("us_c8_4_comparisons"),), slow=True,
-         needs=(_raw("us_c8_3_validation_raw"),)),
     Step("elo", "us_c10_scheme_validation",
          outputs=(_r("us_c10_scheme_thresholds"), _r("us_c10_scheme_validation_summary")), slow=True),
     Step("elo", "us_c11_worker_rules", outputs=(_r("us_c11_worker_rules_summary"),), slow=True),
@@ -115,38 +97,21 @@ STEPS: tuple[Step, ...] = (
     Step("dixon_coles", "us_c9_1_dixon_coles", outputs=(_r("us_c9_1_dixon_coles"),)),
     Step("dixon_coles", "us_c7_2_covariates", DC, outputs=(_r("us_c7_2_covariates_dc"),)),
     Step("dixon_coles", "us_c7_3_module2", DC, outputs=(_r("us_c7_3_module2_dc"), _r("us_c7_3_module2_ci_dc"))),
-    Step("dixon_coles", "us_c8_1b_agents_training", DC, outputs=(_r("us_c8_1b_agents_training_dc"),)),
-    Step("dixon_coles", "us_c8_3b_power", DC, outputs=(_r("us_c8_3b_power_dc"),), slow=True),
-    Step("dixon_coles", "us_c8_2_calibration", DC + ("--log-to", CAL_LOG_DC),
-         outputs=(_r("us_c9_2a_calibration_log_dc"),), slow=True,
-         replaces=((_r("us_c9_2a_calibration_log_dc"), CAL_LOG_DC),
-                   ("config/frozen_params_dc.toml", CAL_LOG_DC.replace(".csv", ".toml")))),
     Step("dixon_coles", "us_c8_3_validation", DC, outputs=(_r("us_c8_3_validation_summary_dc"),), slow=True),
-    Step("dixon_coles", "us_c8_4_comparisons", DC, outputs=(_r("us_c8_4_comparisons_dc"),), slow=True,
-         needs=(_raw("us_c8_3_validation_raw_dc"),)),
     Step("dixon_coles", "us_c8_5_test_run", DC, outputs=(_r("us_c8_5_test_run_dc"),), test_set=True),
-    Step("dixon_coles", "us_c9_2_robustness", outputs=(_r("us_c9_2_robustness"),),
-         needs=tuple(_raw(n) for n in ("us_c8_3_validation_raw", "us_c8_3_validation_raw_dc", "us_c8_5_test_raw",
-                                       "us_c8_5_test_raw_dc"))),
-    *(Step("devig", "us_c9_3_devig_sensitivity", ("--run", m, "--validation-only"), slow=True)
-      for m in DEVIG_METHOD_NAMES),
-    Step("devig", "us_c9_3_devig_sensitivity", outputs=(_r("us_c9_3_devig_sensitivity"),),
-         needs=tuple(_raw(f"us_c9_3_test_raw_{m}{s}") for m in DEVIG_METHOD_NAMES for s in ("", "_iid"))),
 )
 
 
 def normalization_rules() -> dict[str, str]:
     """Regole di normalizzazione del manifesto (decisioni del 2026-10-18).
 
-    I file congelati registrano lo SHA256 grezzo del CSV di potenza, che dipende dai tempi
-    misurati: la riga us_c8_3b_power della sezione [sources] si toglie dal confronto.
+    I file congelati registrano lo SHA256 grezzo del CSV di potenza (sul branch
+    confronti-controllo), che dipende dai tempi misurati: la riga us_c8_3b_power della sezione
+    [sources] si toglie dal confronto.
     """
     test_seasons = ",".join(read_split_config().test)
-    timing = ",".join(TIMING_COLUMNS)
     return {
         _r("us_c3_1_data_coverage"): f"drop_seasons:{test_seasons}",
-        _r("us_c8_3b_power"): f"blank_columns:{timing}",
-        _r("us_c8_3b_power_dc"): f"blank_columns:{timing}",
         "config/frozen_params.toml": "drop_lines:us_c8_3b_power =",
         "config/frozen_params_dc.toml": "drop_lines:us_c8_3b_power =",
     }
@@ -173,7 +138,6 @@ def write_manifest_and_environment() -> None:
         "SHA256 dei CSV di results/ e dei file congelati in config/.",
         "Formato: <sha256>  <percorso>[  normalized=<regola>]. Regole (decisione del 2026-10-18):",
         "drop_seasons: righe delle stagioni date tolte (us_c3_1 aggiunge il test dopo lo sblocco);",
-        "blank_columns: colonne svuotate (tempi misurati di us_c8_3b_power, TIMING_COLUMNS di power.py);",
         "drop_lines: righe tolte (nei file congelati, lo SHA256 grezzo del CSV di potenza, che dipende dai tempi).",
         "Verifica: .venv/Scripts/python.exe scripts/reproduce_all.py (vedi README.md).",
     )
