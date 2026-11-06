@@ -2,7 +2,7 @@
 
 Federico Malservigi, novembre 2026
 
-Questo documento descrive come ho realizzato la soluzione Structural-Hybrid che mi ha proposto, come ho applicato le sue indicazioni e che cosa mostrano i risultati. Alla fine ci sono alcune domande su cui mi servirebbe una sua scelta prima di andare avanti.
+Questo documento descrive come ho realizzato la soluzione Structural-Hybrid che mi ha proposto, come ho applicato le sue indicazioni e che cosa mostrano i risultati.
 
 ## 1. In sintesi
 
@@ -12,9 +12,9 @@ Questo documento descrive come ho realizzato la soluzione Structural-Hybrid che 
   - il ricalibratore usa Blinder-Oaxaca per distinguere un errore nei dati da un errore strutturale e decide la puntata.
 - Il supervisore agisce con un moltiplicatore sulla puntata del lavoratore, come da sua preferenza.
 - Il lavoratore può anche scegliere l'esito su cui puntare, con tre regole diverse.
-- Il lavoratore LLM (opzione A) è predisposto ma non ancora eseguito.
 - Risultato principale: il modello previsivo non batte il mercato, quindi ogni agente che punta perde.
 - Se il supervisore confronta gli errori recenti con quelli delle 40 partite precedenti, lo schema interviene poco. Se li confronta con quelli della stagione su cui il modello è stato calibrato, si accorge che il modello invecchia e il mercato lo supera: punta meno proprio allora e conserva più capitale: in una stagione tipica il 71%, contro il 57% del lavoratore senza supervisore, e fa meglio in 14 stagioni su 19.
+- Come tentativo basato sulla dinamica evolutiva (§7), ho fatto giocare insieme le strategie come una popolazione che si contende il capitale. Da una stagione all'altra la selezione sposta il capitale verso la strategia migliore senza conoscerla in anticipo, e conserva il 70% del capitale. Se fra le strategie c'è anche quella di non puntare, la popolazione finisce per non scommettere più, e conserva l'88%: una conferma per via evolutiva del risultato di KellyBench.
 
 ## 2. Lo schema realizzato
 
@@ -32,9 +32,11 @@ Ho provato anche due modi di scegliere il confronto:
 
 Le soglie non sono quelle nominali dell'ANOVA, perché le serie di errori sono autocorrelate. In quel caso l'ANOVA nominale dà molti falsi allarmi: in simulazione fino al 40% invece del 5%. Ho quindi calibrato le soglie sulle stagioni di training con un bootstrap a blocchi, così i falsi allarmi restano al più al 5%.
 
-**Modulo 3, il ricalibratore.** Quando scatta l'allarme, la decomposizione di Blinder-Oaxaca divide il peggioramento dei residui in due parti:
-- una dovuta a partite diverse (composizione, cioè errore nei dati);
-- una dovuta a un cambiamento della relazione fra le caratteristiche delle partite e l'errore (struttura).
+**Modulo 3, il ricalibratore.** Quando scatta l'allarme, il ricalibratore cerca di capire perché gli errori recenti sono peggiori di quelli di riferimento. Di ogni partita conosce, prima del calcio d'inizio, alcune caratteristiche: quanto sono squilibrate le due squadre secondo le quote, quanto è incerto il mercato, quanto è incerto il modello, se gioca una neopromossa e in che punto della stagione si gioca. In ciascuno dei due periodi una regressione stima come l'errore dipende da queste caratteristiche. La decomposizione di Blinder-Oaxaca divide poi il peggioramento in due parti:
+- **composizione, cioè errore nei dati**: nel periodo recente ci sono più partite del tipo su cui il modello sbaglia di più, per esempio più partite incerte o con una neopromossa. Il modello funziona come prima; sono cambiate le partite;
+- **struttura**: a parità di caratteristiche, il modello sbaglia di più. È cambiato il legame fra le caratteristiche e l'errore, per esempio perché il vantaggio del campo non è più quello che il modello ha imparato, come a porte chiuse durante il Covid.
+
+La decomposizione dà anche un terzo termine, l'interazione fra le due parti, che non uso nella decisione.
 
 Se la parte strutturale supera una soglia calibrata, l'errore è strutturale; altrimenti è un errore nei dati. La puntata diventa:
 
@@ -61,9 +63,7 @@ Scelto l'esito, il resto è uguale per tutte e tre. Si punta solo se il valore a
 
 Un esempio: con quote 1,90 / 3,60 / 4,50 e probabilità del modello 0,48 / 0,30 / 0,22, le prime due regole scelgono il pareggio (valore atteso +8%). La terza sceglie la vittoria in casa, che ha valore atteso negativo (−9%), quindi su quella partita non si punta. È il motivo per cui con la terza regola si scommette su meno partite (§5).
 
-Le tre regole le ho provate con il modello Elo; con Dixon-Coles non ancora.
-
-**Opzione A.** I lavoratori classici sono pronti. Il lavoratore LLM sceglierà esito e puntata a partire da data, squadre, forma recente e classifica, senza vedere le quote. 
+Le tre regole le ho provate con il modello Elo.
 
 ## 4. Come ho valutato
 
@@ -102,6 +102,24 @@ Il lavoratore qui sceglie l'esito con il valore atteso più alto. Il capitale ri
 - **Due cautele su questo risultato.** Ho scelto questo confronto dopo aver visto, sulle stagioni di valutazione, quanto spesso scattava l'allarme (non i guadagni). E con un vantaggio negativo puntare meno aiuta comunque: la versione ferma fino a fine stagione non punta nel 59% delle giornate.
 - **Sui dati reali Oaxaca separa poco i due tipi di errore.** Sui dati simulati la decomposizione funziona. Nella sospensione per il Covid del 2019-20, dove mi aspettavo un errore strutturale, la parte strutturale è quasi nulla. Ho trovato due motivi. Il primo: le caratteristiche delle partite spiegano solo il 2,5% della variabilità dell'errore, che dipende quasi tutto da quale esito è uscito; quindi la parte «dati» resta piccola per forza. Il secondo: la posizione della partita nella stagione, fra due finestre consecutive, non si sovrappone mai, e rende le componenti molto rumorose. Togliendola le diagnosi diventano più stabili e meno spesso «strutturali» (dal 51% al 42% delle giornate con allarme), ma il risultato in capitale non migliora: lo schema la tiene, come era stata scelta prima di vedere i risultati. Un rimedio più efficace è scomporre l'errore «atteso» invece di quello realizzato, cioè la distanza fra modello e mercato prima della partita, che non dipende dall'esito: le caratteristiche delle partite ne spiegano il 41%. Così la diagnosi diventa coerente con il suo schema: fra due periodi vicini l'errore risulta quasi sempre «nei dati» (95% dei casi), mentre rispetto alla stagione di calibrazione è strutturale quasi una volta su due. Il capitale resta però più o meno lo stesso.
 - **Più si riduce la puntata, meno si perde.** Con un vantaggio negativo, ogni riduzione della puntata riduce la perdita. Per questo le versioni che restano ferme fino a fine stagione sono le migliori: le altre, quando l'allarme si spegne, tornano al quarto di Kelly.
+
+**Figura 1. Il modello invecchia rispetto al mercato.**
+
+![Media e dispersione degli errori del modello rispetto al mercato, stagione per stagione](figures/relatore_invecchiamento.png)
+
+*Come si legge.* Ogni punto è una stagione, con il modello Elo. Il colore indica su quale stagione è calibrato il modello usato in quella stagione. Il cerchio vuoto è la stagione di calibrazione; la linea tratteggiata è il suo valore, cioè il riferimento con cui lo schema confronta gli errori recenti.
+- In alto c'è la dispersione degli errori rispetto al mercato, la grandezza che confronta il test di Brown-Forsythe. Più è alta, peggio è.
+- In basso c'è l'errore medio, la grandezza che confronta l'ANOVA. Sotto lo zero il modello assegna all'esito reale meno probabilità del mercato; più è basso, peggio è.
+
+*Che cosa si vede.* Con il modello calibrato sul 2010-11 la dispersione cresce quasi ogni anno, da 0,136 a 0,19–0,20 nelle stagioni 2017-20, e l'errore medio resta sempre sotto il riferimento. Questo è il segnale che fa scattare l'allarme quando il confronto è con la stagione di calibrazione. Da un periodo di 40 partite al successivo, invece, la crescita è troppo lenta per essere vista. Con il modello calibrato sul 2000-01 la crescita c'è, ma è più lenta. Con quello calibrato sul 2020-21 la dispersione resta sotto il riferimento; per questo nel 2023-24 l'allarme scatta di rado.
+
+**Figura 2. Il capitale stagione per stagione.**
+
+![Capitale rimasto a fine stagione, quarto di Kelly e schema, nelle 19 stagioni vere](figures/relatore_capitale.png)
+
+*Come si legge.* Ogni coppia di barre è una stagione vera. In blu c'è il capitale rimasto con il quarto di Kelly senza supervisore; in arancione quello dello schema che confronta con la stagione di calibrazione e resta fermo fino a fine stagione. La linea a 100 è il capitale iniziale, da cui ogni stagione riparte. Le linee verticali separano le stagioni in base al modello usato.
+
+*Che cosa si vede.* Lo schema fa meglio in 14 stagioni su 19. Il guadagno è più grande nelle stagioni in cui il quarto di Kelly perde molto (2007-08, 2012-13, 2015-16, 2018-19, 2022-23): lì lo schema smette di puntare e conserva il capitale. Fa peggio in 5 stagioni, chiaramente in 2011-12 e 2016-17, meno in 2004-05 e 2019-20, e il 2017-18 è praticamente pari. In quelle stagioni, dopo lo stop dello schema, il quarto di Kelly ha continuato a puntare e le puntate successive gli sono andate bene. Nella maggior parte delle stagioni nessuno dei due arriva a fine stagione con più del capitale iniziale: lo schema riduce la perdita, non la trasforma in guadagno.
 
 **Le tre regole di scelta dell'esito.** La tabella sopra usa la regola del valore atteso più alto. Qui la stessa prova con le tre regole (modello Elo, 19 stagioni vere, capitale rimasto in una stagione tipica; fra parentesi le stagioni in cui lo schema fa meglio / peggio del quarto di Kelly con la stessa regola):
 
@@ -159,19 +177,45 @@ Le conclusioni, quindi, non dipendono dalla scelta delle stagioni di training.
 - con una puntata minima di £0,01 il Kelly pieno va in rovina nel 17,9% dei casi, con £1 nel 69,0%;
 - il quarto di Kelly va in rovina solo con £1, nello 0,5% dei casi.
 
-## 7. Che cosa resta da fare
+## 7. Un tentativo basato sulla dinamica evolutiva
 
-- Le stesse prove dei lavoratori con il modello Dixon-Coles.
-- Il lavoratore LLM, sulla stagione 2023-24, in modo esplorativo, per due motivi:
-  - quella stagione è già stata usata come test;
-  - l'LLM potrebbe conoscerne i risultati dal proprio addestramento.
-- La stesura dei capitoli della tesi.
+Come mi ha suggerito, ho provato un approccio basato sulla dinamica evolutiva. Ho scelto di far giocare **insieme** le strategie che ho già, come una popolazione che si contende il capitale.
 
-## 8. Domande per lei
+**Come funziona.** La popolazione contiene undici strategie, tutte con il modello Elo:
+- il Kelly pieno;
+- il quarto di Kelly con le tre regole di scelta dell'esito;
+- le versioni dello schema: confronto con le 40 partite precedenti o con la stagione di calibrazione, ripresa quando l'allarme si spegne o fermo fino a fine stagione, con la regola del valore atteso o dell'esito più probabile.
 
-1. **La puntata dell'LLM.** Il supervisore deve moltiplicare per 0,25 la puntata proposta dall'LLM anche senza allarme, come per i lavoratori classici? Oppure deve intervenire solo con l'allarme, lasciando invariata la puntata dell'LLM finché va tutto bene?
-2. **Un tetto alla puntata dell'LLM.** Pensavo di non permettere più del 10% del capitale su una singola partita. Le va bene?
-3. **La ri-parametrizzazione.** Lei aveva indicato il moltiplicatore come prima scelta, e la ri-parametrizzazione annuale che ho provato va peggio del modello calibrato una volta sola. Basta il moltiplicatore, o vuole che provi anche a ri-parametrizzare il modello subito dopo un errore strutturale?
-4. **La versione principale.** Nella tesi presenterei come versione principale quella che confronta gli errori recenti con la stagione di calibrazione del modello, con allarme se peggiora la media o cresce la varianza, e le altre come varianti. Le sembra corretto?
+Ogni strategia riceve una quota del capitale. Dopo ogni giornata la quota di ciascuna cresce o cala in proporzione a quanto ha reso: è la selezione naturale applicata al capitale (dinamica del replicatore). Il legame con Kelly è diretto: nella letteratura di *evolutionary finance* la regola di Kelly è proprio la strategia che sopravvive a questa selezione. Ho previsto anche una mutazione, cioè una piccola parte del capitale ridistribuita ogni giorno fra tutte le strategie, così che nessuna si estingua. L'intensità della mutazione è l'unico parametro, e l'ho scelta sulle stagioni di training: lì la mutazione peggiora sempre il risultato, perché continua a dare capitale anche a strategie che perdono molto, come il Kelly pieno. Quindi è zero.
+
+Ho provato due varianti:
+- **le generazioni**: ogni stagione riparte dallo stesso capitale, ma le quote iniziali sono quelle con cui è finita la stagione precedente. La popolazione ricorda quali strategie hanno funzionato; usa solo informazione passata;
+- **la cassa**: una strategia in più che non punta mai.
+
+Il confronto è fatto senza puntata minima, perché solo così la quota di capitale affidata a una strategia non cambia il suo rendimento.
+
+Capitale rimasto in una stagione tipica, nelle 19 stagioni vere:
+
+| Agente                                                                            | Capitale rimasto | Stagioni meglio / peggio del quarto di Kelly |
+| --------------------------------------------------------------------------------- | ---------------- | -------------------------------------------- |
+| Quarto di Kelly, senza supervisore                                                | 57%              | –                                            |
+| Popolazione, quote uguali a inizio stagione                                       | 62%              | 10 / 9                                       |
+| Popolazione con le generazioni                                                    | 70%              | 13 / 6                                       |
+| Popolazione con le generazioni e la cassa                                         | 88%              | 15 / 4                                       |
+| La migliore strategia singola, individuata solo dopo aver visto i risultati       | 77%              | 15 / 4                                       |
+
+**Figura 3. Come la popolazione sposta il capitale da una stagione all'altra.**
+
+![Quote del capitale a inizio stagione per famiglia di strategie, senza e con la cassa](figures/us_c21_population_shares.png)
+
+*Come si legge.* È la versione con le generazioni. Ogni colonna è l'inizio di una stagione, l'ultima («fine») è la fine del 2022-23; l'altezza di ogni colore è la quota del capitale affidata a una famiglia di strategie. A sinistra la popolazione senza la cassa, a destra con la cassa (in verde scuro). All'inizio tutte le strategie hanno la stessa quota.
+
+*Che cosa si vede.*
+- **Dentro una stagione la selezione è troppo lenta.** In un centinaio di giornate le strategie si separano poco, e la popolazione resta vicina alla media delle strategie: 62%, meglio del quarto di Kelly in 10 stagioni su 19, quasi come per caso.
+- **Da una stagione all'altra la selezione funziona.** Il Kelly pieno sparisce in due stagioni; il capitale si sposta verso lo schema che confronta con la stagione di calibrazione e si ferma fino a fine stagione (in rosa). A fine 2022-23 più di metà del capitale (54%) è su una sola strategia: lo schema che confronta con la stagione di calibrazione, con la regola dell'esito più probabile, fermo fino a fine stagione. È proprio quella che, guardando i risultati a posteriori, è la migliore. La popolazione arriva al 70% senza sapere in anticipo quale strategia sarebbe stata la migliore.
+- **Con la cassa la popolazione smette di scommettere.** La quota della cassa sale dall'8% iniziale al 99%, e il capitale tipico arriva all'88%. È la conferma, per via evolutiva, del risultato di KellyBench: quando nessuna strategia ha un vantaggio sul mercato, sopravvive chi non punta.
+- **Lo schema e la popolazione si accorgono del modello che invecchia in modo diverso.** Lo schema lo vede dagli errori rispetto al mercato, prima che si traducano in perdite; la popolazione lo scopre solo dai guadagni realizzati, che sono molto più rumorosi, e le servono alcune stagioni.
+
+Due cautele: tutto vale senza la puntata minima obbligatoria di KellyBench; e la popolazione contiene anche versioni dello schema che ho scelto dopo aver visto le stagioni di valutazione (§5), quindi eredita quella scelta.
 
 Il codice e tutti i risultati sono riproducibili e a sua disposizione.
