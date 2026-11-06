@@ -1,3 +1,6 @@
 # I CSV di results/ sono versionati byte per byte (terminatore di riga CRLF scritto dagli script):
 # senza questa riga Git su Windows li converte in LF e gli SHA256 del manifesto non tornano su Linux.
 results/*.csv -text
+# Stesso motivo per i CSV delle tabelle della tesi: test_thesis_outputs.py li confronta byte per byte
+# con quelli rigenerati, che hanno il terminatore CRLF.
+thesis/tables/*.csv -text
