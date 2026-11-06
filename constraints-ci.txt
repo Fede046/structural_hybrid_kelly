@@ -1,0 +1,5 @@
+# Versioni con cui sono stati generati i PDF di thesis/figures/: test_thesis_outputs.py li rigenera e li
+# confronta byte per byte, e un'altra versione di matplotlib o fonttools cambia i byte del PDF anche a
+# figura identica. Se si rigenerano le figure con versioni nuove, aggiornare qui.
+matplotlib==3.11.1
+fonttools==4.64.0
