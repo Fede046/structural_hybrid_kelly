@@ -12,7 +12,6 @@ dependencies = [
     "scipy",
     "matplotlib",
     "pandas",
-    "river",
 ]
 
 [project.optional-dependencies]

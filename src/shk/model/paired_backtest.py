@@ -1,26 +1,20 @@
-"""Modulo per l'esecuzione appaiata degli agenti A, B ed E sulle stagioni di validazione.
+"""Modulo per l'esecuzione appaiata degli agenti A e B_0.25 sulle stagioni di validazione.
 
-Coordina l'esecuzione degli agenti Kelly pieno (A), Kelly frazionario (B 0.25 e 0.10)
-e puntata minima (E) su 19 stagioni di validazione sotto tre configurazioni di floor:
+Coordina l'esecuzione degli agenti Kelly pieno (A) e quarto di Kelly (B_0.25) su 19 stagioni
+di validazione sotto tre configurazioni di floor:
 nessun floor (F = 0), floor £0.01 e floor £1.00 (normalizzati rispetto al bankroll iniziale
 di KellyBench £220).
 """
 
-from typing import Final, Sequence
+from typing import Final
 import numpy as np
 import pandas as pd
 
-from shk.kelly.agents import (
-    AGENT_A_LAMBDA,
-    AGENT_B_LAMBDAS,
-    Agent,
-    FractionalKellyAgent,
-    MinimumStakeAgent,
-)
-from shk.kelly.environment import AgentRun, run_paired_backtest
+from shk.kelly.agents import AGENT_A_LAMBDA, AGENT_B_LAMBDA, Agent, FractionalKellyAgent
+from shk.kelly.environment import run_paired_backtest
 from shk.kelly.metrics import wealth_max_drawdown, wealth_recovery_time
 from shk.model.elo_fit import parse_season_start_year
-from shk.model.monitoring import assemble_baseline_d_season_input
+from shk.model.monitoring import assemble_season_backtest_input
 
 KELLYBENCH_INITIAL_BANKROLL_GBP: Final[float] = 220.0
 
@@ -68,10 +62,7 @@ PAIRED_BACKTEST_CSV_COLUMNS: Final[tuple[str, ...]] = (
 
 
 def build_season_agents(min_stake: float) -> list[Agent]:
-    """Costruisce le istanze degli agenti ammesse per una data configurazione di floor.
-
-    Con F = 0 include solo gli agenti volontari: A (Kelly pieno), B_0.25 e B_0.10.
-    Con F > 0 include anche l'agente a puntata minima E.
+    """Costruisce le istanze degli agenti per una data configurazione di floor: A e B_0.25.
 
     Parametri
     ---------
@@ -95,14 +86,10 @@ def build_season_agents(min_stake: float) -> list[Agent]:
     if min_stake < 0.0:
         raise ValueError(f"min_stake must be non-negative, got {min_stake}")
 
-    agents: list[Agent] = [
+    return [
         FractionalKellyAgent("A", lam=AGENT_A_LAMBDA),
-        FractionalKellyAgent("B_0.25", lam=AGENT_B_LAMBDAS[0]),
-        FractionalKellyAgent("B_0.10", lam=AGENT_B_LAMBDAS[1]),
+        FractionalKellyAgent("B_0.25", lam=AGENT_B_LAMBDA),
     ]
-    if min_stake > 0.0:
-        agents.append(MinimumStakeAgent("E"))
-    return agents
 
 
 def evaluate_validation_seasons(
@@ -124,7 +111,7 @@ def evaluate_validation_seasons(
     Restituisce
     -----------
     list[dict[str, str | int | float]]
-        Lista di 220 dizionari (209 righe di stagione e 11 di riepilogo) conformi a
+        Lista di 120 dizionari (114 righe di stagione e 6 di riepilogo) conformi a
         PAIRED_BACKTEST_CSV_COLUMNS.
 
     Solleva
@@ -158,7 +145,7 @@ def evaluate_validation_seasons(
             group_data[(config_name, agent_inst.name)] = []
 
     for season, fit_through in val_seasons_with_fit:
-        s_input = assemble_baseline_d_season_input(
+        s_input = assemble_season_backtest_input(
             df_residuals=df_residuals,
             df_raw=df,
             season=season,
@@ -236,7 +223,7 @@ def evaluate_validation_seasons(
                 season_rows.append(s_row)
                 group_data[(config_name, run.name)].append(s_row)
 
-    # Costruzione delle 11 righe di riepilogo
+    # Costruzione delle 6 righe di riepilogo
     summary_rows: list[dict[str, str | int | float]] = []
 
     for config_name, min_stake_val in CONFIGURATIONS:

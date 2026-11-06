@@ -9,6 +9,8 @@ Riporta formule, parametri, seed, filtri ed esclusioni; non riporta risultati, c
 - Una riga che inizia con "Formula:" riporta una formula come è implementata, con il riferimento alla funzione o alla classe che la calcola.
 - Un parametro ha la forma `` `modulo:NOME = valore` `` (costante del codice), `` `modulo:funzione(argomento) = valore` `` (valore di default di un argomento) oppure `` `config/<file>.toml:sezione.chiave = valore` `` (file congelato o di split). Il valore è scritto come letterale Python.
 - `tests/test_metodi_implementati.py` risolve ogni riferimento con un import e confronta ogni parametro col codice o col file.
+- «Modulo 2» nel codice è Oaxaca-Blinder (`shk.model.module2`), per ragioni storiche. Nello schema del relatore Oaxaca-Blinder appartiene al Modulo 3 (ricalibratore) e il Modulo 2 (supervisore) è l'allarme ANOVA; lo schema è l'agente C3 (§ 9).
+- Gli agenti di confronto che non vengono dallo schema del relatore (C0, C1, C2, D, E, B_0.10), la calibrazione che ha scritto i file congelati e l'analisi di potenza sono sul branch confronti-controllo.
 - Le decisioni di progetto si citano con la data in cui sono state prese. "Scelta delegata" indica una scelta fatta su delega del programmatore, con un criterio fissato prima dei risultati.
 - Codifica degli esiti in tutto il codice: 0 = casa (H), 1 = pareggio (D), 2 = trasferta (A).
 - Le differenze con le note di tesi sono quelle registrate nel backlog o nei moduli e ricontrollate nel testo della nota; una sezione senza il paragrafo "Differenze con le note" non ne ha di registrate.
@@ -36,7 +38,7 @@ Riporta formule, parametri, seed, filtri ed esclusioni; non riporta risultati, c
 - `shk.data.walkforward:check_leakage` elenca le violazioni; `shk.data.walkforward:assert_no_leakage` solleva `shk.data.walkforward:LeakageError`.
 
 **Casi limite ed esclusioni.**
-- Il 2000-01 non ha B365: è escluso dalle serie che usano B365 (ĝ) e, solo per Modulo 2 e agenti, usa un'altra terna (§ 8).
+- Il 2000-01 non ha B365: è escluso dalle serie che usano B365 (ĝ) e, solo per Oaxaca-Blinder e agenti, usa un'altra terna (§ 8).
 - Il 2001-02 non ha B365: è storia, non validazione.
 
 ## 2. De-vigging
@@ -53,8 +55,8 @@ Probabilità implicite π_i = 1/o_i e somma S = Σ π_i (`shk.market.devig:impli
 Parametri:
 - `shk.market.devig:DEVIG_METHOD_NAMES = ("proportional", "additive", "power", "shin", "odds_ratio")` (prima proporzionale, additivo e power, poi Shin e odds ratio).
 - `shk.market.devig:MAX_NEWTON_ITERATIONS = 50`; `shk.market.devig:MAX_BISECTION_ITERATIONS = 200`.
-- Metodo principale Shin, controllo proporzionale, sensibilità sui cinque metodi (decisione del 2026-10-11): `config/frozen_params.toml:fixed.devig_method = "shin"`.
-- q si ricava sempre dalla terna B365 pre-partita (decisione del 2026-09-29), tranne il 2000-01 nel Modulo 2 (§ 8).
+- Metodo principale Shin, controllo proporzionale (decisione del 2026-10-11): `config/frozen_params.toml:fixed.devig_method = "shin"`.
+- q si ricava sempre dalla terna B365 pre-partita (decisione del 2026-09-29), tranne il 2000-01 in Oaxaca-Blinder (§ 8).
 
 Casi limite:
 - Power, Shin e odds ratio sollevano RuntimeError se un mercato applicabile ha |Σ q − 1| > 1e-12 alla fine del risolutore.
@@ -134,31 +136,13 @@ Differenze con le note:
 - Fasce: sulla quota della favorita (minima delle tre) con le fasce di divergence.py — `shk.model.g_hat_inference:band_rows`. Finestre mobili di 80 partite — `shk.model.g_hat_inference:rolling_shares`.
 - Parametri: `shk.model.g_hat_inference:N_BOOT = 999`; `shk.model.g_hat_inference:N_PERMUTATIONS = 1000`; `shk.model.g_hat_inference:ROLLING_WINDOW = 80`; copertura su AR(1) con `shk.model.g_hat_inference:COVERAGE_PHIS = (0.0, 0.1, 0.25, 0.5)` e `shk.model.g_hat_inference:COVERAGE_N_SERIES = 1000`.
 
-## 5. Detector e Baseline D
-
-**ADWIN e Page-Hinkley** (decisione del 2026-09-30): importati da river, un'istanza nuova per serie — `shk.stats.drift:run_drift_detector`, `shk.stats.drift:make_drift_detector`.
-- Taratura sul training (2000-01 e 2010-11; 2020-21 escluso): vince la combinazione con |10(a + b) − 38| minima, poi meno allarmi, poi l'ordine della griglia — `shk.stats.drift:select_best_candidate`, `shk.stats.drift:calibrate_drift_detectors`. Obiettivo `shk.stats.drift:TARGET_ALARMS_PER_SEASON = 1.9`.
-- Griglie: `shk.stats.drift:ADWIN_GRID_DELTA = (0.002, 0.005, 0.01, 0.02, 0.05, 0.1, 0.2, 0.5, 0.8)`; `shk.stats.drift:PAGE_HINKLEY_GRID_DELTA = (0.005, 0.01, 0.05)`; `shk.stats.drift:PAGE_HINKLEY_GRID_THRESHOLD = (1.0, 2.0, 5.0, 10.0, 20.0, 50.0)`.
-- Congelati nel monitoraggio dei residui: `shk.stats.drift:ADWIN_DELTA = 0.002`; `shk.stats.drift:PAGE_HINKLEY_DELTA = 0.05`; `shk.stats.drift:PAGE_HINKLEY_THRESHOLD = 5.0`. Altri parametri, default di river 0.26.1 passati in modo esplicito: `shk.stats.drift:ADWIN_DEFAULT_CLOCK = 32`, `shk.stats.drift:ADWIN_DEFAULT_MAX_BUCKETS = 5`, `shk.stats.drift:ADWIN_DEFAULT_MIN_WINDOW_LENGTH = 5`, `shk.stats.drift:ADWIN_DEFAULT_GRACE_PERIOD = 10`, `shk.stats.drift:PAGE_HINKLEY_DEFAULT_MIN_INSTANCES = 30`, `shk.stats.drift:PAGE_HINKLEY_DEFAULT_ALPHA = 0.9999`, `shk.stats.drift:PAGE_HINKLEY_DEFAULT_MODE = "both"`.
+## 5. Z-test per giornata
 
 **Z-test per matchday** (decisione del 2026-09-29):
 - Formula: Z_g = (media della log-loss delle 10 partite del matchday − μ_f)/(σ_f/√10), con μ_f e σ_f (ddof = 1) sulle partite di training del fit; allarme nominale se |Z| > norm.ppf(1 − α/2) — `shk.stats.drift:compute_matchday_z_scores`.
 - Formula: soglia calibrata, statistica d'ordine ⌈(1 − α)(B + 1)⌉ di |Z| calcolato sulle prime 10 posizioni (un matchday) di ciascun ricampionamento a blocchi mobili della serie di training del fit — `shk.stats.drift:calibrate_matchday_z_threshold`, `shk.stats.drift:compute_resampled_matchday_abs_z`.
 - Parametri: `shk.stats.drift:MATCHDAY_SIZE = 10`; `shk.stats.false_rejection:ALPHA = 0.05`; `shk.stats.false_rejection:N_BOOT = 999`; `shk.stats.false_rejection:BLOCK_LENGTHS = (7, 20, 40)`.
-
-**Baseline D nel monitoraggio dei residui** (decisione del 2026-09-30, scelta delegata):
-- Formula: λ_j = base·κ^k_j, con k_j gli allarmi su partite con Date strettamente anteriore a quella della partita j — `shk.kelly.staking:compute_adaptive_lambda`.
-- Formula: al più una puntata per partita, sull'esito con p̂·o − 1 massimo se > 0 (parità nell'ordine H, D, A), frazione kelly_staking(p̂, o − 1, λ_j) — `shk.kelly.staking:select_baseline_d_bets`.
-- Formula: motore su quote reali, L ← L + ln(1 + Σ_i f_i r_i) per data, r_i = o_i − 1 se vinta e −1 se persa — `shk.kelly.backtest:backtest_log_wealth`.
-- Parametri: `shk.kelly.staking:BASE_LAMBDA = 0.25`; `shk.kelly.staking:KAPPA_GRID = (0.0, 0.25, 0.5, 0.75, 1.0)`; `shk.kelly.staking:KAPPA_ADWIN = 1.0`; `shk.kelly.staking:KAPPA_PAGE_HINKLEY = 1.0` (κ scelto sulla log-ricchezza finale di 2010-11 e 2020-21, a parità il più grande; 2000-01 escluso perché senza B365).
-
-**Baseline D come agente** (decisione del 2026-10-11): `shk.model.stateful_agents:BaselineDAgent`.
-- Formula: moltiplicatore κ^k, con κ = 0: 1 senza allarmi e 0 con almeno un allarme — `shk.model.stateful_agents:adaptive_multiplier`.
-- Serie del detector: "delta" (δ = ln p̂(x) − ln q(x), q Shin) negli agenti con stato, "log_loss" come nel monitoraggio dei residui: `config/frozen_params.toml:fixed.d_series = "delta"`.
-- Parametri congelati: `config/frozen_params.toml:calibrated.d_adwin_delta = 0.002`; `config/frozen_params.toml:calibrated.d_adwin_kappa = 0.75`; `config/frozen_params.toml:calibrated.d_page_hinkley_delta = 0.005`; `config/frozen_params.toml:calibrated.d_page_hinkley_threshold = 1.0`; `config/frozen_params.toml:calibrated.d_page_hinkley_kappa = 0.75`; `config/frozen_params.toml:fixed.d_base_lambda = 0.25`.
-- Con Dixon-Coles: `config/frozen_params_dc.toml:calibrated.d_adwin_delta = 0.5`; `config/frozen_params_dc.toml:calibrated.d_adwin_kappa = 0.0`; `config/frozen_params_dc.toml:calibrated.d_page_hinkley_kappa = 0.0`.
-
-Il detector dice quando, non quanto né di che tipo; κ è un iperparametro fisso, uguale per ogni allarme (decisione di progetto).
+- Righe per stagione e totali — `shk.model.monitoring:build_daily_z_test_records`.
 
 ## 6. Ambiente e floor
 
@@ -167,6 +151,7 @@ Il detector dice quando, non quanto né di che tipo; κ è un iperparametro fiss
 - Formula: rovina assorbente a inizio data se W = 0, oppure F > 0 e W < F (stretto) — `shk.kelly.environment:run_paired_backtest`.
 - Formula: piazzamento — puntate volontarie f_i·W, con F > 0 ognuna vale almeno F; ordine per EV stimato decrescente (parità: indice di partita), si tiene il prefisso più lungo con somma ≤ W, le altre si scartano; con F > 0 e nessuna puntata volontaria, una puntata da F sul ripiego, contata come forzata — `shk.kelly.environment:place_date_stakes`.
 - Formula: regolamento W ← W + Σ_i s_i r_i, r_i = o_i − 1 se vinta e −1 se persa — `shk.kelly.environment:run_paired_backtest`.
+- Formula: motore di riferimento su quote reali, L ← L + ln(1 + Σ_i f_i r_i) per data; con F = 0 l'ambiente coincide con esso (controllato nei test) — `shk.kelly.backtest:backtest_log_wealth`.
 - Ripiego: `shk.kelly.environment:FALLBACK_POLICIES = ("model_ev", "market_ev")`; nella calibrazione e nelle esecuzioni congelate `config/frozen_params.toml:fixed.fallback_policy = "model_ev"` (coppia partita-esito a EV stimato massimo della data).
 
 **Configurazioni** (decisione del 2026-10-09): B0 = £220, F in unità del bankroll iniziale.
@@ -200,16 +185,14 @@ Differenze con le note:
 **Regola di Kelly** (decisione del 2026-09-27):
 - Formula: f = λ·max(0, (b p̂ − (1 − p̂))/b), b = o − 1, non limitata sotto 1 — `shk.kelly.staking:kelly_staking`; Kelly pieno sul p vero — `shk.kelly.core:kelly_fraction`.
 
-**Baseline e bracci** (decisioni di progetto):
-- A, B: `shk.kelly.agents:FractionalKellyAgent`, con `shk.kelly.agents:AGENT_A_LAMBDA = 1.0` e `shk.kelly.agents:AGENT_B_LAMBDAS = (0.25, 0.10)`. E: `shk.kelly.agents:MinimumStakeAgent`, frazioni nulle (solo puntate forzate con F > 0).
-- C0 = B_0.25: `shk.model.agent_c:build_c0_agent`, `shk.model.agent_c:C0_LAMBDA = 0.25`; `config/frozen_params.toml:fixed.c0_lambda = 0.25`.
-- Formula: C1, λ = 0.25·κ^n con n le accensioni dell'allarme strutturale (date in cui l'allarme è acceso e alla data di decisione precedente era spento); allarme acceso se il Modulo 2 è attivo e T = −S > soglia — `shk.model.agent_c:C1Agent.stake_fractions` (decisione del programmatore, 2026-10-11).
-- Formula: C2_global, λ per scommessa = module3_lambda (§ 9); C2, come C2_global con frazione 0 sulle partite fuori supporto — `shk.model.agent_c:GradedAgent.stake_fractions`.
-- Supervisore del Modulo 2 condiviso dai bracci: esiti solo da observe_results, Modulo 2 una volta per data con Date < d, catena tagliata alla stagione — `shk.model.agent_c:Module2Supervisor.state_at`.
-- Formula: soglia di C1, moving block bootstrap della serie di training del fit con le righe (covariate, δ) insieme, prime 2W posizioni come finestre A e B, T = −S della three-fold; statistica d'ordine ⌈(1 − α)(B_validi + 1)⌉ sui ricampionamenti a rango pieno — `shk.model.agent_c:calibrate_c1_threshold`, `shk.model.agent_c:c1_null_statistics`.
-- Parametri congelati: `config/frozen_params.toml:calibrated.c1_window = 40`; `config/frozen_params.toml:calibrated.c1_kappa = 0.75`; `config/frozen_params.toml:calibrated.c2_global_window = 190`; `config/frozen_params.toml:calibrated.c2_window = 80`; `config/frozen_params.toml:fixed.c1_alpha = 0.05`; `config/frozen_params.toml:fixed.c1_n_boot = 999`; `shk.model.agent_c:C1_N_BOOT = 999`; soglie per fit `config/frozen_params.toml:c1_thresholds.2000-01 = 0.06274452118325424`, `config/frozen_params.toml:c1_thresholds.2010-11 = 0.07682507170298258`, `config/frozen_params.toml:c1_thresholds.2020-21 = 0.10170087346629561`.
-- Con Dixon-Coles: `config/frozen_params_dc.toml:calibrated.c1_kappa = 0.0`; `config/frozen_params_dc.toml:calibrated.c2_window = 40`; `config/frozen_params_dc.toml:c1_thresholds.2020-21 = 0.07033140200701937`.
-- Agenti costruiti solo dal file congelato, con le costanti interne confrontate col file — `shk.model.frozen_agents:build_frozen_agents`, `shk.model.frozen_agents:check_frozen_constants`. Ordine: `shk.model.frozen_agents:AGENT_ORDER = ("A", "B_0.25", "B_0.10", "D_ADWIN", "D_PH", "C0", "C1", "C2_global", "C2", "E")`.
+**Agenti** (decisioni di progetto):
+- A (Kelly pieno, il lavoratore da solo) e B_0.25 (quarto di Kelly senza supervisore): `shk.kelly.agents:FractionalKellyAgent`, con `shk.kelly.agents:AGENT_A_LAMBDA = 1.0` e `shk.kelly.agents:AGENT_B_LAMBDA = 0.25`.
+- Ordine delle esecuzioni congelate: `shk.model.frozen_agents:AGENT_ORDER = ("A", "B_0.25")`, costruiti con `shk.model.frozen_agents:build_frozen_agents`; le costanti interne del supervisore sono confrontate col file congelato — `shk.model.frozen_agents:check_frozen_constants`.
+- Lo schema del relatore (C3, C3_stop, C3_and) è in § 9.
+
+**Regole di scelta dell'esito del lavoratore** (decisione del 2026-11, opzione A del relatore): punto di estensione `shk.kelly.agents:Agent.candidate_outcomes`, regole `shk.kelly.outcome_rules:OUTCOME_RULES`.
+- Formula: R1, argmax(p̂·o − 1) — `shk.kelly.outcome_rules:max_ev_outcomes`; R2, argmax(p̂ − q) con q di Shin — `shk.kelly.outcome_rules:max_edge_outcomes`; R3, argmax(p̂) — `shk.kelly.outcome_rules:max_prob_outcomes`; l'esito si punta solo se p̂·o − 1 > 0.
+- Versioni per regola: da solo (λ = 1), freno (λ = 0.25), schema C3 — `shk.model.worker_run:build_worker_agents`; `shk.model.worker_run:WORKER_VERSIONS = ("alone", "brake", "C3")`.
 
 ## 8. Modulo 2
 
@@ -248,22 +231,31 @@ Differenze con le note:
 
 Quota strutturale: la formula coincide con quella della nota 1.5 §9.5, che la dichiara una scelta, non l'unica possibile (valori assoluti al denominatore).
 
-## 9. Modulo 3
+## 9. Schema del relatore
 
-Da uscita del Modulo 2 a λ (`shk.model.module3`).
-- Formula: λ* = E[c]/E[c²] = μ E[X⁺]/E[(X⁺)²], E[X⁺] = μΦ(μ/s) + sφ(μ/s), E[(X⁺)²] = (μ² + s²)Φ(μ/s) + μsφ(μ/s); λ* = 0 se μ ≤ 0, 1 se s = 0; limitato a [0, 1] — `shk.model.module3:lambda_star`.
-- Formula: σ̂² dalla dispersione di δ, max(SIGMA2_MIN, (media(e²) − media(V))/media(c)), con L_i = ln p̂_i − ln q_i, m̂ = Σ p̂_i L_i, e = δ − m̂, V = Σ p̂_i L_i² − m̂², c = 2Σ(L_i − L̄)² + 2(1 − 1/K)(m̂ Σ 1/p̂_i − Σ L_i/p̂_i); se media(c) è nulla, SIGMA2_MIN — `shk.model.module3:delta_dispersion_sigma2`.
-- Formula: gonfiamento strutturale Δσ² = −S/h se S < 0, altrimenti 0, h = media((1 − 1/K)/2·Σ 1/p̂) sulla finestra A — `shk.model.module3:structural_inflation`.
-- Formula: deviazione standard sull'esito scommesso σ_p = σ√((K − 1)/K), s = o·σ_p — `shk.model.module3:selected_sd`.
-- Formula: candidata P3, μ̂ = media degli EV̂ della finestra B, σ̂² = σ̂²_A + Δσ²; λ = 0 se ĝ della finestra B (media di δ) ≤ 0; Modulo 2 non attivo → INACTIVE_LAMBDA — `shk.model.module3:candidate_lambda`, `shk.model.module3:module3_lambda`.
-- Parametri: `shk.model.module3:INACTIVE_LAMBDA = 0.25`; `shk.model.module3:SIGMA2_MIN = 1e-6`; `shk.model.module3:CANDIDATES = ("P1", "P2", "P3")`; `shk.model.module3:CHOSEN_CANDIDATE = "P3"`; nel file congelato `config/frozen_params.toml:fixed.module3_candidate = "P3"`, `config/frozen_params.toml:fixed.inactive_lambda = 0.25`, `config/frozen_params.toml:fixed.lambda_min = 0.0`, `config/frozen_params.toml:fixed.lambda_max = 1.0`.
-- Scelta della candidata su verità sintetica: errore quadratico medio fra λ̂ e λ* oracolo su quattro regimi e `shk.model.module3_synthetic:N_REPLICAS = 500` repliche, P1 esclusa come controllo negativo — `shk.model.module3_synthetic:choose_candidate`; generatore `shk.model.module3_synthetic:generate_season` con `shk.model.module3_synthetic:GENERATOR_WINDOW = 80` e `shk.model.module3_synthetic:OVERROUND = 1.05`.
+Supervisore online (`shk.model.agent_c:Module2Supervisor`): esiti solo da observe_results, δ = ln p̂(x) − ln q(x) con q di Shin; alla data d usa le partite con Date < d, catena tagliata alla stagione.
+- Formula: finestre A e B di δ, le 2W partite osservate più recenti con Date < d (A le più vecchie) — `shk.model.agent_c:Module2Supervisor.delta_windows`; Oaxaca-Blinder alla data d — `shk.model.agent_c:Module2Supervisor.state_at`.
+- Formula: allarme ANOVA, F della media fra A e B contata solo se la media di B è minore di quella di A; F di Brown-Forsythe contata solo se la dispersione media dalla mediana di B è maggiore di quella di A — `shk.model.agent_c:scheme_statistics`. C3 e C3_stop: allarme se una delle due F supera la sua soglia; C3_and: se le superano entrambe (`shk.model.agent_c:SCHEME_ALARMS = ("or", "and")`).
+- Formula: diagnosi con allarme, errore strutturale se Oaxaca-Blinder è attivo e T = −S supera la soglia strutturale del fit, altrimenti errore di composizione — `shk.model.agent_c:SchemeAgent.stake_fractions`.
+- Formula: λ = 0.25 senza allarme, 0.25·κ con errore di composizione, 0 con errore strutturale (C3 finché dura l'allarme, C3_stop fino a fine stagione: `shk.model.agent_c:SCHEME_STOPS = ("until_clear", "until_season_end")`); frazione kelly_staking(p̂, o − 1, λ) — `shk.model.agent_c:SchemeAgent.stake_fractions`.
+- Formula: soglie dell'allarme "o", statistica d'ordine ⌈(1 − α/2)(B + 1)⌉ di ciascuna F con segno sui ricampionamenti a blocchi mobili della serie di δ del fit (prime 2W posizioni come A e B) — `shk.model.agent_c:calibrate_scheme_thresholds`; soglie dell'allarme "e", sugli stessi ricampionamenti, statistiche d'ordine allo stesso indice k, il più basso con quota congiunta di superamenti ≤ α — `shk.model.agent_c:calibrate_scheme_and_thresholds`.
+- Parametri: `shk.model.agent_c:N_BOOT = 999`; `shk.model.scheme_run:SEED_S12 = 20261102`; seed delle soglie SeedSequence(SEED_S12).spawn(5)[posizione del Modulo 1].spawn(3) — `shk.model.scheme_run:scheme_thresholds`.
+- Parametri congelati usati dallo schema (chiavi storiche c1_*, dalla calibrazione del 2026-10): `config/frozen_params.toml:calibrated.c1_window = 40`; `config/frozen_params.toml:calibrated.c1_kappa = 0.75`; `config/frozen_params.toml:fixed.c0_lambda = 0.25`; `config/frozen_params.toml:fixed.c1_alpha = 0.05`; `config/frozen_params.toml:fixed.c1_n_boot = 999`; soglie strutturali per fit `config/frozen_params.toml:c1_thresholds.2000-01 = 0.06274452118325424`, `config/frozen_params.toml:c1_thresholds.2010-11 = 0.07682507170298258`, `config/frozen_params.toml:c1_thresholds.2020-21 = 0.10170087346629561`.
+- Verifica dell'allarme (decisione del 2026-11-05): quota di date con allarme sulle stagioni di validazione — `shk.model.scheme_power:alarm_flags`; potenza con un cambiamento inserito, Formula: da BREAK_INDEX in poi δ → m + √v·(δ − m) + Δ, con m la media della parte trasformata, e stagione con allarme se l'allarme scatta in una delle prime HORIZON_DATES date successive — `shk.model.scheme_power:inject_change`, `shk.model.scheme_power:alarm_after_break`; `shk.model.scheme_power:BREAK_INDEX = 190`, `shk.model.scheme_power:HORIZON_DATES = 10`. Peggioramento minimo rilevabile √(soglia)·sd(δ)·√(2/W); stessa frequenza sulla log-loss con soglie calibrate allo stesso modo — `shk.model.scheme_power:power_records`, `shk.model.scheme_power:log_loss_thresholds`.
+- Verifiche sulle stagioni di training (decisione del 2026-11-05): Covid, il 2021-22 e il 2022-23 previsti dal fit congelato 2010-11 — `shk.model.training_fits:COVID_SEASONS`, `shk.model.training_fits:covid_check_frame`; fit aggiuntivo 2015-16 calibrato con lo schema espansivo — `shk.model.training_fits:EXTRA_TRAINING = ("2000-01", "2010-11", "2015-16")`, `shk.model.training_fits:extra_fit_params`, per `shk.model.training_fits:EXTRA_SEASONS = ("2016-17", "2017-18", "2018-19", "2019-20")`; soglie del riferimento fisso congelate per i fit esistenti e calibrate sul 2015-16 — `shk.model.training_fits:extra_setups`, seed `shk.model.training_fits:SEED_S20 = 20261109`; errori per stagione — `shk.model.training_fits:error_records`.
+- Risultato principale sulle stagioni vere (decisione del 2026-11-05): realizzazione osservata di ogni stagione di validazione, letta dalle sintesi versionate — `shk.model.real_seasons:REAL_SOURCES`, `shk.model.real_seasons:real_records`; capitale tipico exp(media sulle stagioni di ln W_T), stagioni meglio e peggio del riferimento appaiato (tolleranza `shk.model.real_seasons:TIE_TOL = 1e-12`). Le stagioni ricostruite restano come misura dell'incertezza.
+- Ri-parametrizzazione annuale dell'Elo (decisione del 2026-11-05): per ogni stagione di validazione la stagione di calibrazione è la più recente anteriore con B365 — `shk.model.elo_refit:refit_schedule`, `shk.model.elo_refit:NO_B365_SEASONS = {"2001-02"}`; K, h, ν con `shk.model.elo_fit:calibrate_single_fit` su quella sola stagione — `shk.model.elo_refit:refit_fits`; DataFrame del Modulo 2 — `shk.model.elo_refit:refit_module2_frame`; confronto per stagione — `shk.model.elo_refit:refit_aging_records`; lo schema a riferimento fisso gira sul modello ricalibrato con soglie da `shk.model.scheme_reference_run:reference_setups`.
+- Lavoratore R3 con lo schema a riferimento fisso (decisione del 2026-11-05): `shk.model.worker_reference_run:R3_REFERENCE_ARMS = ("R3_brake", "R3_C3_ref", "R3_C3_ref_stop")`, `shk.model.worker_reference_run:run_r3_reference_instance`; soglie di `shk.model.scheme_reference_run:reference_setups`, seed dell'esecuzione congelata.
+- Diagnosi sull'errore atteso (decisione del 2026-11-05): Formula: E_q[δ] = Σ_j q_j ln(p̂_j/q_j) = −KL(q ‖ p̂) — `shk.model.agent_c:expected_delta`; il supervisore la usa come risposta di Oaxaca-Blinder con `shk.model.agent_c:OAXACA_RESPONSES = ("realized", "expected")` (predefinito "realized"); verifica con soglie strutturali ricalibrate — `shk.model.oaxaca_expected:expected_setups`, `shk.model.oaxaca_expected:run_expected_instance`; seed `shk.model.oaxaca_expected:SEED_S16 = 20261108`.
+- Robustezza di Oaxaca-Blinder senza la covariata «position» (decisione del 2026-11-05): soglia strutturale ricalibrata sul training — `shk.model.oaxaca_position:adjacent_structural_threshold`, `shk.model.oaxaca_position:position_setups`; esecuzione appaiata su `shk.model.oaxaca_position:N_CHECK_SEEDS = 100` seed — `shk.model.oaxaca_position:run_position_instance`; seed `shk.model.oaxaca_position:SEED_S15 = 20261107`.
+- Variante con riferimento fisso (decisione del 2026-11-05, scelta dopo aver visto le frequenze d'allarme sulla validazione): A = stagione di calibrazione del fit, B = ultime W partite; Formula: F con segno fra gruppi di dimensione diversa — `shk.model.agent_c:reference_statistics`; diagnosi three-fold fra riferimento e B — `shk.model.agent_c:Module2Supervisor.reference_diagnostics`; soglie di media e dispersione a α/2 e di T = −S a α, sui ricampionamenti a blocchi di W righe della stagione di calibrazione — `shk.model.agent_c:calibrate_reference_thresholds`; seed `shk.model.scheme_reference_run:SEED_S14 = 20261106`; esecuzione — `shk.model.scheme_reference_run:run_reference_instance`, `shk.model.scheme_reference_run:REFERENCE_ARMS = ("B_0.25", "C3_ref", "C3_ref_stop")`.
+- Esecuzioni: validazione sugli stessi seed dell'esecuzione congelata — `shk.model.scheme_run:evaluate_scheme`, `shk.model.scheme_run:SCHEME_ARMS = ("B_0.25", "C3", "C3_stop", "C3_and")`; 2023-24 una volta sola, sulla realizzazione osservata, esplorativo (decisione del 2026-11-05) — `shk.model.kellybench_run:kellybench_records`, `shk.model.kellybench_run:SCHEME_TEST_ARMS = ("C3", "C3_stop", "C3_and")`; la variante con riferimento fisso, una volta, con `shk.model.kellybench_run:REFERENCE_TEST_ARMS = ("C3_ref", "C3_ref_stop")`; le stesse varianti su stagioni ricostruite del 2023-24, con i seed block dell'esecuzione unica — `shk.model.scheme_test_run:evaluate_test_scheme`, `shk.model.scheme_test_run:TEST_SCHEME_ARMS = ("A", "B_0.25", "C3", "C3_stop", "C3_and", "C3_ref", "C3_ref_stop")`.
 
 ## 10. Seed e bootstrap
 
 **Seed radice** (decisioni di progetto):
 - `shk.kelly.scenarios:SEED = 20260927`; `shk.stats.false_rejection:SEED_C2 = 20260928`; `shk.stats.drift:SEED_C5 = 20260929`; `shk.kelly.floor:SEED_C6 = 20261009`.
-- `shk.stats.false_rejection:SEED_S7 = 20261011`; `shk.stats.oaxaca_synthetic:SEED_S8 = 20261012`; `shk.model.module3_synthetic:SEED_S9 = 20261013`; `shk.model.validation_run:SEED_S10 = 20261014`; `shk.model.dixon_coles:SEED_S11 = 20261015`.
+- `shk.stats.false_rejection:SEED_S7 = 20261011`; `shk.stats.oaxaca_synthetic:SEED_S8 = 20261012`; `shk.model.task_seeds:SEED_S9 = 20261013`; `shk.model.validation_run:SEED_S10 = 20261014`; `shk.model.dixon_coles:SEED_S11 = 20261015`; `shk.model.scheme_run:SEED_S12 = 20261102`; `shk.model.scheme_power:SEED_S13 = 20261105`.
 - La procedura in posizione i di un gruppo di analisi usa SeedSequence(SEED_Sn).spawn(5)[i] — `shk.model.task_seeds:task_sequence`, con `shk.model.task_seeds:N_STORY_TASKS = 5`. Le esecuzioni congelate usano la radice del gruppo — `shk.model.task_seeds:story_task_sequence`.
 - Con Dixon-Coles: procedure di specificazione e calibrazione con SeedSequence(SEED_S11).spawn(5)[2].spawn(5)[k] — `shk.model.module1_seeds:procedure_seeds`, `shk.model.module1_seeds:DC_SEED_SCHEME = "SeedSequence(SEED_S11).spawn(5)[2].spawn(5)[k], k = specificazione, Modulo 2, prova, potenza, calibrazione"`; le esecuzioni congelate con radice SeedSequence(SEED_S11).spawn(5)[3] — `shk.model.module1_seeds:s10_seed`.
 
@@ -277,43 +269,29 @@ Da uscita del Modulo 2 a λ (`shk.model.module3`).
 - Formula: soglia calibrata = statistica d'ordine ⌈(1 − α)(B + 1)⌉ (tolleranza 1e-9 attorno agli interi) — `shk.stats.calibration:compute_order_statistic_index`, `shk.stats.calibration:calibrate_threshold`. H₀ la impone il chiamante (per l'ANOVA: serie centrata per gruppo, `shk.stats.false_rejection:center_by_group`).
 
 **Seed di backtest** (decisione del 2026-10-11): un seed è una stagione ricostruita per stationary bootstrap delle date; ogni data porta con sé le sue partite; il calendario resta ordinato e "position" si ricalcola.
-- Formula: L = L_PW stationary arrotondata della serie per data della media di δ — `shk.model.season_bootstrap:season_block_length`; ricostruzione — `shk.model.season_bootstrap:reconstruct_season`, `shk.model.season_bootstrap:date_layout`. Con L = 1 è la versione iid: `shk.model.comparisons_run:IID_BLOCK_LENGTH = 1.0`.
-- Formula: numero di seed, N_min = (z σ/(0.2 Δ))²/19, N_SEEDS = 100·⌈N_min/100⌉, almeno 500; 1 000 se Δ < 1e-6 o N_SEEDS > 5 000 — `shk.model.power:n_seeds_rule`; `shk.model.power:EFFECT_FRACTION = 0.2`; `shk.model.power:MIN_SEEDS = 500`; `shk.model.power:MAX_SEEDS = 5000`; `shk.model.power:FALLBACK_SEEDS = 1000`; `config/frozen_params.toml:fixed.n_seeds = 500`.
+- Formula: L = L_PW stationary arrotondata della serie per data della media di δ — `shk.model.season_bootstrap:season_block_length`; ricostruzione — `shk.model.season_bootstrap:reconstruct_season`, `shk.model.season_bootstrap:date_layout`. Con L = 1 è la versione iid (esecuzione sul 2023-24).
+- Numero di seed congelato (dall'analisi di potenza del 2026-10, sul branch confronti-controllo): `config/frozen_params.toml:fixed.n_seeds = 500`.
 
 **Soglie calibrate degli altri strumenti**:
-- ANOVA di C2: falso rigetto su `shk.stats.false_rejection:N_SERIES = 1000` serie AR(1) da `shk.stats.false_rejection:N_OBS = 380` osservazioni per `shk.stats.false_rejection:PHI_VALUES = (0.0, 0.3, 0.5, 0.7)` — `shk.stats.false_rejection:compute_nominal_rejection_rates`, `shk.stats.false_rejection:compute_centered_calibrated_rejection_rates`; F a mano — `shk.stats.anova:oneway_anova`; intervallo Monte Carlo α ± 2.576√(α(1 − α)/1000) — `shk.stats.false_rejection:monte_carlo_interval_99`.
+- ANOVA (esperimento C2): falso rigetto su `shk.stats.false_rejection:N_SERIES = 1000` serie AR(1) da `shk.stats.false_rejection:N_OBS = 380` osservazioni per `shk.stats.false_rejection:PHI_VALUES = (0.0, 0.3, 0.5, 0.7)` — `shk.stats.false_rejection:compute_nominal_rejection_rates`, `shk.stats.false_rejection:compute_centered_calibrated_rejection_rates`; F a mano — `shk.stats.anova:oneway_anova`; intervallo Monte Carlo α ± 2.576√(α(1 − α)/1000) — `shk.stats.false_rejection:monte_carlo_interval_99`.
 - Eteroschedasticità: Formula: LM = n·R² della regressione ausiliaria di e² (Koenker) — `shk.stats.heteroskedasticity:breusch_pagan_lm`, `shk.stats.heteroskedasticity:white_lm`; gradi di libertà `shk.model.residual_heteroskedasticity:STATISTIC_DFS = {"bp_joint": 2, "bp_time": 1, "white": 5}`; soglie calibrate con `shk.model.residual_heteroskedasticity:BLOCK_LENGTHS = (7, 20, 40)` e `shk.model.residual_heteroskedasticity:N_BOOT_CALIB = 999` — `shk.model.residual_heteroskedasticity:calibrate_block_bootstrap_thresholds`.
 - Differenza con le note: il TODO v4 (§ 1.8) segnala che "statsmodels HAC non corregge anova_lm". Il controllo in `tests/test_hac_anova_lm.py` (AR(1) con φ = 0.7, n = 380, due metà da 190, maxlags = 5), mostra che vale con typ=1; con typ=2 e typ=3 l'F di anova_lm sul fit HAC coincide col Wald HAC, ma sum_sq non è più una somma di quadrati. Nel progetto l'autocorrelazione si tratta con le soglie calibrate per block bootstrap, non con HAC.
 - Cambio di varianza: Formula: z_t = (l_t − H_t)/√V_t con V_t la varentropia — `shk.stats.variance_change:varentropy_standardized_residuals`; Goldfeld-Quandt sui terzi, ARCH-LM con `shk.stats.variance_change:ARCH_LAGS = 10`, log-varianza mobile con `shk.stats.variance_change:ROLLING_WINDOW = 80` e `shk.stats.variance_change:ROLLING_STEP = 10`, Brown-Forsythe — `shk.stats.variance_change:goldfeld_quandt_thirds`, `shk.stats.variance_change:arch_lm`, `shk.stats.variance_change:rolling_log_variance_max`, `shk.stats.variance_change:brown_forsythe`.
 
-## 11. Calibrazione e congelamento
+## 11. Parametri congelati
 
-**Obiettivo unico** (decisione del 2026-10-11): media, su seed e sulle tre stagioni di training, della log-ricchezza finale nella configurazione principale; a parità entro 1e-12 vince la puntata media più bassa (`shk.model.training_calibration:evaluate_calibration`).
-- Formula: puntata media di una combinazione = media su seed e stagioni della media sulle date di staked_d/W_{d−1} — `shk.model.training_calibration:evaluate_calibration`.
-- Formula: regola di parità di secondo livello (decisione del programmatore, 2026-10-11): 1. valore congelato da una decisione precedente; 2. κ del braccio a reazione binaria più simile con κ identificato, altrimenti 1; 3. ordine della griglia — `shk.model.training_calibration:select_combinations`, `shk.model.training_calibration:first_level_ties`.
-- Parametri: `shk.model.training_calibration:CALIBRATION_CONFIG = "gbp_0.01"`; `shk.model.training_calibration:N_CALIBRATION_SEEDS = 200`; `shk.model.training_calibration:TIE_TOLERANCE = 1e-12`; `shk.model.training_calibration:DEFAULT_KAPPA = 1.0`; `shk.model.training_calibration:KAPPA_REFERENCES = {"D_ADWIN": ("D_PH", "C1"), "D_PH": ("D_ADWIN", "C1"), "C1": ()}`; `shk.model.training_calibration:FROZEN_EARLIER_VALUES = {"D_ADWIN": {"detector_delta": 0.002}, "D_PH": {"detector_delta": 0.05, "detector_threshold": 5.0}}`.
-- Griglie (fissate nella calibrazione sul training, `shk.model.training_calibration:calibration_grid`): C1 = MODULE2_WINDOWS × KAPPA_GRID; C2_global e C2 = MODULE2_WINDOWS; D_ADWIN = ADWIN_GRID_DELTA × KAPPA_GRID; D_PH = PAGE_HINKLEY_GRID_DELTA × PAGE_HINKLEY_GRID_THRESHOLD × KAPPA_GRID.
-- Seed: SeedSequence(SEED_S9).spawn(5)[4] — `shk.model.training_calibration:evaluate_calibration`; `config/frozen_params.toml:calibration.n_seeds = 200`; `config/frozen_params.toml:calibration.configuration = "gbp_0.01"`.
-- Esecuzione di prova sul training con parametri al centro delle griglie: `shk.model.training_agents:PROVISIONAL_WINDOW = 80`, `shk.model.training_agents:PROVISIONAL_KAPPA = 0.5`.
-
-**Congelamento**:
-- `config/frozen_params.toml` si scrive una sola volta (`shk.model.frozen_params:write_frozen_params` rifiuta di sovrascrivere) e si legge solo con `shk.model.frozen_params:load_frozen_params`, che verifica le chiavi (`shk.model.frozen_params:check_keys`). Congelato il 2026-10-11, committato prima dell'esecuzione congelata sulla validazione.
-- Con Dixon-Coles: stessa procedura, file `config/frozen_params_dc.toml` con la chiave di primo livello `config/frozen_params_dc.toml:module1 = "dixon_coles"` — `shk.model.frozen_params:frozen_params_path`; congelato il 2026-10-17, committato prima della robustezza del ranking.
-- Protocollo (decisioni di progetto): nessun parametro di C1, C2 e D si sceglie su validazione o test; il test 2023-24 si esegue una volta, dopo il commit del file congelato e lo sblocco — `shk.model.test_run:TEST_SEASON = "2023-24"`, `shk.model.test_run:TEST_FIT = "2020-21"`.
+- `config/frozen_params.toml` è stato scritto una sola volta dalla calibrazione sul training del 2026-10-11 e si legge solo con `shk.model.frozen_params:load_frozen_params`, che verifica le chiavi (`shk.model.frozen_params:check_keys`). La calibrazione sceglieva anche i parametri degli agenti di confronto; il codice che l'ha eseguita è sul branch confronti-controllo, e qui il file è un dato d'ingresso con SHA256 verificato.
+- Con Dixon-Coles: file `config/frozen_params_dc.toml` con la chiave di primo livello `config/frozen_params_dc.toml:module1 = "dixon_coles"` — `shk.model.frozen_params:frozen_params_path`; congelato il 2026-10-17.
+- Protocollo (decisioni di progetto): nessun parametro si sceglie su validazione o test; il test 2023-24 si esegue una volta, dopo il commit del file congelato e lo sblocco — `shk.model.test_run:TEST_SEASON = "2023-24"`, `shk.model.test_run:TEST_FIT = "2020-21"`. Lo schema del relatore è stato costruito dopo: sul 2023-24 è eseguito una volta, come risultato esplorativo (§ 9).
 
 ## 12. Intervalli
 
-- Formula: confronto pooled A − B = media sulle stagioni della differenza per stagione (metriche per seed: media sui seed delle differenze appaiate; metriche per stagione: differenza delle statistiche) — `shk.model.comparisons:season_differences`, `shk.model.comparisons:pooled_bootstrap`.
-- Formula: bootstrap a due livelli, stagioni con reinserimento e, dentro ciascuna, seed con reinserimento, gli stessi per i due agenti — `shk.model.comparisons:two_level_indices`.
-- Formula: intervallo principale D̂ ± t_{0.975, S−1}·√(S/(S − 1))·se_boot (decisione del programmatore, 2026-10-12) — `shk.model.comparisons:t_cluster_interval`; secondario percentile, statistiche d'ordine ⌈(α/2)(B + 1)⌉ e ⌈(1 − α/2)(B + 1)⌉ — `shk.model.comparisons:percentile_interval`.
-- Parametri: `shk.model.comparisons:N_BOOT = 999`; `shk.model.comparisons:INTERVAL_ALPHA = 0.05`; confronti `shk.model.comparisons:COMPARISONS = (("C2", "D_ADWIN"), ("C2", "D_PH"), ("C2", "E"), ("C1", "C0"), ("C2", "C1"), ("C2", "C2_global"), ("C1", "D_PH"))`.
-- Formula: effect size d = Δ/σ, OVL = 2Φ(−|d|/2), R² = d² e d²/(d² + 4) — `shk.model.comparisons:effect_sizes`, `shk.model.comparisons:effect_size_sigma`.
+- Formula: intervallo t per cluster D̂ ± t_{0.975, S−1}·√(S/(S − 1))·se_boot (decisione del programmatore, 2026-10-12) — `shk.model.comparisons:t_cluster_interval`; percentile, statistiche d'ordine ⌈(α/2)(B + 1)⌉ e ⌈(1 − α/2)(B + 1)⌉ — `shk.model.comparisons:percentile_interval`; `shk.model.comparisons:INTERVAL_ALPHA = 0.05`.
 - Formula: crescita certo-equivalente (decisione del 2026-10-11), g_CE = mean(ln W_T)/D per γ = 1, (1/D)(1/(1 − γ)) ln mean(W_T^(1−γ)) per γ > 1, −inf se una W_T = 0 — `shk.model.validation_run:certainty_equivalent`; `shk.model.validation_run:GAMMAS = (1.0, 2.0, 5.0)`.
-- Test 2023-24: una stagione, intervallo percentile dai soli seed, senza correzione per i cluster — `shk.model.test_run:comparison_records_single`; `shk.model.test_run:N_BOOT = 999`. ROI di E accanto ai riferimenti `shk.model.test_run:PAPER_E_ROI = -0.041` e `shk.model.test_run:NOTE_E_ROI = -0.051` (decisione di progetto).
-- Formula: τ-b di Kendall, τ_b = (n_c − n_d)/√((n_0 − n_1)(n_0 − n_2)), NaN se un ordinamento è tutto in parità — `shk.model.robustness:kendall_tau_b`; statistica di ranking "mediana pooled" (decisione del programmatore, 2026-10-17) — `shk.model.robustness:agent_statistics`; intervallo come i confronti, sul test dai soli seed — `shk.model.robustness:ranking_records`.
-- Formula: intervalli del Modulo 2, stationary bootstrap dentro ciascuna finestra (righe con δ) a L_PW arrotondata, percentili sui ricampionamenti a rango pieno — `shk.model.module2:module2_bootstrap_interval`.
+- Test 2023-24: una stagione, intervalli di ĝ e degli strati per stationary bootstrap — `shk.model.test_run:g_hat_records`, `shk.model.test_run:stratum_records`; `shk.model.test_run:N_BOOT = 999`.
+- Formula: intervalli di Oaxaca-Blinder, stationary bootstrap dentro ciascuna finestra (righe con δ) a L_PW arrotondata, percentili sui ricampionamenti a rango pieno — `shk.model.module2:module2_bootstrap_interval`.
 - Formula: intervallo percentile della media per stationary bootstrap — `shk.stats.bootstrap:stationary_bootstrap_mean_interval`.
-- Casi limite: C2 − E non esiste con F = 0, perché E non c'è (`shk.model.comparisons:comparison_available`); nel ranking non entrano gli agenti con statistica non finita in una delle due esecuzioni; con meno di due ricampionamenti finiti l'intervallo t è NaN.
+- Casi limite: con meno di due ricampionamenti finiti l'intervallo t è NaN.
 
 ## Indice: aree del progetto e file
 
@@ -323,13 +301,13 @@ Da uscita del Modulo 2 a λ (`shk.model.module3`).
 | ANOVA e autocorrelazione | src/shk/stats/anova.py, src/shk/stats/timeseries.py, src/shk/stats/false_rejection.py, src/shk/stats/calibration.py, scripts/us_c2_anova_autocorrelation.py, tests/test_us_c2_acceptance.py |
 | Dati, split, de-vigging e anti-leakage | src/shk/data/loading.py, src/shk/data/coverage.py, src/shk/data/split.py, config/split.toml, src/shk/market/devig.py, src/shk/market/divergence.py, src/shk/data/walkforward.py, tests/test_leakage.py |
 | Modulo 1 Elo e ĝ | src/shk/model/elo.py, src/shk/model/elo_predictor.py, src/shk/model/elo_fit.py, src/shk/model/scoring.py, src/shk/model/recalibration.py, scripts/us_c4_2_g_hat.py |
-| Drift detector, Z-test e Baseline D | src/shk/model/residuals.py, src/shk/stats/drift.py, src/shk/model/monitoring.py, src/shk/kelly/backtest.py, scripts/us_c5_2_daily_z_test.py, scripts/us_c5_3_baseline_d.py |
+| Z-test per giornata | src/shk/model/residuals.py, src/shk/stats/drift.py, src/shk/model/monitoring.py, scripts/us_c5_2_daily_z_test.py |
 | Agenti, ambiente, floor ed eteroschedasticità | src/shk/kelly/agents.py, src/shk/kelly/environment.py, src/shk/kelly/metrics.py, src/shk/model/paired_backtest.py, src/shk/kelly/floor.py, src/shk/model/floor_real_config.py, src/shk/stats/heteroskedasticity.py, src/shk/model/residual_heteroskedasticity.py |
 | Infrastruttura statistica | src/shk/stats/false_rejection.py, tests/test_split.py, src/shk/stats/bootstrap.py, src/shk/model/block_length.py, src/shk/market/devig.py, src/shk/stats/variance_change.py, src/shk/model/variance_change.py |
-| Modulo 2 | src/shk/stats/oaxaca.py, src/shk/stats/oaxaca_synthetic.py, src/shk/model/module2_data.py, src/shk/model/covariate_inspection.py, src/shk/model/module2.py, src/shk/model/known_scenarios.py, src/shk/model/season_objectives.py, src/shk/stats/nopo.py, src/shk/model/did_support.py |
-| Modulo 3, agente C, calibrazione e congelamento | src/shk/model/stateful_agents.py, src/shk/model/module3.py, src/shk/model/module3_synthetic.py, src/shk/model/agent_c.py, src/shk/model/training_agents.py, src/shk/model/season_bootstrap.py, src/shk/model/power.py, src/shk/model/training_calibration.py, src/shk/model/frozen_params.py, config/frozen_params.toml |
-| Esecuzioni congelate, confronti e test 2023-24 | src/shk/model/frozen_agents.py, src/shk/model/validation_run.py, src/shk/model/comparisons.py, src/shk/model/comparisons_run.py, src/shk/model/g_hat_inference.py, src/shk/model/test_run.py |
-| Dixon-Coles e robustezza | src/shk/model/dixon_coles.py, src/shk/model/dixon_coles_calibration.py, src/shk/model/module1.py, src/shk/model/task_seeds.py, src/shk/model/module1_seeds.py, config/frozen_params_dc.toml, src/shk/model/robustness.py, src/shk/model/devig_runs.py, src/shk/model/devig_sensitivity.py |
+| Oaxaca-Blinder sui residui | src/shk/stats/oaxaca.py, src/shk/stats/oaxaca_synthetic.py, src/shk/model/module2_data.py, src/shk/model/covariate_inspection.py, src/shk/model/module2.py, src/shk/model/known_scenarios.py, src/shk/model/season_objectives.py, src/shk/stats/nopo.py, src/shk/model/did_support.py |
+| Schema del relatore e regole del lavoratore | src/shk/model/agent_c.py, src/shk/model/scheme_run.py, src/shk/model/scheme_power.py, src/shk/kelly/outcome_rules.py, src/shk/model/worker_run.py, src/shk/model/season_input.py, src/shk/model/season_bootstrap.py, src/shk/model/frozen_params.py, config/frozen_params.toml |
+| Esecuzioni congelate e test 2023-24 | src/shk/model/frozen_agents.py, src/shk/model/validation_run.py, src/shk/model/comparisons.py, src/shk/model/g_hat_inference.py, src/shk/model/test_run.py, src/shk/model/kellybench_run.py |
+| Dixon-Coles | src/shk/model/dixon_coles.py, src/shk/model/dixon_coles_calibration.py, src/shk/model/module1.py, src/shk/model/task_seeds.py, src/shk/model/module1_seeds.py, config/frozen_params_dc.toml |
 | Riproducibilità e materiale per la tesi | README.md, src/shk/data/manifest.py, scripts/reproduce_all.py, scripts/verify_raw_data.py, src/shk/thesis/tables.py, scripts/build_thesis_tables.py, scripts/build_thesis_figures.py, thesis/numeri.md, thesis/metodi_implementati.md, tests/test_metodi_implementati.py |
 
 Gli script degli esperimenti sono `scripts/us_<area>_<descrizione>.py`; ciascuno scrive `results/<nome>.csv` e `thesis/figures/<nome>.png`.

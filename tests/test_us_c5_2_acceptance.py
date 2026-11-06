@@ -4,8 +4,8 @@ Verifica:
 - sui test sintetici: calcolo di mu e sigma delle baseline di training, schema delle 14 colonne,
   coerenza degli allarmi (matchday vs summary vs overall), valori attesi;
 - sul CSV versionato results/us_c5_2_daily_z_test.csv (eseguibile in CI anche senza dati grezzi):
-  schema delle 14 colonne, 722 righe matchday, 57 righe summary, 3 righe overall, coerenza con
-  i risultati dei drift detector per ADWIN e Page-Hinkley, assenza di leak della stagione 2023-24;
+  schema delle 14 colonne, 722 righe matchday, 76 righe summary, 4 righe overall, assenza di
+  leak della stagione 2023-24;
 - sulla figura thesis/figures/us_c5_2_daily_z_test.png: esistenza e dimensione non nulla;
 - sui dati reali (saltato se non disponibili): ricalcolo esatto riga per riga contro il CSV versionato.
 """
@@ -43,12 +43,6 @@ def _get_csv_path() -> Path:
     """Restituisce il percorso del file CSV dello Z-test per matchday."""
     repo_root = Path(__file__).resolve().parents[1]
     return repo_root / "results" / "us_c5_2_daily_z_test.csv"
-
-
-def _get_c51_csv_path() -> Path:
-    """Restituisce il percorso del CSV dei drift detector."""
-    repo_root = Path(__file__).resolve().parents[1]
-    return repo_root / "results" / "us_c5_1_drift_detectors.csv"
 
 
 def _get_png_path() -> Path:
@@ -161,10 +155,10 @@ def test_synthetic_records_schema_and_types():
     records = generate_daily_z_test_records(df, schedule)
 
     # 2 stagioni di validazione x 38 giornate = 76 matchday
-    # 2 stagioni x (3 metodi + 3 L) = 12 summary
-    # 3 metodi nominali + 3 L = 6 overall
+    # 2 stagioni x (Z nominale + 3 L) = 8 summary
+    # Z nominale + 3 L = 4 overall
     # 1 fit x 3 L x 2 metodi = 6 verification
-    assert len(records) == 76 + 12 + 6 + 6
+    assert len(records) == 76 + 8 + 4 + 6
 
     for r in records:
         assert tuple(r.keys()) == DAILY_Z_TEST_CSV_COLUMNS
@@ -185,7 +179,7 @@ def test_synthetic_records_schema_and_types():
             assert r["n_resamples"] == ""
             assert r["exceedance_rate"] == ""
         elif row_type == "summary":
-            assert r["method"] in ("z_nominal", "adwin", "page_hinkley", "z_block_bootstrap")
+            assert r["method"] in ("z_nominal", "z_block_bootstrap")
             assert r["matchday"] == ""
             assert r["z"] == ""
             assert r["alarm"] == ""
@@ -198,16 +192,13 @@ def test_synthetic_records_schema_and_types():
             if r["method"] == "z_nominal":
                 assert r["block_length"] == ""
                 assert isinstance(r["threshold"], float)
-            elif r["method"] == "z_block_bootstrap":
+            else:
                 assert int(r["block_length"]) in BLOCK_LENGTHS
                 assert isinstance(r["threshold"], float)
-            else:
-                assert r["block_length"] == ""
-                assert r["threshold"] == ""
         elif row_type == "overall":
             assert r["season"] == ""
             assert r["fit_through"] == ""
-            assert r["method"] in ("z_nominal", "adwin", "page_hinkley", "z_block_bootstrap")
+            assert r["method"] in ("z_nominal", "z_block_bootstrap")
             assert r["matchday"] == ""
             assert r["z"] == ""
             assert r["alarm"] == ""
@@ -220,11 +211,8 @@ def test_synthetic_records_schema_and_types():
             if r["method"] == "z_nominal":
                 assert r["block_length"] == ""
                 assert isinstance(r["threshold"], float)
-            elif r["method"] == "z_block_bootstrap":
-                assert int(r["block_length"]) in BLOCK_LENGTHS
-                assert r["threshold"] == ""
             else:
-                assert r["block_length"] == ""
+                assert int(r["block_length"]) in BLOCK_LENGTHS
                 assert r["threshold"] == ""
         else:  # verification
             assert r["season"] == ""
@@ -262,7 +250,7 @@ def test_synthetic_records_alarms_coherence():
         assert int(summary_row["n_alarms"]) == matchday_alarms
 
     # 2. Per ciascun metodo, n_alarms in overall == somma di n_alarms nei summary
-    for met in ("z_nominal", "adwin", "page_hinkley"):
+    for met in ("z_nominal",):
         sum_alarms = sum(
             int(r["n_alarms"])
             for r in records
@@ -292,7 +280,7 @@ def test_versioned_csv_schema_and_columns():
 
 
 def test_versioned_csv_counts_and_structure():
-    """Verifica il conteggio righe (722 matchday, 114 summary, 6 overall, 18 verification) e la conformità dello Z-test."""
+    """Verifica il conteggio righe (722 matchday, 76 summary, 4 overall, 18 verification) e la conformità dello Z-test."""
     csv_path = _get_csv_path()
     with open(csv_path, mode="r", encoding="utf-8") as f:
         rows = list(csv.DictReader(f))
@@ -308,14 +296,14 @@ def test_versioned_csv_counts_and_structure():
 
     # 19 stagioni di validazione x 38 giornate = 722
     assert len(matchday_rows) == 722
-    # 19 stagioni x (3 metodi nominali + 3 L) = 114
-    assert len(summary_rows) == 114
-    # 3 metodi nominali + 3 L = 6 overall
-    assert len(overall_rows) == 6
+    # 19 stagioni x (Z nominale + 3 L) = 76
+    assert len(summary_rows) == 76
+    # Z nominale + 3 L = 4 overall
+    assert len(overall_rows) == 4
     # 3 fit x 3 L x 2 metodi = 18 verification
     assert len(verification_rows) == 18
     # Totale righe dati
-    assert len(rows) == 860
+    assert len(rows) == 820
 
     # Verifica proprietà righe matchday
     for r in matchday_rows:
@@ -330,38 +318,8 @@ def test_versioned_csv_counts_and_structure():
         assert alarm_flag == expected_flag
 
 
-def test_versioned_csv_alarms_match_c5_1():
-    """Verifica che i conteggi di ADWIN e Page-Hinkley sulle 19 stagioni coincidano con i drift detector."""
-    c52_csv = _get_csv_path()
-    c51_csv = _get_c51_csv_path()
-    assert c51_csv.exists(), f"File C5.1 non trovato: {c51_csv}"
-
-    with open(c51_csv, mode="r", encoding="utf-8") as f:
-        c51_rows = list(csv.DictReader(f))
-    with open(c52_csv, mode="r", encoding="utf-8") as f:
-        c52_rows = list(csv.DictReader(f))
-
-    # Estrazione summary dei drift detector su role == validation
-    c51_counts = {
-        (r["season"], r["detector"]): int(r["n_alarms"])
-        for r in c51_rows
-        if r["row_type"] == "summary" and r["role"] == "validation"
-    }
-    assert len(c51_counts) == 38  # 19 stagioni x 2 detector
-
-    # Estrazione summary dello Z-test su adwin e page_hinkley
-    c52_counts = {
-        (r["season"], r["method"]): int(r["n_alarms"])
-        for r in c52_rows
-        if r["row_type"] == "summary" and r["method"] in ("adwin", "page_hinkley")
-    }
-    assert len(c52_counts) == 38
-
-    assert c51_counts == c52_counts
-
-
 def test_versioned_csv_overall_coherence():
-    """Verifica che le 6 righe overall abbiano somme e medie coerenti con le 19 righe summary."""
+    """Verifica che le 4 righe overall abbiano somme e medie coerenti con le 19 righe summary."""
     csv_path = _get_csv_path()
     with open(csv_path, mode="r", encoding="utf-8") as f:
         rows = list(csv.DictReader(f))
@@ -369,10 +327,10 @@ def test_versioned_csv_overall_coherence():
     summary_rows = [r for r in rows if r["row_type"] == "summary"]
     overall_rows = [r for r in rows if r["row_type"] == "overall"]
 
-    assert len(overall_rows) == 6
+    assert len(overall_rows) == 4
 
-    # 1. Metodi nominali e detector
-    for met in ("z_nominal", "adwin", "page_hinkley"):
+    # 1. Z nominale
+    for met in ("z_nominal",):
         ov = next(r for r in overall_rows if r["method"] == met)
         sum_alarms = sum(int(r["n_alarms"]) for r in summary_rows if r["method"] == met)
         assert int(ov["n_alarms"]) == sum_alarms

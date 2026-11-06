@@ -2,8 +2,9 @@
 
 La classe base Agent esegue ciò che gli agenti condividono: selezione dell'esito per
 partita, ripiego sulla data, validazioni e sola lettura degli input. Ogni sottoclasse
-ridefinisce soltanto la regola di staking, cioè la frazione di capitale per gli esiti
-selezionati. Il bankroll non entra in questo modulo: floor, puntata obbligatoria e
+ridefinisce la regola di staking, cioè la frazione di capitale per gli esiti selezionati,
+e può ridefinire l'esito candidato di ogni partita (candidate_outcomes, per default quello
+a EV stimato massimo; shk.kelly.outcome_rules per le altre regole del lavoratore). Il bankroll non entra in questo modulo: floor, puntata obbligatoria e
 rovina sono responsabilità dell'ambiente.
 
 Codifica degli esiti: 0 = H, 1 = D, 2 = A; NO_BET (-1) indica nessuna puntata volontaria.
@@ -23,17 +24,18 @@ from shk.kelly.staking import kelly_staking
 # Codice dell'esito per le partite senza puntata volontaria
 NO_BET: Final[int] = -1
 
-# Moltiplicatori di Kelly degli agenti A (Kelly pieno) e B (Kelly frazionario)
+# Moltiplicatori di Kelly degli agenti A (Kelly pieno) e B_0.25 (quarto di Kelly)
 AGENT_A_LAMBDA: Final[float] = 1.0
-AGENT_B_LAMBDAS: Final[tuple[float, ...]] = (0.25, 0.10)
+AGENT_B_LAMBDA: Final[float] = 0.25
 
 # Numero di esiti del mercato 1X2 e tolleranza sulla somma delle probabilità di riga
 _N_OUTCOMES: Final[int] = 3
 _ROW_SUM_TOLERANCE: Final[float] = 1e-9
 
-# Membri di Agent che una sottoclasse può ridefinire (observe_results dagli agenti con stato)
+# Membri di Agent che una sottoclasse può ridefinire (observe_results dagli agenti con stato,
+# candidate_outcomes dalle regole di scelta dell'esito del lavoratore)
 _OVERRIDABLE_MEMBERS: Final[frozenset[str]] = frozenset(
-    {"__init__", "stake_fractions", "observe_results"}
+    {"__init__", "stake_fractions", "observe_results", "candidate_outcomes"}
 )
 
 
@@ -342,6 +344,39 @@ class AgentDecision:
         object.__setattr__(self, "fallback_outcome", int(self.fallback_outcome))
 
 
+def _validate_candidates(result: object, n_matches: int) -> np.ndarray:
+    """Valida l'uscita di candidate_outcomes e la restituisce come array int64.
+
+    Parametri
+    ---------
+    result : object
+        Valore restituito da candidate_outcomes.
+    n_matches : int
+        Numero di partite della data, cioè la lunghezza attesa dell'uscita.
+
+    Restituisce
+    -----------
+    np.ndarray
+        Array int64 (n,) degli esiti candidati, in 0..2.
+
+    Solleva
+    -------
+    TypeError
+        Se result non è un np.ndarray o non ha dtype intero.
+    ValueError
+        Se result non ha forma (n,) o contiene valori fuori da 0..2.
+    """
+    if not isinstance(result, np.ndarray):
+        raise TypeError(f"candidate_outcomes must return a numpy.ndarray, got {type(result).__name__}")
+    if not np.issubdtype(result.dtype, np.integer):
+        raise TypeError(f"candidate_outcomes must return an integer array, got dtype {result.dtype}")
+    if result.shape != (n_matches,):
+        raise ValueError(f"candidate_outcomes must return shape ({n_matches},), got {result.shape}")
+    if np.any((result < 0) | (result >= _N_OUTCOMES)):
+        raise ValueError("candidate_outcomes must return outcomes in 0..2")
+    return np.array(result, dtype=np.int64)
+
+
 def _validate_stake_output(result: object, n_selected: int) -> np.ndarray:
     """Valida l'uscita di stake_fractions e la restituisce come array float64.
 
@@ -383,8 +418,8 @@ class Agent(abc.ABC):
     """Classe base astratta degli agenti di scommessa.
 
     La base esegue in decide la selezione dell'esito, le validazioni e il ripiego;
-    una sottoclasse può ridefinire soltanto __init__, stake_fractions e observe_results
-    (canale degli esiti delle date regolate). Ogni altra ridefinizione di un metodo
+    una sottoclasse può ridefinire soltanto __init__, stake_fractions, observe_results
+    (canale degli esiti delle date regolate) e candidate_outcomes (esito candidato). Ogni altra ridefinizione di un metodo
     o di una proprietà di Agent, anche tramite un mixin, solleva TypeError alla
     definizione della sottoclasse.
 
@@ -413,7 +448,8 @@ class Agent(abc.ABC):
         -------
         TypeError
             Se la sottoclasse, direttamente o tramite un'altra base, ridefinisce un metodo o
-            una proprietà di Agent diversi da __init__, stake_fractions e observe_results.
+            una proprietà di Agent diversi da __init__, stake_fractions, observe_results e
+            candidate_outcomes.
         """
         super().__init_subclass__(**kwargs)
         protected_kinds = (FunctionType, property, classmethod, staticmethod)
@@ -423,7 +459,7 @@ class Agent(abc.ABC):
             if inspect.getattr_static(cls, member_name) is not member:
                 raise TypeError(
                     f"{cls.__name__} must not override Agent.{member_name}; "
-                    "only __init__, stake_fractions and observe_results may be overridden"
+                    "only __init__, stake_fractions, observe_results and candidate_outcomes may be overridden"
                 )
 
     def __init__(self, name: str) -> None:
@@ -456,8 +492,9 @@ class Agent(abc.ABC):
         """Calcola la decisione dell'agente per le partite di una data.
 
         Passi, nell'ordine:
-        1. per ogni partita, l'esito con EV stimato massimo (np.argmax, parità nell'ordine
-           H, D, A), selezionato solo se il suo EV è > 0;
+        1. per ogni partita, l'esito candidato di candidate_outcomes (per default quello
+           con EV stimato massimo, np.argmax, parità nell'ordine H, D, A), selezionato solo
+           se il suo EV è > 0;
         2. stake_fractions(view, p_hat, b) sui soli esiti selezionati, con p_hat e
            b = o - 1 di forma (k,) non scrivibili, anche con k = 0;
         3. validazione dell'uscita; frazione nulla sulle partite non selezionate;
@@ -477,11 +514,13 @@ class Agent(abc.ABC):
         Solleva
         -------
         TypeError
-            Se view non è un DateView, o se stake_fractions restituisce un oggetto che non
-            è un np.ndarray di dtype floating.
+            Se view non è un DateView, se stake_fractions restituisce un oggetto che non
+            è un np.ndarray di dtype floating, o se candidate_outcomes non restituisce un
+            np.ndarray intero.
         ValueError
             Se stake_fractions restituisce una forma diversa da (k,) o valori non finiti,
-            negativi o >= 1, oppure se scrive su un array non scrivibile.
+            negativi o >= 1, se candidate_outcomes restituisce una forma diversa da (n,) o
+            esiti fuori da 0..2, oppure se scrive su un array non scrivibile.
         """
         if not isinstance(view, DateView):
             raise TypeError(f"view must be a DateView, got {type(view).__name__}")
@@ -489,8 +528,8 @@ class Agent(abc.ABC):
         ev = estimated_expected_values(view.probs, view.odds)
         n_matches = ev.shape[0]
 
-        # 1. Esito con EV stimato massimo per partita, selezionato solo se EV > 0
-        best_outcomes = np.argmax(ev, axis=1)
+        # 1. Esito candidato per partita, selezionato solo se il suo EV stimato è > 0
+        best_outcomes = _validate_candidates(self.candidate_outcomes(view), n_matches)
         best_ev = ev[np.arange(n_matches), best_outcomes]
         selected_rows = np.flatnonzero(best_ev > 0.0)
         selected_outcomes = best_outcomes[selected_rows]
@@ -516,6 +555,24 @@ class Agent(abc.ABC):
             fallback_match=flat_index // _N_OUTCOMES,
             fallback_outcome=flat_index % _N_OUTCOMES,
         )
+
+    def candidate_outcomes(self, view: DateView) -> np.ndarray:
+        """Esito candidato di ogni partita della data; per default quello con EV stimato massimo.
+
+        decide lo seleziona solo se il suo EV stimato è > 0. Una sottoclasse lo ridefinisce
+        per un'altra regola di scelta dell'esito (shk.kelly.outcome_rules).
+
+        Parametri
+        ---------
+        view : DateView
+            Vista in sola lettura delle partite della data.
+
+        Restituisce
+        -----------
+        np.ndarray
+            Array intero (n,) degli esiti candidati, in 0..2.
+        """
+        return np.argmax(estimated_expected_values(view.probs, view.odds), axis=1)
 
     def observe_results(self, results: DateResults) -> None:
         """Riceve gli esiti di una data già regolata; per default non fa nulla.
@@ -556,8 +613,7 @@ class Agent(abc.ABC):
 class FractionalKellyAgent(Agent):
     """Agente a Kelly frazionario: frazione = kelly_staking(p_hat, b, lam).
 
-    L'agente A usa lam = AGENT_A_LAMBDA (1.0), gli agenti B i valori di AGENT_B_LAMBDAS
-    (0.25 e 0.10). Con lam = 1 e p_hat = 1 la frazione vale 1 e decide solleva ValueError.
+    L'agente A usa lam = AGENT_A_LAMBDA (1.0), l'agente B_0.25 lam = AGENT_B_LAMBDA (0.25). Con lam = 1 e p_hat = 1 la frazione vale 1 e decide solleva ValueError.
 
     Parametri
     ---------
@@ -609,7 +665,7 @@ class FractionalKellyAgent(Agent):
         """Calcola le frazioni con kelly_staking, un esito selezionato alla volta.
 
         kelly_staking accetta b solo scalare (math.isfinite(b)), quindi la chiamata avviene
-        elemento per elemento, come in select_baseline_d_bets.
+        elemento per elemento.
 
         Parametri
         ---------
@@ -630,43 +686,3 @@ class FractionalKellyAgent(Agent):
         for i in range(n_selected):
             fractions[i] = kelly_staking(float(p_hat[i]), float(b[i]), lam=self._lam)
         return fractions
-
-
-class MinimumStakeAgent(Agent):
-    """Agente E: nessuna puntata volontaria, frazioni tutte nulle.
-
-    La puntata minima dell'agente verrà dal ripiego obbligatorio dell'ambiente.
-
-    Parametri
-    ---------
-    name : str
-        Nome non vuoto dell'agente.
-
-    Solleva
-    -------
-    TypeError
-        Se name non è una stringa.
-    ValueError
-        Se name è la stringa vuota.
-    """
-
-    def stake_fractions(
-        self, view: DateView, p_hat: np.ndarray, b: np.ndarray
-    ) -> np.ndarray:
-        """Restituisce frazioni nulle per tutti gli esiti selezionati.
-
-        Parametri
-        ---------
-        view : DateView
-            Vista in sola lettura delle partite della data (non usata dalla regola).
-        p_hat : np.ndarray
-            Array float64 (k,) delle probabilità stimate degli esiti selezionati.
-        b : np.ndarray
-            Array float64 (k,) delle quote nette degli esiti selezionati (non usate).
-
-        Restituisce
-        -----------
-        np.ndarray
-            Array float64 (k,) di zeri.
-        """
-        return np.zeros(p_hat.shape[0], dtype=np.float64)
