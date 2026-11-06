@@ -20,6 +20,8 @@ import argparse
 import json
 import os
 import sys
+import threading
+from concurrent.futures import ThreadPoolExecutor
 from datetime import datetime, timezone
 from pathlib import Path
 
@@ -48,6 +50,9 @@ def main(argv: list[str]) -> int:
     p.add_argument("--samples", type=int, default=5)
     p.add_argument("--model", default=DEFAULT_MODEL)
     p.add_argument("--mock", action="store_true")
+    p.add_argument("--workers", type=int, default=8, help="richieste in parallelo")
+    p.add_argument("--retrospective", action="store_true",
+                   help="partite già giocate: la storia può contenere partite successive, il prompt usa solo quelle anteriori")
     args = p.parse_args(argv)
     key = os.environ.get("DEEPSEEK_API_KEY", "")
     if not args.mock and not key:
@@ -62,7 +67,7 @@ def main(argv: list[str]) -> int:
     unknown = (set(fixtures["HomeTeam"]) | set(fixtures["AwayTeam"])) - teams
     if unknown:
         raise ValueError(f"Squadre non trovate nella storia della stagione: {sorted(unknown)}")
-    if (history["Date"] >= fixtures["Date"].min()).any():
+    if not args.retrospective and (history["Date"] >= fixtures["Date"].min()).any():
         raise ValueError("La storia contiene partite dalla data della prima partita in poi")
 
     out_dir = Path(args.fixtures).parent
@@ -74,29 +79,47 @@ def main(argv: list[str]) -> int:
             r = json.loads(line)
             done[(r["home"], r["away"], r["sample"])] = r
 
+    prompts = {(m["HomeTeam"], m["AwayTeam"]): build_prompt(history, m) for _, m in fixtures.iterrows()}
+    todo = [(m, k) for _, m in fixtures.iterrows() for k in range(1, args.samples + 1)
+            if (m["HomeTeam"], m["AwayTeam"], k) not in done]
+    lock = threading.Lock()
+
+    def request(m: pd.Series, k: int) -> None:
+        ask = mock_predictor(k) if args.mock else deepseek_predictor(key, args.model, 1.0)
+        asked_at = datetime.now(timezone.utc).isoformat(timespec="seconds")
+        prompt = prompts[(m["HomeTeam"], m["AwayTeam"])]
+        for attempt in range(3):  # una risposta vuota o senza JSON si richiede, al massimo 3 volte
+            raw = ask(prompt)
+            try:
+                probs_k = parse_probabilities(raw).tolist()
+                break
+            except (ValueError, KeyError):
+                if attempt == 2:
+                    raise
+        rec = {"date": str(m["Date"].date()), "time_uk": m["Time"], "home": m["HomeTeam"],
+               "away": m["AwayTeam"], "sample": k, "model": tag, "asked_at_utc": asked_at,
+               "prompt": prompt, "raw": raw, "p": probs_k}
+        with lock:
+            f.write(json.dumps(rec, ensure_ascii=False) + "\n")
+            f.flush()
+            done[(m["HomeTeam"], m["AwayTeam"], k)] = rec
+            if len(done) % 50 == 0:
+                print(f"{len(done)} risposte", flush=True)
+
+    with open(jsonl, "a", encoding="utf-8") as f, ThreadPoolExecutor(max_workers=args.workers) as pool:
+        for fut in [pool.submit(request, m, k) for m, k in todo]:
+            fut.result()
+
     rows = []
-    with open(jsonl, "a", encoding="utf-8") as f:
-        for _, m in fixtures.iterrows():
-            prompt = build_prompt(history, m)
-            probs, last_time = [], ""
-            for k in range(1, args.samples + 1):
-                rec = done.get((m["HomeTeam"], m["AwayTeam"], k))
-                if rec is None:
-                    ask = mock_predictor(k) if args.mock else deepseek_predictor(key, args.model, 1.0)
-                    asked_at = datetime.now(timezone.utc).isoformat(timespec="seconds")
-                    raw = ask(prompt)
-                    rec = {"date": str(m["Date"].date()), "time_uk": m["Time"], "home": m["HomeTeam"],
-                           "away": m["AwayTeam"], "sample": k, "model": tag, "asked_at_utc": asked_at,
-                           "prompt": prompt, "raw": raw, "p": parse_probabilities(raw).tolist()}
-                    f.write(json.dumps(rec, ensure_ascii=False) + "\n")
-                    f.flush()
-                probs.append(rec["p"])
-                last_time = max(last_time, rec["asked_at_utc"])
-            mean = np.mean(probs, axis=0)
-            rows.append({"Date": m["Date"].date(), "Time": m["Time"], "HomeTeam": m["HomeTeam"],
-                         "AwayTeam": m["AwayTeam"], "p_home": round(mean[0], 4), "p_draw": round(mean[1], 4),
-                         "p_away": round(mean[2], 4), "sd_p_home": round(float(np.std(probs, axis=0)[0]), 4),
-                         "n_samples": len(probs), "last_asked_at_utc": last_time})
+    for _, m in fixtures.iterrows():
+        recs = [done[(m["HomeTeam"], m["AwayTeam"], k)] for k in range(1, args.samples + 1)]
+        probs = [r["p"] for r in recs]
+        last_time = max(r["asked_at_utc"] for r in recs)
+        mean = np.mean(probs, axis=0)
+        rows.append({"Date": m["Date"].date(), "Time": m["Time"], "HomeTeam": m["HomeTeam"],
+                     "AwayTeam": m["AwayTeam"], "p_home": round(mean[0], 4), "p_draw": round(mean[1], 4),
+                     "p_away": round(mean[2], 4), "sd_p_home": round(float(np.std(probs, axis=0)[0]), 4),
+                     "n_samples": len(probs), "last_asked_at_utc": last_time})
     out = pd.DataFrame(rows)
     out.to_csv(out_dir / f"predictions_{tag}.csv", index=False)
     print(out.to_string(index=False))
