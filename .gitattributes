@@ -1,0 +1,3 @@
+# I CSV di results/ sono versionati byte per byte (terminatore di riga CRLF scritto dagli script):
+# senza questa riga Git su Windows li converte in LF e gli SHA256 del manifesto non tornano su Linux.
+results/*.csv -text

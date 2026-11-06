@@ -20,6 +20,8 @@ from typing import Final
 import numpy as np
 
 N_STORY_TASKS: Final[int] = 5
+# Seed radice della calibrazione degli agenti e delle soglie dello schema (decisione di progetto)
+SEED_S9: Final[int] = 20261013
 
 
 def task_sequence(seed: int | np.random.SeedSequence, position: int,

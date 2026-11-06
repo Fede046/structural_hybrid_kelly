@@ -19,9 +19,9 @@ from matplotlib.patches import Patch
 from matplotlib.ticker import MaxNLocator, ScalarFormatter
 
 from shk.market.divergence import REFERENCE_EDGE
-from shk.thesis.labels import AGENTS, CONFIGS, METHODS, METRICS, SERIES, comparison
+from shk.thesis.labels import AGENTS, CONFIGS, SERIES
 from shk.thesis.sources import REPO_ROOT, read_versioned_csv
-from shk.thesis.tables import CONFIG_ORDER, PREMATCH_SOURCES, one, select
+from shk.thesis.tables import PREMATCH_SOURCES, one, select
 
 GENERATED_BY: Final[str] = "scripts/build_thesis_figures.py"
 WIDTH: Final[float] = 6.3
@@ -171,20 +171,18 @@ def figure_g_hat(root: Path | str = REPO_ROOT) -> Figure:
 
 
 def figure_alarms(root: Path | str = REPO_ROOT) -> Figure:
-    """Allarmi per stagione di validazione di Z-test, ADWIN e Page-Hinkley."""
+    """Allarmi per stagione di validazione dello Z-test nominale e calibrato."""
     df = read_versioned_csv("us_c5_2_daily_z_test", root)
     summary = select(df, 'row_type == "summary"')
     seasons = list(dict.fromkeys(summary.season.tolist()))
     methods = (('method == "z_nominal"', "Z nominale"),
-               ('method == "z_block_bootstrap" and block_length == 20.0', "Z calibrato, L = 20"),
-               ('method == "page_hinkley"', "Page-Hinkley"),
-               ('method == "adwin"', "ADWIN"))
+               ('method == "z_block_bootstrap" and block_length == 20.0', "Z calibrato, L = 20"))
     fig = Figure(figsize=(WIDTH, 2.6), layout="constrained")
     ax = fig.subplots()
-    width = 0.2
+    width = 0.35
     for k, (query, name) in enumerate(methods):
         part = select(summary, query)
-        x = [seasons.index(s) + (k - 1.5) * width for s in part.season]
+        x = [seasons.index(s) + (k - 0.5) * width for s in part.season]
         ax.bar(x, part.n_alarms, width=width, color=PALETTE[k], label=name)
     expected = one(df, 'row_type == "overall" and method == "z_nominal"').expected_alarms
     ax.axhline(expected, color="0.3", ls="--", lw=1, label="attesi sotto $H_0$")
@@ -288,84 +286,6 @@ def figure_module2(root: Path | str = REPO_ROOT) -> Figure:
     return fig
 
 
-def _forest(ax: object, rows: list[tuple[str, float, float, float]], offset: float, color: str, label: str) -> None:
-    y = [i + offset for i in range(len(rows))]
-    ax.hlines(y, [r[2] for r in rows], [r[3] for r in rows], color=color, lw=1.5)
-    ax.plot([r[1] for r in rows], y, "o", color=color, label=label)
-
-
-def figure_comparisons(root: Path | str = REPO_ROOT) -> Figure:
-    """Confronti sulla log-ricchezza finale, validazione e test 2023-24, per configurazione."""
-    val = select(read_versioned_csv("us_c8_4_comparisons", root), 'row_type == "comparison" and metric == "final_log_wealth"')
-    test = select(read_versioned_csv("us_c8_5_test_run", root), 'row_type == "comparison" and metric == "final_log_wealth"')
-    fig = Figure(figsize=(WIDTH, 3.0), layout="constrained")
-    axes = fig.subplots(1, 2, sharey=True)
-    for ax, config in zip(axes, CONFIG_ORDER[:2]):
-        v = select(val, f'config == "{config}"')
-        codes = v.comparison.tolist()
-        rows_v = [(c, r.estimate, r.ci_block_low, r.ci_block_high) for c, (_, r) in zip(codes, v.iterrows())]
-        rows_t = []
-        for c in codes:
-            t = one(test, f'config == "{config}" and comparison == "{c}"')
-            rows_t.append((c, t.estimate, t.ci_low, t.ci_high))
-        _forest(ax, rows_v, -0.15, PALETTE[0], "validazione")
-        _forest(ax, rows_t, 0.15, PALETTE[1], "test 2023-24")
-        ax.axvline(0.0, color="0.3", lw=0.8)
-        ax.set_yticks(range(len(codes)), [comparison(c).figure for c in codes])
-        ax.set(title=f"floor {CONFIGS[config].figure}", xlabel="differenza di log-ricchezza finale")
-    axes[0].invert_yaxis()
-    axes[0].legend(loc="lower right")
-    _comma_axes(*axes, x=True, y=False)
-    return fig
-
-
-def figure_robustness(root: Path | str = REPO_ROOT) -> Figure:
-    """Τ_b fra Elo e Dixon-Coles, confronti coi due Moduli 1, ĝ per metodo di de-vigging."""
-    rob = read_versioned_csv("us_c9_2_robustness", root)
-    dev = read_versioned_csv("us_c9_3_devig_sensitivity", root)
-    fig = Figure(figsize=(WIDTH, 7.6), layout="constrained")
-    ax_a, ax_b, ax_c = fig.subplots(3, 1, height_ratios=(1, 1.1, 0.9))
-    tau = select(rob, 'row_type == "tau" and config == "gbp_0.01"')
-    metrics = list(dict.fromkeys(tau.metric.tolist()))
-    for k, (dataset, name, offset) in enumerate((("validation", "validazione", -0.12), ("test", "test 2023-24", 0.12))):
-        part = select(tau, f'dataset == "{dataset}"')
-        x = [metrics.index(m) + offset for m in part.metric]
-        ax_a.vlines(x, part.ci_low, part.ci_high, color=PALETTE[k], lw=1.2)
-        ax_a.plot(x, part.tau, "o", color=PALETTE[k], label=name)
-    ax_a.set_xticks(range(len(metrics)), [METRICS[m].figure for m in metrics], rotation=20, ha="right")
-    ax_a.set(title=r"(a) $\tau_b$ fra i ranking con Elo e con Dixon-Coles, floor £0,01", ylabel=r"$\tau_b$")
-    ax_a.legend(loc="lower left")
-    cmp_ = select(rob, 'row_type == "comparison" and dataset == "validation" and config == "gbp_0.01" '
-                       'and metric == "final_log_wealth"')
-    codes = cmp_.comparison.tolist()
-    _forest(ax_b, [(c, r.estimate_elo, r.ci_low_elo, r.ci_high_elo) for c, (_, r) in zip(codes, cmp_.iterrows())],
-            -0.15, PALETTE[0], "Elo")
-    _forest(ax_b, [(c, r.estimate_dc, r.ci_low_dc, r.ci_high_dc) for c, (_, r) in zip(codes, cmp_.iterrows())],
-            0.15, PALETTE[2], "Dixon-Coles")
-    ax_b.axvline(0.0, color="0.3", lw=0.8)
-    ax_b.set_yticks(range(len(codes)), [comparison(c).figure for c in codes])
-    ax_b.invert_yaxis()
-    ax_b.set(title="(b) confronti in validazione, floor £0,01", xlabel="differenza di log-ricchezza finale")
-    ax_b.legend(loc="lower right")
-    g = select(dev, 'row_type == "g_hat" and (season == "pooled" or season == "2023-24")')
-    methods = list(dict.fromkeys(g.method.tolist()))
-    series_sets = (("validation", "b365_prematch"), ("validation", "pinnacle_closing"),
-                   ("test", "b365_prematch"), ("test", "pinnacle_closing"))
-    for k, (dataset, series) in enumerate(series_sets):
-        part = select(g, f'dataset == "{dataset}" and series == "{series}"')
-        x = [methods.index(m) + (k - 1.5) * 0.15 for m in part.method]
-        ax_c.vlines(x, part.ci_low, part.ci_high, color=PALETTE[k], lw=1.2)
-        name = f"{SERIES[series].figure}, {'validazione' if dataset == 'validation' else 'test 2023-24'}"
-        ax_c.plot(x, part.estimate, "o", color=PALETTE[k], label=name)
-    ax_c.axhline(0.0, color="0.3", lw=0.8)
-    ax_c.set_xticks(range(len(methods)), [METHODS[m].figure for m in methods])
-    ax_c.set(title=r"(c) $\hat g$ per metodo di de-vigging", ylabel=r"$\hat g$ (nat per partita)")
-    ax_c.legend(loc="upper center", bbox_to_anchor=(0.5, -0.12), ncols=2)
-    _comma_axes(ax_a, ax_c)
-    _comma_axes(ax_b, x=True, y=False)
-    return fig
-
-
 FIGURES: Final[dict[str, Callable[..., Figure]]] = {
     "tesi_falso_rigetto": figure_false_rejection,
     "tesi_finestra_dati": figure_data_window,
@@ -375,8 +295,6 @@ FIGURES: Final[dict[str, Callable[..., Figure]]] = {
     "tesi_floor": figure_floor,
     "tesi_eteroschedasticita": figure_heteroskedasticity,
     "tesi_modulo2": figure_module2,
-    "tesi_confronti": figure_comparisons,
-    "tesi_robustezza": figure_robustness,
 }
 
 

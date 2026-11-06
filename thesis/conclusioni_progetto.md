@@ -7,11 +7,13 @@ Formule, parametri e seed sono descritti per esteso in `thesis/metodi_implementa
 ## 1. Obiettivo e impianto
 
 La proposta di partenza è un agente gerarchico. Su di essa si costruisce il resto:
-- **Modulo 1, il lavoratore**: prevede le probabilità 1X2 di ogni partita.
-- **Modulo 2, il supervisore**: osserva come cambia l'errore del Modulo 1 nel tempo. Con la decomposizione di Oaxaca-Blinder separa la parte del cambiamento dovuta a una diversa composizione delle partite (compositiva) da quella dovuta a un cambiamento della relazione fra covariate ed errore (strutturale).
-- **Modulo 3, il ricalibratore**: traduce la diagnosi del supervisore nella frazione di Kelly da puntare.
+- **Modulo 1, il lavoratore**: prevede le probabilità 1X2 di ogni partita e propone la puntata.
+- **Modulo 2, il supervisore**: osserva come cambia l'errore del Modulo 1 nel tempo e, con l'ANOVA sui residui, dà l'allarme.
+- **Modulo 3, il ricalibratore**: con la decomposizione di Oaxaca-Blinder separa la parte del cambiamento dovuta a una diversa composizione delle partite (compositiva, errore nei dati) da quella dovuta a un cambiamento della relazione fra covariate ed errore (strutturale), e ne ricava la frazione di Kelly da puntare.
 
-L'agente è confrontato, sulle stesse partite e con le stesse quote, con le regole di puntata classiche e con un supervisore basato su drift detector standard. Così si misura che cosa aggiunge ciascun pezzo: è un'ablazione dell'architettura a più componenti. L'obiettivo misurato è il profilo di rischio e di crescita del bankroll, non soltanto il rendimento.
+I nomi seguono lo schema del relatore. Nel codice, e nella sezione 3.4, «Modulo 2» indica la decomposizione di Oaxaca-Blinder. Lo schema completo è l'agente C3 (§3.5 e `thesis/agenti_e_architettura.md` §3.3). La sintesi per il relatore è in `thesis/schema_relatore.md`.
+
+Lo schema è confrontato, sulle stesse partite e con le stesse quote, con lo stesso lavoratore senza supervisore: Kelly pieno (A) e quarto di Kelly (B_0.25), che è anche la puntata dello schema senza allarme. Così si misura che cosa aggiunge il supervisore. L'obiettivo misurato è il profilo di rischio e di crescita del bankroll, non soltanto il rendimento. Gli agenti di confronto nati dalle note di progetto (C0, C1, C2, D, E, B_0.10) sono sul branch `confronti-controllo`.
 
 ## 2. Dati e protocollo
 
@@ -24,9 +26,9 @@ L'agente è confrontato, sulle stesse partite e con le stesse quote, con le rego
   - Il test è rimasto bloccato nel codice finché i parametri non sono stati congelati.
 - **Anti-leakage per costruzione.** Per prevedere una partita si usano solo le partite con data strettamente anteriore, e della partita solo identificativi e quote pre-partita. Un test automatico lo verifica, anche sul 2023-24 (0 violazioni su 380 partite).
 - **Protocollo anti-overfitting.**
-  - Tutti i parametri liberi degli agenti si calibrano sulle sole tre stagioni di training, con un unico obiettivo fissato prima: la log-ricchezza finale media nella configurazione principale.
+  - Tutti i parametri liberi si calibrano sulle sole tre stagioni di training.
   - Poi si congelano in un file (`config/frozen_params.toml`), che viene committato. Solo dopo si sblocca il test, con un commit successivo.
-  - Il 2023-24 è stato eseguito una volta sola.
+  - Il 2023-24 è stato eseguito una volta sola. Lo schema del relatore è stato costruito dopo: sul 2023-24 è eseguito una volta, come risultato esplorativo (§4.9).
   - Con il secondo Modulo 1 (Dixon-Coles) la procedura è identica, con un proprio file congelato (`config/frozen_params_dc.toml`).
   - La validazione serve a stimare le prestazioni, non a scegliere parametri.
 
@@ -50,7 +52,7 @@ L'agente è confrontato, sulle stesse partite e con le stesse quote, con le rego
 - **Lo stimatore.** ĝ = media su tutte le partite di ln p̂(esito) − ln q(esito): positivo se il modello assegna all'esito realizzato più probabilità del mercato.
 - **Lo stesso test con qualunque modello.** Se ĝ è negativo, nessuna regola di puntata può creare un edge: si può solo perdere meno.
 
-### 3.4 Modulo 2: il supervisore
+### 3.4 Oaxaca-Blinder sui residui («Modulo 2» nel codice)
 - **Variabile osservata.** δ = ln p̂(esito) − ln q(esito) per partita: la stessa quantità di ĝ, partita per partita.
 - **Covariate**, tutte note prima della partita:
   - log-rapporto delle quote casa/trasferta;
@@ -60,39 +62,31 @@ L'agente è confrontato, sulle stesse partite e con le stesse quote, con le rego
   - Il differenziale Elo è stato escluso da una regola sulla collinearità (VIF ≤ 5) fissata prima di guardare i dati.
 - **I due gruppi, in un contesto sequenziale.** A ogni data di decisione si confrontano due finestre adiacenti di partite già giocate: le ultime W (gruppo recente) e le W precedenti (gruppo di riferimento).
   - Con meno di 2W partite disponibili il supervisore è inattivo.
-  - La finestra W ∈ {40, 80, 120, 190} è calibrata sul training.
+  - La finestra dello schema è W = 40, congelata dalla calibrazione sul training; le analisi diagnostiche usano anche W = 80, 120 e 190.
 - **Decomposizione.** Oaxaca-Blinder three-fold, implementata a mano con OLS via QR: differenza = compositiva + strutturale + interazione.
   - La quota strutturale π = |S| / (|C| + |S| + |I|) usa i valori assoluti, perché le componenti possono avere segni opposti.
   - Sono calcolate anche le two-fold con sei riferimenti, per misurare l'indeterminatezza della scelta del riferimento.
 - **Validazione dell'implementazione.** Su dati sintetici con componenti note, la decomposizione le recupera; la somma delle componenti coincide con la differenza totale entro l'errore di macchina.
-- **Allarme strutturale.** Scatta quando il degrado a composizione fissa, T = −S, supera una soglia calibrata col block bootstrap sotto l'ipotesi nulla.
-- **Supporto comune.** Una partita è "fuori supporto" se nella finestra di riferimento ci sono meno di 5 partite con caratteristiche simili; è il caso tipico delle neopromosse.
+- **Errore strutturale.** Si diagnostica quando il degrado a composizione fissa, T = −S, supera una soglia calibrata col block bootstrap sotto l'ipotesi nulla.
+- **Supporto comune.** Una partita è "fuori supporto" se nella finestra di riferimento ci sono meno di 5 partite con caratteristiche simili; è il caso tipico delle neopromosse (analisi diagnostica, §4.6).
 
-### 3.5 Modulo 3: dal supervisore alla frazione
-- **Formula.** La frazione ottima con stima rumorosa è λ* = E[c]/E[c²], con c = f̂/f* il rapporto fra frazione stimata e frazione vera.
-  - Rispetto alla forma 1/(1 + Var(c)), questa tiene conto che la frazione stimata è troncata a zero: non si punta quando l'EV stimato è negativo.
-- **La componente strutturale aumenta la varianza.** La varianza dell'errore di stima si ricava dalla dispersione di δ; una componente strutturale negativa la aumenta, e λ* si riduce.
-- **Regole comuni.**
-  - Se nella finestra recente il modello perde contro il mercato (media di δ ≤ 0), λ = 0.
-  - Se il supervisore è inattivo, λ = 0.25 (quarto di Kelly).
-- **Scelta della variante.** Fra tre varianti, quella usata è stata scelta su una verità sintetica, con λ* noto, prima di guardare i dati reali.
+### 3.5 Lo schema del relatore
+- **Allarme (supervisore).** Fra le ultime 40 partite e le 40 precedenti: ANOVA a una via sulla media di δ (conta solo se peggiora) e test di Brown-Forsythe sulla dispersione (conta solo se cresce). C3 dà l'allarme se basta uno dei due, C3_and se servono entrambi. Soglie calibrate sul training col block bootstrap, al più il 5% di falsi allarmi.
+- **Diagnosi (ricalibratore).** Con l'allarme, errore strutturale se T = −S supera la soglia, altrimenti errore di composizione.
+- **Puntata.** λ = 0.25 senza allarme, 0.1875 con errore di composizione, 0 con errore strutturale: finché dura l'allarme (C3, C3_and) o fino a fine stagione (C3_stop). La puntata è λ volte il Kelly pieno sull'esito scelto.
+- **Parametri.** W, κ e la soglia strutturale sono congelati; le sole quantità calibrate per lo schema sono le soglie dell'allarme.
+- **Variante con riferimento fisso (C3_ref, C3_ref_stop).** Le ultime 40 partite si confrontano con la stagione di calibrazione del modello invece che con le 40 precedenti, sia nell'allarme sia nella diagnosi; soglie calibrate sul training allo stesso modo. Scelta dopo aver visto le frequenze d'allarme sulla validazione (§4.7).
 
 ### 3.6 Agenti confrontati
 
 | Agente | Regola |
 |---|---|
-| A | Kelly pieno |
-| B_0.25, B_0.10 | Kelly frazionario fisso (quarto e decimo) |
-| C0 | quarto di Kelly: è l'agente C con il supervisore spento |
-| C1 | allarme binario: a ogni nuova accensione dell'allarme strutturale λ si moltiplica per κ |
-| C2_global | λ graduata dal Modulo 3 |
-| C2 | come C2_global, più l'astensione sulle partite fuori supporto |
-| D_ADWIN, D_PH | quarto di Kelly ridotto di κ a ogni allarme di un drift detector standard (ADWIN, Page-Hinkley) |
-| E | puntata minima permanente: punta solo quando l'ambiente lo obbliga |
+| A | Kelly pieno: il lavoratore da solo |
+| B_0.25 | Quarto di Kelly: il lavoratore senza supervisore |
+| C3, C3_stop, C3_and | Lo schema del relatore (§3.5) |
+| C3_ref, C3_ref_stop | Lo schema con il confronto con la stagione di calibrazione (§3.5) |
 
-- **Selezione e ripiego.** Tutti gli agenti scelgono per ogni partita l'esito con EV stimato massimo e puntano solo se l'EV è positivo. Il supervisore cambia solo le frazioni, mai le previsioni né la scelta dell'esito: così il confronto isola la regola di puntata.
-- **I detector sono parte della baseline D.** ADWIN e Page-Hinkley vengono dalla libreria river, non sono reimplementati, e i loro parametri sono calibrati come quelli dell'agente C.
-- **Ablazione.** C0 → C1 misura il valore del "rilevare"; C1 → C2 quello del "graduare"; C2 contro D misura il valore della decomposizione rispetto a un detector standard; C2 contro E dice se il framework serve.
+- **Selezione e ripiego.** Tutti gli agenti scelgono per ogni partita l'esito con EV stimato massimo e puntano solo se l'EV è positivo (le regole alternative del lavoratore sono in §4.7). Il supervisore cambia solo le frazioni, mai le previsioni né la scelta dell'esito: così il confronto isola la regola di puntata.
 
 ### 3.7 Ambiente di backtest
 - **Esecuzione appaiata.** Gli agenti girano sulla stessa sequenza di date, con le stesse previsioni, quote ed esiti.
@@ -105,13 +99,12 @@ L'agente è confrontato, sulle stesse partite e con le stesse quote, con le rego
 
 ### 3.8 Inferenza
 - **Il problema n = 1.** Una stagione è una sola traiettoria, autocorrelata e dipendente dal percorso.
+- **Il risultato principale è la stagione vera** (decisione del 2026-11-05, `results/us_c19_real_seasons.csv`): ognuna delle 19 stagioni di validazione giocata una volta, come in KellyBench; i confronti fra agenti sono appaiati stagione per stagione (stagioni meglio e peggio). Le stagioni ricostruite usano partite, quote e risultati veri, ma ripetono alcune giornate e ne saltano altre: alterano la sequenza nel tempo che il supervisore osserva, quindi servono solo a misurare l'incertezza.
 - **I seed.** Ogni seed è una stagione ricostruita per stationary bootstrap delle date: ogni data porta con sé tutte le sue partite.
   - La lunghezza media dei blocchi è scelta automaticamente con il metodo di Politis-White.
-  - 500 seed per stagione, da un'analisi di potenza sul training.
-- **Intervalli.** Bootstrap a due livelli: stagioni come cluster indipendenti e seed dentro la stagione.
-  - Con soli 19 cluster il percentile sottocopre; si usa quindi una correzione t per il numero di cluster, verificata con una simulazione di copertura.
-  - Sul 2023-24, una stagione sola, l'intervallo viene dai soli seed.
-- **Soglie calibrate dove i test nominali non valgono.** Per ANOVA, Z-test, Breusch-Pagan e allarme strutturale la soglia è calibrata col block bootstrap sotto l'ipotesi nulla. È lo stesso rimedio all'autocorrelazione applicato a tutti gli strumenti.
+  - 500 seed per stagione, numero congelato da un'analisi di potenza sul training.
+- **Intervalli.** Per ĝ, bootstrap a due livelli: stagioni come cluster indipendenti e serie ricampionata dentro la stagione; con soli 19 cluster si usa una correzione t per il numero di cluster.
+- **Soglie calibrate dove i test nominali non valgono.** Per ANOVA, Z-test, Breusch-Pagan e soglia strutturale la soglia è calibrata col block bootstrap sotto l'ipotesi nulla. È lo stesso rimedio all'autocorrelazione applicato a tutti gli strumenti.
 
 ## 4. Risultati
 
@@ -122,29 +115,30 @@ L'agente è confrontato, sulle stesse partite e con le stesse quote, con le rego
 - **Dixon-Coles.** Migliora la log-loss (0.9709 contro 0.9795), ma ĝ resta negativo (−0.0136).
 - **Robustezza del segno.** È lo stesso con i cinque metodi di de-vigging, pooled e sul test.
 
-Di conseguenza tutti gli agenti che puntano perdono in valore atteso, e la domanda corretta diventa quale regola limita meglio le perdite e il rischio.
+Di conseguenza tutti gli agenti che puntano perdono in valore atteso, e il supervisore può solo ridurre la perdita.
 
 ### 4.2 Autocorrelazione: l'ANOVA nominale non è utilizzabile sulle serie di errori
 - **F nominale.** Su serie AR(1) senza differenze fra i gruppi, rigetta falsamente il 3.7% a φ = 0 (atteso 5%), ma il 14.9%, 25.3% e 39.9% a φ = 0.3, 0.5, 0.7.
 - **Soglia calibrata.** Col block bootstrap della serie centrata riporta il tasso entro l'intervallo Monte Carlo [3.2%, 6.8%] con blocchi di 7 e 20 (3.9% e 5.6%), non con blocchi di 40 (8.1%). È un limite da dichiarare.
 
-### 4.3 Drift detector standard e Z-test
+### 4.3 Z-test per giornata
 Sulle 19 stagioni di validazione sono attesi 1.9 allarmi falsi per stagione:
 
 | Metodo | Allarmi |
 |---|---|
-| ADWIN, tarato sul training | 0 |
-| Page-Hinkley | 20 |
 | Z-test per matchday, soglia nominale | 53 |
 | Z-test per matchday, soglia calibrata (blocchi di 20 o 40) | 43 |
-
-I detector dicono quando qualcosa cambia, non quanto né di che tipo.
 
 ### 4.4 Eteroschedasticità: il segnale atteso non c'è
 - **Soglia nominale.** Breusch-Pagan e White rigettano in tutte le 19 stagioni, ma per costruzione: la varianza della log-loss dipende dall'incertezza della previsione.
 - **Soglia calibrata.** I rigetti scendono a 0–1. I test sulla varianza nel corso della stagione (Breusch-Pagan sul tempo, Goldfeld-Quandt, ARCH, varianza mobile) danno 0–3 rigetti su 19.
 
-Non c'è evidenza di una varianza che cresce durante la stagione oltre quella già presente nel training. Per questo l'allarme dell'agente si basa sulla componente strutturale di Oaxaca-Blinder e non su un test di eteroschedasticità.
+Non c'è evidenza di una varianza che cresce durante la stagione oltre quella già presente nel training. È il segnale su cui si basa l'allarme dello schema del relatore, che quindi scatta poco: circa 1,6 volte per stagione (§4.7).
+
+**L'allarme ANOVA funziona, il segnale è troppo piccolo** (`results/us_c12_anova_power.csv`):
+- sui dati reali l'allarme è acceso nel 4.8% delle date, il livello dei falsi allarmi (5%); con la log-loss al posto di δ nel 5.0%;
+- con un peggioramento inserito a metà stagione, le stagioni con allarme nelle 10 date successive passano dal 32% (nessun cambiamento) al 68% con la media peggiore di 0.10 e al 95% con 0.20; con la varianza ×2 al 53%;
+- con 40 partite contro 40 la media deve peggiorare di almeno 0.07–0.11 per essere vista, contro uno svantaggio medio del modello di circa 0.02.
 
 ### 4.5 Il floor rende possibile la rovina
 - **Senza floor.** La rovina è esattamente zero, sul calendario sintetico e su quello reale.
@@ -171,80 +165,94 @@ Non c'è evidenza di una varianza che cresce durante la stagione oltre quella gi
 
 Sui dati reali le due componenti non si separano dove la teoria lo prevede: è il risultato da discutere.
 
-### 4.7 Confronti fra agenti
-Differenze di log-ricchezza finale, configurazione £0.01:
+**Perché** (`results/us_c15_oaxaca_position.csv`):
+- le covariate spiegano lo 0.025 della varianza di δ (R² mediano per stagione), quindi la componente compositiva resta piccola per costruzione;
+- nelle finestre adiacenti «position» non si sovrappone fra A e B: la decomposizione estrapola e le componenti compositiva, strutturale e interazione hanno deviazione standard 0.117, 0.124 e 0.164 contro 0.049 del totale; senza «position» scendono a 0.014, 0.049 e 0.019;
+- togliendo «position» dallo schema le diagnosi strutturali scendono dal 51% al 42% delle giornate con allarme (dal 42% al 32% con il riferimento fisso), ma il capitale non migliora (per esempio C3_ref_stop dal 78% al 74% su 100 seed): la specificazione congelata resta;
+- scomponendo l'errore atteso E_q[δ] = −KL(q ‖ p̂) invece di δ realizzato (`results/us_c16_oaxaca_expected.csv`) le covariate spiegano il 41% invece del 2.5%, e la diagnosi diventa coerente: 5% di diagnosi strutturali fra finestre adiacenti, 47% rispetto alla stagione di calibrazione. Il capitale resta simile (C3_ref 62% contro 61%, C3_ref_stop 76% contro 78%).
 
-| Confronto | Validazione, 19 stagioni: stima [IC 95%] | Test 2023-24 |
-|---|---|---|
-| C2 − D_ADWIN | +0.321 [0.187; 0.455] | +0.789 |
-| C2 − D_PH | **−0.070** [−0.094; −0.045] | −0.163 |
-| C2 − E | **−0.243** [−0.342; −0.144] | −0.596 |
-| C1 − C0 (rilevare) | +0.298 [0.189; 0.407] | +0.669 |
-| C2 − C1 (graduare) | +0.023 [−0.005; 0.051] | +0.120 |
+### 4.7 Lo schema del relatore contro il lavoratore senza supervisore
+Stagioni vere di validazione, configurazione £0.01 (`results/us_c19_real_seasons.csv`). Capitale tipico = exp(media sulle 19 stagioni di ln W_T); «meglio / peggio» rispetto a B_0.25, stagione per stagione. Per confronto, la somma sulle stagioni della mediana di ln W_T sulle 500 stagioni ricostruite (`results/us_c10_scheme_validation_summary.csv`, `results/us_c13_scheme_reference_summary.csv`).
 
-- **Rispetto al Kelly frazionario fisso:** l'agente riduce molto le perdite (C1 − C0).
-- **Rilevare e graduare:** quasi tutto il beneficio viene dal rilevare il degrado; il graduare aggiunge poco. A £0.01 è significativo solo sul test; in validazione lo è con il floor da £1 (+0.105, IC [0.043; 0.168]).
-- **Contro la baseline con ADWIN:** C2 vince, ma ADWIN non dà allarmi e quella baseline coincide col quarto di Kelly.
-- **Contro Page-Hinkley e la puntata minima:** C2 perde sia contro la baseline con Page-Hinkley sia contro E. Con un edge negativo, la politica migliore è puntare il meno possibile.
+| Agente | Capitale tipico, stagioni vere | Meglio / peggio | Accensioni per stagione | Date con λ = 0 | Somma delle mediane, ricostruite |
+|---|---|---|---|---|---|
+| A, Kelly pieno | 0.2% | 0 / 19 | – | – | −116.89 |
+| B_0.25, quarto di Kelly | 57% | – | – | – | −10.87 |
+| C3 | 60% | 10 / 6 | 1.6 | 2% | −10.62 |
+| C3_stop | 71% | 12 / 4 | 1.6 | 34% | −7.51 |
+| C3_and | 56% | 6 / 7 | 1.3 | 1% | −10.67 |
+| C3_ref | 62% | 14 / 5 | 4.8 | 13% | −9.19 |
+| C3_ref_stop | 71% | 14 / 5 | 4.8 | 59% | −4.50 |
+
+- **C3 contro B_0.25:** migliore in 10 stagioni vere su 19, peggiore in 6 (sulle ricostruite, in mediana delle differenze appaiate, mai peggiore e migliore in 5).
+- **C3_stop contro B_0.25:** migliore in 12, peggiore in 4 (ricostruite: mai peggiore, migliore in 9).
+- **C3_and:** quasi come C3; migliore di B_0.25 in 6 stagioni vere, peggiore in 7 (ricostruite: migliore in 8).
+- **C3_ref e C3_ref_stop contro B_0.25:** migliori in 14 stagioni vere su 19, peggiori in 5 (ricostruite: migliori in 15, peggiori in 2). Il guadagno non si concentra nelle stagioni in cui il modello è più vecchio: lo fa solo sulle ricostruite, e solo per C3_ref.
+- **Le versioni ferme fino a fine stagione guadagnano meno sulle stagioni vere** (C3_ref_stop 71% contro 79% sulle ricostruite): il ricampionamento crea più spesso periodi di errori anomali che accendono l'allarme.
+- **Lettura.** Con le finestre adiacenti lo schema interviene poco: fra due periodi vicini il segnale è sotto il rumore (§4.4). Il peggioramento c'è, ma è lento e si accumula fra le stagioni: δ diventa più disperso e peggiora in media man mano che il modello invecchia, mentre la log-loss non peggiora, cioè è il mercato a superare il modello. Il confronto con la stagione di calibrazione lo vede e fa puntare meno nelle stagioni in cui il modello è vecchio (2016-20 con il fit 2010-11). Con un vantaggio negativo ogni riduzione della puntata riduce comunque la perdita: C3_ref_stop non punta nel 64% delle date. La variante è stata scelta dopo aver visto la validazione; sul 2023-24 è stata eseguita una volta, in modo esplorativo (§4.9).
+
+**Il lavoratore sceglie l'esito.** Come chiesto dal relatore, il lavoratore può anche scegliere l'esito con tre regole: EV massimo (R1, quella usata finora), maggior vantaggio sul mercato (R2), esito più probabile (R3). Ogni regola è provata da sola, con il freno fisso λ = 0,25 e con lo schema C3 (`thesis/agenti_e_architettura.md` §4, `results/us_c11_worker_rules_summary.csv`).
+- R3 perde meno di R1 in 13 stagioni su 19, perché punta su circa metà delle partite; R2 è come R1, un po' peggio.
+- Per ogni regola lo schema è migliore del freno fisso in 10–11 stagioni vere su 19 e peggiore in 5–6 (sulle ricostruite mai peggiore, migliore in 5–6).
+- Nessuna regola dà un guadagno: la migliore combinazione con le finestre adiacenti, R3 con lo schema, ha una somma delle mediane di −7.60.
+- Con lo schema a riferimento fisso R3 conserva più capitale (`results/us_c17_r3_reference_summary.csv`): sulle stagioni vere capitale tipico 77% con R3_C3_ref_stop, contro 71% di C3_ref_stop con R1 e 68% di R3 con il freno fisso; meglio di quest'ultimo in 13 stagioni su 19, peggio in 6 (sulle ricostruite 87%, 79% e 66%). Combinazione scelta dopo aver visto la validazione.
 
 ### 4.8 Robustezza
-- **Modulo 1.** Il ranking degli agenti è stabile fra Elo e Dixon-Coles: τ di Kendall 0.857 in validazione e 0.762 sul test. I confronti danno la stessa conclusione in 138 casi su 160 in validazione e 140 su 160 sul test.
-- **De-vigging.** Le conclusioni dei confronti hanno lo stesso segno con tutti e cinque i metodi in 260 casi su 262.
+- **Stagioni di training** (`results/us_c20_training_fits_errors.csv`, `results/us_c20_training_fits_summary.csv`). Il 2020-21, stagione del Covid, è nel training per la regola di una stagione ogni dieci anni e abbassa h del fit 2020-21 a 78. Prevedere il 2021-23 senza di esso (fit 2010-11) peggiora ĝ da −0.032 a −0.040: il fattore campo si era già ridotto prima del 2020. Un fit aggiuntivo sul 2015-16 per il 2016-20 migliora ĝ (da −0.031 a −0.025) e la log-loss, ma non il capitale (B_0.25 dal 57% al 54%, C3_ref_stop dal 71% al 70% sulle stagioni vere); C3_ref_stop batte B_0.25 in 17 stagioni vere su 19. Le conclusioni non dipendono dalle stagioni di training.
+- **Modulo 1.** Con Dixon-Coles il modello migliora la log-loss ma ĝ resta negativo (§4.1); l'esecuzione congelata con Dixon-Coles è in `results/us_c8_3_validation_summary_dc.csv`.
+- **De-vigging.** Il segno di ĝ è lo stesso con tutti e cinque i metodi, pooled e sul test.
 
 ### 4.9 La stagione 2023-24 come in KellyBench, partendo da £100 000
 **L'esperimento.** Come in KellyBench, ogni agente vive la stagione 2023-24 data per data, partendo da £100 000: il bankroll iniziale a cui il paper riscala i risultati (Tabella 2).
 - Gli esiti sono quelli veri, non stagioni ricostruite.
-- Agenti, parametri congelati e Modulo 1 Elo sono quelli dell'esecuzione sul test; non si cambia nulla.
+- Parametri congelati e Modulo 1 Elo sono quelli dell'esecuzione sul test; non si cambia nulla.
 - Il floor di KellyBench non è certo, quindi la simulazione è ripetuta senza floor e con floor di £0.01 e £1.
 - Con £100 000 il floor quasi non conta: il bankroll finale cambia al più di qualche decina di sterline.
-- Verifica: senza floor la log-ricchezza di ogni agente coincide esattamente con quella dell'esecuzione sul test.
+- Verifica: senza floor la log-ricchezza di A e B_0.25 coincide esattamente con quella dell'esecuzione sul test.
 
 **Bankroll finale**, floor £0.01 (`results/kellybench_2023_24.csv`, figura `thesis/figures/kellybench_2023_24.png`):
 
 | Agente | Bankroll finale | Rendimento della stagione | Drawdown massimo | Rendimento per £ puntata |
 |---|---|---|---|---|
 | A, Kelly pieno | £14 | −99.99% | 99.99% | −34.0% |
-| B_0.25 = C0 = D_ADWIN = C2_global | £24 358 | −75.6% | 75.6% | −20.1% |
-| C1, allarme binario | £46 645 | −53.4% | 53.4% | −23.2% |
-| C2, λ graduata con astensione | £57 315 | −42.7% | 56.9% | −22.4% |
-| B_0.10, decimo di Kelly | £59 969 | −40.0% | 40.0% | −18.8% |
-| D_PH, detector Page-Hinkley | £65 053 | −34.9% | 40.4% | −21.3% |
-| E, puntata minima | £99 999.64 | −0.0004% | 0.0004% | −30.1% |
+| B_0.25, quarto di Kelly | £24 358 | −75.6% | 75.6% | −20.1% |
+| C3, schema del relatore | £24 424 | −75.6% | 75.6% | −20.2% |
+| C3_stop | £24 424 | −75.6% | 75.6% | −20.2% |
+| C3_and | £26 755 | −73.2% | 73.2% | −20.0% |
+| C3_ref, C3_ref_stop | £24 944 | −75.1% | 75.1% | −19.7% |
 
-**Perché quattro agenti coincidono.** Sul 2023-24 C0, D_ADWIN e C2_global hanno la stessa traiettoria di B_0.25:
-- ADWIN non dà allarmi;
-- il Modulo 2 con la finestra di C2_global (190 partite) non si attiva mai nella stagione, perché la catena è tagliata alla stagione.
+Lo schema è stato costruito dopo l'esecuzione unica sul test, quindi le sue righe sono un'esecuzione esplorativa, fatta una sola volta con i parametri congelati.
 
 **Lettura.**
 - **Il quadro di KellyBench si riproduce.** Puntare con un modello che non batte il mercato fa perdere, e la perdita cresce con la frazione: Kelly pieno azzera quasi il bankroll, come i modelli che nel paper vanno in rovina. Con £100 000 nessun agente va in rovina in senso stretto.
-- **Rispetto alle regole fisse il supervisore riduce la perdita:** C2 perde il 42.7% contro il 75.6% del quarto di Kelly, ma resta dietro a D_PH, al decimo di Kelly e soprattutto alla puntata minima.
-- **La puntata minima conserva il capitale**, come il seed di KellyBench passato alle puntate minime (−4.1% nel paper). È la conseguenza diretta di ĝ < 0.
+- **Lo schema cambia poco il quarto di Kelly**, come in validazione: l'allarme è raro e nella stagione non separa C3 da C3_stop.
+- **Anche la variante con riferimento fisso cambia poco**, ed è coerente con la validazione: il modello del 2023-24 è calibrato sul 2020-21, la dispersione di δ è quella della calibrazione e l'allarme scatta nell'1% delle date, come nel 2021-23.
+- **Su 500 stagioni ricostruite del 2023-24** (`results/us_c14_test_scheme_seeds_summary.csv`, senza floor, capitale riportato a £100 000) la mediana del quarto di Kelly è £24 564; lo schema fa meglio nel 59–77% dei seed, e le versioni ferme fino a fine stagione arrivano a £41 169 (C3_stop) e £51 185 (C3_ref_stop). Nelle stagioni ricostruite l'allarme scatta 2–3 volte, perché il ricampionamento delle date crea più spesso periodi di errori anomali.
 
 ## 5. Lettura rispetto all'ipotesi iniziale
 
 | Ipotesi | Esito |
 |---|---|
 | Un floor di puntata rende possibile la rovina di un agente Kelly | confermata |
-| Rilevare il degrado del modello riduce le perdite rispetto al Kelly frazionario fisso | confermata |
 | L'ANOVA e lo Z-test nominali sono inaffidabili su serie autocorrelate; la calibrazione col block bootstrap è il rimedio | confermata, con il limite dei blocchi lunghi |
-| Le conclusioni non dipendono dal modello previsivo né dal metodo di de-vigging | confermata |
+| Il segno di ĝ non dipende dal modello previsivo né dal metodo di de-vigging | confermata |
 | Il modello batte il mercato | non confermata: ĝ < 0 ovunque |
-| L'eteroschedasticità crescente segnala il degrado | non confermata: con soglie corrette non si osserva |
+| L'eteroschedasticità crescente segnala il degrado | non dentro la stagione; sì rispetto alla stagione di calibrazione: la dispersione di δ cresce con l'età del modello |
 | La decomposizione distingue in modo netto il cambiamento compositivo da quello strutturale sui dati reali | non confermata, anche se l'implementazione è corretta sui dati sintetici |
-| Graduare la puntata con la decomposizione è meglio di un allarme binario | effetto piccolo: significativo sul test e, in validazione, solo con il floor da £1 |
-| L'agente batte un detector standard (Page-Hinkley) | non confermata |
-| L'agente batte la puntata minima | non confermata, anche nella stagione 2023-24 giocata come in KellyBench con £100 000 |
+| Lo schema del relatore riduce le perdite rispetto al lavoratore senza supervisore | con le finestre adiacenti poco; con il confronto con la stagione di calibrazione sì, in 14 stagioni vere su 19, peggio in 5 (variante scelta dopo aver visto la validazione) |
+| L'agente batte il mercato | non confermata, anche nella stagione 2023-24 giocata come in KellyBench con £100 000 |
 
 ## 6. Limiti e parti non implementate
 
 **Scelte semplificative**
-- Una sola puntata per partita, sull'esito a EV massimo; nessun Kelly multi-esito né ottimizzazione congiunta delle puntate della stessa data.
+- Una sola puntata per partita, sull'esito a EV massimo (le regole alternative R2 e R3 sono in §4.7); nessun Kelly multi-esito né ottimizzazione congiunta delle puntate della stessa data.
+- Dopo un errore strutturale lo schema azzera la puntata, ma non ri-parametrizza né cambia il modello: il relatore ha indicato il moltiplicatore sulla puntata come prima scelta. La ri-parametrizzazione annuale (ricalibrare l'Elo sulla stagione precedente) è stata provata e va peggio del modello congelato (`results/us_c19_real_seasons.csv`, stagioni vere: C3_ref_stop 67% contro 71%, B_0.25 46% contro 57%); una ri-parametrizzazione subito dopo l'allarme non è implementata.
 - Scenari: al posto dei cinque di KellyBench, tre stagioni di training, 19 di validazione e il 2023-24. La variante "literature" del 2023-24 non è ricostruibile dai dati pubblici.
 - Il valore del floor (£0.01 o £1) non è verificato sul codice di KellyBench: per questo i risultati sono riportati con entrambi.
 
 **Parti non implementate**
-- Modelli previsivi: solo Elo e Dixon-Coles. Bradley-Terry, i modelli score-driven e un Modulo 1 basato su LLM (per il costo) non ci sono.
-- Detector: solo ADWIN e Page-Hinkley; DDM e CUSUM no.
+- Modelli previsivi: solo Elo e Dixon-Coles. Il lavoratore LLM è predisposto ma non ancora eseguito.
+- L'agente autonomo come quello di KellyBench (opzione B del relatore) è fuori dalla tesi.
 - Non implementati: la regressione RIF, una baseline con Kelly bayesiano e la valutazione dell'agente sulla rubrica a 44 punti di KellyBench.
 
 ## 7. Riproducibilità e materiale disponibile
@@ -252,6 +260,7 @@ Differenze di log-ricchezza finale, configurazione £0.01:
 **Esecuzione**
 - Tutti i risultati si rigenerano da zero con `scripts/reproduce_all.py`, partendo dai CSV di football-data.co.uk. I CSV grezzi sono verificati con un manifesto SHA256.
 - Un secondo manifesto confronta ogni risultato con la versione salvata.
+- I file congelati in `config/` sono dati d'ingresso: la calibrazione che li ha scritti è sul branch `confronti-controllo`.
 - Le versioni dei pacchetti sono registrate in `results/environment.txt`.
 - La procedura è descritta nel `README.md`.
 

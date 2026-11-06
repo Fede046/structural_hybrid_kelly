@@ -54,12 +54,13 @@ THEMES: Final[dict[str, str]] = {
     "dati": "Finestra effettiva dei dati",
     "divergenza": "Divergenza fra metodi di de-vigging",
     "g_hat": "ĝ del Modulo 1 contro il mercato",
-    "detector": "Perché ANOVA e non ADWIN",
+    "detector": "Z-test per giornata",
     "floor": "Floor",
     "eteroschedasticita": "Eteroschedasticità",
-    "modulo2": "Modulo 2",
-    "confronti": "Confronti e test set",
-    "robustezza": "Robustezza: Dixon-Coles, ranking e de-vigging",
+    "modulo2": "Oaxaca-Blinder sui residui",
+    "schema": "Allarme ANOVA dello schema: potenza",
+    "confronti": "Test set 2023-24",
+    "robustezza": "Robustezza: Dixon-Coles",
 }
 
 _C2: Final[str] = "us_c2_anova_autocorrelation"
@@ -74,12 +75,10 @@ _H: Final[str] = "us_c6_4_heteroskedasticity"
 _V: Final[str] = "us_c6_4b_variance_change"
 _K: Final[str] = "us_c7_3b_known_scenarios"
 _DID: Final[str] = "us_c7_4_did_support"
-_CMP: Final[str] = "us_c8_4_comparisons"
+_PW: Final[str] = "us_c12_anova_power"
 _T: Final[str] = "us_c8_5_test_run"
 _TDC: Final[str] = "us_c8_5_test_run_dc"
 _DC: Final[str] = "us_c9_1_dixon_coles"
-_R: Final[str] = "us_c9_2_robustness"
-_DV: Final[str] = "us_c9_3_devig_sensitivity"
 
 _NOM: Final[str] = 'design == "contiguous_2" and method == "nominal"'
 _CEN: Final[str] = 'design == "contiguous_2" and method == "block_bootstrap_centered"'
@@ -87,11 +86,6 @@ _GP: Final[str] = 'row_type == "interval" and season == "pooled"'
 _ZO: Final[str] = 'row_type == "overall"'
 _FRA: Final[str] = 'row_type == "aggregate"'
 _KC: Final[str] = 'scenario == "2_covid" and version == "threefold"'
-_CV: Final[str] = 'row_type == "comparison" and metric == "final_log_wealth"'
-
-
-def _cmp(config: str, comparison: str) -> str:
-    return f'{_CV} and config == "{config}" and comparison == "{comparison}"'
 
 
 NUMBERS: Final[tuple[NumberSpec, ...]] = (
@@ -185,10 +179,6 @@ NUMBERS: Final[tuple[NumberSpec, ...]] = (
     # Detector
     NumberSpec("detector", "detector_allarmi_z_nominale", "Allarmi dello Z-test nominale sulle 19 stagioni di validazione", _Z,
                f'{_ZO} and method == "z_nominal"', "n_alarms", 0, "allarmi"),
-    NumberSpec("detector", "detector_allarmi_adwin", "Allarmi di ADWIN sulle 19 stagioni di validazione", _Z,
-               f'{_ZO} and method == "adwin"', "n_alarms", 0, "allarmi"),
-    NumberSpec("detector", "detector_allarmi_page_hinkley", "Allarmi di Page-Hinkley sulle 19 stagioni di validazione", _Z,
-               f'{_ZO} and method == "page_hinkley"', "n_alarms", 0, "allarmi"),
     NumberSpec("detector", "detector_allarmi_z_L7", "Allarmi dello Z-test calibrato, L = 7", _Z,
                f'{_ZO} and method == "z_block_bootstrap" and block_length == 7.0', "n_alarms", 0, "allarmi"),
     NumberSpec("detector", "detector_allarmi_z_L20", "Allarmi dello Z-test calibrato, L = 20", _Z,
@@ -230,12 +220,6 @@ NUMBERS: Final[tuple[NumberSpec, ...]] = (
                'experiment == "C" and config_id == "C_a"', "mean_ruin_time", 1, "date"),
     NumberSpec("floor", "floor_tempo_mediano_a", "Tempo mediano di rovina, configurazione (a)", _FS,
                'experiment == "C" and config_id == "C_a"', "median_ruin_time", 1, "date"),
-    NumberSpec("floor", "floor_B010_senza_floor", "Somma sulle stagioni della log-ricchezza finale di B_0.10 senza floor", _PB,
-               'row_type == "summary" and config == "none" and agent == "B_0.10"', "sum_final_log_wealth", 3,
-               "log-ricchezza (nat)"),
-    NumberSpec("floor", "floor_B010_floor_1", "Somma sulle stagioni della log-ricchezza finale di B_0.10 con £1", _PB,
-               'row_type == "summary" and config == "gbp_1" and agent == "B_0.10"', "sum_final_log_wealth", 3,
-               "log-ricchezza (nat)"),
     NumberSpec("floor", "floor_B025_senza_floor", "Somma sulle stagioni della log-ricchezza finale di B_0.25 senza floor", _PB,
                'row_type == "summary" and config == "none" and agent == "B_0.25"', "sum_final_log_wealth", 3,
                "log-ricchezza (nat)"),
@@ -291,57 +275,36 @@ NUMBERS: Final[tuple[NumberSpec, ...]] = (
                'row_type == "did" and season == "pooled"', "lower", 4, "nat per partita"),
     NumberSpec("modulo2", "modulo2_did_pooled_sup", "DiD pooled, IC 95%, estremo superiore", _DID,
                'row_type == "did" and season == "pooled"', "upper", 4, "nat per partita"),
-    # Confronti
-    NumberSpec("confronti", "confronti_copertura_percentile", "Copertura dell'intervallo percentile sul run prescritto dei confronti", _CMP,
-               'row_type == "coverage" and source == "seeds_resampled"', "coverage", 3, "quota di repliche"),
-    NumberSpec("confronti", "confronti_copertura_corretta", "Copertura dell'intervallo con la correzione t, confronti", _CMP,
-               'row_type == "coverage" and source == "seeds_resampled"', "coverage_corrected", 3, "quota di repliche"),
-    NumberSpec("confronti", "confronti_C2_DADWIN_001", "C2 − D_ADWIN, log-ricchezza finale, £0.01, validazione", _CMP,
-               _cmp("gbp_0.01", "C2-D_ADWIN"), "estimate", 3, "log-ricchezza (nat)"),
-    NumberSpec("confronti", "confronti_C2_DPH_001", "C2 − D_PH, log-ricchezza finale, £0.01, validazione", _CMP,
-               _cmp("gbp_0.01", "C2-D_PH"), "estimate", 3, "log-ricchezza (nat)"),
-    NumberSpec("confronti", "confronti_C2_E_001", "C2 − E, log-ricchezza finale, £0.01, validazione", _CMP,
-               _cmp("gbp_0.01", "C2-E"), "estimate", 3, "log-ricchezza (nat)"),
-    NumberSpec("confronti", "confronti_rilevare_001", "Rilevare (C1 − C0), log-ricchezza finale, £0.01, validazione", _CMP,
-               _cmp("gbp_0.01", "C1-C0"), "estimate", 3, "log-ricchezza (nat)"),
-    NumberSpec("confronti", "confronti_graduare_001", "Graduare (C2 − C1), log-ricchezza finale, £0.01, validazione", _CMP,
-               _cmp("gbp_0.01", "C2-C1"), "estimate", 3, "log-ricchezza (nat)"),
-    NumberSpec("confronti", "confronti_graduare_001_inf", "Graduare, £0.01, validazione, IC 95%, estremo inferiore", _CMP,
-               _cmp("gbp_0.01", "C2-C1"), "ci_block_low", 3, "log-ricchezza (nat)"),
-    NumberSpec("confronti", "confronti_graduare_001_sup", "Graduare, £0.01, validazione, IC 95%, estremo superiore", _CMP,
-               _cmp("gbp_0.01", "C2-C1"), "ci_block_high", 3, "log-ricchezza (nat)"),
-    NumberSpec("confronti", "confronti_graduare_1", "Graduare (C2 − C1), log-ricchezza finale, £1, validazione", _CMP,
-               _cmp("gbp_1", "C2-C1"), "estimate", 3, "log-ricchezza (nat)"),
-    NumberSpec("confronti", "confronti_rapporto_C2_DADWIN_001", "Rapporto delle ampiezze block/iid, C2 − D_ADWIN, £0.01", _CMP,
-               _cmp("gbp_0.01", "C2-D_ADWIN"), "width_ratio_block_iid", 3, "rapporto"),
-    NumberSpec("confronti", "test_C2_DADWIN_001", "C2 − D_ADWIN, log-ricchezza finale, £0.01, test 2023-24", _T,
-               _cmp("gbp_0.01", "C2-D_ADWIN"), "estimate", 3, "log-ricchezza (nat)"),
-    NumberSpec("confronti", "test_C2_DPH_001", "C2 − D_PH, log-ricchezza finale, £0.01, test 2023-24", _T,
-               _cmp("gbp_0.01", "C2-D_PH"), "estimate", 3, "log-ricchezza (nat)"),
-    NumberSpec("confronti", "test_C2_E_001", "C2 − E, log-ricchezza finale, £0.01, test 2023-24", _T,
-               _cmp("gbp_0.01", "C2-E"), "estimate", 3, "log-ricchezza (nat)"),
-    NumberSpec("confronti", "test_rilevare_001", "Rilevare (C1 − C0), £0.01, test 2023-24", _T,
-               _cmp("gbp_0.01", "C1-C0"), "estimate", 3, "log-ricchezza (nat)"),
-    NumberSpec("confronti", "test_graduare_001", "Graduare (C2 − C1), £0.01, test 2023-24", _T,
-               _cmp("gbp_0.01", "C2-C1"), "estimate", 3, "log-ricchezza (nat)"),
+    # Allarme ANOVA dello schema: potenza
+    NumberSpec("schema", "schema_potenza_none", "Stagioni con allarme nelle 10 date dopo il cambiamento: nessun cambiamento", _PW,
+               'row_type == "power" and scenario == "none"', "share_seasons_with_alarm", 2, "quota di stagioni"),
+    NumberSpec("schema", "schema_potenza_mean_005", "Stagioni con allarme nelle 10 date dopo il cambiamento: media peggiore di 0.05", _PW,
+               'row_type == "power" and scenario == "mean_-0.05"', "share_seasons_with_alarm", 2, "quota di stagioni"),
+    NumberSpec("schema", "schema_potenza_mean_010", "Stagioni con allarme nelle 10 date dopo il cambiamento: media peggiore di 0.10", _PW,
+               'row_type == "power" and scenario == "mean_-0.10"', "share_seasons_with_alarm", 2, "quota di stagioni"),
+    NumberSpec("schema", "schema_potenza_mean_020", "Stagioni con allarme nelle 10 date dopo il cambiamento: media peggiore di 0.20", _PW,
+               'row_type == "power" and scenario == "mean_-0.20"', "share_seasons_with_alarm", 2, "quota di stagioni"),
+    NumberSpec("schema", "schema_potenza_variance_x15", "Stagioni con allarme nelle 10 date dopo il cambiamento: varianza ×1.5", _PW,
+               'row_type == "power" and scenario == "variance_x1.5"', "share_seasons_with_alarm", 2, "quota di stagioni"),
+    NumberSpec("schema", "schema_potenza_variance_x2", "Stagioni con allarme nelle 10 date dopo il cambiamento: varianza ×2", _PW,
+               'row_type == "power" and scenario == "variance_x2"', "share_seasons_with_alarm", 2, "quota di stagioni"),
+    NumberSpec("schema", "schema_potenza_mean_010_variance_x2", "Stagioni con allarme nelle 10 date dopo il cambiamento: media peggiore di 0.10 e varianza ×2", _PW,
+               'row_type == "power" and scenario == "mean_-0.10_variance_x2"', "share_seasons_with_alarm", 2, "quota di stagioni"),
+    NumberSpec("schema", "schema_mde_2000_01", "Peggioramento minimo della media di δ rilevabile, fit 2000-01", _PW,
+               'row_type == "mde" and fit_through == "2000-01"', "min_detectable_worsening", 3, "nat per partita"),
+    NumberSpec("schema", "schema_mde_2010_11", "Peggioramento minimo della media di δ rilevabile, fit 2010-11", _PW,
+               'row_type == "mde" and fit_through == "2010-11"', "min_detectable_worsening", 3, "nat per partita"),
+    NumberSpec("schema", "schema_mde_2020_21", "Peggioramento minimo della media di δ rilevabile, fit 2020-21", _PW,
+               'row_type == "mde" and fit_through == "2020-21"', "min_detectable_worsening", 3, "nat per partita"),
+    # Test set 2023-24
     NumberSpec("confronti", "test_log_loss", "Log-loss del Modulo 1 (Elo) sul 2023-24", _T,
                'row_type == "log_loss" and series == "b365_prematch"', "estimate", 3, "nat per partita"),
     NumberSpec("confronti", "test_g_hat_b365_shin", "ĝ B365 Shin sul 2023-24", _T,
                'row_type == "g_hat" and series == "b365_prematch" and method == "shin"', "estimate", 4, "nat per partita"),
     NumberSpec("confronti", "test_g_hat_pinnacle_shin", "ĝ Pinnacle Shin sul 2023-24", _T,
                'row_type == "g_hat" and series == "pinnacle_closing" and method == "shin"', "estimate", 4, "nat per partita"),
-    NumberSpec("confronti", "test_allarmi_adwin", "Allarmi di ADWIN sul 2023-24", _T,
-               'row_type == "drift" and detector == "adwin"', "n_alarms", 0, "allarmi"),
-    NumberSpec("confronti", "test_allarmi_page_hinkley", "Allarmi di Page-Hinkley sul 2023-24", _T,
-               'row_type == "drift" and detector == "page_hinkley"', "n_alarms", 0, "allarmi"),
     NumberSpec("confronti", "test_violazioni_leakage", "Violazioni anti-leakage sulle 380 partite del 2023-24", _T,
                'row_type == "check"', "leakage_violations", 0, "partite"),
-    NumberSpec("confronti", "test_roi_E_001", "ROI osservato di E sul 2023-24, £0.01", _T,
-               'row_type == "e_roi" and config == "gbp_0.01" and reference_roi == -0.041', "observed_roi", 4, "quota"),
-    NumberSpec("confronti", "test_roi_E_1", "ROI osservato di E sul 2023-24, £1", _T,
-               'row_type == "e_roi" and config == "gbp_1" and reference_roi == -0.041', "observed_roi", 4, "quota"),
-    NumberSpec("confronti", "test_roi_paper", "ROI di riferimento del paper", _T,
-               'row_type == "e_roi" and config == "gbp_0.01" and reference_roi == -0.041', "reference_roi", 3, "quota"),
     # Robustezza
     NumberSpec("robustezza", "dc_log_loss_validazione", "Log-loss di Dixon-Coles, validazione pooled", _DC,
                'row_type == "validation" and season == "pooled" and model == "dixon_coles" and method.isna()', "log_loss", 4,
@@ -360,39 +323,6 @@ NUMBERS: Final[tuple[NumberSpec, ...]] = (
                'row_type == "log_loss" and series == "b365_prematch"', "estimate", 3, "nat per partita"),
     NumberSpec("robustezza", "dc_test_g_hat_shin", "ĝ B365 Shin di Dixon-Coles sul 2023-24", _TDC,
                'row_type == "g_hat" and series == "b365_prematch" and method == "shin"', "estimate", 4, "nat per partita"),
-    NumberSpec("robustezza", "tau_validazione_001", "τ_b Elo/Dixon-Coles, log-ricchezza finale, £0.01, validazione", _R,
-               'row_type == "tau" and dataset == "validation" and config == "gbp_0.01" and metric == "final_log_wealth"',
-               "tau", 3, "τ_b"),
-    NumberSpec("robustezza", "tau_validazione_001_inf", "τ_b, log-ricchezza finale, £0.01, validazione, IC 95%, inferiore", _R,
-               'row_type == "tau" and dataset == "validation" and config == "gbp_0.01" and metric == "final_log_wealth"',
-               "ci_low", 3, "τ_b"),
-    NumberSpec("robustezza", "tau_validazione_001_sup", "τ_b, log-ricchezza finale, £0.01, validazione, IC 95%, superiore", _R,
-               'row_type == "tau" and dataset == "validation" and config == "gbp_0.01" and metric == "final_log_wealth"',
-               "ci_high", 3, "τ_b"),
-    NumberSpec("robustezza", "tau_validazione_recupero_001", "τ_b, tempo di recupero, £0.01, validazione", _R,
-               'row_type == "tau" and dataset == "validation" and config == "gbp_0.01" and metric == "recovery_time"',
-               "tau", 3, "τ_b"),
-    NumberSpec("robustezza", "tau_test_001", "τ_b, log-ricchezza finale, £0.01, test 2023-24", _R,
-               'row_type == "tau" and dataset == "test" and config == "gbp_0.01" and metric == "final_log_wealth"',
-               "tau", 3, "τ_b"),
-    NumberSpec("robustezza", "dc_graduare_001", "Graduare (C2 − C1) con Dixon-Coles, £0.01, validazione", _R,
-               'row_type == "comparison" and dataset == "validation" and config == "gbp_0.01" '
-               'and metric == "final_log_wealth" and comparison == "C2-C1"', "estimate_dc", 3, "log-ricchezza (nat)"),
-    NumberSpec("robustezza", "dc_graduare_001_inf", "Graduare con Dixon-Coles, £0.01, validazione, IC 95%, inferiore", _R,
-               'row_type == "comparison" and dataset == "validation" and config == "gbp_0.01" '
-               'and metric == "final_log_wealth" and comparison == "C2-C1"', "ci_low_dc", 3, "log-ricchezza (nat)"),
-    NumberSpec("robustezza", "dc_graduare_001_sup", "Graduare con Dixon-Coles, £0.01, validazione, IC 95%, superiore", _R,
-               'row_type == "comparison" and dataset == "validation" and config == "gbp_0.01" '
-               'and metric == "final_log_wealth" and comparison == "C2-C1"', "ci_high_dc", 3, "log-ricchezza (nat)"),
-    NumberSpec("robustezza", "devig_g_hat_b365_proporzionale", "ĝ pooled B365 col metodo proporzionale", _DV,
-               'row_type == "g_hat" and dataset == "validation" and series == "b365_prematch" and method == "proportional" '
-               'and season == "pooled"', "estimate", 4, "nat per partita"),
-    NumberSpec("robustezza", "devig_g_hat_b365_odds_ratio", "ĝ pooled B365 col metodo odds ratio", _DV,
-               'row_type == "g_hat" and dataset == "validation" and series == "b365_prematch" and method == "odds_ratio" '
-               'and season == "pooled"', "estimate", 4, "nat per partita"),
-    NumberSpec("robustezza", "devig_g_hat_test_b365_additivo", "ĝ B365 col metodo additivo sul 2023-24", _DV,
-               'row_type == "g_hat" and dataset == "test" and series == "b365_prematch" and method == "additive"',
-               "estimate", 4, "nat per partita"),
 )
 
 

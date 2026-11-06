@@ -1,32 +1,22 @@
-"""Test: supervisore del Modulo 2, bracci C1, C2_global e C2, soglia di C1."""
+"""Test: supervisore dello schema del relatore sui dati reali (Oaxaca-Blinder, separazione, anti-leakage)."""
 
 import inspect
-import math
-from types import SimpleNamespace
 
 import numpy as np
 import pytest
 
 import shk.kelly.environment as environment
 from shk.data.loading import DEFAULT_DATA_DIR
-from shk.kelly.agents import DateResults, DateView, FractionalKellyAgent
+from shk.kelly.agents import DateResults, FractionalKellyAgent
 from shk.kelly.environment import run_paired_backtest
-from shk.model.agent_c import (
-    C1Agent,
-    GradedAgent,
-    Module2Supervisor,
-    SupervisorState,
-    build_c0_agent,
-    c1_null_statistics,
-    calibrate_c1_threshold,
-)
+from shk.model.agent_c import SCHEME_STOP_CLEAR, Module2Supervisor, SchemeAgent
 from shk.model.covariate_inspection import derive_specification
-from shk.model.did_support import out_of_support_at_date
-from shk.model.module2 import STATE_ACTIVE, Module2Output, module2_at_date, prepare_module2_data
+from shk.model.module2 import STATE_ACTIVE, module2_at_date, prepare_module2_data
 from shk.model.module2_data import build_module2_frame
 from shk.model.residuals import load_model_residuals
-from shk.model.training_agents import PROVISIONAL_WINDOW, season_input_from_frame, training_seasons
-from shk.stats.calibration import compute_order_statistic_index
+from shk.model.season_input import season_input_from_frame, training_seasons
+
+WINDOW = 40
 
 
 def _has_real_data() -> bool:
@@ -44,80 +34,28 @@ def training():
     return train, covs, inputs
 
 
-class _ScriptedSupervisor(Module2Supervisor):
-    """Supervisore con uscite prefissate per data: attivo con la S indicata, oppure non attivo."""
-
-    def __init__(self, dates: np.ndarray, structural: list[float | None]) -> None:
-        super().__init__("s", dates, np.zeros((dates.shape[0], 1)), ["c"], 3)
-        self._script = dict(zip(np.unique(dates), structural))
-
-    def state_at(self, decision_date: np.datetime64) -> SupervisorState:
-        s = self._script[np.datetime64(decision_date, "ns")]
-        state = STATE_ACTIVE if s is not None else "not_active"
-        result = SimpleNamespace(structural=s) if s is not None else None
-        out = Module2Output("s", None, 3, state, 0, 0, 0, math.nan, math.nan, result, math.nan)
-        return SupervisorState(out, None, None, None)
-
-
-def test_c1_counts_alarm_onsets():
-    """λ = 0.25·κ^(accensioni): un allarme acceso per più date conta una volta; T = −S."""
-    days = (np.datetime64("2010-08-14") + np.arange(7) * np.timedelta64(7, "D")).astype("datetime64[ns]")
-    # T = −S: allarme con S = −0.2 (T = 0.2 > 0.1); S = +0.2 non dà allarme
-    script = [None, -0.2, -0.2, 0.2, -0.2, -0.05, -0.3]
-    sup = _ScriptedSupervisor(days, script)
-    agent = C1Agent("C1", sup, 0.5, 0.1)
-    probs = np.array([[0.6, 0.25, 0.15]])
-    odds = np.array([[2.0, 3.6, 7.0]])
-    for d in days:
-        agent.decide(DateView(d, probs, odds))
-    lam = [agent.lambda_by_date[d] for d in days]
-    assert agent.alarm_by_date == dict(zip(days, [False, True, True, False, True, False, True]))
-    assert lam == [0.25, 0.125, 0.125, 0.125, 0.0625, 0.0625, 0.03125]
-    assert agent.n_onsets == 3
-    # κ = 0: dopo la prima accensione λ = 0
-    agent0 = C1Agent("C1", _ScriptedSupervisor(days, script), 0.0, 0.1)
-    for d in days:
-        agent0.decide(DateView(d, probs, odds))
-    assert [agent0.lambda_by_date[d] for d in days] == [0.25, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]
-
-
-def test_c1_threshold_order_statistic_and_rank_deficient_resamples():
-    """Soglia = statistica d'ordine sui ricampionamenti a rango pieno; i ricampionamenti degeneri si scartano."""
-    rng = np.random.default_rng(0)
-    n, w = 120, 20
-    flag = np.zeros(n)
-    flag[[5, 60]] = 1.0
-    x = np.column_stack([rng.normal(size=n), flag])
-    delta = rng.normal(0.0, 0.3, n)
-    stats, n_valid = c1_null_statistics(x, delta, w, 5, 999, np.random.default_rng(1))
-    assert 0 < n_valid < 999
-    thr, n_valid2 = calibrate_c1_threshold(x, delta, w, 5, np.random.default_rng(1))
-    assert n_valid2 == n_valid
-    assert thr == np.sort(stats)[compute_order_statistic_index(n_valid, 0.05) - 1]
-
-
-def test_supervisor_matches_module2_and_support_rule_on_frame(training):
-    """Con gli esiti solo dall'ambiente il supervisore riproduce module2_at_date e la regola dell'analisi del supporto comune."""
+def test_supervisor_matches_module2_on_frame(training):
+    """Con gli esiti solo dall'ambiente il supervisore riproduce module2_at_date e le finestre di δ."""
     train, covs, inputs = training
-    dummies = [i for i, c in enumerate(covs) if c.startswith("flag_")]
     for season, inp in inputs.items():
-        sup = Module2Supervisor(season, inp.dates, inp.x, covs, PROVISIONAL_WINDOW)
+        sup = Module2Supervisor(season, inp.dates, inp.x, covs, WINDOW)
         ref = prepare_module2_data(train[train["season"] == season], covs)
         n_active = 0
         for d in np.unique(inp.dates):
-            st = sup.state_at(d)
-            r = module2_at_date(ref, season, d, PROVISIONAL_WINDOW)
-            assert st.output.state == r.state
+            out = sup.state_at(d)
+            r = module2_at_date(ref, season, d, WINDOW)
+            assert out.state == r.state
             if r.state == STATE_ACTIVE:
                 n_active += 1
                 for c in ("total", "compositional", "structural", "interaction"):
-                    assert abs(getattr(st.output.result, c) - getattr(r.result, c)) <= 1e-12
-            rows = np.flatnonzero(inp.dates == d)
-            mask = out_of_support_at_date(ref, season, d, PROVISIONAL_WINDOW, inp.x[rows], dummies)
-            if mask is None:
-                assert st.out_of_support is None
+                    assert abs(getattr(out.result, c) - getattr(r.result, c)) <= 1e-12
+            windows = sup.delta_windows(d)
+            earlier = np.flatnonzero(inp.dates < d)
+            if earlier.shape[0] < 2 * WINDOW:
+                assert windows is None
             else:
-                np.testing.assert_array_equal(st.out_of_support, mask)
+                np.testing.assert_allclose(np.concatenate(windows), inp.delta[earlier[-2 * WINDOW:]], rtol=0, atol=1e-12)
+            rows = np.flatnonzero(inp.dates == d)
             sup.observe(DateResults(date=d, probs=inp.probs[rows], odds=inp.odds[rows], outcomes=inp.outcomes[:, rows]))
         assert n_active > 0
 
@@ -133,18 +71,7 @@ class _RecB(FractionalKellyAgent):
         return f
 
 
-class _RecC1(C1Agent):
-    def __init__(self, *args):
-        super().__init__(*args)
-        self.log = {}
-
-    def stake_fractions(self, view, p_hat, b):
-        f = super().stake_fractions(view, p_hat, b)
-        self.log[view.date] = (view.probs.copy(), view.odds.copy(), p_hat.copy(), b.copy(), f.copy())
-        return f
-
-
-class _RecGraded(GradedAgent):
+class _RecScheme(SchemeAgent):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.log = {}
@@ -155,65 +82,27 @@ class _RecGraded(GradedAgent):
         return f
 
 
-def _recorded_run(inp, covs, min_stake=0.0):
-    sup = Module2Supervisor(inp.season, inp.dates, inp.x, covs, PROVISIONAL_WINDOW)
-    agents = [_RecB("B_0.25", 0.25), _RecC1("C1", sup, 0.5, 0.05),
-              _RecGraded("C2_global", sup, abstain=False), _RecGraded("C2", sup, abstain=True)]
-    runs = run_paired_backtest(agents, inp.dates, inp.probs, inp.odds, inp.outcomes, min_stake)
-    return sup, agents, runs
+def _scheme(sup: Module2Supervisor) -> SchemeAgent:
+    """Schema con soglie basse, così l'allarme scatta spesso."""
+    return _RecScheme("C3", sup, 0.75, 0.5, 0.5, 0.01, SCHEME_STOP_CLEAR)
 
 
 def test_separation_of_responsibilities(training):
-    """Stesse previsioni e quote viste, stessa selezione di B_0.25; i bracci cambiano solo le frazioni."""
+    """Stesse previsioni e quote viste, stessa selezione di B_0.25; lo schema cambia solo le frazioni."""
     _, covs, inputs = training
     for inp in inputs.values():
-        _, agents, _ = _recorded_run(inp, covs)
-        b_log = agents[0].log
-        for agent in agents[1:]:
-            assert agent.log.keys() == b_log.keys()
-            for d, (probs, odds, p_hat, b, f) in agent.log.items():
-                ref = b_log[d]
-                np.testing.assert_array_equal(probs, ref[0])
-                np.testing.assert_array_equal(odds, ref[1])
-                # Stessi esiti selezionati: stessi p̂ e b dei soli esiti scelti da B_0.25
-                np.testing.assert_array_equal(p_hat, ref[2])
-                np.testing.assert_array_equal(b, ref[3])
-                assert np.all((f >= 0.0) & (f < 1.0))
-
-
-def test_c2_abstains_only_out_of_support(training):
-    """C2 = C2_global dove la regola dà "nel supporto" (o non si applica), 0 dove dà "fuori"."""
-    _, covs, inputs = training
-    n_out = 0
-    for inp in inputs.values():
-        sup, agents, _ = _recorded_run(inp, covs)
-        g_log, c2_log = agents[2].log, agents[3].log
-        for d, entry in c2_log.items():
-            f_c2, f_g = entry[4], g_log[d][4]
-            mask = sup.state_at(d).out_of_support
-            if mask is None:
-                np.testing.assert_array_equal(f_c2, f_g)
-                continue
-            view_probs, view_odds = entry[0], entry[1]
-            ev = view_probs * view_odds - 1.0
-            selected = np.flatnonzero(ev.max(axis=1) > 0.0)
-            outside = mask[selected]
-            n_out += int(outside.sum())
-            assert np.all(f_c2[outside] == 0.0)
-            np.testing.assert_array_equal(f_c2[~outside], f_g[~outside])
-        assert agents[3].n_abstained == sum(
-            int(sup.state_at(d).out_of_support[np.flatnonzero((e[0] * e[1] - 1.0).max(axis=1) > 0.0)].sum())
-            for d, e in c2_log.items() if sup.state_at(d).out_of_support is not None)
-    assert n_out > 0
-
-
-def test_c0_equals_b025(training):
-    _, covs, inputs = training
-    for inp in inputs.values():
-        for min_stake in (0.0, 0.01 / 220, 1.0 / 220):
-            runs = run_paired_backtest([FractionalKellyAgent("B_0.25", 0.25), build_c0_agent("C0")],
-                                       inp.dates, inp.probs, inp.odds, inp.outcomes, min_stake)
-            np.testing.assert_allclose(runs[1].wealth, runs[0].wealth, rtol=0.0, atol=1e-12)
+        sup = Module2Supervisor(inp.season, inp.dates, inp.x, covs, WINDOW)
+        b_agent, scheme = _RecB("B_0.25", 0.25), _scheme(sup)
+        run_paired_backtest([b_agent, scheme], inp.dates, inp.probs, inp.odds, inp.outcomes, 0.0)
+        assert scheme.log.keys() == b_agent.log.keys()
+        assert scheme.n_onsets > 0
+        for d, (probs, odds, p_hat, b, f) in scheme.log.items():
+            ref = b_agent.log[d]
+            np.testing.assert_array_equal(probs, ref[0])
+            np.testing.assert_array_equal(odds, ref[1])
+            np.testing.assert_array_equal(p_hat, ref[2])
+            np.testing.assert_array_equal(b, ref[3])
+            assert np.all((f >= 0.0) & (f < 1.0))
 
 
 def _mutant_run_paired_backtest():
@@ -235,18 +124,20 @@ class _LeakySupervisor(Module2Supervisor):
         return np.datetime64(decision_date, "ns") + np.timedelta64(1, "D")
 
 
-def _module2_outputs(runner, supervisor_cls, inp, covs, outcomes):
-    sup = supervisor_cls(inp.season, inp.dates, inp.x, covs, PROVISIONAL_WINDOW)
-    runner([GradedAgent("C2_global", sup, abstain=False)], inp.dates, inp.probs, inp.odds, outcomes, 0.0)
+def _supervisor_outputs(runner, supervisor_cls, inp, covs, outcomes):
+    sup = supervisor_cls(inp.season, inp.dates, inp.x, covs, WINDOW)
+    runner([_scheme(sup)], inp.dates, inp.probs, inp.odds, outcomes, 0.0)
     out = {}
     for d in np.unique(inp.dates):
-        res = sup.state_at(d).output.result
-        out[d] = None if res is None else (res.total, res.structural)
+        res = sup.state_at(d).result
+        windows = sup.delta_windows(d)
+        out[d] = (None if res is None else (res.total, res.structural),
+                  None if windows is None else tuple(np.concatenate(windows)))
     return out
 
 
-def test_module2_anti_leakage_with_mutant(training):
-    """Alterare gli esiti di date >= d non cambia l'uscita del Modulo 2 usata a d; il mutante sì."""
+def test_supervisor_anti_leakage_with_mutant(training):
+    """Alterare gli esiti di date >= d non cambia ciò che il supervisore usa a d; il mutante sì."""
     _, covs, inputs = training
     inp = inputs["2010-11"]
     days = np.unique(inp.dates)
@@ -256,13 +147,13 @@ def test_module2_anti_leakage_with_mutant(training):
     altered[0, late] = (altered[0, late] + 1) % 3
 
     for runner in (run_paired_backtest, _mutant_run_paired_backtest()):
-        base = _module2_outputs(runner, Module2Supervisor, inp, covs, inp.outcomes)
-        alt = _module2_outputs(runner, Module2Supervisor, inp, covs, altered)
+        base = _supervisor_outputs(runner, Module2Supervisor, inp, covs, inp.outcomes)
+        alt = _supervisor_outputs(runner, Module2Supervisor, inp, covs, altered)
         for d in days[days <= d0]:
             assert base[d] == alt[d]
 
     # Mutante: ambiente che notifica prima delle decisioni e supervisore con Date <= d
     mutant = _mutant_run_paired_backtest()
-    base = _module2_outputs(mutant, _LeakySupervisor, inp, covs, inp.outcomes)
-    alt = _module2_outputs(mutant, _LeakySupervisor, inp, covs, altered)
-    assert base[d0] is not None and base[d0] != alt[d0]
+    base = _supervisor_outputs(mutant, _LeakySupervisor, inp, covs, inp.outcomes)
+    alt = _supervisor_outputs(mutant, _LeakySupervisor, inp, covs, altered)
+    assert base[d0][0] is not None and base[d0] != alt[d0]

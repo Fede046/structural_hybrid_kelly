@@ -22,8 +22,7 @@ import numpy as np
 
 from shk.model.dixon_coles import SEED_S11
 from shk.model.module1 import MODULE1_ELO, check_module1
-from shk.model.module3_synthetic import SEED_S9
-from shk.model.task_seeds import N_STORY_TASKS
+from shk.model.task_seeds import N_STORY_TASKS, SEED_S9
 from shk.model.validation_run import SEED_S10
 from shk.stats.oaxaca_synthetic import SEED_S8
 
