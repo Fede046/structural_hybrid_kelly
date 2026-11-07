@@ -6,6 +6,7 @@ import numpy as np
 import pandas as pd
 import pytest
 
+from shk.data.loading import DEFAULT_DATA_DIR
 from shk.model.evolution import Genome
 from shk.model.evolution_run import season_log_wealth
 from shk.model.frozen_params import frozen_params_path, load_frozen_params
@@ -26,6 +27,8 @@ KNOWN = {
 
 
 @pytest.mark.skipif(not POPULATION_CSV.exists(), reason="us_c21 non ancora eseguito")
+@pytest.mark.skipif(not (DEFAULT_DATA_DIR.is_dir() and any(DEFAULT_DATA_DIR.glob("*.csv"))),
+                    reason=f"Real data missing: no CSV in {DEFAULT_DATA_DIR}")
 def test_known_genomes_reproduce_published_strategies():
     params = load_frozen_params(frozen_params_path())
     frame = build_module2_frame(load_model_residuals())
