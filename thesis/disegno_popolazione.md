@@ -111,3 +111,37 @@ Che cosa si vede:
 Figura: `thesis/figures/us_c21_population_shares.png`, quote del capitale a inizio stagione per famiglia di strategie, senza e con la cassa.
 
 Limiti da dichiarare: vale solo senza puntata minima (§2); μ è scelto su tre stagioni di training, dove il modello è valutato sui dati su cui è stato calibrato; la popolazione contiene strategie scelte dopo aver visto la validazione (lo schema con confronto con la stagione di calibrazione e la regola dell'esito più probabile), quindi anche la popolazione eredita quella scelta.
+
+## 9. Secondo tentativo: le strategie evolvono (variazione, selezione, ereditarietà)
+
+Nella popolazione del §1-8 le strategie sono fisse e cambia solo la quota di capitale: c'è selezione ed ereditarietà, ma non variazione. Qui cambiano le strategie stesse.
+
+**Geni.** Ogni strategia è un genoma di cinque geni, tutti parametri che lo schema accetta già, così che nessuna soglia dell'allarme vada ricalibrata (`src/shk/model/evolution.py`):
+- frazione di Kelly senza allarme (λ), in [0,005; 1];
+- riduzione della puntata con errore nei dati (κ, λ diventa λ·κ), in [0; 1];
+- supervisore: nessuno, confronto con le 40 partite precedenti, confronto con la stagione di calibrazione;
+- dopo un errore strutturale: riprende quando l'allarme si spegne, o fermo fino a fine stagione;
+- regola di scelta dell'esito: R1, R2, R3.
+
+**Ciclo.** Una generazione è una stagione di validazione, in ordine dal 2002-03 al 2022-23. 20 genomi iniziali casuali giocano la stagione vera (senza puntata minima, capitale iniziale 1); sopravvive la metà con il capitale finale più alto, e ogni sopravvissuto ha un figlio mutato (λ moltiplicato per exp(N(0; 0,3)), κ + N(0; 0,1), ogni gene discreto cambiato con probabilità 0,1). Parametri fissati prima di guardare i risultati. 30 evoluzioni indipendenti (seed diversi) per variante; si riportano mediana e 5-95%.
+
+**Due varianti.** «Libera»: evolvono tutti i geni. «Quarto di Kelly fisso»: λ = 0,25 sempre, si è obbligati a puntare, evolvono supervisore, κ, stop e regola.
+
+**Misure.** Popolazione: capitale finale con il capitale diviso in parti uguali fra i 20 genomi della generazione, cioè quanto ottiene chi segue l'evoluzione senza sapere quale genoma vincerà. Campione: il genoma migliore della stagione precedente.
+
+**Controllo.** I genomi (0,25; 0,75; nessuno; –; R1), (0,25; 0,75; precedenti; fermo; R1) e (0,25; 0,75; calibrazione; fermo; R3) riproducono esattamente il quarto di Kelly, lo schema fermo e lo schema migliore già pubblicati (`tests/test_us_c22_acceptance.py`).
+
+### Risultati (`results/us_c22_evolution_*.csv`, figura `thesis/figures/us_c22_evolution.png`)
+
+| Variante | Popolazione: capitale tipico (mediana, 5-95%) | Campione | Stagioni meglio / peggio del quarto di Kelly (popolazione, mediana) |
+| --- | --- | --- | --- |
+| Libera | 98% (97-99%) | 99% | – |
+| Quarto di Kelly fisso | 70% (65-75%) | 66% | 13 / 6 |
+| Riferimenti: quarto di Kelly 57%; quarto di Kelly con l'esito più probabile 68%; schema migliore scelto dopo 77% | | | |
+
+- **Libera: l'evoluzione smette di scommettere.** La frazione di Kelly media scende da 0,20 a 0,03 dopo una stagione, a 0,013 dopo due, poi verso il minimo consentito (0,005). Con puntate così piccole gli altri geni non contano più e derivano a caso. È la stessa conclusione della cassa (§8) e di KellyBench, ottenuta per via evolutiva.
+- **Quarto di Kelly fisso: l'evoluzione sceglie lo schema del relatore.** A fine 2022-23 tutte le strategie hanno un supervisore (dal 65% iniziale), l'88% si ferma fino a fine stagione dopo un errore strutturale, circa il 90% punta sull'esito più probabile, e κ scende a circa 0,3 (dopo un errore nei dati si punta meno di quanto previsto dallo schema, 0,75). Il genoma più frequente nell'ultima generazione è: supervisore con le 40 partite precedenti, fermo fino a fine stagione, esito più probabile.
+- **Ma non il confronto con la stagione di calibrazione.** La quota con quel supervisore crolla al 5% entro la quarta stagione (2005-06) e non risale più sopra il 22%: nelle prime stagioni, con il modello appena calibrato, il confronto con la stagione di calibrazione non dà vantaggi, e l'evoluzione lo elimina prima che il modello invecchi. È un effetto di contingenza storica: la selezione premia ciò che funziona adesso, non ciò che servirà dopo.
+- **Capitale.** La popolazione con il quarto di Kelly fisso conserva il 70%, contro il 57% del quarto di Kelly e il 68% del quarto di Kelly con l'esito più probabile; resta sotto lo schema migliore scelto a posteriori (77%), che batte in 7 stagioni su 19. Il campione (66%) fa peggio della popolazione: il migliore di una stagione non è il migliore della successiva, perché una sola stagione è un segnale rumoroso.
+
+Limiti: la fitness è il capitale di una sola stagione vera, molto rumorosa; i parametri dell'evoluzione (20 genomi, metà sopravvive, intensità delle mutazioni) sono fissati a priori e non esplorati; vale senza puntata minima; la regola R3 e il confronto con la stagione di calibrazione fanno parte dei geni possibili ma sono stati individuati dopo aver visto la validazione.

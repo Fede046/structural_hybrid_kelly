@@ -14,7 +14,7 @@ Questo documento descrive come ho realizzato la soluzione Structural-Hybrid che 
 - Il lavoratore può anche scegliere l'esito su cui puntare, con tre regole diverse.
 - Risultato principale: il modello previsivo non batte il mercato, quindi ogni agente che punta perde.
 - Se il supervisore confronta gli errori recenti con quelli delle 40 partite precedenti, lo schema interviene poco. Se li confronta con quelli della stagione su cui il modello è stato calibrato, si accorge che il modello invecchia e il mercato lo supera: punta meno proprio allora e conserva più capitale: in una stagione tipica il 71%, contro il 57% del lavoratore senza supervisore, e fa meglio in 14 stagioni su 19.
-- Come tentativo basato sulla dinamica evolutiva (§7), ho fatto giocare insieme le strategie come una popolazione che si contende il capitale. Da una stagione all'altra la selezione sposta il capitale verso la strategia migliore senza conoscerla in anticipo, e conserva il 70% del capitale. Se fra le strategie c'è anche quella di non puntare, la popolazione finisce per non scommettere più, e conserva l'88%: una conferma per via evolutiva del risultato di KellyBench.
+- Ho fatto due tentativi basati sulla dinamica evolutiva (§7). Nel primo le strategie giocano insieme come una popolazione che si contende il capitale: da una stagione all'altra la selezione sposta il capitale verso la strategia migliore senza conoscerla in anticipo, e conserva il 70%. Nel secondo le strategie stesse evolvono, con variazione, selezione ed ereditarietà: se possono, smettono di scommettere; se sono obbligate a scommettere, ritrovano da sole gli ingredienti dello schema (supervisore, stop fino a fine stagione, esito più probabile) e conservano il 70%, contro il 57% del quarto di Kelly. In entrambi i casi, quando non puntare è possibile, vince non puntare: una conferma per via evolutiva del risultato di KellyBench.
 
 ## 2. Lo schema realizzato
 
@@ -86,7 +86,7 @@ Capitale rimasto a fine stagione nelle 19 stagioni vere di validazione:
 
 | Agente                                               | Confronto con            | Quando scatta l'allarme                | Dopo un errore strutturale          | Capitale rimasto | Stagioni meglio / peggio del quarto di Kelly | Stagioni ricostruite |
 | ---------------------------------------------------- | ------------------------ | -------------------------------------- | ----------------------------------- | ---------------- | -------------------------------------------- | -------------------- |
-| Lavoratore da solo, Kelly pieno                      | –                        | –                                      | –                                   | 0,2%             | 0 / 19                                       | 0,2%                 |
+| Lavoratore da solo, Kelly pieno                      | –                        | –                                      | –                                   | 0,3%             | 0 / 19                                       | 0,3%                 |
 | Lavoratore con il quarto di Kelly, senza supervisore | –                        | –                                      | –                                   | 57%              | –                                            | 56%                  |
 | Schema                                               | 40 partite precedenti    | Peggiora la media o cresce la varianza | Riprende quando l'allarme si spegne | 60%              | 10 / 6                                       | 57%                  |
 | Schema                                               | 40 partite precedenti    | Peggiorano media e varianza insieme    | Riprende quando l'allarme si spegne | 56%              | 6 / 7                                        | 57%                  |
@@ -177,14 +177,37 @@ Le conclusioni, quindi, non dipendono dalla scelta delle stagioni di training.
 - con una puntata minima di £0,01 il Kelly pieno va in rovina nel 17,9% dei casi, con £1 nel 69,0%;
 - il quarto di Kelly va in rovina solo con £1, nello 0,5% dei casi.
 
-## 7. Un tentativo basato sulla dinamica evolutiva
+## 7. Due tentativi basati sulla dinamica evolutiva
 
-Come mi ha suggerito, ho provato un approccio basato sulla dinamica evolutiva. Ho scelto di far giocare **insieme** le strategie che ho già, come una popolazione che si contende il capitale.
+Come mi ha suggerito, ho provato due approcci basati sulla dinamica evolutiva. Nel primo le strategie che ho già giocano **insieme**, come una popolazione che si contende il capitale: c'è selezione, ma le strategie restano quelle. Nel secondo cambiano le strategie stesse: ci sono anche variazione ed ereditarietà, come nell'evoluzione darwiniana.
 
-**Come funziona.** La popolazione contiene undici strategie, tutte con il modello Elo:
-- il Kelly pieno;
-- il quarto di Kelly con le tre regole di scelta dell'esito;
-- le versioni dello schema: confronto con le 40 partite precedenti o con la stagione di calibrazione, ripresa quando l'allarme si spegne o fermo fino a fine stagione, con la regola del valore atteso o dell'esito più probabile.
+**Che cosa intendo per strategia.** Una strategia è un modo completo di scommettere: il lavoratore (sempre il modello Elo) più, se c'è, il supervisore, con quattro scelte:
+- **quanto puntare quando non c'è allarme**: il Kelly pieno, o un quarto del Kelly;
+- **il supervisore**: nessuno, oppure lo schema, che confronta gli errori recenti con le 40 partite precedenti o con la stagione di calibrazione;
+- **che cosa fare dopo un errore strutturale**: riprendere a puntare quando l'allarme si spegne, o restare fermi fino a fine stagione;
+- **su quale esito puntare**: la regola del valore atteso più alto o quella dell'esito più probabile (§3).
+
+Dopo un errore nei dati, tutte le versioni dello schema riducono la puntata a tre quarti (da 0,25 a 0,19 del Kelly).
+
+### 7.1 Una popolazione di strategie che si contende il capitale
+
+**Come funziona.** La popolazione contiene le undici strategie della tabella. Sono strategie già valutate da sole (quasi tutte compaiono nel §5); nell'ultima colonna c'è il capitale che ciascuna conserva giocando da sola, in una stagione tipica.
+
+| Strategia | Puntata senza allarme | Supervisore: confronto con | Dopo un errore strutturale | Esito su cui punta | Capitale da sola |
+| --- | --- | --- | --- | --- | --- |
+| 1 | Kelly pieno | nessun supervisore | – | valore atteso più alto | 0,3% |
+| 2 | quarto di Kelly | nessun supervisore | – | valore atteso più alto | 57% |
+| 3 | quarto di Kelly | nessun supervisore | – | scarto maggiore dal mercato | 55% |
+| 4 | quarto di Kelly | nessun supervisore | – | esito più probabile | 68% |
+| 5 | quarto di Kelly | 40 partite precedenti | riprende | valore atteso più alto | 60% |
+| 6 | quarto di Kelly | 40 partite precedenti | riprende | esito più probabile | 70% |
+| 7 | quarto di Kelly | 40 partite precedenti | fermo fino a fine stagione | valore atteso più alto | 71% |
+| 8 | quarto di Kelly | stagione di calibrazione | riprende | valore atteso più alto | 62% |
+| 9 | quarto di Kelly | stagione di calibrazione | fermo fino a fine stagione | valore atteso più alto | 71% |
+| 10 | quarto di Kelly | stagione di calibrazione | riprende | esito più probabile | 69% |
+| 11 | quarto di Kelly | stagione di calibrazione | fermo fino a fine stagione | esito più probabile | 77% |
+
+La strategia 2 è il «quarto di Kelly senza supervisore» usato come riferimento in tutto il documento; la 11 è la migliore, individuata solo dopo aver visto i risultati.
 
 Ogni strategia riceve una quota del capitale. Dopo ogni giornata la quota di ciascuna cresce o cala in proporzione a quanto ha reso: è la selezione naturale applicata al capitale (dinamica del replicatore). Il legame con Kelly è diretto: nella letteratura di *evolutionary finance* la regola di Kelly è proprio la strategia che sopravvive a questa selezione. Ho previsto anche una mutazione, cioè una piccola parte del capitale ridistribuita ogni giorno fra tutte le strategie, così che nessuna si estingua. L'intensità della mutazione è l'unico parametro, e l'ho scelta sulle stagioni di training: lì la mutazione peggiora sempre il risultato, perché continua a dare capitale anche a strategie che perdono molto, come il Kelly pieno. Quindi è zero.
 
@@ -196,13 +219,13 @@ Il confronto è fatto senza puntata minima, perché solo così la quota di capit
 
 Capitale rimasto in una stagione tipica, nelle 19 stagioni vere:
 
-| Agente                                                                            | Capitale rimasto | Stagioni meglio / peggio del quarto di Kelly |
+| Chi gioca                                                                         | Capitale rimasto | Stagioni meglio / peggio del quarto di Kelly |
 | --------------------------------------------------------------------------------- | ---------------- | -------------------------------------------- |
-| Quarto di Kelly, senza supervisore                                                | 57%              | –                                            |
+| Strategia 2 da sola: quarto di Kelly, senza supervisore                           | 57%              | –                                            |
 | Popolazione, quote uguali a inizio stagione                                       | 62%              | 10 / 9                                       |
 | Popolazione con le generazioni                                                    | 70%              | 13 / 6                                       |
 | Popolazione con le generazioni e la cassa                                         | 88%              | 15 / 4                                       |
-| La migliore strategia singola, individuata solo dopo aver visto i risultati       | 77%              | 15 / 4                                       |
+| Strategia 11 da sola: la migliore, individuata solo dopo aver visto i risultati   | 77%              | 15 / 4                                       |
 
 **Figura 3. Come la popolazione sposta il capitale da una stagione all'altra.**
 
@@ -212,10 +235,72 @@ Capitale rimasto in una stagione tipica, nelle 19 stagioni vere:
 
 *Che cosa si vede.*
 - **Dentro una stagione la selezione è troppo lenta.** In un centinaio di giornate le strategie si separano poco, e la popolazione resta vicina alla media delle strategie: 62%, meglio del quarto di Kelly in 10 stagioni su 19, quasi come per caso.
-- **Da una stagione all'altra la selezione funziona.** Il Kelly pieno sparisce in due stagioni; il capitale si sposta verso lo schema che confronta con la stagione di calibrazione e si ferma fino a fine stagione (in rosa). A fine 2022-23 più di metà del capitale (54%) è su una sola strategia: lo schema che confronta con la stagione di calibrazione, con la regola dell'esito più probabile, fermo fino a fine stagione. È proprio quella che, guardando i risultati a posteriori, è la migliore. La popolazione arriva al 70% senza sapere in anticipo quale strategia sarebbe stata la migliore.
+- **Da una stagione all'altra la selezione funziona.** Il Kelly pieno sparisce in due stagioni; il capitale si sposta verso lo schema che confronta con la stagione di calibrazione e si ferma fino a fine stagione (in rosa). A fine 2022-23 più di metà del capitale (54%) è su una sola strategia, la 11. È proprio quella che, guardando i risultati a posteriori, è la migliore. La popolazione arriva al 70% senza sapere in anticipo quale strategia sarebbe stata la migliore.
 - **Con la cassa la popolazione smette di scommettere.** La quota della cassa sale dall'8% iniziale al 99%, e il capitale tipico arriva all'88%. È la conferma, per via evolutiva, del risultato di KellyBench: quando nessuna strategia ha un vantaggio sul mercato, sopravvive chi non punta.
 - **Lo schema e la popolazione si accorgono del modello che invecchia in modo diverso.** Lo schema lo vede dagli errori rispetto al mercato, prima che si traducano in perdite; la popolazione lo scopre solo dai guadagni realizzati, che sono molto più rumorosi, e le servono alcune stagioni.
 
 Due cautele: tutto vale senza la puntata minima obbligatoria di KellyBench; e la popolazione contiene anche versioni dello schema che ho scelto dopo aver visto le stagioni di valutazione (§5), quindi eredita quella scelta.
+
+### 7.2 Strategie che evolvono: variazione, selezione ed ereditarietà
+
+**Come funziona.** Le scelte che definiscono una strategia diventano i suoi «geni», ma ora possono prendere anche valori diversi da quelli delle undici strategie del 7.1:
+
+| Gene | Valori possibili | Nelle strategie del 7.1 |
+| --- | --- | --- |
+| Puntata senza allarme | qualsiasi frazione del Kelly, da quasi zero (0,005) a 1 | solo 1 o 0,25 |
+| Riduzione dopo un errore nei dati | da 0 (non si punta) a 1 (nessuna riduzione) | sempre tre quarti |
+| Supervisore | nessuno, 40 partite precedenti, stagione di calibrazione | gli stessi tre |
+| Dopo un errore strutturale | riprende, fermo fino a fine stagione | gli stessi due |
+| Esito su cui punta | valore atteso più alto, scarto maggiore dal mercato, esito più probabile | gli stessi tre |
+
+Ogni strategia del 7.1 è quindi una particolare combinazione di geni: per esempio la strategia 11 ha puntata 0,25, riduzione tre quarti, confronto con la stagione di calibrazione, fermo fino a fine stagione, esito più probabile. Sono tutte scelte che lo schema già prevede, quindi nessuna soglia dell'allarme va ricalibrata.
+
+Ogni stagione è una generazione. Venti strategie con geni casuali giocano la prima stagione (2002-03). Sopravvive la metà che ha conservato più capitale, e ogni sopravvissuta ha una «figlia» con i geni leggermente modificati (mutazione). La nuova generazione gioca la stagione successiva, e così fino al 2022-23. Si usa solo informazione passata. Il numero di strategie, la quota che sopravvive e l'intensità delle mutazioni li ho fissati prima di vedere i risultati. Poiché il caso conta, ho ripetuto l'evoluzione 30 volte, con mutazioni diverse, e riporto il valore centrale.
+
+Ho provato due varianti:
+- **libera**: evolvono tutti i geni, anche la frazione di Kelly;
+- **con il quarto di Kelly fisso**: si è obbligati a puntare il quarto di Kelly quando non c'è allarme, ed evolvono solo supervisore, riduzione, stop e regola. Così la domanda diventa: se si deve scommettere, l'evoluzione sceglie lo schema?
+
+Capitale rimasto in una stagione tipica, nelle 19 stagioni vere; per la popolazione il capitale è diviso in parti uguali fra le venti strategie di ogni generazione, cioè senza sapere quale vincerà:
+
+| Chi gioca                                                                    | Capitale rimasto | Stagioni meglio / peggio del quarto di Kelly |
+| ---------------------------------------------------------------------------- | ---------------- | -------------------------------------------- |
+| Strategia 2 da sola: quarto di Kelly, senza supervisore                      | 57%              | –                                            |
+| Popolazione che evolve, variante libera                                      | 98%              | –                                            |
+| Popolazione che evolve, quarto di Kelly fisso                                | 70% (65-75%)     | 13 / 6                                       |
+| Strategia 11 da sola: la migliore, individuata solo dopo aver visto i risultati | 77%              | 15 / 4                                       |
+
+Fra parentesi l'intervallo fra il 5% e il 95% delle 30 evoluzioni.
+
+**Figura 4. Come evolvono le strategie.**
+
+![Evoluzione della frazione di Kelly, dei geni e del capitale, stagione per stagione](figures/us_c22_evolution.png)
+
+*Come si legge.* Ogni punto è una stagione, cioè una generazione; le linee sono il valore centrale delle 30 evoluzioni.
+- In alto a sinistra (1), nella variante libera, la frazione di Kelly media della generazione, in scala logaritmica; la linea tratteggiata è il quarto di Kelly.
+- In alto a destra (2), con il quarto di Kelly fisso, la quota di strategie con ciascuna scelta: con un supervisore (blu), con il confronto con la stagione di calibrazione (rosso), ferme fino a fine stagione (verde), con la regola dell'esito più probabile (giallo).
+- In basso (3), sempre con il quarto di Kelly fisso, il capitale a fine stagione della popolazione (blu, con la fascia fra il 5% e il 95% delle evoluzioni), del quarto di Kelly senza supervisore (arancione) e della migliore strategia singola individuata a posteriori (verde).
+
+*Che cosa si vede.*
+- **Se può, l'evoluzione smette di scommettere.** Nella variante libera la frazione di Kelly scende da 0,20 a 0,03 in una sola stagione, e poi fin quasi a zero; il capitale tipico arriva al 98%. Con puntate così piccole gli altri geni non contano più. È la stessa conclusione della cassa nel primo tentativo, e del paper KellyBench.
+- **Se si deve scommettere, l'evoluzione sceglie lo schema.** Con il quarto di Kelly fisso, a fine 2022-23 tutte le strategie hanno un supervisore (all'inizio due su tre), quasi nove su dieci si fermano fino a fine stagione dopo un errore strutturale, circa nove su dieci puntano sull'esito più probabile, e la riduzione dopo un errore nei dati diventa più forte di quella che avevo fissato (la puntata scende a circa un terzo invece che a tre quarti). L'evoluzione ritrova da sola gli ingredienti dello schema che avevo individuato come migliori, senza che glieli indicassi.
+- **Tranne il confronto con la stagione di calibrazione.** L'evoluzione lo elimina già nelle prime stagioni, quando il modello è appena calibrato e quel confronto non dà vantaggi, e non lo recupera quando il modello invecchia. La selezione premia ciò che funziona adesso, non ciò che servirà dopo.
+- **Il capitale.** Con il quarto di Kelly fisso la popolazione conserva il 70%, contro il 57% del quarto di Kelly, e fa meglio in 13 stagioni su 19; resta sotto la migliore strategia individuata a posteriori (77%). La migliore strategia di una stagione, presa da sola, nella stagione dopo fa peggio della popolazione (66%): una sola stagione è un segnale troppo rumoroso per sapere chi è davvero il migliore.
+
+Le stesse cautele del primo tentativo: tutto vale senza la puntata minima obbligatoria, e fra i geni possibili ci sono anche scelte che ho individuato dopo aver visto le stagioni di valutazione.
+
+## 8. Conclusioni
+
+**1. Il limite viene dal modello, non dallo schema.** Il modello previsivo assegna all'esito reale, in media, meno probabilità del mercato. Con un vantaggio negativo nessuna regola di puntata può guadagnare: lo schema può solo decidere quando perdere meno. È lo stesso risultato di KellyBench, ottenuto qui con modelli classici e su 19 stagioni invece che su una.
+
+**2. Lo schema funziona se confronta il presente con il momento in cui il modello «era a posto».** Il modello non peggiora da un mese all'altro: peggiora lentamente rispetto al mercato, che migliora mentre il modello resta fermo. Il confronto con le 40 partite precedenti non vede questo cambiamento; il confronto con la stagione di calibrazione sì. Il segnale che lei si aspettava, la media degli errori che cresce e soprattutto la varianza che si allarga, c'è, ma su scala di stagioni e non di settimane.
+
+**3. La distinzione fra errore nei dati ed errore strutturale è la parte più fragile.** Sui dati simulati Blinder-Oaxaca la riconosce; sui dati reali molto meno, perché l'errore di una partita dipende soprattutto da quale esito esce, non dalle caratteristiche della partita. Scomporre l'errore atteso prima della partita la rende più coerente, ma non cambia il capitale.
+
+**4. La dinamica evolutiva conferma lo schema da una direzione indipendente.** Senza sapere niente dello schema, l'evoluzione delle strategie ritrova i suoi ingredienti: un supervisore, lo stop fino a fine stagione dopo un errore strutturale, una riduzione della puntata dopo un errore nei dati. E la popolazione che si contende il capitale arriva vicino alla strategia migliore senza conoscerla in anticipo. L'unica scelta che l'evoluzione non ritrova è il confronto con la stagione di calibrazione: è utile solo quando il modello invecchia, e la selezione lo scarta prima.
+
+**5. Tutti i meccanismi portano a puntare meno.** Il supervisore che si ferma, la regola dell'esito più probabile che scommette su meno partite, la popolazione che sposta capitale verso la cassa, l'evoluzione che riduce la frazione di Kelly fin quasi a zero: con un vantaggio negativo vince chi rischia meno. Il contributo dello schema non è far guadagnare, ma indicare **quando** ridurre la puntata: quando il modello si allontana dal mercato.
+
+**Limiti.** Una sola lega (la Premier League) e le quote di un solo bookmaker (Bet365); le analisi evolutive valgono senza la puntata minima obbligatoria; il confronto con la stagione di calibrazione e la regola dell'esito più probabile li ho scelti dopo aver visto le stagioni di valutazione, e nella tesi lo dichiarerò; la stagione 2023-24 l'ho usata come test una volta sola.
 
 Il codice e tutti i risultati sono riproducibili e a sua disposizione.
