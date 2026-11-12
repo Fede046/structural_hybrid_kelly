@@ -50,7 +50,10 @@ def _read(name: str, root: str) -> pd.DataFrame:
     actual = sha256_bytes(data)
     if actual != source.sha256:
         raise ValueError(f"{source.path} does not match {RESULTS_MANIFEST}: {actual} != {source.sha256}")
-    return pd.read_csv(io.BytesIO(data))
+    # round_trip: ogni numero è letto come il float più vicino al testo, come float() di Python. Il
+    # parser predefinito di pandas ("high") non arrotonda sempre correttamente e il suo risultato
+    # cambia fra Windows e Linux nelle ultime cifre, quindi le tabelle rigenerate non coincidevano.
+    return pd.read_csv(io.BytesIO(data), float_precision="round_trip")
 
 
 def read_versioned_csv(name: str, root: Path | str = REPO_ROOT) -> pd.DataFrame:
