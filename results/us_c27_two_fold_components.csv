@@ -1,0 +1,9 @@
+statistic,value
+sd_total,0.035473167815589464
+sd_composition,0.014606029779212507
+sd_structure,0.27788397665585207
+sd_interaction,0.27572113067821
+corr_structure_total,0.11999126807408315
+corr_structure_interaction,-0.9907238796733583
+corr_structure_plus_interaction_total,0.9223326099174959
+n_decisions,1756.0

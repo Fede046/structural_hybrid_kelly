@@ -245,6 +245,17 @@ class Module2Supervisor:
         self._reference_cache[day] = out
         return out
 
+    def reference_window(self, decision_date: np.datetime64) -> tuple[np.ndarray, np.ndarray] | None:
+        """Covariate (W, k) e δ (W,) delle ultime W partite osservate con Date < d; None con meno di W partite.
+
+        È la finestra che reference_diagnostics confronta con il riferimento fisso.
+        """
+        eligible = self._eligible(np.datetime64(decision_date, "ns"))
+        if eligible.shape[0] < self._window:
+            return None
+        rows = eligible[-self._window:]
+        return self._x[rows].copy(), self._delta[rows].copy()
+
     def state_at(self, decision_date: np.datetime64) -> Module2Output:
         """Uscita di Oaxaca-Blinder (module2_at_date) sulle partite osservate con Date < d (in cache)."""
         day = np.datetime64(decision_date, "ns")
