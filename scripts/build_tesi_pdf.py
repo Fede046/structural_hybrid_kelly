@@ -79,6 +79,18 @@ def surnames(authors: str) -> list[str]:
     return [a.split(",")[0].strip() for a in authors.split(" and ")]
 
 
+def disambiguate_years(bib: dict[str, dict[str, str]]) -> None:
+    """Stesso autore e stesso anno: 2026a, 2026b, ... in ordine alfabetico di titolo (nel testo e in bibliografia)."""
+    groups: dict[tuple[str, str], list[str]] = {}
+    for key, e in bib.items():
+        who = short_cite(e).rsplit(",", 1)[0]
+        groups.setdefault((who, e.get("year", "")), []).append(key)
+    for (_, year), keys in groups.items():
+        if len(keys) > 1 and year:
+            for letter, key in zip("abcdefghijklmnopqrstuvwxyz", sorted(keys, key=lambda k: bib[k].get("title", ""))):
+                bib[key]["year"] = year + letter
+
+
 def short_cite(e: dict[str, str]) -> str:
     s = surnames(e.get("author", e.get("editor", "?")))
     who = s[0] if len(s) == 1 else f"{s[0]} e {s[1]}" if len(s) == 2 else f"{s[0]} et al."
@@ -171,6 +183,7 @@ def main() -> None:
         sys.path.insert(0, args.pylib)
 
     bib = parse_bib(BIB)
+    disambiguate_years(bib)
     title, body_md = build_markdown(bib)
     missing = sorted(set(re.findall(r"\?\?(\w+)\?\?", body_md)))
     if missing:

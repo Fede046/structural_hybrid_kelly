@@ -1,4 +1,4 @@
-# Dall’assenza di vantaggio all’invecchiamento del modello: uno studio di conferma di KellyBench con importanti precisazioni
+# Dall’assenza di vantaggio alla supervisione del rischio: uno studio di conferma di KellyBench con importanti precisazioni
 
 INDICE:
 - Abstract
@@ -43,7 +43,31 @@ Questo studio non riguarda gli agenti linguistici, e non dimostra che uno di ess
 
 ## 2. Scommesse, criterio di Kelly e strumenti statistici
 
-### 2.1 Il criterio di Kelly
+### 2.1 Scommesse e quote
+
+#### La scommessa a quota fissa
+
+Nelle scommesse sportive a quota fissa chi scommette punta una somma su un esito di un evento, e il bookmaker, cioè l'operatore che accetta le scommesse, fissa in anticipo quanto pagherà se quell'esito si verifica. Per una partita di calcio il mercato più comune è quello dei tre esiti: vittoria della squadra di casa, pareggio, vittoria della squadra in trasferta. Su ogni partita il bookmaker offre anche altri mercati, per esempio sul numero di gol, ma questo studio usa soltanto quello dei tre esiti.
+
+In Europa le quote si esprimono in forma decimale. La quota decimale $o$ è la somma che si incassa per ogni unità puntata se l'esito si verifica, puntata compresa; se l'esito non si verifica, la puntata è persa. Puntando £10 sulla vittoria in casa alla quota 2,50, se la squadra di casa vince si incassano £25, cioè un guadagno netto di £15; se pareggia o perde si perdono le £10. Ogni puntata si regola alla fine della partita, e nella stessa giornata si può puntare su più partite.
+
+Se l'esito ha probabilità $p$, il valore atteso di un'unità puntata è $p\,o - 1$: si guadagnano $o - 1$ unità con probabilità $p$ e se ne perde una con probabilità $1 - p$. Una puntata conviene in media solo se questo valore è positivo, cioè se $p > 1/o$. Chi scommette non conosce $p$ e la stima con un proprio modello: si parla di scommessa «di valore» quando la probabilità stimata supera $1/o$. Se la stima è sbagliata, una puntata che il modello giudica di valore può essere sfavorevole.
+
+#### Probabilità implicite e margine
+
+Una quota decimale $o_i$ corrisponde a una probabilità implicita $\pi_i = 1/o_i$. Sui tre esiti di una partita queste probabilità sommano a $S = \sum_i \pi_i > 1$: l'eccesso $S - 1$, detto *overround*, è il margine del bookmaker. Sulle quote Bet365 della Premier League usate in questo studio l'overround medio è 5,4%. Il margine ha tre funzioni: è il guadagno del bookmaker su un libro bilanciato, compensa le posizioni sbilanciate quando il pubblico preferisce un esito, e protegge dagli scommettitori informati [@shin1993].
+
+Per confrontare le previsioni del modello con quelle del mercato servono probabilità che sommino a uno, quindi il margine va tolto. Il problema è sottodeterminato: c'è una sola equazione ($\sum_i q_i = 1$) per tre incognite, e ogni metodo equivale a un'ipotesi su come il margine si distribuisce fra gli esiti. Il metodo proporzionale ($q_i = \pi_i/S$) assume un margine uguale ovunque. Il metodo di Shin [@shin1993] assume invece che una frazione $z$ delle puntate provenga da scommettitori informati, e ne deduce che il margine pesa di più sugli esiti improbabili, in accordo con il noto *favourite-longshot bias*, per cui le quote alte sono sistematicamente meno convenienti. Questo studio adotta il metodo di Shin, l'unico fondato su un modello economico, e verifica che i risultati non cambino con altri quattro metodi (proporzionale, additivo, potenza e *odds ratio*).
+
+Il metodo conta per il confronto con il mercato, non per la puntata. La frazione di Kelly (2.2), che il §2.2 ricava, usa soltanto la probabilità del modello e la quota offerta: togliere il margine in un modo o nell'altro non cambia né l'esito su cui si punta né l'importo.
+
+#### Quote pre-partita e quote di chiusura
+
+Le quote non restano fisse fino alla partita. Il bookmaker le pubblica alcuni giorni prima e le corregge man mano che arrivano notizie, come le formazioni e gli infortuni, e che si accumulano le puntate. La quota di chiusura è l'ultima prima del calcio d'inizio: incorpora tutta l'informazione disponibile in quel momento, ed è considerata la stima più precisa che il mercato esprime. Battere le quote di chiusura è quindi più difficile che battere quelle pubblicate prima.
+
+I bookmaker differiscono anche per il margine. Bet365, la fonte delle quote di KellyBench, si rivolge al grande pubblico e sulla Premier League applica un margine di circa il 5%. Pinnacle accetta puntate alte anche dagli scommettitori professionisti e lavora con margini molto più bassi, e le sue quote di chiusura sono considerate fra le più precise del mercato. Questo studio usa le quote pre-partita di Bet365, come KellyBench, e come confronto più severo le quote di chiusura di Pinnacle (§4.1).
+
+### 2.2 Il criterio di Kelly
 
 Nel 1956 John L. Kelly Jr., fisico dei Bell Laboratories, pubblicò sul *Bell System Technical Journal* un articolo dal titolo tecnico, «A New Interpretation of Information Rate» [@kelly1956]. Il problema era quello di uno scommettitore che riceve, su un canale disturbato, un'informazione sull'esito di un evento prima che il mercato la conosca; secondo la ricostruzione di Poundstone [@poundstone2005], lo spunto veniva dagli scandali dei quiz televisivi dell'epoca. Kelly dimostrò che il tasso massimo a cui lo scommettitore può far crescere il proprio capitale coincide con il tasso di informazione del canale, nel senso della teoria che il collega Claude Shannon aveva fondato pochi anni prima [@shannon1948]. La regola che ne deriva, puntare la frazione del capitale che massimizza il logaritmo della ricchezza, porta da allora il suo nome. Kelly morì nel 1965, a 41 anni.
 
@@ -53,7 +77,7 @@ Il criterio non ha avuto soltanto sostenitori. Paul Samuelson contestò a lungo 
 
 #### La frazione ottima
 
-Si consideri una scommessa ripetuta che si vince con probabilità $p$ e si perde con probabilità $1-p$, pagata a una quota decimale $o$: per ogni unità puntata si incassano $o$ unità in caso di vittoria, e la vincita netta è $b = o - 1$. Se a ogni turno si punta una frazione $f$ del capitale corrente $W$, il capitale si moltiplica per $1 + fb$ quando si vince e per $1 - f$ quando si perde. Dopo $n$ turni il capitale è un prodotto di fattori casuali, e il suo logaritmo una somma. Il tasso di crescita atteso per turno è quindi
+Si consideri una scommessa ripetuta che si vince con probabilità $p$ e si perde con probabilità $1-p$, pagata a una quota decimale $o$ (§2.1): la vincita netta per unità puntata è $b = o - 1$. Se a ogni turno si punta una frazione $f$ del capitale corrente $W$, il capitale si moltiplica per $1 + fb$ quando si vince e per $1 - f$ quando si perde. Dopo $n$ turni il capitale è un prodotto di fattori casuali, e il suo logaritmo una somma. Il tasso di crescita atteso per turno è quindi
 
 $$
 g(f) = \mathbb{E}\left[\ln \frac{W_{t+1}}{W_t}\right] = p \ln(1 + fb) + (1-p)\ln(1-f). \tag{2.1}
@@ -75,15 +99,7 @@ Due proprietà della regola spiegano perché nella pratica la si usa in forma fr
 
 Nella (2.2) la probabilità $p$ è quella vera. Chi scommette non la conosce, e usa la stima del proprio modello: il criterio dice quanto puntare se quella stima è giusta, non se lo è. Quando conviene puntare dipende dal confronto con il mercato, che è l'argomento della prossima sezione.
 
-### 2.2 Le quote, il margine e l'efficienza del mercato
-
-#### Probabilità implicite e margine
-
-Una quota decimale $o_i$ corrisponde a una probabilità implicita $\pi_i = 1/o_i$. Sui tre esiti di una partita (vittoria in casa, pareggio, vittoria in trasferta) queste probabilità sommano a $S = \sum_i \pi_i > 1$: l'eccesso $S - 1$, detto *overround*, è il margine del bookmaker. Sulle quote Bet365 della Premier League usate in questo studio l'overround medio è 5,4%. Il margine ha tre funzioni: è il guadagno del bookmaker su un libro bilanciato, compensa le posizioni sbilanciate quando il pubblico preferisce un esito, e protegge dagli scommettitori informati [@shin1993].
-
-Per confrontare le previsioni del modello con quelle del mercato servono probabilità che sommino a uno, quindi il margine va tolto. Il problema è sottodeterminato: c'è una sola equazione ($\sum_i q_i = 1$) per tre incognite, e ogni metodo equivale a un'ipotesi su come il margine si distribuisce fra gli esiti. Il metodo proporzionale ($q_i = \pi_i/S$) assume un margine uguale ovunque. Il metodo di Shin [@shin1993] assume invece che una frazione $z$ delle puntate provenga da scommettitori informati, e ne deduce che il margine pesa di più sugli esiti improbabili, in accordo con il noto *favourite-longshot bias*, per cui le quote alte sono sistematicamente meno convenienti. Questo studio adotta il metodo di Shin, l'unico fondato su un modello economico, e verifica che i risultati non cambino con altri quattro metodi (proporzionale, additivo, potenza e *odds ratio*).
-
-Il metodo conta per il confronto con il mercato, non per la puntata. La frazione di Kelly (2.2) usa soltanto la probabilità del modello e la quota offerta: togliere il margine in un modo o nell'altro non cambia né l'esito su cui si punta né l'importo.
+### 2.3 Il confronto con il mercato
 
 #### Efficienza del mercato
 
@@ -113,9 +129,9 @@ dove $q_t$ è la probabilità del mercato senza margine. La media $\hat g = \fra
 
 Rispetto al guadagno realizzato, questa misura ha due vantaggi. Si calcola su tutte le partite, non solo su quelle su cui si è puntato, e quindi non dipende dalla regola di puntata. Ed è molto meno ingannevole: un modello che riproduce il mercato con l'aggiunta di rumore casuale trova «scommesse di valore» su gran parte delle partite, perché il rumore crea scarti positivi, ma il suo $\hat g$ è negativo.
 
-Poiché le partite di una stagione non sono del tutto indipendenti, gli intervalli di confidenza di $\hat g$ si costruiscono con un bootstrap a blocchi, che ricampiona tratti consecutivi della serie invece di singole partite (§2.5).
+Poiché le partite di una stagione non sono del tutto indipendenti, gli intervalli di confidenza di $\hat g$ si costruiscono con un bootstrap a blocchi, che ricampiona tratti consecutivi della serie invece di singole partite (§2.6).
 
-### 2.3 Il modello previsivo Elo
+### 2.4 Il modello previsivo Elo
 
 Il sistema Elo nasce negli scacchi [@elo1978] ed è oggi uno dei modelli più usati per prevedere i risultati del calcio, dove regge il confronto con modelli più ricchi [@hvattum2010]. A ogni squadra è associato un punteggio $R$, e il punteggio atteso della squadra di casa è
 
@@ -135,7 +151,7 @@ Il pareggio diventa meno probabile al crescere dello squilibrio fra le squadre. 
 
 La scelta di Elo ha tre ragioni. È deterministico ed economico: tutte le regole di puntata confrontate usano esattamente le stesse previsioni, e ogni differenza di capitale dipende dalla sola decisione; è la separazione che in un agente LLM non si può ottenere. È dinamico: si aggiorna a ogni partita, e la rubrica con cui KellyBench valuta la sofisticazione delle strategie include fra i criteri proprio l'uso di modelli dinamici come Elo [@grady2026kellybench]. Infine ha pochi parametri, e il suo comportamento resta facile da interpretare anche quando invecchia.
 
-### 2.4 KellyBench
+### 2.5 KellyBench
 
 #### L'ambiente
 
@@ -152,7 +168,7 @@ Per passare alla giornata successiva bisogna aver piazzato almeno una puntata. U
 
 Per costruire i propri modelli l'agente lavora in un ambiente di calcolo isolato, con strumenti per eseguire comandi, leggere e scrivere file e scrivere codice Python con le librerie usuali di analisi dei dati. Ha a disposizione i dati storici della Premier League: i risultati dal 1993-94, le statistiche delle partite dal 2000-01, le quote dal 2002-03 e i dati sui giocatori dal 2008. Non può accedere alla rete: chi ci prova tre volte viene squalificato e perde il capitale.
 
-Il risultato di ogni giornata è misurato con la variazione del logaritmo del capitale, $\ln(W_{t+1}/W_t)$. Sommata sulla stagione dà il logaritmo del rapporto fra capitale finale e iniziale: è la grandezza che il criterio di Kelly massimizza (§2.1).
+Il risultato di ogni giornata è misurato con la variazione del logaritmo del capitale, $\ln(W_{t+1}/W_t)$. Sommata sulla stagione dà il logaritmo del rapporto fra capitale finale e iniziale: è la grandezza che il criterio di Kelly massimizza (§2.2).
 
 Gli scenari sono quattro. Tre, di stagioni distanti un decennio l'una dall'altra, servono a mettere a punto gli agenti; il quarto, la stagione 2023-24, è quello su cui sono valutati.
 
@@ -199,7 +215,7 @@ Gli autori discutono infine i limiti del benchmark: una sola stagione, che per i
 
 Il paper non precisa se la *log-loss* del mercato con cui l'esecuzione di GPT-5.4 confronta il proprio modello sia calcolata con o senza margine, e la differenza è grande: togliere il margine alza la *log-loss* del mercato di circa 0,05, più di dieci volte lo scarto osservato (0,003); con il margine incluso il mercato appare più preciso di quanto sia, e il confronto risulta sbilanciato a suo favore.
 
-### 2.5 Il bootstrap
+### 2.6 Il bootstrap
 
 #### L'idea
 
@@ -215,13 +231,13 @@ La lunghezza dei blocchi è un compromesso: blocchi troppo corti spezzano la dip
 
 #### Tre usi
 
-Lo stesso strumento serve a tre scopi. Il primo è l'intervallo di confidenza di una stima, come il vantaggio sul mercato $\hat g$ (§2.2).
+Lo stesso strumento serve a tre scopi. Il primo è l'intervallo di confidenza di una stima, come il vantaggio sul mercato $\hat g$ (§2.3).
 
 Il secondo è la soglia di un test. Ricampionando a blocchi un unico periodo si ottengono serie in cui i blocchi sono mescolati a caso: un eventuale cambiamento nel tempo viene cancellato, mentre la dipendenza fra osservazioni vicine resta. Il valore della statistica del test su ciascuna di queste serie è quindi un esempio di ciò che il test produce quando non è cambiato nulla, e il loro quantile al 95% è una soglia che segnala un cambiamento inesistente solo nel 5% dei casi, anche con osservazioni dipendenti.
 
 Il terzo è la ricostruzione di intere serie. Ricampionando a blocchi una serie reale, per esempio una stagione di partite, si ottengono molte serie plausibili, fatte degli stessi dati in un ordine diverso, con alcuni tratti ripetuti e altri assenti. Ripetendo un'intera analisi su ciascuna si misura quanto il suo risultato dipenda dal caso.
 
-### 2.6 L'ANOVA e il controllo della dispersione
+### 2.7 L'ANOVA e il controllo della dispersione
 
 #### L'ANOVA a una via
 
@@ -232,7 +248,7 @@ $$
 $$
 
 La statistica $F$ è il rapporto fra le due parti, ciascuna divisa per i propri gradi di libertà. Se tutte le medie sono uguali, $F$ è vicino a uno; se differiscono, cresce. Con osservazioni indipendenti e normali, sotto l'ipotesi di medie uguali $F$ segue una distribuzione $F$ di Fisher, da cui si ricava la soglia. Con due gruppi l'ANOVA coincide con il test $t$.
-Se i due gruppi sono due periodi di tempo, l'ANOVA dice se la media di una grandezza è cambiata fra l'uno e l'altro.
+Se i due gruppi sono due periodi di tempo, l'ANOVA dice se la media di una grandezza è cambiata fra l'uno e l'altro. La stessa scomposizione dice anche quanto una differenza conti, oltre a se sia significativa: con campioni molto grandi una differenza può superare qualunque soglia e spiegare comunque una parte trascurabile della variabilità [@roccetti2026fragi].
 
 #### La dispersione: il test di Brown-Forsythe
 
@@ -240,15 +256,15 @@ Un modello che perde affidabilità può produrre errori non solo peggiori in med
 
 #### Errori autocorrelati e soglie calibrate
 
-La soglia nominale dell'ANOVA vale per osservazioni indipendenti. Gli errori di un modello lungo una stagione possono invece essere autocorrelati: a un errore alto tende a seguirne un altro, per esempio perché il modello sbaglia per settimane la forza di una squadra. In questo caso $n$ osservazioni contengono meno informazione di $n$ osservazioni indipendenti; il test sovrastima l'informazione disponibile e segnala differenze che non esistono, cioè falsi allarmi. Nel confronto fra due periodi consecutivi la quota di falsi allarmi cresce rapidamente con l'autocorrelazione: in simulazione arriva al 40% invece del 5% (Figura 3.2).
+La soglia nominale dell'ANOVA vale per osservazioni indipendenti. Gli errori di un modello lungo una stagione possono invece essere autocorrelati: a un errore alto tende a seguirne un altro, per esempio perché il modello sbaglia per settimane la forza di una squadra. In questo caso $n$ osservazioni contengono meno informazione di $n$ osservazioni indipendenti; il test sovrastima l'informazione disponibile e segnala differenze che non esistono, cioè falsi allarmi. Nel confronto fra due periodi consecutivi la quota di falsi allarmi cresce rapidamente con l'autocorrelazione: in simulazione arriva al 40% invece del 5% (capitolo 3, Figura 3.2).
 
-Il rimedio è calibrare la soglia sui dati con un bootstrap a blocchi (§2.5), che conserva la dipendenza fra osservazioni vicine, invece di ricavarla dalla distribuzione $F$.
+Il rimedio è calibrare la soglia sui dati con un bootstrap a blocchi (§2.6), che conserva la dipendenza fra osservazioni vicine, invece di ricavarla dalla distribuzione $F$.
 
-### 2.7 La scomposizione di Blinder-Oaxaca
+### 2.8 La scomposizione di Blinder-Oaxaca
 
 #### L'origine
 
-Nel 1973 Blinder e Oaxaca proposero, in modo indipendente, un metodo per spiegare il divario salariale fra due gruppi, uomini e donne o bianchi e neri [@blinder1973; @oaxaca1973]. La domanda era: quanto del divario dipende dalle diverse caratteristiche dei due gruppi, come l'istruzione e l'esperienza, e quanto dal fatto che le stesse caratteristiche sono retribuite in modo diverso? Il metodo è stato poi usato ben oltre l'economia del lavoro. In epidemiologia, per esempio, scomposizioni dello stesso tipo sono state usate per separare la parte di un segnale di rischio dovuta alla composizione delle popolazioni confrontate da quella strutturale [@roccetti2026fphar; @roccetti2026cmes].
+Nel 1973 Blinder e Oaxaca proposero, in modo indipendente, un metodo per spiegare il divario salariale fra due gruppi, uomini e donne o bianchi e neri [@blinder1973; @oaxaca1973]. La domanda era: quanto del divario dipende dalle diverse caratteristiche dei due gruppi, come l'istruzione e l'esperienza, e quanto dal fatto che le stesse caratteristiche sono retribuite in modo diverso? Il metodo è stato poi usato ben oltre l'economia del lavoro. In epidemiologia, per esempio, scomposizioni dello stesso tipo sono state usate per separare la parte di un segnale di rischio dovuta alla composizione delle popolazioni confrontate da quella strutturale [@roccetti2026cmes; @roccetti2026fphar].
 
 #### La scomposizione
 
@@ -276,7 +292,7 @@ La scomposizione vale per la media di qualunque risposta. Se la risposta è la d
 
 La scomposizione richiede due cautele. La prima: la parte strutturale, o non spiegata, è un residuo. Contiene il vero cambiamento del legame, ma anche l'effetto di ogni caratteristica rilevante che non è stata inclusa: se una caratteristica omessa cambia fra i due gruppi, il suo effetto viene attribuito alla struttura. Va quindi letta insieme all'elenco delle caratteristiche usate, e non ha un significato causale. La seconda: la forma a due termini dipende dal gruppo scelto come riferimento, e va usata solo quando la scelta è naturale, per esempio quando uno dei due gruppi è il punto di partenza con cui si confrontano i successivi. La forma a tre termini (2.8) non dipende da questa scelta, ma richiede una regressione in entrambi i gruppi.
 
-### 2.8 La dinamica evolutiva
+### 2.9 La dinamica evolutiva
 
 La dinamica evolutiva si può applicare a una popolazione di strategie a due livelli: la sola selezione fra strategie fisse, e l'evoluzione completa, con variazione, selezione ed ereditarietà.
 
@@ -298,9 +314,9 @@ Negli algoritmi genetici [@holland1975] una strategia è descritta da un insieme
 
 ## 3. Lo schema Structural-Hybrid
 
-Il criterio di Kelly indica quale frazione del capitale puntare supponendo che le probabilità usate siano quelle vere (§2.1). Le probabilità di un modello, però, sono stime, e la loro affidabilità cambia nel tempo: una squadra cambia allenatore, il vantaggio del campo si riduce, il mercato si aggiorna più in fretta del modello. Chi applica il criterio senza misurare quanto le proprie stime siano ancora affidabili punta come se lo fossero sempre, e perde proprio quando smettono di esserlo. La forma frazionaria attenua il problema riducendo tutte le puntate nella stessa misura, ma non distingue un periodo in cui il modello funziona da uno in cui ha smesso di funzionare.
+Il criterio di Kelly indica quale frazione del capitale puntare supponendo che le probabilità usate siano quelle vere (§2.2). Le probabilità di un modello, però, sono stime, e la loro affidabilità cambia nel tempo: una squadra cambia allenatore, il vantaggio del campo si riduce, il mercato si aggiorna più in fretta del modello. Chi applica il criterio senza misurare quanto le proprie stime siano ancora affidabili punta come se lo fossero sempre, e perde proprio quando smettono di esserlo. La forma frazionaria attenua il problema riducendo tutte le puntate nella stessa misura, ma non distingue un periodo in cui il modello funziona da uno in cui ha smesso di funzionare.
 
-Lo schema Structural-Hybrid rende la frazione puntata una variabile, che dipende da quanto il modello è affidabile in quel momento, e misura questa affidabilità con strumenti statistici. È anche una risposta al difetto più evidente degli agenti di KellyBench, che riconoscevano i propri errori ma non cambiavano comportamento (§2.4): qui chi osserva gli errori e chi decide la puntata sono moduli distinti, e la reazione a un peggioramento è una regola, non una scelta lasciata a chi prevede.
+Lo schema Structural-Hybrid rende la frazione puntata una variabile, che dipende da quanto il modello è affidabile in quel momento, e misura questa affidabilità con strumenti statistici. È anche una risposta al difetto più evidente degli agenti di KellyBench, che riconoscevano i propri errori ma non cambiavano comportamento (§2.5): qui chi osserva gli errori e chi decide la puntata sono moduli distinti, e la reazione a un peggioramento è una regola, non una scelta lasciata a chi prevede.
 
 ### 3.1 L'architettura
 
@@ -316,7 +332,7 @@ Il ricalibratore non modifica mai il modello: agisce soltanto sulla puntata. Le 
 
 ### 3.2 Il lavoratore
 
-**Le previsioni.** Il lavoratore è il modello Elo-Davidson del §2.3. Prima di ogni giornata prevede tutte le partite di quella data con i punteggi correnti, e aggiorna i punteggi solo dopo averne ricevuto gli esiti. Le squadre neopromosse entrano con una regola fissata prima di guardare i dati: una squadra che era in Premier League nella stagione precedente conserva il proprio punteggio; una che vi torna dopo qualche anno riprende l'ultimo punteggio che aveva; una mai vista parte dalla media delle tre retrocesse della stagione precedente. Un secondo modello, Dixon-Coles [@dixon1997], basato sui gol anziché sui risultati, serve soltanto da controllo: verifica che il risultato principale non dipenda dal modello scelto.
+**Le previsioni.** Il lavoratore è il modello Elo-Davidson del §2.4. Prima di ogni giornata prevede tutte le partite di quella data con i punteggi correnti, e aggiorna i punteggi solo dopo averne ricevuto gli esiti. Le squadre neopromosse entrano con una regola fissata prima di guardare i dati: una squadra che era in Premier League nella stagione precedente conserva il proprio punteggio; una che vi torna dopo qualche anno riprende l'ultimo punteggio che aveva; una mai vista parte dalla media delle tre retrocesse della stagione precedente. Un secondo modello, Dixon-Coles [@dixon1997], basato sui gol anziché sui risultati, serve soltanto da controllo: verifica che il risultato principale non dipenda dal modello scelto.
 
 **La puntata proposta.** Per l'esito scelto, con probabilità $\hat p$ e quota $o$, il lavoratore propone la frazione di Kelly (2.2), posta a zero se il valore atteso stimato $\hat p\,o - 1$ è negativo. La puntata effettiva è $\lambda$ volte questa frazione, dove $\lambda$ è il moltiplicatore deciso dal supervisore e dal ricalibratore.
 
@@ -334,16 +350,16 @@ Il lavoratore non risolve il problema di Kelly congiunto sui tre esiti e sulle p
 
 **Che cosa osserva.** Il supervisore non osserva il guadagno, ma il residuo $\delta_t$ della (2.4): lo scarto logaritmico fra la probabilità che il modello e il mercato, senza margine, hanno assegnato all'esito che si è verificato. La scelta ha tre ragioni.
 
-La prima è che il residuo misura proprio ciò che determina il guadagno. La sua media su un periodo è la stima del vantaggio sul mercato in quel periodo (§2.2): un residuo che peggiora è un vantaggio che si riduce. La seconda è che non dipende dalla puntata. Si calcola su tutte le partite, comprese quelle su cui non si punta, e il supervisore osserva quindi la stessa serie qualunque cosa decida; il guadagno, al contrario, cambierebbe con le decisioni del supervisore stesso. La terza è che tiene conto della difficoltà delle partite. Una partita incerta produce errori grandi per chiunque, e il confronto con il mercato elimina la parte di difficoltà comune ai due; gli errori del solo modello, come la *log-loss*, confonderebbero un modello che peggiora con una stagione più imprevedibile.
+La prima è che il residuo misura proprio ciò che determina il guadagno. La sua media su un periodo è la stima del vantaggio sul mercato in quel periodo (§2.3): un residuo che peggiora è un vantaggio che si riduce. La seconda è che non dipende dalla puntata. Si calcola su tutte le partite, comprese quelle su cui non si punta, e il supervisore osserva quindi la stessa serie qualunque cosa decida; il guadagno, al contrario, cambierebbe con le decisioni del supervisore stesso. La terza è che tiene conto della difficoltà delle partite. Una partita incerta produce errori grandi per chiunque, e il confronto con il mercato elimina la parte di difficoltà comune ai due; gli errori del solo modello, come la *log-loss*, confonderebbero un modello che peggiora con una stagione più imprevedibile.
 
 **I due periodi.** A ogni giornata il supervisore confronta le ultime 40 partite osservate con un periodo di riferimento. Quaranta partite corrispondono a quattro giornate: abbastanza per avere una media stabile, e abbastanza poche per reagire entro un mese. La lunghezza è stata scelta sulle stagioni di calibrazione. Per il periodo di riferimento si considerano due alternative:
 
 - **la stagione di calibrazione del modello.** Gli errori di oggi sono confrontati con quelli della stagione su cui il modello è stato stimato. È il riferimento della versione principale;
 - **le 40 partite precedenti.** È il confronto più immediato: il modello sta peggiorando rispetto a poco fa? Resta come variante.
 
-**I due test.** Il supervisore tratta i due periodi come i due gruppi dell'ANOVA (§2.6) e calcola due statistiche: l'ANOVA sulla media dei residui, che conta solo se la media recente è peggiore di quella di riferimento, e il test di Brown-Forsythe sulla dispersione, che conta solo se la dispersione recente è maggiore. Un miglioramento, quindi, non fa mai scattare l'allarme. Poiché un modello che perde affidabilità può peggiorare nella media, nella dispersione o in entrambe, si provano due regole: nella prima basta che una delle due statistiche superi la soglia, nella seconda devono superarla entrambe. La versione principale usa la prima.
+**I due test.** Il supervisore tratta i due periodi come i due gruppi dell'ANOVA (§2.7) e calcola due statistiche: l'ANOVA sulla media dei residui, che conta solo se la media recente è peggiore di quella di riferimento, e il test di Brown-Forsythe sulla dispersione, che conta solo se la dispersione recente è maggiore. Un miglioramento, quindi, non fa mai scattare l'allarme. Poiché un modello che perde affidabilità può peggiorare nella media, nella dispersione o in entrambe, si provano due regole: nella prima basta che una delle due statistiche superi la soglia, nella seconda devono superarla entrambe. La versione principale usa la prima.
 
-**Le soglie.** Un falso allarme è un allarme che scatta quando il modello non è cambiato: gli errori recenti sembrano peggiori del riferimento solo per caso. Nessun test li evita del tutto; la soglia fissa in anticipo la probabilità di un falso allarme che si è disposti ad accettare, qui il 5%. Le soglie non sono però quelle nominali perché, come anticipato nel §2.6, con errori autocorrelati la soglia nominale dell'ANOVA produce troppi falsi allarmi. La Figura 3.2 lo mostra su serie simulate con autocorrelazione crescente: nel confronto fra due metà consecutive di una stagione i falsi allarmi passano dal 4% con osservazioni indipendenti al 40% con autocorrelazione forte, mentre con una soglia calibrata per bootstrap a blocchi tornano vicini al 5%. Le soglie dello schema sono quindi calibrate sulle stagioni di calibrazione con un bootstrap a blocchi mobili.
+**Le soglie.** Un falso allarme è un allarme che scatta quando il modello non è cambiato: gli errori recenti sembrano peggiori del riferimento solo per caso. Nessun test li evita del tutto; la soglia fissa in anticipo la probabilità di un falso allarme che si è disposti ad accettare, qui il 5%. Le soglie non sono però quelle nominali perché, come anticipato nel §2.7, con errori autocorrelati la soglia nominale dell'ANOVA produce troppi falsi allarmi. La Figura 3.2 lo mostra su serie simulate con autocorrelazione crescente: nel confronto fra due metà consecutive di una stagione i falsi allarmi passano dal 4% con osservazioni indipendenti al 40% con autocorrelazione forte, mentre con una soglia calibrata per bootstrap a blocchi tornano vicini al 5%. Le soglie dello schema sono quindi calibrate sulle stagioni di calibrazione con un bootstrap a blocchi mobili.
 
 Resta da decidere a che cosa si riferisce il 5%. Il supervisore fa un confronto a ogni giornata, un centinaio per stagione, su finestre che in gran parte si sovrappongono: una soglia al 5% per ciascun confronto dà una probabilità di almeno un falso allarme nell'arco della stagione molto più alta del 5%. Se la conseguenza di un allarme dura fino a fine stagione, conta questa probabilità complessiva. La versione principale la controlla calibrando la soglia sul massimo della statistica lungo la stagione: in ogni ricampionamento a blocchi si calcola la statistica a tutte le giornate di decisione, se ne prende il massimo e si usa come soglia il suo quantile al 95%. Il 5% diventa così la probabilità di almeno un falso allarme nell'intera stagione; nella variante con le soglie per giornata resta la probabilità di un falso allarme a ogni singola giornata. La soglia per stagione rende l'allarme meno sensibile ai cambiamenti piccoli: è il compromesso di ogni controllo ripetuto nel tempo. In entrambi i casi, nella regola «una delle due», ciascuna statistica riceve metà di questo margine. Le soglie per stagione sono da due volte e mezzo a tre volte più alte di quelle per giornata (Appendice B). 
 
@@ -353,7 +369,7 @@ Resta da decidere a che cosa si riferisce il 5%. Il supervisore fa un confronto 
 
 ### 3.4 Il ricalibratore
 
-**Quando interviene.** Il ricalibratore lavora solo quando il supervisore dà l'allarme, e risponde a una domanda: gli errori recenti sono peggiori perché sono cambiate le partite, o perché il modello non descrive più il campionato? È la distinzione della scomposizione di Blinder-Oaxaca (§2.7). Se nel periodo recente il modello sbaglia di più perché sono aumentate le partite del tipo su cui sbaglia sempre, per esempio partite incerte o con una neopromossa, il peggioramento è di composizione: un errore nei dati, con un modello che funziona come prima. Se invece sbaglia di più sulle stesse partite, il peggioramento è strutturale: il modello non descrive più il campionato.
+**Quando interviene.** Il ricalibratore lavora solo quando il supervisore dà l'allarme, e risponde a una domanda: gli errori recenti sono peggiori perché sono cambiate le partite, o perché il modello non descrive più il campionato? È la distinzione della scomposizione di Blinder-Oaxaca (§2.8). Se nel periodo recente il modello sbaglia di più perché sono aumentate le partite del tipo su cui sbaglia sempre, per esempio partite incerte o con una neopromossa, il peggioramento è di composizione: un errore nei dati, con un modello che funziona come prima. Se invece sbaglia di più sulle stesse partite, il peggioramento è strutturale: il modello non descrive più il campionato.
 
 **Le caratteristiche delle partite.** Di ogni partita sono note, prima del calcio d'inizio, cinque caratteristiche:
 
@@ -377,7 +393,7 @@ La prima versione della diagnosi applicava invece la scomposizione a tre termini
 | Errore nei dati | 0,19, cioè tre quarti di 0,25, finché dura l'allarme |
 | Errore strutturale | 0 |
 
-Il quarto di Kelly in assenza di allarme è la scelta prudente più diffusa nella pratica (§2.1); la riduzione a tre quarti dopo un errore nei dati è stata scelta sulle stagioni di calibrazione.
+Il quarto di Kelly in assenza di allarme è la scelta prudente più diffusa nella pratica (§2.2); la riduzione a tre quarti dopo un errore nei dati è stata scelta sulle stagioni di calibrazione.
 
 Dopo un errore strutturale lo schema non punta finché il modello non viene ri-parametrizzato. Se ne provano due letture: riprendere a puntare quando l'allarme si spegne, oppure restare fermi fino a fine stagione, perché qui il modello viene ri-parametrizzato solo fra una stagione e l'altra.
 
@@ -431,7 +447,7 @@ Con una puntata minima di £0,01 su un capitale di £220 l'effetto sui risultati
 
 Il risultato principale è quello delle **stagioni vere**: ciascuna delle 19 stagioni di valutazione è giocata una volta, con le partite nell'ordine in cui si sono svolte, come in KellyBench.
 
-Per misurare quanto conta la fortuna, ogni stagione è anche **ricostruita 500 volte**, ricampionando le giornate con uno *stationary bootstrap* (§2.5): si estraggono blocchi di giornate consecutive, di lunghezza casuale, e li si accoda fino a riempire la stagione. Partite, quote e risultati sono veri, ma alcune giornate si ripetono e altre mancano. Le stagioni ricostruite non sono il risultato principale perché alterano proprio la sequenza temporale che il supervisore osserva, e possono creare o cancellare i periodi di errori anomali che fanno scattare l'allarme.
+Per misurare quanto conta la fortuna, ogni stagione è anche **ricostruita 500 volte**, ricampionando le giornate con uno *stationary bootstrap* (§2.6): si estraggono blocchi di giornate consecutive, di lunghezza casuale, e li si accoda fino a riempire la stagione. Partite, quote e risultati sono veri, ma alcune giornate si ripetono e altre mancano. Le stagioni ricostruite non sono il risultato principale perché alterano proprio la sequenza temporale che il supervisore osserva, e possono creare o cancellare i periodi di errori anomali che fanno scattare l'allarme.
 
 Le stagioni ricostruite sono disponibili per le prime versioni dello schema (Appendice A) e, sulla stagione 2023-24, anche per la versione principale (§5.8). La versione principale è valutata sulle stagioni vere, con i controlli del §4.6.
 
@@ -520,7 +536,7 @@ Lo schema agisce solo sulla puntata, e ridurre la puntata conviene soltanto quan
 
 ### 5.1 Il modello non batte il mercato
 
-Sulle 19 stagioni di valutazione (7 220 partite) il modello Elo assegna all'esito reale, in media, meno probabilità delle quote Bet365 senza margine: lo scarto medio $\hat g$ della (2.4) è −0,022, con intervallo al 95% da −0,030 a −0,015. Contro le quote di chiusura di Pinnacle, più precise, lo scarto è più ampio: −0,032, con intervallo da −0,044 a −0,020. Il risultato non dipende dal metodo usato per togliere il margine, perché con i cinque metodi del §2.2 lo scarto va da −0,021 a −0,022, e non dipende nemmeno dal modello: Dixon-Coles prevede meglio dell'Elo (*log-loss* 0,971 contro 0,980), ma resta sotto il mercato (−0,014). Nessuna stagione ha uno scarto significativamente positivo, e il valore cumulato è negativo alla fine di ogni stagione (Figura 5.1).
+Sulle 19 stagioni di valutazione (7 220 partite) il modello Elo assegna all'esito reale, in media, meno probabilità delle quote Bet365 senza margine: lo scarto medio $\hat g$ della (2.4) è −0,022, con intervallo al 95% da −0,030 a −0,015. Contro le quote di chiusura di Pinnacle, più precise, lo scarto è più ampio: −0,032, con intervallo da −0,044 a −0,020. Il risultato non dipende dal metodo usato per togliere il margine, perché con i cinque metodi del §2.1 lo scarto va da −0,021 a −0,022, e non dipende nemmeno dal modello: Dixon-Coles prevede meglio dell'Elo (*log-loss* 0,971 contro 0,980), ma resta sotto il mercato (−0,014). Nessuna stagione ha uno scarto significativamente positivo, e il valore cumulato è negativo alla fine di ogni stagione (Figura 5.1).
 
 ![Scarto cumulato fra modello e mercato, partita per partita](figures/us_c4_2_g_hat.png)
 
@@ -528,7 +544,7 @@ Sulle 19 stagioni di valutazione (7 220 partite) il modello Elo assegna all'esit
 
 Il modello perde di più proprio dove il mercato è più sicuro: nelle partite con una favorita netta (quota sotto 1,5) lo scarto è −0,037. Un controllo con gli esiti rimescolati a caso all'interno di ogni stagione esclude che il risultato sia un artefatto della procedura: lo scarto osservato resta al di sotto di tutti i valori ottenuti con gli esiti rimescolati.
 
-La conseguenza è quella ricavata nel §2.2: chi punta secondo le probabilità del modello perde in media, e una regola di puntata più prudente può soltanto ridurre le perdite. Il guadagno, che era l'obiettivo iniziale di questo studio, non è raggiungibile; resta da capire se il supervisore sappia indicare quando perdere meno. È lo stesso risultato di KellyBench, ottenuto senza LLM e su 19 stagioni invece che su una.
+La conseguenza è quella ricavata nel §2.3: chi punta secondo le probabilità del modello perde in media, e una regola di puntata più prudente può soltanto ridurre le perdite. Il guadagno, che era l'obiettivo iniziale di questo studio, non è raggiungibile; resta da capire se il supervisore sappia indicare quando perdere meno. È lo stesso risultato di KellyBench, ottenuto senza LLM e su 19 stagioni invece che su una.
 
 ### 5.2 Il capitale degli agenti
 
@@ -633,7 +649,7 @@ In sintesi, l'allarme riconosce una cosa reale: le stagioni in cui il modello è
 
 ### 5.5 Che cosa riconosce Blinder-Oaxaca
 
-Prima di applicarla ai dati reali, la scomposizione è stata provata su dati simulati in cui le parti vere sono note (Figura 5.5), e lì funziona. Quando cambiano solo le caratteristiche, la parte strutturale stimata è nulla; quando cambia solo il legame, è nulla la composizione; nel caso misto le tre parti sono stimate correttamente. Due casi mostrano i limiti discussi nel §2.7: se una caratteristica rilevante è omessa, tutto il cambiamento viene attribuito alla struttura; con errori autocorrelati le stime restano corrette, ma gli intervalli di confidenza classici coprono il valore vero il 77% delle volte invece del 95%, e vanno sostituiti con intervalli bootstrap a blocchi.
+Prima di applicarla ai dati reali, la scomposizione è stata provata su dati simulati in cui le parti vere sono note (Figura 5.5), e lì funziona. Quando cambiano solo le caratteristiche, la parte strutturale stimata è nulla; quando cambia solo il legame, è nulla la composizione; nel caso misto le tre parti sono stimate correttamente. Due casi mostrano i limiti discussi nel §2.8: se una caratteristica rilevante è omessa, tutto il cambiamento viene attribuito alla struttura; con errori autocorrelati le stime restano corrette, ma gli intervalli di confidenza classici coprono il valore vero il 77% delle volte invece del 95%, e vanno sostituiti con intervalli bootstrap a blocchi.
 
 ![Scomposizione di Blinder-Oaxaca su dati simulati con parti vere note](figures/us_c7_1_ob_synthetic.png)
 
@@ -751,7 +767,7 @@ Il quarto di Kelly e lo schema chiudono la stagione con circa il 25% del capital
 
 ## 6. Dinamica evolutiva
 
-Lo schema stabilisce in anticipo come reagire quando il modello peggiora. La dinamica evolutiva (§2.8) rovescia la prospettiva: invece di scegliere una strategia, si lascia che sia il capitale a selezionarla fra molte, come in un mercato in cui sopravvive chi guadagna. Se la reazione dello schema è utile, le strategie che la adottano dovrebbero conquistare capitale a spese delle altre. La selezione si può applicare a due livelli. Al primo le strategie già costruite giocano insieme, come una popolazione che si contende il capitale: c'è selezione, ma le strategie restano quelle di partenza. Al secondo cambiano le strategie stesse, per variazione, selezione ed ereditarietà, e ci si può chiedere se l'evoluzione ritrovi da sola le scelte della versione principale. Entrambe le analisi sono condotte senza puntata minima: solo così la quota di capitale affidata a una strategia non ne modifica il rendimento, e il capitale della popolazione si calcola esattamente dai percorsi delle singole strategie.
+Lo schema stabilisce in anticipo come reagire quando il modello peggiora. La dinamica evolutiva (§2.9) rovescia la prospettiva: invece di scegliere una strategia, si lascia che sia il capitale a selezionarla fra molte, come in un mercato in cui sopravvive chi guadagna. Se la reazione dello schema è utile, le strategie che la adottano dovrebbero conquistare capitale a spese delle altre. La selezione si può applicare a due livelli. Al primo le strategie già costruite giocano insieme, come una popolazione che si contende il capitale: c'è selezione, ma le strategie restano quelle di partenza. Al secondo cambiano le strategie stesse, per variazione, selezione ed ereditarietà, e ci si può chiedere se l'evoluzione ritrovi da sola le scelte della versione principale. Entrambe le analisi sono condotte senza puntata minima: solo così la quota di capitale affidata a una strategia non ne modifica il rendimento, e il capitale della popolazione si calcola esattamente dai percorsi delle singole strategie.
 
 In entrambe le analisi una strategia è un modo completo di scommettere: il lavoratore, sempre con il modello Elo, e l'eventuale supervisore. La definiscono la puntata quando non c'è allarme, il supervisore, ciò che lo schema fa dopo un errore strutturale e l'esito su cui puntare.
 
@@ -982,7 +998,7 @@ Tutti i parametri sono stati stimati sulle stagioni di calibrazione. Quelli dell
 
 | Parametro | Valore | Come è stato scelto |
 |---|---|---|
-| Metodo per togliere il margine | Shin | fissato in anticipo (§2.2) |
+| Metodo per togliere il margine | Shin | fissato in anticipo (§2.1) |
 | Finestra del supervisore | 40 partite | calibrata fra 40, 80, 120 e 190 |
 | Moltiplicatore senza allarme | 0,25 | fissato (quarto di Kelly) |
 | Riduzione dopo un errore nei dati | 0,75 (puntata 0,19) | calibrata |
