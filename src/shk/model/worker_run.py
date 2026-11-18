@@ -1,6 +1,6 @@
 """Lavoratori classici che scelgono l'esito (R1, R2, R3) sulle 19 stagioni di validazione.
 
-Disegno del lavoratore, opzione A (thesis/disegno_lavoratore.md): il lavoratore propone per
+Disegno del lavoratore (tesi, §3.2 e §5.7): il lavoratore propone per
 ogni partita esito e frazione f_w = Kelly pieno sull'esito della sua regola
 (shk.kelly.outcome_rules); il supervisore agisce solo sulla puntata, f = λ·f_w. Per ogni
 regola tre versioni, sulle stesse partite e quote:

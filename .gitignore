@@ -32,12 +32,13 @@ data/raw/E0/*
 !data/raw/E0/MANIFEST.sha256
 
 
-# Agent files
-.agent/*
-!.agent/.gitkeep
+# File locali degli strumenti
+.agent/
+docs/
+.obsidian/
 
-docs/*
-!docs/.gitkeep
+# Uscite della compilazione della tesi (scripts/build_tesi_latex.py)
+thesis/latex/TESI_unibo.*
 
 # Uscite per seed di S10 (decisione S10), compresse e non versionate
 results/raw/

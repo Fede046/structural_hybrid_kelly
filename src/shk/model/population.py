@@ -1,4 +1,4 @@
-"""Popolazione di strategie con dinamica del replicatore e mutazione (thesis/disegno_popolazione.md).
+"""Popolazione di strategie con dinamica del replicatore e mutazione (tesi, §6.1).
 
 Le strategie si dividono il capitale; s_i(d) è la quota della strategia i alla giornata d e R_i(d) il
 suo rendimento lordo nella giornata (W_i(d+1) / W_i(d)). Senza puntata minima ogni puntata è una

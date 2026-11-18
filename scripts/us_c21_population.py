@@ -1,4 +1,4 @@
-"""Script: popolazione di strategie con dinamica del replicatore (thesis/disegno_popolazione.md).
+"""Script: popolazione di strategie con dinamica del replicatore (tesi, §6.1).
 
 1. Esegue le strategie di shk.model.population_run senza puntata minima, sulle 3 stagioni di training
    e sulle 19 di validazione, stagione vera e ricostruite (seed di validazione dell'esecuzione congelata;

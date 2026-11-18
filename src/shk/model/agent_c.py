@@ -33,7 +33,7 @@ Frazione sull'esito selezionato: kelly_staking(p̂, o − 1, λ), elemento per e
 regola del lavoratore (shk.kelly.outcome_rules.with_outcome_rule) l'esito è quello della regola.
 
 W, κ e la soglia strutturale sono i valori congelati in config/frozen_params.toml (chiavi c1_*:
-vengono dalla calibrazione del 2026-10, documentata sul branch confronti-controllo).
+vengono dalla calibrazione del 2026-10, fatta in una fase precedente del progetto).
 
 Variante con riferimento fisso (C3_ref, C3_ref_stop; decisione del 2026-11-05): la finestra A non
 è più quella delle W partite precedenti ma la stagione di calibrazione del Modulo 1 (la stagione di

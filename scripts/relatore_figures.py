@@ -1,4 +1,4 @@
-"""Script: i due grafici del documento per il relatore (thesis/schema_relatore.md).
+"""Script: due grafici sui residui δ stagione per stagione (il primo è nella tesi, §5.4).
 
 - thesis/figures/relatore_invecchiamento.png: per ogni stagione, media e dispersione di δ
   (scarto medio assoluto dalla mediana, la misura del test di Brown-Forsythe) con il modello

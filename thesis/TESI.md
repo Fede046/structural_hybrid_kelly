@@ -139,7 +139,7 @@ $$
 E = \frac{1}{1 + 10^{-(R_{\text{casa}} - R_{\text{trasf}} + h)/400}}, \tag{2.5}
 $$
 
-dove $h$ è il vantaggio del campo, espresso in punti Elo. Dopo la partita, con risultato $S = 1$, $0{,}5$ o $0$ per vittoria, pareggio o sconfitta, i punteggi si aggiornano di $K(S - E)$: la squadra di casa guadagna quanto perde quella in trasferta. Il parametro $K$ stabilisce la velocità con cui il modello reagisce: un valore alto lo rende reattivo ma rumoroso, un valore basso stabile ma lento. Elo equivale al modello di Bradley-Terry stimato partita per partita, con un aggiornamento che è un passo di discesa del gradiente sulla verosimiglianza.
+dove $h$ è il vantaggio del campo, espresso in punti Elo. Dopo la partita alla squadra di casa si assegna un punteggio $s$, che vale 1 se vince, $\tfrac{1}{2}$ se pareggia e 0 se perde, e i punteggi si aggiornano di $K(s - E)$: la squadra di casa guadagna quanto perde quella in trasferta. Il parametro $K$ stabilisce la velocità con cui il modello reagisce: un valore alto lo rende reattivo ma rumoroso, un valore basso stabile ma lento. Elo equivale al modello di Bradley-Terry stimato partita per partita, con un aggiornamento che è un passo di discesa del gradiente sulla verosimiglianza.
 
 Il punteggio atteso $E$ non basta per scommettere sui tre esiti, perché non dice quanto è probabile il pareggio. Questo studio usa il modello di Davidson [@davidson1970], che aggiunge un solo parametro $\nu$: posto $r = 10^{(R_{\text{casa}} - R_{\text{trasf}} + h)/400}$,
 
@@ -869,7 +869,17 @@ Per entrambe le analisi valgono due cautele: i risultati sono ottenuti senza la 
 
 ## 7. Conclusioni
 
-### 7.1 Le risposte alle due domande
+### 7.1 I risultati in sintesi
+
+Sulle 19 stagioni di valutazione il modello Elo non batte il mercato: assegna all'esito reale, in media, meno probabilità delle quote senza margine, qualunque sia il metodo usato per togliere il margine, anche contro le quote di chiusura di Pinnacle e anche con un modello più accurato come Dixon-Coles. Chi punta secondo le probabilità del modello, quindi, perde in media.
+
+La versione principale dello schema conserva in una stagione tipica il 64% del capitale, contro il 57% del quarto di Kelly, ma la differenza non è distinguibile dal caso. La variante con le soglie per giornata conserva il 72%, perché si ferma molto più spesso, in buona parte per falsi allarmi. Nessuna delle due conserva più di una riduzione della puntata della stessa entità applicata in giornate scelte a caso: con un vantaggio negativo il capitale misura soprattutto quanto si punta, non quando.
+
+Una misura che non dipende dagli esiti mostra però che lo schema si ferma nelle stagioni in cui il modello è più lontano dal mercato prima della partita. Questa distanza cresce con gli anni, soprattutto perché il mercato cambia e solo in parte perché i parametri del modello invecchiano, e il numero di stagioni riconosciute dipende da quanto era regolare la stagione presa come riferimento. La diagnosi a due termini separa i due tipi di peggioramento: nel mondo simulato chiama strutturale il 18% dei cambiamenti dovuti al solo tipo di partite e l'85–92% di quelli strutturali.
+
+Dove un vantaggio c'è e a metà stagione si rovescia, la versione principale se ne accorge in tre stagioni su quattro e chiude con 1,50 volte il capitale iniziale, contro 0,81 del quarto di Kelly; quando nulla cambia rinuncia a poco (6,47 contro 6,79). La dinamica evolutiva conferma la regola, puntare meno: la popolazione sposta il capitale verso la versione principale quando è l'unico modo di fermarsi e verso la cassa quando può non puntare, e l'evoluzione preferisce gli allarmi che scattano più spesso a quelli più affidabili. Sulla stagione 2023-24 di KellyBench l'allarme della versione principale non scatta mai, e lo schema perde quanto il quarto di Kelly.
+
+### 7.2 Le risposte alle due domande
 
 L'introduzione poneva due domande. La prima: le perdite degli agenti di KellyBench dipendono da come decidono o dall'assenza di un vantaggio sul mercato? Una volta separata la previsione dalla decisione, la risposta è netta. Un modello classico, che applica sempre la regola di puntata prevista e non soffre di alcun divario fra sapere e fare, perde comunque, perché su 19 stagioni assegna all'esito reale meno probabilità del mercato. L'assenza di un vantaggio basta a spiegare le perdite; i fallimenti di decisione documentati dagli autori le aggravano, ma non sono necessari per produrle.
 
@@ -881,11 +891,11 @@ La seconda: ridurre la puntata quando il vantaggio manca può diventare una rego
 
 L'idea alla base dello schema è che un agente debba trattare la stabilità del sistema come una variabile, invece di applicare il criterio di Kelly come un dogma. I risultati la sostengono sul metodo: il Kelly pieno, che non controlla nulla, è il migliore finché il modello è giusto e si azzera appena smette di esserlo, mentre lo schema riconosce un cambiamento strutturale e ferma le perdite. E ne fissano il perimetro: un modulo che gestisce il rischio non crea un vantaggio che il modello non ha, e senza quel vantaggio il mercato non si batte.
 
-### 7.2 Il confronto con KellyBench
+### 7.3 Il confronto con KellyBench
 
 Il risultato principale di KellyBench è confermato: nessun agente guadagna, e il comportamento corretto, quando manca un vantaggio sul mercato, è ridurre le puntate. Questo studio lo ritrova senza modelli linguistici, su 19 stagioni invece che su una, e con intervalli di confidenza al posto di poche esecuzioni.
 
-Cambia invece la spiegazione delle perdite. Il paper le attribuisce soprattutto al divario fra sapere e fare, cioè ad agenti che riconoscono i propri errori ma non cambiano comportamento; come si è visto nel §7.1, l'assenza di un vantaggio basta a produrle, e quel divario le aggrava senza esserne la causa necessaria.
+Cambia invece la spiegazione delle perdite. Il paper le attribuisce soprattutto al divario fra sapere e fare, cioè ad agenti che riconoscono i propri errori ma non cambiano comportamento; come si è visto nel §7.2, l'assenza di un vantaggio basta a produrle, e quel divario le aggrava senza esserne la causa necessaria.
 
 Questo studio aggiunge alcune cose che il paper non misura. Mostra che, senza vantaggio, il capitale non distingue una buona regola di riduzione da una riduzione qualsiasi, e propone una misura di ciò che un supervisore riconosce che non dipende dagli esiti delle partite. Verifica, in un mondo simulato, che lo stesso supervisore protegge un vantaggio quando c'è. Usa la scomposizione di Blinder-Oaxaca per distinguere un errore dovuto al tipo di partite da un errore strutturale del modello. Mostra che la puntata minima obbligatoria rende possibile la rovina, che con il criterio di Kelly puro non lo sarebbe, e che il confronto di *log-loss* con il mercato cambia molto a seconda che il margine sia tolto o no.
 
@@ -893,7 +903,7 @@ Alcune ipotesi da cui questo studio è partito, infine, risultano più deboli de
 
 Tutti i meccanismi studiati portano nella stessa direzione, puntare meno: il supervisore che si ferma, la regola dell'esito più probabile che scommette su meno partite, la popolazione che sposta il capitale verso la cassa, l'evoluzione che riduce la frazione di Kelly fin quasi a zero e, quando deve puntare, preferisce gli allarmi che scattano più spesso. Con un vantaggio negativo conserva più capitale chi rischia meno. Il contributo della supervisione statistica non è generare profitto: è un'assicurazione contro un cambiamento strutturale, che costa poco quando nulla cambia e ripaga quando c'è un vantaggio da perdere.
 
-### 7.3 I limiti
+### 7.4 I limiti
 
 - **Scelte fatte dopo aver visto le stagioni di valutazione.** Il confronto con la stagione di calibrazione, la regola dell'esito più probabile, le soglie per stagione e la diagnosi a due termini sono stati introdotti nel corso del lavoro (§4.8). I risultati sono riportati per tutte le versioni, ma nessuna è confermata su stagioni mai viste: la stagione di test non può farlo, perché lì il modello è giovane e l'allarme della versione principale non scatta mai.
 - **Il riferimento è una sola stagione.** Quante stagioni lo schema riconosca dipende da quanto era regolare la stagione di calibrazione (§5.4).
@@ -904,7 +914,7 @@ Tutti i meccanismi studiati portano nella stessa direzione, puntare meno: il sup
 - **Le analisi evolutive valgono senza puntata minima**, e la selezione agisce sul capitale di stagioni in cui il modello non ha mai un vantaggio.
 - **Una regola di puntata semplificata.** Il lavoratore punta su un esito per partita e non risolve il problema di Kelly congiunto sulle partite della stessa giornata.
 
-### 7.4 Gli sviluppi futuri
+### 7.5 Gli sviluppi futuri
 
 - **Un lavoratore con un vantaggio.** Lo schema non può creare un vantaggio che il modello non ha, e sui dati veri non ha mai avuto nulla da proteggere. Il passo successivo è un lavoratore che combini le proprie previsioni con quelle del mercato, come faceva Benter [@benter1994], per verificare sui dati veri ciò che qui è mostrato solo in simulazione.
 - **Una conferma su stagioni non usate.** La versione principale va provata, senza modifiche, su stagioni successive a quelle di questo studio.

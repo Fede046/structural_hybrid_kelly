@@ -2,8 +2,8 @@
 
 config/frozen_params.toml è stato scritto una sola volta, dalla calibrazione sul training del
 2026-10, e poi non si è più toccato. La calibrazione sceglieva anche i parametri degli agenti di
-confronto (C1, C2, D), che non fanno più parte del progetto: script e codice sono sul branch
-confronti-controllo. Il file resta invariato come dato d'ingresso; lo schema del relatore ne usa
+confronto (C1, C2, D), che non fanno più parte del progetto.
+Il file resta invariato come dato d'ingresso; lo schema del relatore ne usa
 W (c1_window), κ (c1_kappa) e la soglia strutturale per fit ([c1_thresholds]).
 load_frozen_params verifica che il file contenga esattamente le chiavi richieste.
 

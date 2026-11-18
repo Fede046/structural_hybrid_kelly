@@ -1,4 +1,4 @@
-"""Script: evoluzione delle strategie con variazione, selezione ed ereditarietà (thesis/disegno_popolazione.md §9).
+"""Script: evoluzione delle strategie con variazione, selezione ed ereditarietà (tesi, §6.2).
 
 Per ciascuna di N_RUNS evoluzioni indipendenti (seed da SEED_S22): N_GENOMES genomi casuali
 (shk.model.evolution.random_genome) giocano la prima stagione di validazione (2002-03), la metà

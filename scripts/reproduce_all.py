@@ -18,7 +18,7 @@ Le esecuzioni sul 2023-24 non si rieseguono (decisione del 2026-10-18): i loro C
 soltanto.
 
 I file congelati config/frozen_params*.toml sono dati d'ingresso: la calibrazione che li ha
-scritti è sul branch confronti-controllo, insieme agli agenti di confronto (C1, C2, D, E). Qui si
+scritti, insieme agli agenti di confronto (C1, C2, D, E), non fa parte di questa versione. Qui si
 verifica solo il loro SHA256.
 
 Esiti in build/reproduce/: un file di uscita per passo in logs/ e il rapporto report.txt (passi
@@ -140,8 +140,8 @@ STEPS: tuple[Step, ...] = (
 def normalization_rules() -> dict[str, str]:
     """Regole di normalizzazione del manifesto (decisioni del 2026-10-18).
 
-    I file congelati registrano lo SHA256 grezzo del CSV di potenza (sul branch
-    confronti-controllo), che dipende dai tempi misurati: la riga us_c8_3b_power della sezione
+    I file congelati registrano lo SHA256 grezzo del CSV di potenza (prodotto dalla
+    calibrazione iniziale), che dipende dai tempi misurati: la riga us_c8_3b_power della sezione
     [sources] si toglie dal confronto.
     """
     test_seasons = ",".join(read_split_config().test)

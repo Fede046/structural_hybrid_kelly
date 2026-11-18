@@ -1,4 +1,4 @@
-"""Evoluzione delle strategie: variazione, selezione ed ereditarietà (thesis/disegno_popolazione.md §9).
+"""Evoluzione delle strategie: variazione, selezione ed ereditarietà (tesi, §6.2).
 
 Secondo tentativo basato sulla dinamica evolutiva. Nella popolazione di shk.model.population le
 strategie sono fisse e cambia solo la quota di capitale; qui cambiano le strategie stesse. Ogni

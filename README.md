@@ -9,9 +9,9 @@ L'impianto segue lo schema del relatore e ha tre moduli:
 - **Modulo 2, il supervisore**: monitora i residui δ = ln p̂ − ln q con l'ANOVA e dà l'allarme.
 - **Modulo 3, il ricalibratore**: con la scomposizione di Oaxaca-Blinder distingue un errore nei dati da un degrado strutturale e ne ricava la frazione di Kelly λ.
 
-Nel codice il nome è storico: `shk.model.module2` contiene Oaxaca-Blinder. Lo schema è l'agente C3 (`shk.model.agent_c`); la descrizione è in `thesis/agenti_e_architettura.md` e la sintesi per il relatore in `thesis/schema_relatore.md`.
+Nel codice il nome è storico: `shk.model.module2` contiene Oaxaca-Blinder. Lo schema è l'agente C3 (`shk.model.agent_c`). La tesi è in `thesis/TESI.md`; il PDF impaginato si costruisce con `scripts/build_tesi_latex.py` (vedi [La tesi](#la-tesi)).
 
-Lo schema (C3, C3_stop, C3_and) si confronta in backtest appaiati con lo stesso lavoratore senza supervisore: Kelly pieno (A) e quarto di Kelly (B_0.25). Il lavoratore può anche scegliere l'esito con tre regole (R1, R2, R3). Gli agenti di confronto che non vengono dallo schema del relatore (C0, C1, C2, D con ADWIN e Page-Hinkley, la puntata minima E, B_0.10), la calibrazione che ha scritto i file congelati e i loro risultati sono sul branch `confronti-controllo`.
+Lo schema (C3, C3_stop, C3_and) si confronta in backtest appaiati con lo stesso lavoratore senza supervisore: Kelly pieno (A) e quarto di Kelly (B_0.25). Il lavoratore può anche scegliere l'esito con tre regole (R1, R2, R3). Gli agenti di confronto usati nelle prime fasi del progetto (C0, C1, C2, D con ADWIN e Page-Hinkley, la puntata minima E, B_0.10) e la calibrazione che ha scritto i file congelati non fanno parte di questa versione.
 
 Pacchetto importabile: `shk` (in `src/shk/`). Esperimenti: uno script per analisi in `scripts/`, che scrive
 `results/<nome>.csv` e, quando c'è, la figura `thesis/figures/<nome>.png`. L'elenco è in [Script e risultati](#script-e-risultati).
@@ -75,7 +75,7 @@ Il run completo dura diverse ore e si fa per gruppi (`elo`, poi `dixon_coles`).
 - Lo script termina con codice 1 se un passo fallisce o un file non coincide.
 
 Dettagli:
-- **File congelati.** `config/frozen_params.toml` e `config/frozen_params_dc.toml` sono dati d'ingresso: si verifica solo il loro SHA256. La calibrazione che li ha scritti è sul branch `confronti-controllo`.
+- **File congelati.** `config/frozen_params.toml` e `config/frozen_params_dc.toml` sono dati d'ingresso: si verifica solo il loro SHA256. La calibrazione che li ha scritti non fa parte di questa versione.
 - **Il 2023-24 non si riesegue.** Gli script delle esecuzioni sul test set sono solo verificati, perché il test set si esegue una volta.
 - **Un file non si riproduce byte per byte**, per una ragione nota: `us_c3_1_data_coverage.csv`, a cui con il test sbloccato lo script aggiunge le righe del 2023-24, che la regola `drop_seasons` del manifesto toglie.
 - **Uscite per seed.** Quelle delle esecuzioni lunghe sono in `results/raw/`, non versionate.
@@ -156,6 +156,14 @@ I due script leggono solo i CSV elencati in `results/MANIFEST.sha256` e non calc
 - **Figure.** `thesis/figures/tesi_<tema>.pdf` sono vettoriali e hanno uno stile comune. I PNG degli script degli esperimenti restano.
 - **Numeri citabili.** `thesis/numeri.md` ha una voce per riga: valore, unità, CSV, selezione della riga, colonna e SHA256. `tests/test_thesis_outputs.py` rilegge ogni voce.
 
+## La tesi
+
+```bash
+.venv/Scripts/python.exe scripts/build_tesi_latex.py
+```
+
+Lo script converte `thesis/TESI.md` in `thesis/latex/TESI_unibo.tex`, con il frontespizio di `thesis/latex/frontespizio.tex`, e lo compila con [Tectonic](https://tectonic-typesetting.github.io/) in `thesis/latex/TESI_unibo.pdf` (`--tectonic PATH` se Tectonic non è nel PATH, `--tex-only` per scrivere solo il `.tex`). Se c'è, `thesis/latex/ringraziamenti.tex` viene aggiunto in fondo.
+
 ## Stagione 2023-24 come in KellyBench
 
 ```bash
@@ -173,9 +181,9 @@ Lo split temporale è in `config/split.toml`:
 
 Lo split è congelato il 2026-09-29 (commit `90a77a1`). Il codice legge le stagioni per ruolo con `shk.data.split.load_by_role`, che rifiuta il test finché `test_unlocked = false`.
 
-1. I parametri liberi si calibrano sul solo training e si congelano in `config/frozen_params.toml`, scritto una volta dalla calibrazione sul training e committato in `9f30b30` (2026-10-11). Il loader `shk.model.frozen_params.load_frozen_params` controlla che le chiavi siano esattamente quelle attese.
-2. Il test set è sbloccato con `test_unlocked = true` nel commit `a5abca4` (2026-10-12), dopo il congelamento. Il 2023-24 è stato eseguito una sola volta, senza ritocchi.
-3. Con Dixon-Coles come Modulo 1 la stessa procedura produce `config/frozen_params_dc.toml`, con la chiave in più `module1 = "dixon_coles"`. È committato in `b4c4e8a` (2026-10-17), prima dell'esecuzione con Dixon-Coles.
+1. I parametri liberi si calibrano sul solo training e si congelano in `config/frozen_params.toml`, scritto una volta dalla calibrazione sul training e committato il 2026-10-11 (su `main` con `eb421ca`). Il loader `shk.model.frozen_params.load_frozen_params` controlla che le chiavi siano esattamente quelle attese.
+2. Il test set è sbloccato con `test_unlocked = true` il 2026-10-12 (su `main` con `eb421ca`), dopo il congelamento. Il 2023-24 è stato eseguito una sola volta, senza ritocchi.
+3. Con Dixon-Coles come Modulo 1 la stessa procedura produce `config/frozen_params_dc.toml`, con la chiave in più `module1 = "dixon_coles"`. È committato il 2026-10-17 (su `main` con `eb421ca`), prima dell'esecuzione con Dixon-Coles.
 
 
 ## Limiti noti

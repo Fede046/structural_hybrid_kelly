@@ -1,4 +1,4 @@
-"""Strategie della popolazione (thesis/disegno_popolazione.md): percorsi del capitale senza puntata minima.
+"""Strategie della popolazione (tesi, §6.1): percorsi del capitale senza puntata minima.
 
 Le strategie sono quelle già valutate, con il modello Elo e i parametri congelati:
 - "A": Kelly pieno, regola R1 (agente A);
