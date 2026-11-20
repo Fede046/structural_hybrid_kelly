@@ -708,27 +708,11 @@ La domanda utile, allora, è un'altra: le giornate in cui lo schema riduce la pu
 
 ### 5.7 Lo schema quando un vantaggio c'è
 
-Nel mondo simulato del §4.7 le partite, le quote e le previsioni sono quelle vere, ma i risultati sono simulati in modo che il modello abbia, all'inizio della stagione, un vantaggio sul mercato. A metà stagione il mondo può cambiare in cinque modi, uno per scenario, e per ogni scenario si simulano 475 stagioni. Lì si può chiedere allo schema ciò per cui è stato pensato: conservare il guadagno quando il vantaggio si perde, senza rinunciarvi quando non si perde.
+Sulle stagioni vere non c'è mai un vantaggio da proteggere. Nel mondo simulato del §4.7 sì: partite, quote e previsioni sono quelle vere, ma i risultati sono simulati in modo che il modello abbia un vantaggio sul mercato, e a metà stagione il mondo può cambiare. Ogni scenario conta 475 stagioni, e il capitale si misura come multiplo di quello iniziale.
 
-La tabella confronta tre agenti con le stesse previsioni. Il **quarto di Kelly** punta sempre la stessa frazione. Lo **schema** è la versione definitiva. La **puntata fissa di pari esposizione** punta per tutta la stagione la frazione media puntata dallo schema, senza guardare l'allarme: se lo schema fa meglio di lei, è perché riduce la puntata nei momenti giusti, e non soltanto perché punta un po' meno. Ogni numero è il capitale a fine stagione in una stagione tipica, come multiplo di quello iniziale: 6,79 vuol dire che il capitale è quasi settuplicato, 0,81 che ne resta l'81%. L'ultima colonna dice quanto spesso, e con che ritardo dopo il cambiamento, lo schema dà una diagnosi di errore strutturale.
+Il caso per cui lo schema è pensato è il vantaggio che si rovescia: da metà stagione il modello sbaglia quanto prima aveva ragione. Lo schema se ne accorge in tre stagioni su quattro, con un ritardo tipico di 14 giornate, e chiude a 0,95 volte il capitale iniziale, contro 0,81 del quarto di Kelly. Fa meglio anche di una puntata fissa che per tutta la stagione punta la stessa frazione media dello schema (0,83): qui, a differenza delle stagioni vere, ridurre la puntata nei giorni dell'allarme conta. La protezione è parziale, perché l'allarme si spegne e si riaccende e, quando è spento, lo schema torna al quarto di Kelly; una riduzione mantenuta fino a fine stagione arriverebbe a 1,18 (Appendice F).
 
-| Scenario: che cosa succede a metà stagione | Quarto di Kelly | Schema | Puntata fissa di pari esposizione | Diagnosi strutturale |
-|---|---|---|---|---|
-| Nulla: il modello ha ragione tutta la stagione | 6,79 | 6,77 | 6,77 | nel 9% delle stagioni, per falso allarme |
-| Il vantaggio svanisce: da metà stagione ha ragione il mercato | 2,01 | 2,03 | 2,00 | nel 33% delle stagioni, dopo 24 giornate |
-| Il vantaggio si rovescia: da metà stagione il modello sbaglia | 0,81 | 0,95 | 0,83 | nel 77% delle stagioni, dopo 14 giornate |
-| Nessun vantaggio in tutta la stagione, come nei dati veri | 0,53 | 0,53 | 0,53 | nel 7% delle stagioni, per falso allarme |
-| Cambia solo il tipo di partite: il modello resta giusto | 7,04 | 6,41 | 6,70 | nel 48% delle stagioni, a torto |
-
-**Quando nulla cambia, lo schema costa quasi nulla.** Un falso allarme strutturale arriva in meno di una stagione su dieci e dura poco: il capitale è 6,77 contro 6,79. È il compito delle soglie per stagione.
-
-**Quando il vantaggio si rovescia, lo schema lo protegge in parte.** Lo schema se ne accorge in tre stagioni su quattro, con un ritardo tipico di 14 giornate, e chiude a 0,95 invece di 0,81: fa meglio del quarto di Kelly in 64 stagioni su 100 e peggio in 13. Fa meglio anche della puntata fissa di pari esposizione (0,83): qui, a differenza delle stagioni vere, ridurre la puntata nei giorni dell'allarme conta. La protezione è parziale, perché dopo il rovescio l'allarme si spegne e si riaccende, e quando è spento lo schema torna al quarto di Kelly su un modello che ora sbaglia. Una riduzione mantenuta fino a fine stagione arriverebbe a 1,18 (Appendice F).
-
-**Quando il vantaggio svanisce, lo schema pareggia** (2,03 contro 2,01): un cambiamento piccolo è riconosciuto solo in una stagione su tre.
-
-**Senza vantaggio, come nei dati veri, lo schema coincide con il quarto di Kelly** (0,53), e il Kelly pieno, che nel mondo in cui il modello ha ragione moltiplica il capitale per 48, in questo scenario lo azzera. È il punto di partenza dello schema: il criterio di Kelly applicato in modo rigido presuppone probabilità vere.
-
-**Quando cambia solo il tipo di partite, la diagnosi sbaglia una volta su cinque.** Nella seconda metà della stagione capitano le partite su cui il modello sbaglia di più, quindi l'allarme scatta, ma il modello è giusto come prima: la risposta corretta è ridurre la puntata di poco. Fra le giornate con allarme, la diagnosi a due termini risponde «strutturale» nel 18% dei casi in questo scenario, e nell'85–92% quando a cambiare è davvero il modello. Quando sbaglia, lo schema riduce la puntata più del necessario, e chiude a 6,41 contro 7,04. Poiché la riduzione dura solo finché dura l'allarme, l'errore costa poco: una versione che dopo il primo errore strutturale restasse ferma fino a fine stagione chiuderebbe a 4,65 (Appendice F).
+Quando nulla cambia, lo schema costa quasi nulla: un falso allarme arriva in meno di una stagione su dieci e dura poco, e il capitale è 6,77 contro 6,79 del quarto di Kelly. Il prezzo si vede quando a cambiare è solo il tipo di partite, con un modello che resta giusto: l'allarme scatta, e la diagnosi lo scambia per un errore strutturale nel 18% dei casi, contro l'85–92% quando a cambiare è davvero il modello. Lo schema riduce allora la puntata più del necessario e chiude a 6,41 contro 7,04; restando fermo fino a fine stagione chiuderebbe a 4,65. Senza vantaggio, come nei dati veri, lo schema coincide con il quarto di Kelly (0,53), mentre il Kelly pieno, che quando il modello ha ragione moltiplica il capitale per 48, in quel caso lo azzera.
 
 ### 5.8 La stagione di KellyBench
 
