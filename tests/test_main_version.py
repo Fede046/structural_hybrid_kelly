@@ -11,7 +11,7 @@ from shk.model.main_version import DIAGNOSES, MAIN_POPULATION_ARMS, RULE_ARMS, R
 def test_arm_names():
     assert set(RULE_REFERENCES) <= set(RULE_ARMS) and set(RULE_REFERENCES.values()) <= set(RULE_ARMS)
     assert "M" in TEST_ARMS and "B_0.25" in TEST_ARMS
-    assert {"M", "M_clear", "R3_M", "R3_M_clear"} <= set(MAIN_POPULATION_ARMS)
+    assert {"F", "F_season", "R3_F", "R3_F_season"} <= set(MAIN_POPULATION_ARMS)
 
 
 def test_random_genomes_cover_the_new_genes():
@@ -24,8 +24,9 @@ def test_random_genomes_cover_the_new_genes():
 
 
 def test_is_main():
-    main = MainGenome(0.25, 0.75, "calibration", "season", "R1", "season", "two")
+    main = MainGenome(0.25, 0.75, "calibration", "clear", "R1", "season", "two")
     assert main.is_main()
+    assert not MainGenome(0.25, 0.75, "calibration", "season", "R1", "season", "two").is_main()
     assert not MainGenome(0.25, 0.75, "calibration", "season", "R1", "day", "two").is_main()
     assert not MainGenome(0.25, 0.75, "previous", "season", "R1", "season", "two").is_main()
 

@@ -65,11 +65,11 @@ def test_us_c31_population():
         key = f"member:{arm}"
         for col in ("observed_log_wealth", "median_log_wealth"):
             assert np.allclose(m.loc[key, col], c21.loc[key, col].loc[m.loc[key].index], rtol=0, atol=1e-9), (arm, col)
-    # La versione principale da sola: stessa stagione vera di us_c27, senza puntata minima
-    c27 = pd.read_csv(RESULTS / "us_c27_two_fold_seasons.csv")
-    c27 = c27[(c27["config"] == "none") & (c27["agent"] == "C3_ref_stop_season_dx")].set_index("season")["log_wealth"]
-    x = m.loc["member:M", "observed_log_wealth"]
-    assert np.allclose(x, c27.loc[x.index], rtol=0, atol=1e-9)
+    # La versione definitiva da sola: stessa stagione vera di us_c35, senza puntata minima
+    c35 = pd.read_csv(RESULTS / "us_c35_final_version_seasons.csv")
+    c35 = c35[(c35["config"] == "none") & (c35["agent"] == "F")].set_index("season")["log_wealth"]
+    x = m.loc["member:F", "observed_log_wealth"]
+    assert np.allclose(x, c35.loc[x.index], rtol=0, atol=1e-9)
 
 
 @_needs("us_c32_main_evolution_seasons.csv")

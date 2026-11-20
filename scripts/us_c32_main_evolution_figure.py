@@ -57,9 +57,9 @@ def main() -> None:
     fixed = med.loc["fixed_lam_0.25"].loc[seasons]
     series = (("con supervisore", "share_supervised", BLUE),
               ("supervisore: stagione di calibrazione", "share_calibration", ORANGE),
-              ("fermo fino a fine stagione", "share_stop_season", AQUA),
+              ("riduzione fino a fine stagione", "share_stop_season", AQUA),
               ("regola: esito più probabile", "share_r3", YELLOW),
-              ("scelte della versione principale", "share_main", INK))
+              ("scelte della versione definitiva", "share_main", INK))
     for label, col, color in series:
         ax.plot(x, 100 * fixed[col], color=color, linewidth=2, label=label)
     ax.set_ylim(0, 100)
@@ -74,7 +74,7 @@ def main() -> None:
     ax.plot(x, pop.median(axis=1), color=BLUE, linewidth=2, label="popolazione che evolve (mediana, 5-95%)")
     ref = pd.read_csv(POPULATION_CSV)
     for version, label, color in (("member:B_0.25", "quarto di Kelly, senza supervisore", ORANGE),
-                                  ("member:R3_M", "migliore strategia, scelta dopo", AQUA)):
+                                  ("member:R3_F_season", "migliore strategia, scelta dopo", AQUA)):
         v = ref[ref["version"] == version].set_index("season").loc[seasons, "observed_log_wealth"]
         ax.plot(x, 100 * np.exp(v), color=color, linewidth=1.5, marker="o", markersize=3, label=label)
     ax.axhline(100, color=INK_2, linewidth=1)

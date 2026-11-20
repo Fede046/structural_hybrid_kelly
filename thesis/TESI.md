@@ -16,11 +16,11 @@ INDICE:
 
 Un recente benchmark, KellyBench (Grady et al., 2026), ha mostrato che agenti basati su modelli linguistici di frontiera, chiamati a scommettere su un'intera stagione di Premier League, perdono capitale in 22 esecuzioni su 24; una sola, dopo aver misurato di non battere il mercato, riduce le puntate al minimo. Poiché il costo limita la prova a una stagione e a poche esecuzioni per modello, questa evidenza non distingue un difetto degli agenti dall'assenza di un vantaggio sul mercato. Questo studio separa le due componenti sostituendo l'agente con un'architettura Structural-Hybrid: un modello previsivo classico (Elo), un supervisore che monitora con l'ANOVA gli errori del modello rispetto al mercato e un ricalibratore che, con la scomposizione di Blinder-Oaxaca, decide quanto ridurre la puntata.
 
-Su 19 stagioni l'analisi conferma il risultato di KellyBench: il modello non batte le quote, e chi punta secondo le sue probabilità perde in media, qualunque frazione scelga. Lo schema riduce le perdite: in una stagione tipica conserva il 64% del capitale, contro il 57% di chi punta sempre la stessa frazione. Con un modello che perde, però, qualunque riduzione della puntata conserva capitale, e fermarsi nello stesso numero di giornate, scelte a caso, conserva altrettanto. Il capitale, da solo, non può quindi dimostrare che il supervisore intervenga al momento giusto.
+Su 19 stagioni l'analisi conferma il risultato di KellyBench: il modello non batte le quote, e chi punta secondo le sue probabilità perde in media, qualunque frazione scelga. Con le stesse previsioni il capitale rimasto dipende soltanto da quanto si punta. Lo schema riduce la puntata solo nelle giornate in cui il supervisore vede il modello peggiorare, e in una stagione tipica conserva quanto chi punta sempre la stessa frazione. Con un modello che perde, qualunque riduzione della puntata conserva capitale, e il capitale, da solo, non può dimostrare che il supervisore intervenga al momento giusto.
 
-Per capire che cosa il supervisore riconosce si è usata una misura che non dipende dai risultati delle partite: la distanza fra le probabilità del modello e quelle del mercato prima di ogni partita. Lo schema si ferma proprio nelle stagioni in cui questa distanza è maggiore. La distanza cresce con gli anni anche per un modello ricalibrato ogni stagione: dipende soprattutto dal mercato, che cambia e lascia indietro il modello, e solo in parte dall'invecchiamento dei parametri.
+Per capire che cosa il supervisore riconosce si è usata una misura che non dipende dai risultati delle partite: la distanza fra le probabilità del modello e quelle del mercato prima di ogni partita. Lo schema riduce la puntata proprio nelle stagioni in cui questa distanza è maggiore, ma dentro la stagione il giorno dell'intervento non porta informazione. Seguendo l'agente partita per partita, gli errori si concentrano sulle grandi squadre in trasferta, che il modello sottovaluta e il mercato no. La distanza cresce con gli anni anche per un modello ricalibrato ogni stagione: dipende soprattutto dal mercato, che cambia e lascia indietro il modello, e solo in parte dall'invecchiamento dei parametri.
 
-Poiché nei dati reali il modello non ha mai un vantaggio da proteggere, lo schema è stato provato anche su stagioni simulate in cui il vantaggio c'è e a metà stagione si rovescia. Lì lo schema se ne accorge e conserva più capitale sia di chi continua a puntare come prima, sia di chi punta per tutta la stagione una frazione più bassa; quando invece nulla cambia, rinuncia a poco. Due analisi di dinamica evolutiva arrivano per altra via alla stessa regola, puntare meno, mentre le squadre neopromosse, che nessun agente del benchmark gestisce, non risultano una fonte significativa di errore. L'assenza di un vantaggio sul mercato basta quindi a spiegare le perdite osservate in KellyBench. La supervisione statistica non genera profitto, ma funziona come un'assicurazione: costa poco quando nulla cambia e protegge il capitale quando c'è un vantaggio da perdere e la struttura cambia.
+Poiché nei dati reali il modello non ha mai un vantaggio da proteggere, lo schema è stato provato anche su stagioni simulate in cui il vantaggio c'è e a metà stagione si rovescia. Lì lo schema se ne accorge e conserva più capitale sia di chi continua a puntare come prima, sia di chi punta per tutta la stagione una frazione più bassa; quando invece nulla cambia, rinuncia a pochissimo. Due analisi di dinamica evolutiva arrivano per altra via alla stessa regola, puntare meno. Anche un agente che corregge le proprie previsioni imparando dagli errori passati continua a perdere, mentre le squadre neopromosse, che nessun agente del benchmark gestisce, non risultano una fonte significativa di errore. L'assenza di un vantaggio sul mercato basta quindi a spiegare le perdite osservate in KellyBench. La supervisione statistica non genera profitto, ma funziona come un'assicurazione: costa pochissimo quando nulla cambia e protegge in parte il capitale quando c'è un vantaggio da perdere e la struttura cambia.
 
 ## 1. Introduzione
 
@@ -38,7 +38,7 @@ Questi risultati, però, non dicono perché gli agenti perdono. Ogni esecuzione 
 
 Per rispondere, questo studio separa la previsione dalla decisione. Al posto dell'agente linguistico usa l'architettura Structural-Hybrid: un modello previsivo classico, il modello Elo [@elo1978], fa le previsioni; un supervisore confronta con l'ANOVA gli errori del modello rispetto al mercato con quelli di un periodo di riferimento e dà l'allarme quando peggiorano; un ricalibratore, con la scomposizione di Blinder-Oaxaca [@blinder1973; @oaxaca1973], decide se il peggioramento dipende dal tipo di partite o da un modello che non descrive più il campionato, e riduce o azzera la puntata. Il modello è deterministico e quasi gratuito: tutte le regole di puntata usano le stesse previsioni, e la prova si può ripetere su 19 stagioni, dal 2002-03 al 2022-23, con le stesse regole di KellyBench.
 
-Questo studio non riguarda gli agenti linguistici, e non dimostra che uno di essi, affiancato da un supervisore, farebbe meglio. I risultati valgono per una lega, un bookmaker e il mercato dei tre esiti, e la versione principale dello schema è stata fissata dopo aver visto le stagioni su cui è valutata.
+Questo studio non riguarda gli agenti linguistici, e non dimostra che uno di essi, affiancato da un supervisore, farebbe meglio. I risultati valgono per una lega, un bookmaker e il mercato dei tre esiti, e la versione definitiva dello schema è stata fissata dopo aver visto le stagioni su cui è valutata.
 
 
 ## 2. Scommesse, criterio di Kelly e strumenti statistici
@@ -250,13 +250,13 @@ $$
 La statistica $F$ è il rapporto fra le due parti, ciascuna divisa per i propri gradi di libertà. Se tutte le medie sono uguali, $F$ è vicino a uno; se differiscono, cresce. Con osservazioni indipendenti e normali, sotto l'ipotesi di medie uguali $F$ segue una distribuzione $F$ di Fisher, da cui si ricava la soglia. Con due gruppi l'ANOVA coincide con il test $t$.
 Se i due gruppi sono due periodi di tempo, l'ANOVA dice se la media di una grandezza è cambiata fra l'uno e l'altro. La stessa scomposizione dice anche quanto una differenza conti, oltre a se sia significativa: con campioni molto grandi una differenza può superare qualunque soglia e spiegare comunque una parte trascurabile della variabilità [@roccetti2026fragi].
 
-#### La dispersione: il test di Brown-Forsythe
+#### La dispersione: l'ANOVA sulla dispersione
 
-Un modello che perde affidabilità può produrre errori non solo peggiori in media, ma anche più dispersi: è l'eteroschedasticità, cioè una varianza degli errori che cresce. Per confrontare la dispersione di due periodi questo studio usa il test di Brown-Forsythe [@brownforsythe1974], una variante robusta del test di Levene [@levene1960]: per ogni osservazione si calcola la distanza assoluta dalla mediana del proprio gruppo, e a queste distanze si applica l'ANOVA. Se nel periodo recente le distanze sono in media maggiori, gli errori sono più dispersi. L'uso della mediana al posto della media rende il test affidabile anche quando gli errori non sono normali, come accade per $\delta_t$, che ha una distribuzione asimmetrica.
+Un modello che perde affidabilità può produrre errori non solo peggiori in media, ma anche più dispersi: è l'eteroschedasticità, cioè una varianza degli errori che cresce. Per confrontare la dispersione di due periodi questo studio applica l'ANOVA alla dispersione: per ogni osservazione si calcola la distanza assoluta dalla mediana del proprio gruppo, e a queste distanze si applica l'ANOVA. Se nel periodo recente le distanze sono in media maggiori, gli errori sono più dispersi. Il procedimento è noto come test di Brown-Forsythe [@brownforsythe1974], una variante robusta del test di Levene [@levene1960]; nel seguito lo si chiama semplicemente ANOVA sulla dispersione, e l'ANOVA della sezione precedente ANOVA sulla media. L'uso della mediana al posto della media rende il test affidabile anche quando gli errori non sono normali, come accade per $\delta_t$, che ha una distribuzione asimmetrica.
 
 #### Errori autocorrelati e soglie calibrate
 
-La soglia nominale dell'ANOVA vale per osservazioni indipendenti. Gli errori di un modello lungo una stagione possono invece essere autocorrelati: a un errore alto tende a seguirne un altro, per esempio perché il modello sbaglia per settimane la forza di una squadra. In questo caso $n$ osservazioni contengono meno informazione di $n$ osservazioni indipendenti; il test sovrastima l'informazione disponibile e segnala differenze che non esistono, cioè falsi allarmi. Nel confronto fra due periodi consecutivi la quota di falsi allarmi cresce rapidamente con l'autocorrelazione: in simulazione arriva al 40% invece del 5% (capitolo 3, Figura 3.2).
+La soglia nominale dell'ANOVA vale per osservazioni indipendenti. Gli errori di un modello lungo una stagione possono invece essere autocorrelati: a un errore alto tende a seguirne un altro, per esempio perché il modello sbaglia per settimane la forza di una squadra. In questo caso $n$ osservazioni contengono meno informazione di $n$ osservazioni indipendenti; il test sovrastima l'informazione disponibile e segnala differenze che non esistono, cioè falsi allarmi. Nel confronto fra due periodi consecutivi la quota di falsi allarmi cresce rapidamente con l'autocorrelazione: in simulazione arriva al 40% invece del 5% (Appendice B, Figura B.1).
 
 Il rimedio è calibrare la soglia sui dati con un bootstrap a blocchi (§2.6), che conserva la dipendenza fra osservazioni vicine, invece di ricavarla dalla distribuzione $F$.
 
@@ -286,7 +286,7 @@ $$
 
 Il termine spiegato è la composizione della (2.8). Quello non spiegato riunisce struttura e interazione, ed è la media, nel gruppo B, dei residui del modello stimato sul riferimento. Ha un vantaggio pratico: non richiede di stimare una regressione nel gruppo B, e si può usare anche quando B è piccolo.
 
-La scomposizione vale per la media di qualunque risposta. Se la risposta è la distanza assoluta di ogni errore dalla mediana del riferimento, la stessa del test di Brown-Forsythe, si scompone la variazione della dispersione invece di quella della media.
+La scomposizione vale per la media di qualunque risposta. Se la risposta è la distanza assoluta di ogni errore dalla mediana del riferimento, la stessa dell'ANOVA sulla dispersione, si scompone la variazione della dispersione invece di quella della media.
 
 #### Due cautele
 
@@ -326,6 +326,8 @@ Lo schema divide il compito di un agente che scommette in tre moduli (Figura 3.1
 
 *Figura 3.1. Lo schema realizzato. Il lavoratore prevede con le sole informazioni disponibili prima della partita e propone la frazione di Kelly. Dopo la partita il supervisore aggiorna il residuo e confronta il periodo recente con un periodo di riferimento; se dà l'allarme, il ricalibratore distingue un errore nei dati da un errore strutturale. La puntata finale è la frazione di Kelly moltiplicata per $\lambda$.*
 
+I tre moduli corrispondono alle tre domande che si pone uno scommettitore prudente. Il lavoratore risponde alla prima: *su quali partite le mie stime vedono un'occasione, e quanto vale?* Il supervisore alla seconda: *le mie stime sbagliano più di quanto sbagliavano quando le ho costruite?* Il ricalibratore alla terza, che si pone solo quando la seconda ha risposto di sì: *sbaglio di più perché mi sono capitate partite difficili, o perché non capisco più questo campionato?* Nel primo caso uno scommettitore continua a giocare, con un po' più di cautela; nel secondo continua a giocare, ma rischia pochissimo finché i suoi errori restano fuori dal normale.
+
 I tre moduli lavorano in sequenza a ogni giornata. Prima delle partite il supervisore confronta gli errori delle partite già giocate con un periodo di riferimento; se dà l'allarme, il ricalibratore stabilisce se il peggioramento è un errore nei dati o un errore strutturale, e fissa un moltiplicatore della puntata. Il lavoratore prevede le partite della giornata con le sole informazioni disponibili e propone la frazione di Kelly, e la puntata effettiva è quella frazione moltiplicata per il moltiplicatore. Dopo le partite il lavoratore aggiorna il modello con i risultati, e il supervisore aggiunge gli errori della giornata alla propria serie.
 
 Il ricalibratore non modifica mai il modello: agisce soltanto sulla puntata. Le previsioni restano quindi le stesse in tutte le versioni dello schema e nei riferimenti con cui lo schema è confrontato, e ogni differenza di capitale si può attribuire alla sola decisione. È la separazione fra previsione e decisione che in un agente basato su un modello linguistico non si può ottenere.
@@ -348,30 +350,30 @@ Il lavoratore non risolve il problema di Kelly congiunto sui tre esiti e sulle p
 
 ### 3.3 Il supervisore
 
-**Che cosa osserva.** Il supervisore non osserva il guadagno, ma il residuo $\delta_t$ della (2.4): lo scarto logaritmico fra la probabilità che il modello e il mercato, senza margine, hanno assegnato all'esito che si è verificato. La scelta ha tre ragioni.
+**Che cosa osserva.** Il supervisore non osserva il guadagno, ma il residuo $\delta_t$ della (2.4): lo scarto logaritmico fra la probabilità che il modello e il mercato, senza margine, hanno assegnato all'esito che si è verificato. Un residuo positivo significa che il modello aveva dato al risultato più probabilità del mercato, uno negativo che gliene aveva data meno. La scelta ha tre ragioni. Il residuo misura ciò che determina il guadagno: la sua media su un periodo è la stima del vantaggio sul mercato in quel periodo (§2.3). Non dipende dalla puntata: si calcola su tutte le partite, comprese quelle su cui non si punta, e il supervisore osserva la stessa serie qualunque cosa decida. E tiene conto della difficoltà delle partite: una partita incerta produce errori grandi per chiunque, e il confronto con il mercato elimina la parte di difficoltà comune ai due.
 
-La prima è che il residuo misura proprio ciò che determina il guadagno. La sua media su un periodo è la stima del vantaggio sul mercato in quel periodo (§2.3): un residuo che peggiora è un vantaggio che si riduce. La seconda è che non dipende dalla puntata. Si calcola su tutte le partite, comprese quelle su cui non si punta, e il supervisore osserva quindi la stessa serie qualunque cosa decida; il guadagno, al contrario, cambierebbe con le decisioni del supervisore stesso. La terza è che tiene conto della difficoltà delle partite. Una partita incerta produce errori grandi per chiunque, e il confronto con il mercato elimina la parte di difficoltà comune ai due; gli errori del solo modello, come la *log-loss*, confonderebbero un modello che peggiora con una stagione più imprevedibile.
+**Il confronto.** A ogni giornata il supervisore confronta le ultime 40 partite giocate, circa quattro giornate, con la stagione su cui il modello è stato stimato. La domanda è quella di uno scommettitore che si chiede se le proprie stime funzionano ancora come quando le ha costruite. Il peggioramento può avere due forme, e il supervisore le controlla entrambe.
 
-**I due periodi.** A ogni giornata il supervisore confronta le ultime 40 partite osservate con un periodo di riferimento. Quaranta partite corrispondono a quattro giornate: abbastanza per avere una media stabile, e abbastanza poche per reagire entro un mese. La lunghezza è stata scelta sulle stagioni di calibrazione. Per il periodo di riferimento si considerano due alternative:
+- **La media.** Il modello dà al risultato, in media, meno probabilità del mercato di quanto facesse nella stagione di calibrazione: il suo vantaggio si è ridotto. La controlla l'ANOVA sulla media (§2.7).
+- **La dispersione.** I residui si allontanano di più dal loro valore tipico, in un senso o nell'altro: il modello a volte dà al risultato molta più probabilità del mercato, a volte molta meno. Anche se in media pareggia, le sue stime e quelle del mercato non vanno più d'accordo. La controlla l'ANOVA sulla dispersione, cioè l'ANOVA applicata alle distanze dei residui dalla loro mediana (§2.7).
 
-- **la stagione di calibrazione del modello.** Gli errori di oggi sono confrontati con quelli della stagione su cui il modello è stato stimato. È il riferimento della versione principale;
-- **le 40 partite precedenti.** È il confronto più immediato: il modello sta peggiorando rispetto a poco fa? Resta come variante.
+Basta che una delle due superi la propria soglia perché scatti l'allarme. Contano solo i peggioramenti: un modello che migliora non fa mai scattare nulla.
 
-**I due test.** Il supervisore tratta i due periodi come i due gruppi dell'ANOVA (§2.7) e calcola due statistiche: l'ANOVA sulla media dei residui, che conta solo se la media recente è peggiore di quella di riferimento, e il test di Brown-Forsythe sulla dispersione, che conta solo se la dispersione recente è maggiore. Un miglioramento, quindi, non fa mai scattare l'allarme. Poiché un modello che perde affidabilità può peggiorare nella media, nella dispersione o in entrambe, si provano due regole: nella prima basta che una delle due statistiche superi la soglia, nella seconda devono superarla entrambe. La versione principale usa la prima.
+**Le soglie.** Ogni confronto fra due gruppi di partite dà una differenza anche quando non è cambiato nulla, per puro caso. La soglia risponde a una domanda: *quanto deve essere diverso il periodo recente perché non sia un caso?* Per rispondere si rigioca molte volte la stagione di calibrazione rimescolandola a blocchi di partite vicine, in modo che non contenga alcun cambiamento, e si guarda quanto diventano grandi le due statistiche per puro caso. La soglia è un valore che, in queste stagioni senza cambiamenti, si supera di rado.
 
-**Le soglie.** Un falso allarme è un allarme che scatta quando il modello non è cambiato: gli errori recenti sembrano peggiori del riferimento solo per caso. Nessun test li evita del tutto; la soglia fissa in anticipo la probabilità di un falso allarme che si è disposti ad accettare, qui il 5%. Le soglie non sono però quelle nominali perché, come anticipato nel §2.7, con errori autocorrelati la soglia nominale dell'ANOVA produce troppi falsi allarmi. La Figura 3.2 lo mostra su serie simulate con autocorrelazione crescente: nel confronto fra due metà consecutive di una stagione i falsi allarmi passano dal 4% con osservazioni indipendenti al 40% con autocorrelazione forte, mentre con una soglia calibrata per bootstrap a blocchi tornano vicini al 5%. Le soglie dello schema sono quindi calibrate sulle stagioni di calibrazione con un bootstrap a blocchi mobili.
+Resta da stabilire che cosa significa «di rado». Il supervisore ripete il confronto a ogni giornata, un centinaio di volte per stagione: con una soglia che si supera per caso nel 5% dei confronti, quasi ogni stagione avrebbe qualche falso allarme, e lo schema ridurrebbe la puntata senza motivo. Ciò che conta, quindi, non è la probabilità di un falso allarme in una certa giornata, ma quella di un falso allarme in tutta la stagione. La soglia è fissata in modo che, in una stagione senza cambiamenti, la probabilità di anche un solo allarme sia del 5%. Il prezzo di questa prudenza è che i cambiamenti piccoli non vengono visti.
 
-Resta da decidere a che cosa si riferisce il 5%. Il supervisore fa un confronto a ogni giornata, un centinaio per stagione, su finestre che in gran parte si sovrappongono: una soglia al 5% per ciascun confronto dà una probabilità di almeno un falso allarme nell'arco della stagione molto più alta del 5%. Se la conseguenza di un allarme dura fino a fine stagione, conta questa probabilità complessiva. La versione principale la controlla calibrando la soglia sul massimo della statistica lungo la stagione: in ogni ricampionamento a blocchi si calcola la statistica a tutte le giornate di decisione, se ne prende il massimo e si usa come soglia il suo quantile al 95%. Il 5% diventa così la probabilità di almeno un falso allarme nell'intera stagione; nella variante con le soglie per giornata resta la probabilità di un falso allarme a ogni singola giornata. La soglia per stagione rende l'allarme meno sensibile ai cambiamenti piccoli: è il compromesso di ogni controllo ripetuto nel tempo. In entrambi i casi, nella regola «una delle due», ciascuna statistica riceve metà di questo margine. Le soglie per stagione sono da due volte e mezzo a tre volte più alte di quelle per giornata (Appendice B). 
-
-![Falsi allarmi dell'ANOVA su serie autocorrelate, con soglia nominale e calibrata](figures/us_c2_anova_autocorrelation.png)
-
-*Figura 3.2. Quota di falsi allarmi dell'ANOVA su 1 000 serie simulate di 380 osservazioni senza alcun cambiamento, al crescere dell'autocorrelazione $\phi$. (A) Con la soglia nominale, il confronto fra due metà consecutive (rosso) sbaglia sempre più spesso, quello fra 38 blocchi consecutivi (arancione) quasi sempre; se i gruppi sono assegnati a caso (blu) l'autocorrelazione non conta. (B, C) Con soglie calibrate per bootstrap a blocchi di lunghezza 7, 20 e 40, la quota resta vicina al livello nominale del 5% (linea tratteggiata, con l'intervallo Monte Carlo in grigio).*
+In pratica, con queste soglie, l'allarme sulla dispersione scatta quando lo scarto tipico dei residui nelle ultime 40 partite è circa una volta e mezza quello della stagione di calibrazione: nel 2013-14, per esempio, 0,211 contro 0,135. L'allarme sulla media scatta quando il residuo medio è di circa 0,10 più basso che nella stagione di calibrazione, cioè quando, rispetto al mercato, il modello dà al risultato circa il 10% di probabilità in meno di quanto facesse allora. Il calcolo delle soglie è descritto nell'Appendice B.
 
 ### 3.4 Il ricalibratore
 
-**Quando interviene.** Il ricalibratore lavora solo quando il supervisore dà l'allarme, e risponde a una domanda: gli errori recenti sono peggiori perché sono cambiate le partite, o perché il modello non descrive più il campionato? È la distinzione della scomposizione di Blinder-Oaxaca (§2.8). Se nel periodo recente il modello sbaglia di più perché sono aumentate le partite del tipo su cui sbaglia sempre, per esempio partite incerte o con una neopromossa, il peggioramento è di composizione: un errore nei dati, con un modello che funziona come prima. Se invece sbaglia di più sulle stesse partite, il peggioramento è strutturale: il modello non descrive più il campionato.
+**La domanda.** Quando il supervisore dà l'allarme, gli errori recenti sono peggiori di quelli della stagione di calibrazione. Il ricalibratore deve capire perché, e le risposte possibili sono due.
 
-**Le caratteristiche delle partite.** Di ogni partita sono note, prima del calcio d'inizio, cinque caratteristiche:
+**L'errore nei dati.** Il modello funziona come prima, ma nelle ultime partite sono capitate più partite del tipo su cui sbaglia sempre di più: molte partite equilibrate, in cui modello e mercato sono entrambi incerti, o molte partite con una squadra neopromossa, che il modello conosce poco. Sulle stesse partite, nella stagione di calibrazione, avrebbe sbagliato allo stesso modo. È lo scommettitore che si dice «è stato un mese difficile»: le sue stime sono ancora buone, il calendario no. La reazione giusta è continuare a giocare, con un po' più di cautela finché il periodo difficile non è passato.
+
+**L'errore strutturale.** Sulle stesse partite il modello sbaglia più di prima: qualcosa è cambiato nel modo in cui le caratteristiche di una partita si traducono nel risultato. Il vantaggio del campo si riduce, come nelle stagioni giocate a porte chiuse; una squadra diventa molto più forte di quanto dica il suo punteggio; il mercato diventa più preciso e il modello no. È lo scommettitore che si dice «non sono le partite, sono io che non capisco più questo campionato». La reazione giusta è puntare molto meno finché il problema si vede negli errori, perché il criterio di Kelly punta di più proprio dove il modello crede, sbagliando, di avere un vantaggio.
+
+**Come li distingue.** La distinzione è quella della scomposizione di Blinder-Oaxaca (§2.8). Di ogni partita sono note, prima del calcio d'inizio, cinque caratteristiche:
 
 - lo squilibrio fra le due squadre secondo il mercato, misurato dal logaritmo del rapporto fra le quote di vittoria in casa e in trasferta;
 - l'incertezza del mercato, misurata dall'entropia delle sue tre probabilità;
@@ -379,27 +381,76 @@ Resta da decidere a che cosa si riferisce il 5%. Il supervisore fa un confronto 
 - se gioca una squadra neopromossa;
 - la posizione della partita nella stagione.
 
-L'elenco è stato fissato sulle stagioni di calibrazione, con regole decise prima di vedere i risultati. Le neopromosse appena salite e quelle che tornano dopo qualche anno sono state riunite in un solo indicatore, perché erano troppo poche per stimarle separatamente; la differenza dei punteggi Elo è stata esclusa perché quasi coincidente con lo squilibrio secondo il mercato.
+Sulla stagione di calibrazione si stima quanto errore il modello fa, in media e in dispersione, su ciascun tipo di partita. Applicando questa stima alle ultime 40 partite si ottiene l'errore che il modello avrebbe fatto su quelle partite se fosse rimasto quello della stagione di calibrazione. La differenza fra la stagione di calibrazione e le ultime 40 partite si divide così in due parti, secondo la (2.9):
 
-**La diagnosi.** La diagnosi usa la scomposizione a due termini (2.9) fra la stagione di calibrazione e le ultime 40 partite. La stagione di calibrazione è il riferimento naturale del confronto, perché è quella su cui il modello è stato stimato, e la finestra di 40 partite è troppo piccola per stimarvi una regressione: sono le due condizioni in cui la forma a due termini è adatta. La scomposizione è applicata alla grandezza che ha fatto scattare l'allarme: la media del residuo, la sua dispersione, o entrambe. L'errore è classificato come strutturale se la parte non spiegata dalle caratteristiche delle partite supera una soglia, calibrata sulla stagione di calibrazione in modo da essere superata per caso, per ciascuna grandezza, al più nel 2,5% delle finestre senza cambiamenti; altrimenti è classificato come errore nei dati. La domanda a cui risponde è quella da cui nasce lo schema: il peggioramento, o l'aumento di variabilità, dipende dal tipo di partite o dal fatto che il modello non descrive più il campionato?
+- la **parte spiegata** dal tipo di partite, che è l'errore nei dati;
+- la **parte non spiegata**, cioè quanto il modello sbaglia in più sulle stesse partite, che è l'errore strutturale.
 
-La prima versione della diagnosi applicava invece la scomposizione a tre termini (2.8) alla sola media del residuo, stimando una regressione anche nella finestra recente, e classificava l'errore dalla componente strutturale. Il §5.5 mostra perché non è la versione principale; resta come variante.
+Il ricalibratore applica la divisione alla grandezza che ha fatto scattare l'allarme, la media o la dispersione. Se la parte non spiegata supera una soglia, l'errore è strutturale; altrimenti è un errore nei dati. La soglia è calibrata come quelle del supervisore, sulla stagione di calibrazione rimescolata a blocchi.
 
-**La puntata.** Il ricalibratore agisce con un moltiplicatore sulla puntata proposta dal lavoratore (§3.1), che assume tre valori:
+Un esempio vero, che il §3.6 racconta per intero. L'8 dicembre 2013 l'allarme scatta sulla dispersione: lo scarto tipico dei residui è 0,211 nelle ultime 40 partite contro 0,135 nella stagione di calibrazione, un aumento di 0,076. Le caratteristiche di quelle 40 partite ne spiegano 0,013; restano 0,063 non spiegati, oltre la soglia di 0,040. Il modello non sbaglia di più perché sono capitate partite più difficili, ma perché sulle stesse partite non va più d'accordo con il mercato: l'errore è strutturale.
+
+L'elenco delle caratteristiche è stato fissato sulle stagioni di calibrazione, con regole decise prima di vedere i risultati. Le neopromosse appena salite e quelle che tornano dopo qualche anno sono state riunite in un solo indicatore, perché erano troppo poche per stimarle separatamente; la differenza dei punteggi Elo è stata esclusa perché quasi coincidente con lo squilibrio secondo il mercato. La divisione vale solo per ciò che queste cinque caratteristiche descrivono: un cambiamento nel tipo di partite che nessuna di esse misura finisce nella parte non spiegata, e viene chiamato strutturale (§2.8).
+
+**La puntata.** Il ricalibratore agisce con un moltiplicatore sulla puntata proposta dal lavoratore, che assume tre valori:
 
 | Situazione | Moltiplicatore $\lambda$ |
 |---|---|
 | Nessun allarme | 0,25 (quarto di Kelly) |
 | Errore nei dati | 0,19, cioè tre quarti di 0,25, finché dura l'allarme |
-| Errore strutturale | 0 |
+| Errore strutturale | 0,10, finché dura l'allarme |
 
-Il quarto di Kelly in assenza di allarme è la scelta prudente più diffusa nella pratica (§2.2); la riduzione a tre quarti dopo un errore nei dati è stata scelta sulle stagioni di calibrazione.
+Senza allarme lo schema punta un quarto della frazione di Kelly, la scelta prudente più diffusa nella pratica: conserva circa il 44% della crescita del Kelly pieno con un quarto della volatilità (§2.2). Dopo un errore nei dati riduce la puntata di un quarto, una misura scelta sulle stagioni di calibrazione. Dopo un errore strutturale la riduce molto di più: punta un decimo della frazione di Kelly, meno della metà del quarto di Kelly. In entrambi i casi la riduzione dura finché dura l'allarme, e quando l'allarme si spegne lo schema torna al quarto di Kelly.
 
-Dopo un errore strutturale lo schema non punta finché il modello non viene ri-parametrizzato. Se ne provano due letture: riprendere a puntare quando l'allarme si spegne, oppure restare fermi fino a fine stagione, perché qui il modello viene ri-parametrizzato solo fra una stagione e l'altra.
+La regola, quindi, è la stessa ogni giorno: la puntata dipende soltanto dalla diagnosi di quel giorno. I due tipi di errore non si distinguono per la durata della reazione, ma per la sua forza: un errore nei dati chiede un po' di cautela, un errore strutturale chiede di rischiare pochissimo. Lo schema reagisce a ciò che vede negli errori, e smette di reagire quando gli errori tornano nella norma. Non si ferma mai del tutto, perché un agente che smette di puntare non decide più nulla (§3.5).
 
-La versione principale resta ferma fino a fine stagione.
+Il limite di questa regola è che un allarme può spegnersi anche per caso, mentre la causa di un errore strutturale resta: il rimedio sarebbe ristimare il modello, ma dentro una stagione il modello non viene mai ristimato, perché i suoi parametri si stimano soltanto sulle stagioni di calibrazione (§4.2). Se il problema c'è ancora, gli errori lo mostreranno di nuovo, e la puntata tornerà a scendere.
 
-Le alternative indicate per ciascun modulo definiscono le varianti dello schema, che il §4.8 elenca insieme all'ordine in cui le scelte sono state fatte.
+### 3.5 Perché questa versione
+
+Ogni modulo lascia aperta almeno una scelta, e per ciascuna è stata provata un'alternativa. Questa sezione spiega, scelta per scelta, perché si è preferita la versione descritta nei paragrafi precedenti: quasi sempre perché l'alternativa funzionava peggio, e in un caso, la durata della riduzione, per coerenza con lo schema anche se l'alternativa conservava più capitale. Non tutte le scelte sono state fatte prima di vedere le stagioni di valutazione: il §4.8 riporta in che ordine sono state fatte, e l'Appendice A il capitale di ogni versione.
+
+**Il confronto con la stagione di calibrazione, non con le 40 partite precedenti.** Il confronto più immediato sarebbe chiedersi se il modello sta peggiorando rispetto a poco fa. Provato nelle prime versioni dello schema, faceva scattare l'allarme in media 1,6 volte per stagione, quanto ci si aspetta dai soli falsi allarmi. Il motivo probabile è che il modello non peggiora da un mese all'altro, ma da una stagione all'altra: fra due periodi vicini di 40 partite la differenza è più piccola di quella che un confronto così breve riesce a vedere, che è di 0,07–0,11 per partita (Appendice E). Confrontando gli errori di oggi con quelli della stagione su cui il modello è stato stimato, il peggioramento accumulato negli anni diventa visibile.
+
+**Le soglie per stagione, non per giornata.** Con soglie fissate perché il 5% valga per ogni singola giornata, l'allarme è più sensibile, ma il 5% ripetuto per un centinaio di giornate diventa quasi una certezza di falso allarme. Nel mondo simulato del §4.7, in cui il modello ha ragione tutta la stagione, la variante con le soglie per giornata dava un falso allarme strutturale in due stagioni su tre, e in una versione che si fermava dopo l'allarme dimezzava la crescita del capitale; con le soglie per stagione il falso allarme arrivava nel 9% delle stagioni. Poiché il confronto si ripete a ogni giornata, conta la probabilità di un falso allarme nell'intera stagione. Il prezzo è la sensibilità: con le soglie per giornata un vantaggio che si rovescia era riconosciuto quasi sempre e circa sei giornate prima.
+
+**La diagnosi a due termini, non a tre.** La prima versione del ricalibratore usava la scomposizione a tre termini (2.8), che stima una regressione anche sulle ultime 40 partite. Nel mondo simulato chiamava strutturale circa la metà degli allarmi, qualunque cosa fosse successa: il 43% quando era cambiato solo il tipo di partite, il 55–56% quando era cambiata la struttura. La diagnosi a due termini, nelle stesse prove, chiama strutturale il 18% degli allarmi nel primo caso e l'85–92% nel secondo. Il motivo è che 40 partite consecutive sono troppo poche per stimare una regressione: la parte strutturale e l'interazione diventano due numeri grandi e opposti, che si annullano a vicenda. Il caso più chiaro è la sospensione per il Covid del 2019-20: dopo la ripresa a porte chiuse ci si aspetterebbe un errore strutturale, e la scomposizione a tre termini trovava una parte strutturale quasi nulla (−0,0004), con composizione e interazione che si compensavano (+0,012 e −0,016). La forma a due termini usa i coefficienti della sola stagione di calibrazione, stimati su 380 partite, e non stima nulla sulla finestra recente.
+
+**Basta una delle due statistiche.** Nelle prime versioni dello schema, richiedere che media e dispersione superino entrambe la soglia faceva intervenire l'allarme ancora più di rado, e il capitale scendeva sotto quello del quarto di Kelly (56% contro 57%). Il motivo è che un modello che perde il contatto con il mercato lo mostra soprattutto nella dispersione dei suoi errori, prima che nella media: le sue stime si allontanano da quelle del mercato in entrambe le direzioni, e in media i due effetti in parte si compensano.
+
+**Ridurre la puntata, non fermarsi.** Dopo un errore strutturale la scelta più prudente sarebbe non puntare affatto, e sui dati di questo studio conserva quasi lo stesso capitale della riduzione a 0,10: in una stagione tipica il 57,1% contro il 57,5%, e il 57,4% con 0,05. Fermarsi, però, è una risposta che non dice nulla: con un vantaggio negativo qualunque stop conserva capitale, e un agente che non punta più non sta più decidendo. Ciò che KellyBench mette alla prova è la capacità di continuare a decidere bene in un ambiente che cambia, e un agente che riconosce un errore strutturale deve reagire puntando molto meno, non uscendo dal gioco. Il livello di 0,10, meno della metà del quarto di Kelly, è stato scelto dopo aver visto questi valori; il capitale cambia di pochi decimi di punto fra 0 e 0,10.
+
+**Finché dura l'allarme, non fino a fine stagione.** L'alternativa è mantenere la riduzione fino alla fine della stagione dopo il primo errore strutturale, con l'argomento che la causa di un errore strutturale non passa da sola: il modello non viene ristimato dentro la stagione, e un allarme può spegnersi per caso. È la sola scelta in cui l'alternativa conserva più capitale: in una stagione tipica il 63,4%, contro il 57,5% della riduzione finché dura l'allarme e il 57,3% del quarto di Kelly. Il motivo, però, è lo stesso per cui fermarsi conserva capitale: con la riduzione fino a fine stagione lo schema punta meno nel 42% delle giornate, con la riduzione finché dura l'allarme solo nell'8%, e con un vantaggio negativo chi punta meno più a lungo perde meno, qualunque sia la ragione per cui riduce. Il capitale, da solo, non può dire quale delle due regole riconosca meglio un modello che non funziona (capitolo 5). Nel mondo simulato del §4.7, dove un vantaggio c'è, la differenza ha due facce. Quando il vantaggio si rovescia a metà stagione, la riduzione fino a fine stagione protegge di più: il capitale chiude a 1,18 volte quello iniziale, contro 0,95 della riduzione finché dura l'allarme e 0,81 del quarto di Kelly. Quando invece cambia soltanto il tipo di partite e la diagnosi sbaglia, la riduzione finché dura l'allarme costa molto meno: 6,41 contro 5,55, con il quarto di Kelly a 7,04. Quando nulla cambia, infine, costa quasi nulla: 6,77 contro 6,79 del quarto di Kelly. Si è scelta la riduzione finché dura l'allarme perché è coerente con lo schema: la puntata dipende soltanto da ciò che il supervisore e il ricalibratore vedono quel giorno, e i due tipi di errore ricevono la stessa regola, con una forza diversa. Una regola che, dopo il primo errore strutturale, ignora ciò che gli errori mostrano nel resto della stagione smetterebbe di essere una supervisione. Il prezzo di questa coerenza è una protezione più debole quando il problema è vero e dura.
+
+**Ridurre la puntata, non cambiare il modello.** L'alternativa più naturale al moltiplicatore è ristimare il modello. Provata nella forma più semplice, una ristima prima di ogni stagione sulla stagione precedente, avvicinava il modello al mercato prima della partita, ma non migliorava le previsioni dei risultati, e il capitale peggiorava: il quarto di Kelly scendeva dal 57% al 46%. Una stagione sola è poca per stimare bene i parametri: sul 2020-21, giocato a porte chiuse, il vantaggio del campo stimato è nullo, e il modello lo applicava anche al 2021-22, quando il pubblico era tornato. Ridurre la puntata non richiede di stimare nulla di nuovo, e lascia le previsioni identiche in tutte le versioni, così che ogni differenza di capitale dipenda dalla sola decisione. È anche la reazione più umana: uno scommettitore che non si fida più delle proprie stime, prima ancora di rifarle, punta meno.
+
+### 3.6 Lo schema al lavoro: il 7 e l'8 dicembre 2013
+
+Un esempio mostra come i tre moduli lavorano insieme. La stagione è il 2013-14, prevista con il modello calibrato sul 2010-11. Dall'inizio della stagione non è mai scattato un allarme, e lo schema punta il quarto della frazione di Kelly. Il capitale, dopo alti e bassi, è al 124,8% di quello iniziale.
+
+**Sabato 7 dicembre: il lavoratore.** Si giocano sette partite. Per ciascuna il lavoratore sceglie l'esito con il valore atteso stimato più alto e, se è positivo, propone la frazione di Kelly; lo schema ne punta un quarto. Nella tabella le probabilità sono quelle dell'esito su cui si punta, e la puntata è in percentuale del capitale.
+
+| Partita | Punta su | Quota | Modello | Mercato | Valore atteso | Puntata | Esito |
+|---|---|---|---|---|---|---|---|
+| Crystal Palace – Cardiff | Crystal Palace | 2,80 | 45% | 35% | +27% | 3,7% | vinta |
+| Liverpool – West Ham | West Ham | 12,00 | 12% | 8% | +47% | 1,1% | persa |
+| Manchester United – Newcastle | Manchester United | 1,53 | 70% | 64% | +8% | 3,6% | persa |
+| Southampton – Manchester City | Southampton | 5,25 | 29% | 18% | +50% | 2,9% | persa |
+| Stoke – Chelsea | Stoke | 6,50 | 25% | 15% | +61% | 2,8% | vinta |
+| Sunderland – Tottenham | Sunderland | 4,50 | 28% | 22% | +25% | 1,8% | persa |
+| West Brom – Norwich | Norwich | 5,00 | 22% | 19% | +12% | 0,8% | vinta |
+
+In sei partite su sette il lavoratore punta contro la favorita del mercato: le sue stime danno alle squadre di casa contro le grandi, Stoke, Southampton, Sunderland, molta più probabilità di quanta ne dia il mercato. È il comportamento di uno scommettitore convinto che il mercato sopravvaluti le grandi squadre, e che vede occasioni dove il mercato vede quote giuste. Lo schema punta in tutto il 16,7% del capitale. Lo Stoke batte il Chelsea a quota 6,50, il Crystal Palace e il Norwich vincono, le altre quattro scommesse sono perse: a fine giornata il capitale è salito dal 124,8% al 144,3%.
+
+**Domenica 8 dicembre, prima delle partite: il supervisore.** Il supervisore non guarda il guadagno della giornata, ma i residui. Quelli del sabato sono grandi e di segno opposto: +0,53 per Stoke–Chelsea, dove il modello aveva dato al risultato molta più probabilità del mercato, −0,48 per Manchester United–Newcastle, dove gliene aveva data molto meno. Con queste sette partite lo scarto tipico dei residui nelle ultime 40 partite sale da 0,200 a 0,211, contro 0,135 della stagione di calibrazione, e la statistica dell'ANOVA sulla dispersione passa da 7,8 a 10,8, oltre la soglia di 9,5. La media dei residui, invece, non è peggiorata: in media il modello non sbaglia più di prima. È la dispersione a far scattare l'allarme: modello e mercato non vanno più d'accordo, in un senso o nell'altro. Per lo scommettitore è il momento in cui si accorge di essere troppo spesso lontano dal mercato, anche nelle giornate in cui vince.
+
+**Domenica 8 dicembre: il ricalibratore.** Il ricalibratore si chiede se le ultime 40 partite siano state particolarmente difficili. Non lo sono state: le loro caratteristiche spiegano 0,013 dell'aumento di dispersione di 0,076, e i restanti 0,063 superano la soglia di 0,040. L'errore è strutturale, e il moltiplicatore scende da 0,25 a 0,10 finché dura l'allarme. Per lo scommettitore la conclusione è: «non è sfortuna e non è un mese strano; le mie stime e quelle del mercato non parlano più la stessa lingua, e finché i miei errori restano così rischio pochissimo».
+
+**Che cosa succede dopo.** Quel giorno si giocano due partite. Il lavoratore propone due scommesse, sul Fulham contro l'Aston Villa e sul pareggio fra Arsenal ed Everton, e lo schema le piazza con il moltiplicatore ridotto: l'1,3% e lo 0,1% del capitale, invece del 3,2% e dello 0,3% che avrebbe puntato con il quarto di Kelly. Entrambe vengono vinte, e il capitale sale al 148,0%; il quarto di Kelly, con le puntate intere, sale al 153,6%. La riduzione costa quindi qualcosa nelle giornate buone. Lo schema non riduce la puntata perché prevede che le prossime scommesse andranno male, ma perché in quel momento non si fida delle stime con cui le sceglie.
+
+**Lunedì 9 dicembre: l'allarme si spegne.** Con le due partite della domenica la finestra delle ultime 40 partite cambia ancora, e la statistica dell'ANOVA sulla dispersione scende a 7,6, sotto la soglia. Non c'è più allarme, il ricalibratore non interviene, e lo schema torna a puntare il quarto della frazione di Kelly. Più avanti nella stagione l'allarme si riaccende in altri cinque giorni, e ogni volta la puntata scende di nuovo a 0,10 per il tempo in cui l'allarme resta acceso. Lo scommettitore ha avuto un momento di sfiducia nelle proprie stime, e torna a fidarsene quando i suoi errori rientrano nella norma. La stagione si chiude al 63%, contro il 67% del quarto di Kelly (§5.4).
+
+**Se l'errore fosse stato nei dati.** Supponiamo invece che le ultime 40 partite fossero state soprattutto partite equilibrate, fra squadre vicine in classifica, con modello e mercato entrambi incerti. Lo scarto tipico dei residui sarebbe cresciuto anche con un modello invariato, perché su quelle partite chiunque sbaglia di più. Le stime della stagione di calibrazione lo avrebbero previsto: la parte spiegata sarebbe stata grande, quella non spiegata sotto la soglia, e il ricalibratore avrebbe ridotto la puntata da 0,25 a 0,19, per riportarla a 0,25 quando l'allarme si fosse spento. Lo scommettitore avrebbe continuato a giocare, con un po' più di cautela, aspettando che il calendario tornasse normale.
 
 ## 4. Dati e disegno sperimentale
 
@@ -449,7 +500,7 @@ Il risultato principale è quello delle **stagioni vere**: ciascuna delle 19 sta
 
 Per misurare quanto conta la fortuna, ogni stagione è anche **ricostruita 500 volte**, ricampionando le giornate con uno *stationary bootstrap* (§2.6): si estraggono blocchi di giornate consecutive, di lunghezza casuale, e li si accoda fino a riempire la stagione. Partite, quote e risultati sono veri, ma alcune giornate si ripetono e altre mancano. Le stagioni ricostruite non sono il risultato principale perché alterano proprio la sequenza temporale che il supervisore osserva, e possono creare o cancellare i periodi di errori anomali che fanno scattare l'allarme.
 
-Le stagioni ricostruite sono disponibili per le prime versioni dello schema (Appendice A) e, sulla stagione 2023-24, anche per la versione principale (§5.8). La versione principale è valutata sulle stagioni vere, con i controlli del §4.6.
+Le stagioni ricostruite sono disponibili per le prime versioni dello schema (Appendice A) e, sulla stagione 2023-24, anche per la versione definitiva (§5.8). La versione definitiva è valutata sulle stagioni vere, con i controlli del §4.6.
 
 ### 4.5 Le misure
 
@@ -463,19 +514,19 @@ I risultati sono espressi con tre misure.
 
 Per isolare il contributo del supervisore, lo schema è confrontato con lo stesso lavoratore privo di supervisore, sulle stesse partite e con le stesse previsioni. I riferimenti sono due: il **Kelly pieno**, cioè il lavoratore da solo, e il **quarto di Kelly fisso**, cioè la puntata dello schema quando non c'è allarme. Il secondo è il riferimento principale, perché la differenza fra lo schema e questo agente è esattamente l'effetto del supervisore e del ricalibratore.
 
-Con un vantaggio negativo, però, qualunque regola che punta meno perde meno, quindi battere il quarto di Kelly non dimostra che lo schema riduca la puntata nelle giornate giuste. Servono riferimenti con la stessa esposizione dello schema, cioè con lo stesso numero di giornate a puntata piena, ridotta e nulla:
+Con un vantaggio negativo, però, qualunque regola che punta meno perde meno, quindi battere il quarto di Kelly non dimostra che lo schema riduca la puntata nelle giornate giuste. Servono riferimenti con la stessa esposizione dello schema, cioè con lo stesso numero di giornate a ciascun livello di puntata:
 
 - **calendari casuali dentro la stagione**: i livelli di puntata dello schema riassegnati a caso alle giornate della stessa stagione, oppure l'intero calendario dello schema spostato di un numero casuale di giornate;
 - **calendari di un'altra stagione**: a ogni stagione è assegnato a caso il calendario che lo schema ha prodotto in un'altra, riportato alla sua lunghezza;
 - **una frazione fissa di pari esposizione**: il Kelly frazionario con una frazione costante uguale a quella media dello schema.
 
-Questi confronti sono fatti senza puntata minima. In quel caso ogni puntata è una frazione del capitale corrente, e il capitale di un calendario qualsiasi si ricostruisce esattamente dai rendimenti giornalieri del quarto di Kelly e del Kelly ridotto. Per ogni versione dello schema si estraggono 10 000 calendari di ciascun tipo, e il valore $p$ è la quota di calendari che conservano almeno quanto lo schema.
+Questi confronti sono fatti senza puntata minima. In quel caso ogni puntata è una frazione del capitale corrente, e il capitale di un calendario qualsiasi si ricostruisce esattamente dai rendimenti giornalieri del Kelly frazionario a ciascun livello di puntata. Per ogni versione dello schema si estraggono 10 000 calendari di ciascun tipo, e il valore $p$ è la quota di calendari che conservano almeno quanto lo schema.
 
 È un test per permutazione [@fisher1935]: si ricalcola una quantità su molte riassegnazioni casuali di un'etichetta, qui le giornate in cui lo schema riduce la puntata, lasciando invariato tutto il resto. Il test non richiede ipotesi sulla distribuzione degli errori. Richiede però che, se l'etichetta non portasse informazione, le riassegnazioni fossero equivalenti a quella osservata.
 
 I calendari casuali dentro la stagione non soddisfano del tutto questa condizione, e il difetto penalizza lo schema. L'allarme scatta dopo una serie di errori grandi, cioè dopo giornate in cui anche le puntate sono andate male, e in quelle giornate lo schema stava puntando, mentre un calendario riassegnato può evitarle. Anche un allarme privo di ogni informazione sul futuro risulterebbe quindi peggiore di questi calendari. I calendari di un'altra stagione non hanno questo difetto, e sono il confronto di riferimento.
 
-La frazione fissa è un riferimento più severo. Poiché la crescita è concava nella frazione puntata, a parità di esposizione media una frazione costante rende in attesa più di un'alternanza fra puntata piena e nulla. Non è però una regola applicabile in anticipo, perché la frazione media dello schema si conosce solo a posteriori.
+La frazione fissa è un riferimento più severo. Poiché la crescita è concava nella frazione puntata, a parità di esposizione media una frazione costante rende in attesa più di un'alternanza fra puntate piene e ridotte. Non è però una regola applicabile in anticipo, perché la frazione media dello schema si conosce solo a posteriori.
 
 ### 4.7 Il mondo simulato
 
@@ -501,38 +552,36 @@ Nei dati veri l'Elo non ha mai esattamente ragione, quindi le conclusioni ottenu
 
 ### 4.8 Le versioni dello schema
 
-Ogni modulo dello schema lascia aperta almeno una scelta, e il capitolo 3 indica per ciascuna l'alternativa provata. Il testo segue la versione principale; le alternative servono a verificare che le conclusioni non dipendano dalle scelte fatte.
+Ogni modulo dello schema lascia aperta almeno una scelta, e il §3.5 spiega perché si è preferita ciascuna alternativa. Il testo segue la versione definitiva; le altre versioni sono riportate nell'Appendice F, e l'Appendice A ne elenca il capitale. Le alternative provate sono queste:
 
-**La variante con le soglie per giornata.** Accanto alla versione principale compare una sola variante, che ne cambia le soglie dell'allarme: sono calibrate perché il 5% valga per ogni giornata invece che per l'intera stagione (§3.3). Con le soglie per giornata l'allarme è più sensibile, ma scatta molto più spesso senza motivo. Per questo la variante accompagna la versione principale nelle analisi in cui conta quanto pesano i falsi allarmi: il capitale nelle stagioni vere, i controlli a pari esposizione, ciò che l'allarme riconosce e il mondo simulato.
-
-**Le altre alternative.** Le altre scelte del capitolo 3 sono state provate, e il capitolo 5 ne riporta l'effetto in una frase ciascuna:
-
-- riprendere a puntare quando l'allarme si spegne, invece di restare fermi fino a fine stagione;
+- dopo un errore strutturale, azzerare la puntata invece di ridurla a 0,10, e mantenere la riduzione fino a fine stagione invece che finché dura l'allarme;
 - la diagnosi a tre termini sulla media del residuo, invece di quella a due termini;
+- le soglie dell'allarme calibrate per ogni giornata, invece che per l'intera stagione;
 - il confronto con le 40 partite precedenti, invece che con la stagione di calibrazione;
 - l'allarme solo quando superano la soglia entrambe le statistiche, invece di una delle due.
 
-Le prime due cambiano una sola scelta della versione principale. Le ultime due sono state provate soltanto nelle prime versioni dello schema, costruite prima della versione principale, con le soglie per giornata e la diagnosi a tre termini. L'Appendice A elenca tutte le versioni provate, con il capitale di ciascuna.
+Le ultime due sono state provate soltanto nelle prime versioni dello schema, costruite con le soglie per giornata e la diagnosi a tre termini.
 
-In tutte le versioni il lavoratore punta sull'esito con il valore atteso più alto. Le altre regole di scelta dell'esito (§3.2) riguardano il lavoratore, non lo schema, e sono confrontate a parte (§5.7).
-
-Un'alternativa alla riduzione della puntata non compare fra le versioni: ri-parametrizzare il modello dopo un allarme. Ne è stata esplorata una forma, la ri-parametrizzazione annuale sulla stagione precedente (§5.7); la ri-parametrizzazione subito dopo un allarme e il cambio di modello non sono stati realizzati.
+In tutte le versioni il lavoratore punta sull'esito con il valore atteso più alto. Le altre regole di scelta dell'esito (§3.2) riguardano il lavoratore, non lo schema, e sono confrontate a parte (Appendice F.4). Due alternative alla riduzione della puntata sono state esplorate fuori dallo schema: la ri-parametrizzazione annuale del modello sulla stagione precedente (Appendice F.4) e un lavoratore che corregge le proprie previsioni imparando dagli errori passati (Appendice F.5). La ri-parametrizzazione subito dopo un allarme e il cambio di modello non sono stati realizzati.
 
 **L'ordine delle scelte.** Non tutte le scelte sono state fatte prima di vedere le stagioni di valutazione.
 
-- **Prima delle stagioni di valutazione**: i parametri del modello, la finestra di 40 partite, le caratteristiche delle partite, i moltiplicatori della puntata, e le prime versioni dello schema, con il confronto con le 40 partite precedenti e soglie calibrate sulle sole stagioni di calibrazione.
+- **Prima delle stagioni di valutazione**: i parametri del modello, la finestra di 40 partite, le caratteristiche delle partite, la puntata senza allarme e dopo un errore nei dati, e le prime versioni dello schema, con il confronto con le 40 partite precedenti e soglie calibrate sulle sole stagioni di calibrazione.
 - **Dopo aver visto le stagioni di valutazione**: il confronto con la stagione di calibrazione, introdotto perché quello con le 40 partite precedenti interveniva di rado e scelto dopo aver visto la frequenza degli allarmi ma non i guadagni, e la regola dell'esito più probabile.
-- **Dopo i controlli a pari esposizione e la simulazione**: le soglie per stagione, introdotte quando la simulazione ha mostrato quanti falsi allarmi producono le soglie per giornata, e la diagnosi a due termini, introdotta dopo aver verificato il comportamento di quella a tre termini. Insieme definiscono la versione principale.
+- **Dopo i controlli a pari esposizione e la simulazione**: le soglie per stagione, introdotte quando la simulazione ha mostrato quanti falsi allarmi producono le soglie per giornata, e la diagnosi a due termini, introdotta dopo aver verificato il comportamento di quella a tre termini.
+- **Alla fine del lavoro**: la reazione all'errore strutturale. Fino ad allora lo schema smetteva di puntare fino a fine stagione. La versione definitiva riduce la puntata a 0,10 finché dura l'allarme, per coerenza con il resto dello schema e con ciò che KellyBench mette alla prova, sapendo che sulle stagioni di valutazione conserva meno capitale (§3.5).
 
-Nessuna versione può quindi essere confermata sulle stagioni di valutazione, che hanno contribuito a sceglierla, e la stagione di test non aiuta, perché lì l'allarme della versione principale non scatta mai (§5.8). Per questo le conclusioni non sono affidate al capitale di una sola versione.
+Nessuna versione può quindi essere confermata sulle stagioni di valutazione, che hanno contribuito a sceglierla, e la stagione di test non aiuta, perché lì l'allarme della versione definitiva non scatta mai (§5.8). Per questo le conclusioni non sono affidate al capitale di una sola versione.
 
 ### 4.9 La riproducibilità
 
-I parametri del modello sono stati stimati sulle stagioni di calibrazione e scritti una volta sola in un file congelato, prima di guardare le stagioni di valutazione. Ogni procedura casuale ha un seme fissato, e ogni risultato riportato in questo studio è letto da un file di risultati protetto da test automatici, che verificano che i valori non cambino. La stagione di test è stata sbloccata una sola volta. Lo schema Structural-Hybrid è stato costruito dopo quel test: sul 2023-24 ogni versione è stata eseguita una sola volta, le prime versioni dello schema subito dopo il test e la versione principale alla fine del lavoro, e i risultati su quella stagione vanno perciò considerati esplorativi.
+I parametri del modello sono stati stimati sulle stagioni di calibrazione e scritti una volta sola in un file congelato, prima di guardare le stagioni di valutazione. Ogni procedura casuale ha un seme fissato, e ogni risultato riportato in questo studio è letto da un file di risultati protetto da test automatici, che verificano che i valori non cambino. La stagione di test è stata sbloccata una sola volta. Lo schema Structural-Hybrid è stato costruito dopo quel test: sul 2023-24 ogni versione è stata eseguita una sola volta, le prime versioni dello schema subito dopo il test e la versione definitiva alla fine del lavoro, e i risultati su quella stagione vanno perciò considerati esplorativi.
 
 ## 5. Risultati
 
-Lo schema agisce solo sulla puntata, e ridurre la puntata conviene soltanto quando puntare perde. Il primo risultato da stabilire è quindi se il modello abbia un vantaggio sul mercato, perché da esso dipende come va letto ogni risultato sul capitale. Se il vantaggio manca, qualunque regola che punta meno perde meno, e la domanda utile non è se lo schema conservi capitale, ma se lo conservi riducendo la puntata nei momenti giusti: per questo i risultati sul capitale sono sempre affiancati dai controlli a pari esposizione (§4.6).
+Questo capitolo segue la versione definitiva dello schema descritta nel capitolo 3: confronto con la stagione di calibrazione, soglie dell'allarme per stagione, diagnosi a due termini, e una puntata che dipende soltanto dalla diagnosi del giorno, cioè 0,25 senza allarme, 0,19 dopo un errore nei dati, 0,10 dopo un errore strutturale. Le altre versioni sono raccolte nell'Appendice F.
+
+Il capitolo risponde alla domanda di KellyBench in tre passi. Il primo è stabilire se il modello abbia un vantaggio sul mercato (§5.1). Il secondo è misurare quanto, a parità di previsioni, il capitale dipenda da come si punta (§5.2). Il terzo è guardare che cosa fa il supervisore: in una stagione seguita giornata per giornata (§5.3), in tutte le 19 stagioni (§5.4), se interviene nelle stagioni giuste (§5.5), che cosa ne viene per il capitale (§5.6), che cosa succede quando un vantaggio c'è davvero (§5.7) e sulla stagione di KellyBench (§5.8).
 
 ### 5.1 Il modello non batte il mercato
 
@@ -542,238 +591,225 @@ Sulle 19 stagioni di valutazione (7 220 partite) il modello Elo assegna all'esit
 
 *Figura 5.1. Lo scarto medio fra modello e mercato, $\hat g$, calcolato sulle prime $t$ partite in ordine cronologico, con i cinque metodi per togliere il margine. A sinistra le quote pre-partita di Bet365 sulle 19 stagioni di valutazione, a destra le quote di chiusura di Pinnacle dal 2012-13. Dopo le prime centinaia di partite la curva resta stabilmente sotto lo zero, e i cinque metodi quasi coincidono.*
 
-Il modello perde di più proprio dove il mercato è più sicuro: nelle partite con una favorita netta (quota sotto 1,5) lo scarto è −0,037. Un controllo con gli esiti rimescolati a caso all'interno di ogni stagione esclude che il risultato sia un artefatto della procedura: lo scarto osservato resta al di sotto di tutti i valori ottenuti con gli esiti rimescolati.
+Il modello perde di più proprio dove il mercato è più sicuro: nelle partite con una favorita netta (quota sotto 1,5) lo scarto è −0,037. Un esempio rende l'idea. Il 1° settembre 2018 il Liverpool gioca sul campo del Leicester. Bet365 paga la vittoria del Liverpool 1,44: tolto il margine, il mercato le assegna il 68%. Il modello Elo le assegna il 37%, e dà al Leicester il 32% contro il 13% del mercato. Vince il Liverpool, e il residuo della partita è $\delta = \ln(0{,}37/0{,}68) = -0{,}60$: il modello aveva dato al risultato poco più della metà della probabilità che gli dava il mercato.
 
-La conseguenza è quella ricavata nel §2.3: chi punta secondo le probabilità del modello perde in media, e una regola di puntata più prudente può soltanto ridurre le perdite. Il guadagno, che era l'obiettivo iniziale di questo studio, non è raggiungibile; resta da capire se il supervisore sappia indicare quando perdere meno. È lo stesso risultato di KellyBench, ottenuto senza LLM e su 19 stagioni invece che su una.
+Non è un caso isolato. La tabella riporta le partite delle 19 stagioni di valutazione con una favorita netta, divise secondo il campo della favorita.
 
-### 5.2 Il capitale degli agenti
+| Favorita netta | Partite | Probabilità della favorita, modello | Probabilità della favorita, mercato | Vittorie della favorita | $\delta$ medio |
+|---|---|---|---|---|---|
+| In casa | 1 237 | 68,5% | 75,5% | 76,7% | −0,024 |
+| In trasferta | 273 | 52,2% | 72,3% | 73,3% | −0,097 |
+| In trasferta, modello calibrato sul 2010-11 | 144 | 49,5% | 73,0% | 75,0% | −0,139 |
 
-La tabella riporta, sulle 19 stagioni vere, il capitale rimasto a fine stagione in una stagione tipica, la quota di giornate in cui lo schema resta fermo e la quota di stagioni in cui fa meglio o peggio del quarto di Kelly; nelle stagioni restanti i due capitali coincidono, perché lo schema non interviene mai. Il lavoratore sceglie l'esito con il valore atteso più alto.
+Il modello dà quasi sempre alla favorita meno probabilità del mercato, e il mercato è più vicino alla frequenza con cui la favorita vince davvero. Lo scarto è grande soprattutto quando la favorita gioca in trasferta: il modello le dà poco più di una probabilità su due, il mercato quasi tre su quattro. È ciò che succede se il vantaggio del campo del modello, fra 125 e 128 punti Elo in tutte le partite con le prime due calibrazioni, è troppo grande per una squadra molto più forte dell'avversaria. Con il modello calibrato sul 2010-11, negli anni in cui Manchester City e Liverpool dominano il campionato, lo scarto medio su queste partite arriva a −0,139. Con quello calibrato sul 2020-21, che ha un vantaggio del campo di 78 punti, la distanza in trasferta si riduce: 56% contro 73%.
 
-| Agente                             | Capitale rimasto | Giornate da fermo | Stagioni meglio / peggio del quarto di Kelly |
-| ---------------------------------- | ---------------- | ----------------- | -------------------------------------------- |
-| Kelly pieno, senza supervisore     | 0,2%             | –                 | 0% / 100%                                    |
-| Quarto di Kelly, senza supervisore | 57%              | –                 | –                                            |
-| **Versione principale**            | **64%**          | 42%               | 47% / 16%                                    |
-| Soglie per giornata                | 72%              | 68%               | 74% / 26%                                    |
+Un controllo con gli esiti rimescolati a caso all'interno di ogni stagione esclude che il risultato sia un artefatto della procedura: lo scarto osservato resta al di sotto di tutti i valori ottenuti con gli esiti rimescolati.
 
-Con un vantaggio negativo il Kelly pieno lascia in una stagione tipica lo 0,2% del capitale. Il quarto di Kelly perde molto meno: ne resta il 57%.
+La conseguenza è quella ricavata nel §2.3: chi punta secondo le probabilità del modello perde in media, e una regola di puntata più prudente può soltanto ridurre le perdite. È lo stesso risultato di KellyBench, ottenuto senza modelli linguistici e su 19 stagioni invece che su una.
 
-La versione principale conserva il 64%. Fa meglio del quarto di Kelly in 9 stagioni e peggio in 3; nelle altre 7 non si ferma mai, e i due capitali coincidono. La differenza non è distinguibile dal caso: il test dei segni dà $p = 0{,}15$, il test di Wilcoxon $p = 0{,}34$, e il rapporto fra i capitali tipici è 1,12, con intervallo al 95% da 0,92 a 1,35. Lo schema si ferma in 12 stagioni su 19 e resta fermo nel 42% delle giornate.
+### 5.2 Quanto si punta decide quanto si perde
 
-La variante con le soglie per giornata conserva di più, il 72%, e batte il quarto di Kelly in 14 stagioni su 19 (Wilcoxon $p = 0{,}04$; rapporto fra i capitali tipici 1,25, con intervallo al 95% da 1,04 a 1,49). Si ferma però molto più spesso: in 18 stagioni su 19, e nel 68% delle giornate. Le sezioni seguenti mostrano che questa differenza non è un merito dell'allarme. Senza vantaggio fermarsi conviene comunque (§5.3), e buona parte di quegli stop è compatibile con i falsi allarmi che le soglie per giornata producono nell'arco di una stagione (§5.6).
+Se il vantaggio non c'è, le perdite non dipendono da quanto è bravo l'agente a prevedere, ma da quanto e quanto spesso punta. La tabella lo mostra con lo stesso modello e le stesse previsioni: cambia soltanto la regola di puntata.
 
-Le altre alternative del §4.8 non cambiano il quadro.
-
-- **Riprendere a puntare** quando l'allarme si spegne, invece di restare fermi fino a fine stagione, riduce le giornate da fermo all'8% e riporta il capitale a quello del quarto di Kelly (57%).
-- **La diagnosi a tre termini** al posto di quella a due termini dà il 61%, con 7 stagioni meglio e 5 peggio del quarto di Kelly: la diagnosi conta poco sul capitale (§5.5).
-- **Il confronto con le 40 partite precedenti**, provato nelle prime versioni dello schema, interviene poco: l'allarme scatta in media 1,6 volte per stagione, quanto ci si aspetta dai soli falsi allarmi, e il capitale è il 60%. Non è un difetto dei test: i cambiamenti da un periodo di 40 partite al successivo sono più piccoli di quelli che il confronto è in grado di vedere (Appendice E).
-- **Richiedere che superino la soglia entrambe le statistiche** fa intervenire l'allarme ancora meno, e il capitale scende al 56%.
-
-In tutte le versioni il capitale cresce in genere con la quota di giornate da fermo, e quelle che restano ferme fino a fine stagione conservano di più qualunque sia il riferimento: anche con le 40 partite precedenti si arriva al 71%, perché dopo il primo stop non si punta più. L'Appendice A riporta tutte le versioni, con il capitale stagione per stagione.
-
-![Capitale rimasto a fine stagione, quarto di Kelly e versione principale dello schema, nelle 19 stagioni vere](figures/tesi_capitale_principale.png)
-
-*Figura 5.2. Capitale rimasto a fine stagione nelle 19 stagioni vere, con la puntata minima di £0,01. In blu il quarto di Kelly senza supervisore, in arancione la versione principale dello schema. La linea a 100 è il capitale iniziale, da cui ogni stagione riparte; le linee verticali separano le stagioni in base al modello usato.*
-
-La Figura 5.2 mostra il confronto stagione per stagione. Il vantaggio della versione principale si concentra in poche stagioni (2006-07, 2008-09, 2012-13, 2013-14, 2018-19), in cui lo schema si ferma e il quarto di Kelly continua a perdere. In tre stagioni lo schema fa nettamente peggio (2011-12, 2016-17, 2019-20): dopo il suo stop il quarto di Kelly ha continuato a puntare, e le puntate successive gli sono state favorevoli. Nella maggior parte delle stagioni nessuno dei due chiude sopra il capitale iniziale: lo schema riduce la perdita, non la trasforma in guadagno.
-
-### 5.3 Quanto conta il momento dell'intervento
-
-Con un vantaggio negativo puntare meno aiuta comunque. Per sapere se lo schema riduce la puntata nelle giornate giuste, il suo capitale va confrontato con quello di riduzioni di pari entità che non usano l'allarme (§4.6). La tabella riporta il confronto, senza puntata minima, per la versione principale e per la variante con le soglie per giornata.
-
-| Capitale rimasto in una stagione tipica | Versione principale | Soglie per giornata |
+| Agente | Capitale rimasto in una stagione tipica | Scommesse per stagione |
 |---|---|---|
-| Schema | 64% | 72% |
-| Quarto di Kelly, senza supervisore | 57% | 57% |
-| Livelli di puntata riassegnati a caso nella stessa stagione (mediana) | 67% | 80% |
-| Calendario spostato a caso nella stessa stagione (mediana) | 67% | 80% |
-| Calendario di un'altra stagione (mediana; 90% dei casi fra) | 69% (62–76%) | 78% (72–84%) |
-| Quota di calendari di un'altra stagione che conservano almeno quanto lo schema | 88% | 95% |
-| Frazione fissa di pari esposizione | 77% | 89% |
+| Kelly pieno | 0,2% | come il quarto di Kelly, finché ha capitale |
+| Quarto di Kelly | 57% | 333 |
+| Quarto di Kelly, puntando solo sull'esito più probabile | 67% | 179 |
+| Schema, versione definitiva | 58% | 333 |
 
-Nessuna delle due versioni conserva più capitale di un calendario di pari esposizione che non usa l'allarme. Vale per i calendari riassegnati dentro la stagione, che per costruzione sono sfavorevoli allo schema, e vale per i calendari di un'altra stagione, che non lo sono: in più di otto casi su dieci conservano almeno quanto lo schema. La frazione fissa di pari esposizione, 0,15 volte la frazione di Kelly per la versione principale e 0,08 per la variante, conserva ancora di più.
+Il Kelly pieno, che punta la frazione intera indicata dalle stime, lascia in una stagione tipica lo 0,2% del capitale: è il comportamento degli agenti di KellyBench che puntano molto e azzerano il capitale. Il quarto di Kelly, con le stesse scommesse e puntate quattro volte più piccole, ne conserva il 57%. Puntare su meno partite aiuta allo stesso modo: con la regola dell'esito più probabile (§3.2) il lavoratore scommette su circa metà delle partite e conserva il 67%. Lo schema, che riduce la puntata solo nelle giornate con l'allarme, resta vicino al quarto di Kelly (58%).
 
-Questo non significa che l'allarme sia inutile, ma che su 19 stagioni, con un vantaggio negativo in ogni giornata, il capitale non può mostrare se l'allarme sceglie bene: la differenza fra 64% e 57%, e ancor più quella fra 72% e 57%, misura l'effetto del puntare meno, e gli esiti delle partite sono troppo rumorosi per misurare altro. Nelle giornate in cui la versione principale resta ferma, l'errore realizzato del modello rispetto al mercato è in media di 0,001 migliore che nelle altre, e con i calendari di un'altra stagione questa differenza oscilla per il 90% dei casi fra −0,005 e +0,009: un'incertezza grande quanto l'effetto che la sezione seguente misura con una grandezza meno rumorosa.
+Con lo stesso modello, quindi, il capitale va dallo 0,2% al 67% secondo come si punta, e nessuna regola chiude in guadagno in una stagione tipica. È la prima parte della risposta: le perdite vengono dall'assenza di vantaggio, e il modo di decidere stabilisce soltanto quanto si perde.
 
-### 5.4 Che cosa riconosce l'allarme
+### 5.3 Una stagione vista dall'agente: il 2018-19
 
-#### La distanza dal mercato prima della partita
+Per capire che cosa fa lo schema conviene seguirlo in una stagione, scommessa dopo scommessa. Il 2018-19 è previsto con il modello calibrato sul 2010-11, all'ottava stagione dalla calibrazione. È la stagione in cui Manchester City e Liverpool chiudono con 98 e 97 punti.
 
-Per sapere se l'allarme sceglie le giornate giuste serve quindi una misura che non dipenda dagli esiti. L'errore atteso di una partita è lo scarto fra modello e mercato calcolato prima che si giochi, pesando i tre esiti con le probabilità del mercato: $\mathbb{E}_q[\delta] = -\mathrm{KL}(q\,\|\,\hat p)$. È sempre negativo o nullo, ed è tanto più negativo quanto più il modello è lontano dal mercato; se il mercato ha ragione, è la crescita attesa di chi punta secondo il modello.
+![Le statistiche dell'allarme, i giorni con la puntata ridotta e il capitale nel 2018-19](figures/tesi_allarmi_2018_19.png)
 
-Nelle giornate in cui la versione principale resta ferma l'errore atteso è in media −0,027; nelle altre −0,020. Con i calendari di un'altra stagione una differenza così grande si ottiene nello 0,4% dei casi ($p = 0{,}004$). Con le soglie per giornata la differenza è più piccola (−0,024 contro −0,020; $p = 0{,}04$). Lo schema si ferma quindi nelle stagioni in cui il modello è davvero più lontano dal mercato, e lo fa usando soltanto gli errori delle partite già giocate.
+*Figura 5.2. La stagione 2018-19. In alto le statistiche dell'ANOVA sulla media e dell'ANOVA sulla dispersione del residuo, divise per la loro soglia per stagione: l'allarme scatta quando una delle due supera 1. Sono calcolabili dalla 40ª partita in poi. Le fasce colorate sono le giornate con una diagnosi di errore strutturale, in cui lo schema punta 0,10 invece di 0,25. In basso il capitale della versione definitiva e del quarto di Kelly senza supervisore, che coincidono fino al primo allarme.*
 
-Dentro la stagione il segnale è più debole. Riassegnando a caso i livelli di puntata fra le giornate della stessa stagione la differenza osservata si ottiene nell'8% dei casi, spostando il calendario nell'11%; e a parità di posizione nella stagione non si distingue più dal caso ($p = 0{,}43$). Con le soglie per giornata il giorno dell'intervento sembra contare di più (1% dei calendari riassegnati), ma anche qui il segnale scompare a parità di posizione nella stagione ($p = 0{,}19$). Lo schema riconosce in quali stagioni fermarsi; il giorno esatto in cui lo fa non aggiunge informazione misurabile.
+**Lo scommettitore.** Nel 2018-19 il lavoratore scommette su 376 partite su 380: quasi sempre trova un esito con valore atteso stimato positivo. In tre scommesse su quattro punta contro la favorita del mercato, e punta in media l'1,9% del capitale. È il comportamento di uno scommettitore convinto che il mercato sopravvaluti le grandi squadre: vede occasioni ovunque una piccola squadra affronti una grande.
 
-#### La dispersione cresce con gli anni
+**Agosto: le prime giornate.** Il 12 agosto l'Arsenal ospita il Manchester City. Il mercato dà all'Arsenal il 24%, il modello il 37%: a quota 4,00 il lavoratore vede un valore atteso del +48% e punta il 4% del capitale sull'Arsenal. Vince il City. Lo stesso giorno punta sul West Ham, a quota 14,00, sul campo del Liverpool, e perde. Alla fine di agosto il capitale è al 92%.
+
+**1° settembre: il campionato dà torto allo scommettitore.** È la giornata di Leicester–Liverpool del §5.1. Il lavoratore punta sul Leicester a quota 7,50: per le sue stime ha il 32% di probabilità di vincere, il mercato gliene dà il 13%, e il valore atteso stimato è del +141%. Punta il 5,4% del capitale. Vince il Liverpool. Nella stessa giornata punta il 7,5% del capitale sul West Ham contro il Wolverhampton (57% per il modello, 38% per il mercato), e vince il Wolverhampton. Il capitale scende al 76%.
+
+**15 settembre: il primo allarme.** È la prima giornata in cui il supervisore ha 40 partite da confrontare con la stagione di calibrazione. Il residuo medio di quelle partite è −0,096, contro +0,004 della stagione di calibrazione: il modello dà al risultato, in media, circa il 10% di probabilità in meno, rispetto al mercato, di quanto facesse allora. La statistica della media supera la soglia (9,5 contro 9,2). Le caratteristiche delle partite non spiegano il peggioramento, e la diagnosi è strutturale: la puntata scende a 0,10. Quel giorno il lavoratore punta sul Tottenham contro il Liverpool (50% per il modello, 32% per il mercato) con il 2,5% del capitale invece del 6,3%, e vince il Liverpool. Lo scommettitore ha capito che non sono le partite a essere difficili: è lui a non vedere quanto sono forti le grandi squadre.
+
+**Settembre e ottobre: l'allarme resta acceso.** L'allarme dura dodici giornate di decisione, fino al 20 ottobre. In quel periodo le grandi continuano a vincere in trasferta, e le scommesse sulle piccole continuano a perdere: lo schema scende dal 76% al 60%, il quarto di Kelly, che punta pieno, dal 76% al 41%. È qui che lo schema guadagna il vantaggio che conserverà fino alla fine della stagione.
+
+**Dicembre e febbraio: allarmi sulla dispersione.** Fra il 30 novembre e il 15 dicembre e fra il 6 e il 27 febbraio l'allarme si riaccende, questa volta sulla dispersione: il modello non sbaglia di più in media, ma si allontana dal mercato in entrambe le direzioni. Ogni volta la puntata scende a 0,10 per il tempo in cui l'allarme resta acceso, e risale a 0,25 quando si spegne.
+
+**Gennaio: la vincita.** A gennaio non c'è allarme, e lo schema punta il quarto di Kelly. Il 29 gennaio il Newcastle ospita il Manchester City: il mercato dà al Newcastle il 5%, il modello il 18%, e a quota 19,00 il lavoratore punta il 3,3% del capitale. Vince il Newcastle, e il capitale passa in un giorno dal 70% al 112%. Il giorno dopo vincono anche il pareggio fra Liverpool e Leicester, a quota 7,00, e il Bournemouth contro il Chelsea, a quota 5,25: in due giorni il capitale passa dal 70% al 139%. È la stessa convinzione di agosto e settembre, che questa volta paga.
+
+**Aprile e maggio: la fine.** Il 24 aprile il lavoratore punta il 7,1% del capitale sul Manchester United contro il City, a quota 7,50 (38% per il modello, 13% per il mercato), e vince il City. Il 26 e il 27 aprile l'allarme sulla media scatta per l'ultima volta. Lo schema chiude la stagione al 65%, il quarto di Kelly al 42%.
+
+**Che cosa insegna la stagione.** Lo schema conserva più capitale del quarto di Kelly quasi soltanto per ciò che è successo fra metà settembre e metà ottobre: l'allarme ha riconosciuto all'inizio della stagione che il modello sottovalutava le grandi squadre, e ha ridotto la puntata proprio nelle settimane in cui quelle squadre vincevano. Il resto della stagione i due agenti guadagnano e perdono insieme. Non sempre va così. Nel 2011-12, con lo stesso modello, l'allarme scatta il 30 dicembre, con il capitale al 36%, e resta acceso per nove giornate fino al 21 gennaio. In quelle giornate le scommesse sulle piccole squadre vincono: il Sunderland batte il Manchester City a quota 6,50, il Blackburn vince sul campo del Manchester United a quota 26,00, il Bolton batte il Liverpool a quota 6,00. Puntate ridotte, vincite ridotte: lo schema sale dal 36% al 44%, il quarto di Kelly al 58%. La differenza resta fino alla fine, e lo schema chiude al 63% contro l'84%. Il supervisore riconosce quando il modello è lontano dal mercato, non quali scommesse andranno male.
+
+### 5.4 Dove scattano gli allarmi
+
+La Figura 5.3 riporta le 19 stagioni nello stesso formato: per ogni giornata di decisione, la puntata dello schema e le giornate in cui l'allarme è acceso.
+
+![Allarmi e puntata della versione definitiva nelle 19 stagioni vere](figures/tesi_allarmi_stagioni.png)
+
+*Figura 5.3. Le 19 stagioni vere, giornata per giornata, in funzione delle partite già giocate. In azzurro le giornate senza allarme, in cui lo schema punta il quarto di Kelly; in giallo quelle con un errore nei dati (puntata 0,19); in arancione quelle con un errore strutturale (puntata 0,10). I trattini neri sono le giornate con l'allarme acceso. La linea tratteggiata a 40 partite è la prima giornata in cui il confronto è possibile. A destra il capitale rimasto a fine stagione, con la puntata minima di £0,01, per lo schema e per il quarto di Kelly senza supervisore; il segno indica se lo schema fa meglio (+), peggio (−) o uguale (=).*
+
+La tabella riporta le 12 stagioni in cui scatta almeno un allarme.
+
+| Stagione | Anni dalla calibrazione | Partite giocate al primo allarme | Allarme su | Giornate con puntata ridotta | Schema | Quarto di Kelly |
+|---|---|---|---|---|---|---|
+| 2005-06 | 5 | 252 | dispersione | 10% | 110% | 117% |
+| 2006-07 | 6 | 208 | dispersione | 1% | 96% | 94% |
+| 2008-09 | 8 | 127 | dispersione | 1% | 110% | 107% |
+| 2009-10 | 9 | 52 | dispersione | 12% | 46% | 49% |
+| 2011-12 | 1 | 179 | dispersione | 9% | 63% | 84% |
+| 2012-13 | 2 | 218 | dispersione | 3% | 28% | 29% |
+| 2013-14 | 3 | 147 | dispersione | 6% | 63% | 67% |
+| 2015-16 | 5 | 167 | dispersione | 1% | 36% | 37% |
+| 2016-17 | 6 | 41 | media | 21% | 90% | 100% |
+| 2017-18 | 7 | 77 | dispersione | 20% | 126% | 89% |
+| 2018-19 | 8 | 40 | media | 26% | 65% | 42% |
+| 2019-20 | 9 | 142 | dispersione | 42% | 69% | 79% |
+
+**Dove.** L'allarme scatta in 12 stagioni su 19, e le stagioni dipendono soprattutto dal modello. Con il modello calibrato sul 2000-01 scatta in quattro stagioni su otto, tutte dal quinto anno dopo la calibrazione in poi. Con quello calibrato sul 2010-11 scatta in otto stagioni su nove, già dalla prima. Con quello calibrato sul 2020-21 non scatta mai, né nelle due stagioni di valutazione né nella stagione di test (§5.8).
+
+**Su che cosa.** L'allarme scatta sulla dispersione in dieci stagioni e sulla media in due. Le due sulla media, il 2016-17 e il 2018-19, sono anche le sole in cui l'allarme scatta subito, alla prima giornata in cui il confronto è possibile: già nelle prime 40 partite gli errori sono in media peggiori che nella stagione di calibrazione.
+
+**Quanto dura.** Il primo allarme arriva fra la 40ª e la 252ª partita, e in nove stagioni su dodici nella prima metà della stagione. In tre stagioni (2006-07, 2008-09, 2015-16) l'allarme è acceso un solo giorno; con il modello calibrato sul 2010-11, nelle ultime stagioni, si riaccende di continuo, fino al 42% delle giornate del 2019-20. Nelle 19 stagioni lo schema riduce la puntata nell'8% delle giornate.
+
+**La diagnosi.** In tutte le dodici stagioni la diagnosi del primo allarme è strutturale. Su 1 963 giornate di decisione la diagnosi è strutturale in 162 e «errore nei dati» in una sola: nelle stagioni vere la riduzione a 0,19 non viene quasi mai usata. Il motivo è nelle soglie per stagione. Poiché devono limitare al 5% la probabilità di un falso allarme nell'intera stagione, l'allarme scatta solo per aumenti grandi; e le caratteristiche delle partite spiegano dal 10% al 18% della dispersione del residuo, troppo poco per rendere conto di un aumento grande. La distinzione fra le due diagnosi conta invece nel mondo simulato, dove a cambiare è soltanto il tipo di partite (§5.7).
+
+**Le partite.** La tabella riporta, per ogni stagione, la partita con il residuo più grande in valore assoluto fra le 40 della finestra in cui arriva la prima diagnosi strutturale; le probabilità sono quelle assegnate al risultato che si è verificato.
+
+| Stagione | Data | Partita | Chi vince | Modello | Mercato | $\delta$ |
+|---|---|---|---|---|---|---|
+| 2005-06 | 11 feb. 2006 | Middlesbrough – Chelsea | Middlesbrough | 23% | 11% | +0,71 |
+| 2006-07 | 30 dic. 2006 | Sheffield United – Arsenal | Sheffield United | 27% | 14% | +0,64 |
+| 2008-09 | 15 nov. 2008 | Blackburn – Sunderland | Sunderland | 13% | 25% | −0,67 |
+| 2009-10 | 30 ago. 2009 | Portsmouth – Manchester City | Manchester City | 27% | 62% | −0,84 |
+| 2011-12 | 21 dic. 2011 | QPR – Sunderland | Sunderland | 20% | 33% | −0,51 |
+| 2012-13 | 26 dic. 2012 | Sunderland – Manchester City | Sunderland | 27% | 14% | +0,66 |
+| 2013-14 | 10 nov. 2013 | Sunderland – Manchester City | Sunderland | 24% | 10% | +0,83 |
+| 2015-16 | 19 dic. 2015 | West Brom – Bournemouth | Bournemouth | 17% | 32% | −0,63 |
+| 2016-17 | 14 ago. 2016 | Arsenal – Liverpool | Liverpool | 18% | 31% | −0,56 |
+| 2017-18 | 14 ott. 2017 | Crystal Palace – Chelsea | Crystal Palace | 20% | 10% | +0,68 |
+| 2018-19 | 1 set. 2018 | West Ham – Wolverhampton | Wolverhampton | 16% | 34% | −0,73 |
+| 2019-20 | 30 nov. 2019 | Newcastle – Manchester City | pareggio | 28% | 11% | +0,95 |
+
+Il filo comune è quello del §5.1. Nelle finestre di queste dodici diagnosi un terzo delle partite ha la favorita del mercato in trasferta, ma fra le cinque partite con il residuo più grande di ogni finestra sono 43 su 60, e in media il loro residuo è più del doppio di quello delle altre (0,31 contro 0,14 in valore assoluto). Quando la favorita vince, come il Manchester City a Portsmouth, il residuo è molto negativo; quando perde o pareggia, come il City a Sunderland o a Newcastle, è molto positivo; in entrambi i casi la dispersione cresce. L'allarme, quindi, non scatta perché il modello perde una scommessa, ma perché modello e mercato sono in forte disaccordo su molte partite, e qualunque sia il risultato uno dei due sbaglia di molto. La media peggiora invece quando le favorite in trasferta vincono quasi sempre, ed è ciò che succede nelle due stagioni in cui l'allarme scatta sulla media: nel 2018-19 il Liverpool vince sul campo del Crystal Palace e del Leicester e il Manchester City su quello dell'Arsenal (§5.3); nel 2016-17 il Liverpool vince sul campo dell'Arsenal e del Chelsea, con il 18% e il 20% secondo il modello e il 31% e il 29% secondo il mercato.
+
+### 5.5 Gli allarmi scattano nelle stagioni giuste?
+
+Che lo schema abbia conservato capitale nel 2018-19 non dimostra che riconosca un modello che non funziona: con un vantaggio negativo in ogni giornata, ridurre la puntata conserva capitale quasi sempre. Per sapere se gli allarmi riconoscono qualcosa servono misure che non dipendano dagli esiti delle partite successive. Se ne usano due.
+
+**La scomposizione della stagione intera.** La prima misura viene dalla scomposizione di Blinder-Oaxaca applicata alle stagioni intere, dove le regressioni sono stimate su 380 partite ciascuna (Appendice D). Rispetto alla stagione di calibrazione, la parte strutturale dell'aumento di dispersione è distinguibile da zero in 8 stagioni su 19: il 2009-10 e sette delle nove stagioni con il modello calibrato sul 2010-11. La tabella la incrocia con le stagioni in cui lo schema dà almeno una diagnosi strutturale.
+
+| | Aumento strutturale significativo nella stagione | Non significativo |
+|---|---|---|
+| Stagioni con almeno una diagnosi strutturale | 8 | 4 |
+| Stagioni senza diagnosi strutturale | 0 | 7 |
+
+Lo schema dà una diagnosi strutturale in tutte le otto stagioni in cui la dispersione è cresciuta per ragioni strutturali, e in nessuna delle stagioni senza diagnosi la crescita è strutturale. La dà anche in quattro stagioni in cui la parte strutturale non è significativa sulla stagione intera (2005-06, 2006-07, 2008-09, 2012-13): in queste può trattarsi di un falso allarme o di un cambiamento limitato a una parte della stagione. Il confronto ha un limite: la scomposizione della stagione intera usa anche le partite successive all'allarme, che lo schema non può conoscere. Serve a verificare la diagnosi a posteriori, non a riprodurla.
+
+**La distanza dal mercato prima della partita.** La seconda misura è l'errore atteso di una partita, lo scarto fra modello e mercato calcolato prima che si giochi, pesando i tre esiti con le probabilità del mercato: $\mathbb{E}_q[\delta] = -\mathrm{KL}(q\,\|\,\hat p)$. È sempre negativo o nullo, ed è tanto più negativo quanto più il modello è lontano dal mercato; se il mercato ha ragione, è la crescita attesa di chi punta secondo il modello. Nelle giornate in cui lo schema riduce la puntata l'errore atteso è in media −0,033 per partita; nelle altre −0,022. Assegnando a ogni stagione il calendario degli allarmi di un'altra stagione (§4.6), una differenza così grande si ottiene nello 0,02% dei casi ($p = 0{,}0002$). Lo schema riduce la puntata nelle stagioni in cui il modello è davvero più lontano dal mercato, e lo fa usando soltanto gli errori delle partite già giocate.
+
+**Le stagioni, non il giorno.** Dentro la stagione il segnale scompare. Riassegnando a caso le giornate con la puntata ridotta all'interno della stessa stagione, una differenza come quella osservata si ottiene nel 13% dei casi, spostando il calendario nel 14%; e a parità di posizione nella stagione non si distingue dal caso ($p = 0{,}17$). Nel 2018-19, per esempio, l'errore atteso è −0,038 sia nelle giornate con la puntata ridotta sia nelle altre: il modello è lontano dal mercato per tutta la stagione, e l'allarme lo vede solo in alcune giornate. Lo schema riconosce in quali stagioni il modello non funziona; il giorno esatto in cui interviene non aggiunge informazione misurabile. Per questo, nel 2018-19, l'aver ridotto la puntata proprio a settembre e ottobre è stato in buona parte fortunato (§5.3).
+
+**Perché quelle stagioni.** Dentro ciascuna calibrazione la dispersione degli errori cresce con gli anni trascorsi dalla calibrazione (Figura 5.4): la correlazione di Spearman fra dispersione ed età del modello, calcolata dentro ogni calibrazione, è 0,71, e una tendenza così netta si ottiene per caso nello 0,2% delle permutazioni. Con il modello calibrato sul 2010-11 la dispersione passa da 0,135 nella stagione di calibrazione a 0,19–0,20 nelle stagioni dal 2017-18 al 2019-20; con quello calibrato sul 2000-01 la crescita c'è, ma è più lenta; con quello calibrato sul 2020-21, ancora giovane, la dispersione resta sotto il riferimento. Le stagioni con le diagnosi strutturali sono quelle in cui la linea della Figura 5.4 si allontana dal riferimento.
 
 ![Media e dispersione degli errori del modello rispetto al mercato, stagione per stagione](figures/relatore_invecchiamento.png)
 
-*Figura 5.3. Media (in basso) e dispersione (in alto) del residuo $\delta$, stagione per stagione. Il colore indica la calibrazione usata; il cerchio vuoto è la stagione di calibrazione e la linea tratteggiata il suo valore, cioè il riferimento dello schema. In alto la grandezza che confronta il test di Brown-Forsythe: più è alta, peggio è. In basso quella che confronta l'ANOVA: più è bassa, peggio è.*
+*Figura 5.4. Media (in basso) e dispersione (in alto) del residuo $\delta$, stagione per stagione. Il colore indica la calibrazione usata; il cerchio vuoto è la stagione di calibrazione e la linea tratteggiata il suo valore, cioè il riferimento dello schema. In alto la grandezza che confronta l'ANOVA sulla dispersione: più è alta, peggio è. In basso quella che confronta l'ANOVA sulla media: più è bassa, peggio è.*
 
-Dentro ciascuna calibrazione la dispersione degli errori cresce con gli anni trascorsi dalla calibrazione (Figura 5.3): la correlazione di Spearman fra dispersione ed età del modello, calcolata dentro ogni calibrazione, è 0,71, e una tendenza così netta si ottiene per caso nello 0,2% delle permutazioni. Con il modello calibrato sul 2010-11 la dispersione passa da 0,135 nella stagione di calibrazione a 0,19–0,20 nelle stagioni dal 2017-18 al 2019-20, e la media resta sempre sotto il riferimento. Con il modello calibrato sul 2000-01 la crescita c'è, ma è più lenta; con quello calibrato sul 2020-21, ancora giovane, la dispersione resta sotto il riferimento. È il segnale su cui lo schema è costruito, errori che peggiorano in media e soprattutto si allargano, ma su una scala di stagioni e non di settimane: fra due periodi di 40 partite la crescita è troppo lenta per essere vista.
+Che la distanza dal mercato sia l'invecchiamento del modello è vero solo in parte. Anche un modello ricalibrato ogni anno sulla stagione precedente si allontana dal mercato con il passare degli anni, sulle stesse partite (Appendice F.3): il mercato diventa più preciso e lascia indietro il modello, e l'età dei parametri aggiunge una distanza più piccola. Per lo schema la differenza non cambia la decisione, perché in entrambi i casi il modello non descrive più il campionato come nella stagione su cui è stato stimato; cambia invece il rimedio, perché ricalibrare il modello non basta a raggiungere il mercato.
 
-#### Età del modello o tempo di calendario
+**Quanto conta il riferimento.** L'allarme confronta gli errori recenti con una sola stagione, e le tre stagioni di calibrazione sono molto diverse fra loro. Il 2010-11 è stato una stagione con errori poco dispersi (0,135); già nel 2011-12, con lo stesso modello, la dispersione era 0,171. Rieseguendo lo schema con la prima stagione dopo la calibrazione come riferimento (2002-03, 2011-12, 2021-22), con le soglie ricalibrate su di essa, sulle 16 stagioni che restano le stagioni con almeno una diagnosi strutturale scendono da 11 a 4. Quattro stagioni su 16 restano più di quanto ci si aspetta dai soli falsi allarmi con soglie al 5% per stagione, ma il numero di stagioni riconosciute dipende da quanto era regolare la stagione presa come riferimento.
 
-Dentro una calibrazione, però, l'età del modello e l'anno di calendario crescono insieme, e la dispersione delle tre stagioni di calibrazione cresce da sola nei decenni: 0,109 nel 2000-01, 0,135 nel 2010-11, 0,186 nel 2020-21. Per separare le due cose il modello congelato è stato confrontato, sulle stesse partite e con le stesse quote, con il modello ricalibrato prima di ogni stagione sulla stagione precedente (§5.7), che ha sempre un anno: ciò che dipende dalla stagione è comune ai due modelli.
+### 5.6 Il capitale
 
-![Dispersione degli errori e distanza dal mercato prima della partita, modello congelato e modello ricalibrato ogni anno](figures/tesi_eta_calendario.png)
+La tabella riporta, sulle 19 stagioni vere e con la puntata minima di £0,01, il capitale rimasto in una stagione tipica (la media geometrica) e il confronto con il quarto di Kelly stagione per stagione; nelle sette stagioni senza allarme i due capitali coincidono.
 
-*Figura 5.4. In alto la dispersione del residuo $\delta$, in basso la distanza dal mercato prima della partita ($-\mathbb{E}_q[\delta]$), stagione per stagione. In blu il modello congelato, calibrato da 1 a 9 anni prima; in arancione il modello ricalibrato ogni anno sulla stagione precedente. Le partite e le quote sono le stesse per i due modelli; le etichette in alto indicano la calibrazione del modello congelato. Nel 2002-03 i due modelli coincidono.*
-
-Il confronto dà quattro risultati (Figura 5.4).
-
-- **Anche il modello ricalibrato ogni anno si allontana dal mercato.** A età costante, la dispersione dei suoi errori cresce con gli anni (correlazione di Spearman 0,56; $p = 0{,}007$), e così la sua distanza dal mercato prima della partita (0,61; $p = 0{,}004$). La tendenza principale è quindi di calendario.
-- **Sulle stesse partite, il modello congelato è più lontano dal mercato.** Il suo errore atteso è peggiore di quello del modello ricalibrato in 14 stagioni su 16 (test dei segni $p = 0{,}002$), in media di 0,004. Un effetto dell'età dei parametri c'è.
-- **Questo effetto non cresce in modo distinguibile con l'età** ($p = 0{,}22$).
-- **Sulla dispersione degli errori realizzati i due modelli non si distinguono**: quella del modello congelato è maggiore in 10 stagioni su 16 ($p = 0{,}23$).
-
-Il modello ricalibrato usa una sola stagione e ha parametri rumorosi, quindi il confronto sulla dispersione è poco preciso: può nascondere un effetto dell'età, non crearne uno. Con questa cautela, la lettura è che il modello Elo si allontana dal mercato con il passare degli anni soprattutto perché il mercato cambia, e in parte minore perché i suoi parametri invecchiano. Lo conferma il fatto che l'errore del modello da solo, senza il confronto con il mercato, non peggiora, e spiega perché ricalibrare il modello ogni anno non migliora il capitale (§5.7).
-
-#### Il riferimento è una sola stagione
-
-L'allarme confronta gli errori recenti con una sola stagione, e le tre stagioni di calibrazione sono molto diverse fra loro. Per vedere quanto conta, lo schema è stato rieseguito con un altro riferimento: la prima stagione dopo la calibrazione (2002-03, 2011-12, 2021-22), che per il modello è fuori campione, con le soglie ricalibrate su di essa. Le due varianti sono confrontate sulle 16 stagioni che restano.
-
-| | Riferimento: stagione di calibrazione | Riferimento: prima stagione successiva |
-|---|---|---|
-| Versione principale, stagioni con almeno uno stop | 11 su 16 | 4 su 16 |
-| Versione principale, capitale rimasto | 70% | 63% |
-| Soglie per giornata, stagioni con almeno uno stop | 16 su 16 | 12 su 16 |
-| Soglie per giornata, capitale rimasto | 76% | 67% |
-| Quarto di Kelly, senza supervisore | 58% | 58% |
-
-Il numero di stagioni in cui lo schema si ferma dipende dal riferimento. Il 2010-11 è stato una stagione con errori poco dispersi (0,135); già nel 2011-12, con lo stesso modello, la dispersione era 0,171. Con il 2010-11 come riferimento la versione principale si ferma in sette delle otto stagioni dal 2012-13 al 2019-20; con il 2011-12 soltanto nell'ultima. Con il modello del 2000-01 il quadro cambia poco, perché i due riferimenti sono quasi uguali: lo schema si ferma nel 2005-06, nel 2006-07 e nel 2009-10 con entrambi, e nel 2008-09 solo con la stagione di calibrazione. Quattro stagioni su 16 restano più di quanto ci si aspetta dai soli falsi allarmi con soglie al 5% per stagione, ma il segnale è molto più debole di quanto suggeriva il riferimento alla stagione di calibrazione.
-
-In sintesi, l'allarme riconosce una cosa reale: le stagioni in cui il modello è più lontano dal mercato. Che questa distanza sia l'invecchiamento del modello è vero solo in parte, e quante stagioni risultino «lontane» dipende da quanto era regolare la stagione presa come riferimento.
-
-### 5.5 Che cosa riconosce Blinder-Oaxaca
-
-Prima di applicarla ai dati reali, la scomposizione è stata provata su dati simulati in cui le parti vere sono note (Figura 5.5), e lì funziona. Quando cambiano solo le caratteristiche, la parte strutturale stimata è nulla; quando cambia solo il legame, è nulla la composizione; nel caso misto le tre parti sono stimate correttamente. Due casi mostrano i limiti discussi nel §2.8: se una caratteristica rilevante è omessa, tutto il cambiamento viene attribuito alla struttura; con errori autocorrelati le stime restano corrette, ma gli intervalli di confidenza classici coprono il valore vero il 77% delle volte invece del 95%, e vanno sostituiti con intervalli bootstrap a blocchi.
-
-![Scomposizione di Blinder-Oaxaca su dati simulati con parti vere note](figures/us_c7_1_ob_synthetic.png)
-
-*Figura 5.5. Scomposizione su 1 000 coppie di gruppi simulati di 190 osservazioni. Le barre sono la media delle stime, con tre errori standard Monte Carlo; i rombi rossi sono i valori veri. (a) Composizione, struttura e interazione insieme; (b) solo composizione; (c) solo struttura; (d) una caratteristica omessa che cambia fra i gruppi; (e) come (a), con errori autocorrelati.*
-
-#### La diagnosi a tre termini sulla media
-
-La prima versione della diagnosi applicava la scomposizione a tre termini alla media del residuo, fra il riferimento e le ultime 40 partite. Sui dati reali separa poco. Il caso di prova più chiaro è la sospensione per il Covid del 2019-20, dopo la quale si è giocato a porte chiuse e il vantaggio del campo è cambiato: ci si aspetterebbe un errore strutturale. Confrontando le 288 partite precedenti la sospensione con le 472 successive, la parte strutturale risulta invece quasi nulla (−0,0004), mentre composizione (+0,012) e interazione (−0,016) si compensano. Le ragioni sono tre.
-
-- **Scompone la grandezza meno adatta.** Le caratteristiche delle partite spiegano dall'1% al 3% della variabilità del residuo, perché l'errore di una partita dipende soprattutto da quale esito si è verificato. Spiegano invece dal 10% al 18% della sua dispersione, che è la grandezza su cui l'allarme scatta più spesso.
-- **Su 40 partite consecutive la componente strutturale è quasi solo rumore.** In una finestra così breve la posizione nella stagione copre un intervallo stretto, e la regressione stimata nella finestra viene estrapolata fino alla media del riferimento. Struttura e interazione diventano due numeri grandi e opposti: fra le 1 756 giornate di decisione delle stagioni vere oscillano con deviazione standard 0,28, contro 0,035 dello scarto totale, e la loro correlazione è −0,99. La diagnosi guardava la sola struttura, che con lo scarto da spiegare ha correlazione 0,12.
-- **La soglia era calibrata in condizioni diverse dall'uso.** Nella calibrazione le 40 partite erano ricampionate da tutta la stagione; nell'uso sono consecutive. La soglia risultava troppo bassa: la diagnosi a tre termini direbbe «strutturale» nel 34% delle giornate senza alcun allarme.
-
-#### La diagnosi a due termini
-
-La versione principale usa la scomposizione a due termini con i coefficienti della stagione di calibrazione, applicata alla grandezza che ha fatto scattare l'allarme (§3.4). Non stima regressioni nella finestra, e la parte non spiegata è la media dei residui del modello di riferimento. La tabella confronta le due diagnosi sulle giornate di decisione delle 19 stagioni vere, con le soglie dell'allarme per giornata.
-
-| Allarme | Giornate | Diagnosi «strutturale», tre termini | Diagnosi «strutturale», due termini |
+| Agente | Capitale rimasto | Giornate con la puntata ridotta | Stagioni meglio / peggio del quarto di Kelly |
 |---|---|---|---|
-| Nessuno (la diagnosi non si applica) | 1 148 | 34% | 4% |
-| Solo sulla media | 116 | 49% | 84% |
-| Solo sulla dispersione | 409 | 37% | 63% |
-| Su entrambe | 83 | 57% | 96% |
+| Kelly pieno, senza supervisore | 0,2% | – | 0 / 19 |
+| Quarto di Kelly, senza supervisore | 57,3% | – | – |
+| **Schema, versione definitiva** | **57,6%** | 8% | 4 / 8 |
 
-Senza allarme la diagnosi a due termini resta al livello previsto. Con l'allarme sulla media il peggioramento non è quasi mai spiegato dal tipo di partite, come ci si aspetta da caratteristiche che spiegano così poco della media. Con l'allarme sulla dispersione, invece, in più di un caso su tre l'aumento è spiegato dal tipo di partite: è la distinzione fra errore nei dati ed errore strutturale su cui si basa lo schema, e qui ha un contenuto. Il §5.6 verifica nel mondo simulato che la distinzione sia quella giusta.
+Lo schema conserva in una stagione tipica il 57,6% del capitale, contro il 57,3% del quarto di Kelly. Fa meglio in quattro stagioni (2006-07, 2008-09, 2017-18, 2018-19) e peggio in otto. La differenza non è distinguibile dal caso: il test dei segni dà $p = 0{,}39$, il test di Wilcoxon $p = 0{,}38$, e il rapporto fra i capitali tipici è 1,004, con intervallo al 95% da 0,94 a 1,08. Nella maggior parte delle stagioni nessuno dei due chiude sopra il capitale iniziale.
 
-Sul capitale delle stagioni vere le due diagnosi danno risultati simili: 64% contro 61% con le soglie per stagione, 72% contro 71% con quelle per giornata (§5.2 e Appendice A).
+**I controlli a pari esposizione.** Con un vantaggio negativo puntare meno aiuta comunque. Per sapere se lo schema riduce la puntata nelle giornate giuste, il suo capitale va confrontato con quello di riduzioni della stessa entità che non usano l'allarme (§4.6). La tabella riporta il confronto senza puntata minima.
 
-#### Quanto dell'aumento di dispersione è strutturale
+| Capitale rimasto in una stagione tipica | |
+|---|---|
+| Schema, versione definitiva | 57,5% |
+| Quarto di Kelly, senza supervisore | 57,3% |
+| Giornate con la puntata ridotta riassegnate a caso nella stessa stagione (mediana) | 58,7% |
+| Calendario spostato a caso nella stessa stagione (mediana) | 58,7% |
+| Calendario di un'altra stagione (mediana; 90% dei casi fra) | 59,3% (56,8–61,8%) |
+| Quota di calendari di un'altra stagione che conservano almeno quanto lo schema | 88% |
+| Frazione fissa di pari esposizione (0,24 volte la frazione di Kelly) | 59,7% |
 
-Applicata alle stagioni intere, dove le due regressioni sono stimate su 380 partite ciascuna, la scomposizione a tre termini della dispersione è stabile: l'interazione è piccola e le parti si sommano senza compensarsi (Appendice D). La parte strutturale dell'aumento di dispersione rispetto alla stagione di calibrazione è distinguibile da zero in 8 stagioni su 19: il 2009-10 e sette delle nove stagioni con il modello calibrato sul 2010-11, in cui vale da 0,02 a 0,05 su un aumento totale da 0,02 a 0,07. Non lo è in nessuna delle stagioni vicine alla calibrazione. Dove la dispersione cresce, quindi, la crescita è in buona parte strutturale e non dovuta al tipo di partite. Vale la cautela del §5.4: il confronto è con la stagione di calibrazione, e per il modello del 2010-11 quella stagione era insolitamente regolare.
+Lo schema non conserva più capitale di un calendario di pari esposizione che non usa l'allarme, e una frazione fissa appena più bassa del quarto di Kelly conserva di più. Sulle stagioni vere, quindi, il capitale non mostra alcun beneficio del supervisore. È coerente con il §5.5: lo schema riconosce le stagioni in cui il modello è lontano dal mercato, ma dentro la stagione il giorno in cui interviene non porta informazione, e una riduzione in giornate scelte a caso fa lo stesso effetto. Con un vantaggio negativo in ogni giornata, il capitale misura soprattutto quanto si punta. L'Appendice F riporta le versioni che riducono la puntata più a lungo, fino a fine stagione o azzerandola: conservano di più (63–64%) solo perché puntano meno nel 42% delle giornate.
 
-L'errore atteso, che non dipende dall'esito, si presta alla scomposizione ancora meglio: le caratteristiche delle partite ne spiegano il 41%. Con la scomposizione a tre termini fra due periodi vicini l'errore atteso risulta quasi sempre nei dati (95% dei casi), mentre rispetto alla stagione di calibrazione è strutturale quasi una volta su due.
-
-### 5.6 Lo schema quando un vantaggio c'è
+### 5.7 Lo schema quando un vantaggio c'è
 
 Sulle stagioni vere non c'è mai un vantaggio da proteggere. Nel mondo simulato del §4.7 sì, e lì si può chiedere allo schema ciò per cui è stato pensato: conservare il guadagno quando la struttura cambia, senza rinunciarvi quando non cambia. La tabella riporta il capitale a fine stagione in una stagione tipica, come multiplo di quello iniziale, su 475 stagioni simulate per scenario.
 
-| Scenario | Kelly pieno | Quarto di Kelly | Schema, versione principale | Frazione fissa di pari esposizione | Schema, soglie per giornata | Stop perfetto |
-|---|---|---|---|---|---|---|
-| Il modello ha ragione tutta la stagione | 47,9 | 6,79 | 6,47 | 6,44 | 3,51 | 6,79 |
-| Il vantaggio svanisce | 0,48 | 2,01 | 2,15 | 1,92 | 2,09 | 2,65 |
-| Il vantaggio si rovescia | 0,01 | 0,81 | 1,50 | 0,90 | 1,91 | 2,65 |
-| Nessun vantaggio | 0,003 | 0,53 | 0,54 | 0,54 | 0,67 | 1,00 |
-| Cambia solo il tipo di partite | 53,9 | 7,04 | 4,65 | 5,58 | 3,36 | 7,04 |
-
-La variante «soglie per giornata» ha la stessa diagnosi della versione principale. La tabella seguente riporta, per le due, quanto spesso lo schema si ferma e con che ritardo.
-
-| Scenario | Stagioni con almeno uno stop, versione principale | Stagioni con almeno uno stop, soglie per giornata | Ritardo tipico dello stop dopo il cambiamento, versione principale | Ritardo tipico, soglie per giornata |
+| Scenario | Kelly pieno | Quarto di Kelly | Schema, versione definitiva | Frazione fissa di pari esposizione |
 |---|---|---|---|---|
-| Il modello ha ragione tutta la stagione | 9% | 66% | – | – |
-| Il vantaggio svanisce | 33% | 91% | 24 giornate | 13 giornate |
-| Il vantaggio si rovescia | 77% | 99% | 14 giornate | 8 giornate |
-| Nessun vantaggio | 7% | 59% | – | – |
-| Cambia solo il tipo di partite | 48% | 69% | – | – |
+| Il modello ha ragione tutta la stagione | 47,9 | 6,79 | 6,77 | 6,77 |
+| Il vantaggio svanisce | 0,48 | 2,01 | 2,03 | 2,00 |
+| Il vantaggio si rovescia | 0,01 | 0,81 | 0,95 | 0,83 |
+| Nessun vantaggio | 0,003 | 0,53 | 0,53 | 0,53 |
+| Cambia solo il tipo di partite | 53,9 | 7,04 | 6,41 | 6,70 |
 
-**Quando il vantaggio si rovescia, lo schema lo protegge.** La versione principale riconosce il cambiamento in tre stagioni su quattro e porta il capitale a 1,50, contro 0,81 del quarto di Kelly: fa meglio in 74 stagioni su 100 e peggio in 3. Qui il momento dell'intervento conta davvero, perché la frazione fissa di pari esposizione si ferma a 0,90. Lo stop perfetto arriverebbe a 2,65: il ritardo tipico di 14 giornate costa.
+La tabella seguente riporta quanto spesso arriva una diagnosi strutturale e con che ritardo.
 
-**Quando il vantaggio svanisce, lo schema pareggia.** Un cambiamento piccolo è riconosciuto in una stagione su tre, e il capitale è di poco superiore a quello del quarto di Kelly (2,15 contro 2,01), ma migliore di quello della frazione fissa (1,92).
+| Scenario | Stagioni con almeno una diagnosi strutturale | Ritardo tipico dopo il cambiamento | Giornate con la puntata ridotta, dopo il cambiamento |
+|---|---|---|---|
+| Il modello ha ragione tutta la stagione | 9% | – | 0,3% |
+| Il vantaggio svanisce | 33% | 24 giornate | 3% |
+| Il vantaggio si rovescia | 77% | 14 giornate | 19% |
+| Nessun vantaggio | 7% | – | 0,2% |
+| Cambia solo il tipo di partite | 48% | 21 giornate | 16% |
 
-**Quando nulla cambia, lo schema costa poco.** La versione principale si ferma senza motivo nel 9% delle stagioni e lascia 6,47 contro 6,79. Con le soglie per giornata si ferma nel 66% delle stagioni e dimezza la crescita (3,51): il 5% per giornata, ripetuto su un centinaio di giornate, diventa uno stop per falso allarme in due stagioni su tre. È il motivo per cui la versione principale usa le soglie per stagione. Il prezzo è la sensibilità: con le soglie per giornata un vantaggio che si rovescia è riconosciuto quasi sempre e prima, e il capitale arriva a 1,91.
+**Quando il vantaggio si rovescia, lo schema lo protegge in parte.** La diagnosi strutturale arriva in tre stagioni su quattro, con un ritardo tipico di 14 giornate, e il capitale chiude a 0,95 volte quello iniziale contro 0,81 del quarto di Kelly: lo schema fa meglio in 64 stagioni su 100 e peggio in 13. Qui il momento dell'intervento conta, perché la frazione fissa di pari esposizione si ferma a 0,83. La protezione è parziale: dopo il rovescio l'allarme si spegne e si riaccende, e quando è spento lo schema torna al quarto di Kelly su un modello che ora ha un vantaggio negativo. Una riduzione che durasse fino a fine stagione arriverebbe a 1,18 (Appendice F).
+
+**Quando nulla cambia, lo schema costa quasi nulla.** Senza cambiamenti l'allarme dà una diagnosi strutturale nel 9% delle stagioni, e la puntata resta ridotta in meno di una giornata su cento: il capitale è 6,77 contro 6,79 del quarto di Kelly. È il compito delle soglie per stagione.
+
+**Quando il vantaggio svanisce, lo schema pareggia** (2,03 contro 2,01): un cambiamento piccolo è riconosciuto in una stagione su tre.
 
 **Il Kelly pieno è il migliore finché il modello ha ragione, e si azzera quando smette di averla.** È il punto di partenza dello schema: il criterio di Kelly applicato in modo rigido presuppone probabilità vere, e senza un controllo sulla loro affidabilità porta alla rovina.
 
-**Senza vantaggio, come nei dati veri, la versione principale non si distingue dal quarto di Kelly** (0,54 contro 0,53), mentre la variante con le soglie per giornata conserva di più (0,67) soltanto perché si ferma più spesso per falso allarme. In questo scenario, che non ha alcun cambiamento, la variante resta ferma in circa il 30% delle giornate: meno della metà di quanto accade sulle stagioni vere (68%).
+**Senza vantaggio, come nei dati veri, lo schema coincide con il quarto di Kelly** (0,53).
 
-#### La diagnosi nel mondo simulato
-
-Nello scenario in cui cambia solo il tipo di partite l'allarme scatta, perché nella seconda metà gli errori sono davvero più dispersi, ma l'errore è nei dati: la risposta giusta è ridurre un poco la puntata, non fermarsi. La tabella riporta la quota di giornate con allarme, dopo il cambiamento, in cui la diagnosi è «strutturale», con le soglie per giornata.
-
-| Scenario | Diagnosi a tre termini | Diagnosi a due termini |
-|---|---|---|
-| Cambia solo il tipo di partite | 43% | 18% |
-| Il vantaggio svanisce | 55% | 85% |
-| Il vantaggio si rovescia | 56% | 92% |
-| Il modello ha ragione tutta la stagione (falsi allarmi) | 49% | 71% |
-
-La diagnosi a tre termini risponde «strutturale» in circa metà dei casi qualunque cosa sia successa. Quella a due termini distingue: 18% quando è cambiato solo il tipo di partite, 85–92% quando è cambiata la struttura. Non è perfetta. Con il solo cambio di composizione sbaglia ancora un allarme su cinque, e poiché basta un errore per fermarsi fino a fine stagione lo schema perde capitale anche in questo scenario (4,65 contro 7,04 del quarto di Kelly, per la versione principale). Inoltre non riconosce i falsi allarmi: un falso allarme non è spiegato dal tipo di partite, e viene chiamato strutturale. Quel controllo spetta alle soglie dell'allarme.
-
-### 5.7 La regola di scelta dell'esito e la ri-parametrizzazione
-
-**Le regole di scelta dell'esito.** La prova è stata ripetuta con le tre regole del §3.2. La tabella riporta il capitale rimasto in una stagione tipica e, fra parentesi, le stagioni in cui la versione principale fa meglio / peggio del quarto di Kelly con la stessa regola.
-
-| Regola di scelta dell'esito | Quarto di Kelly, senza supervisore | Versione principale |
-|---|---|---|
-| Valore atteso più alto | 57% | 64% (9 / 3) |
-| Scarto maggiore dal mercato | 55% | 64% (8 / 4) |
-| Esito più probabile | 68% | 73% (8 / 4) |
-
-La regola di scelta dell'esito incide sul capitale più del supervisore. Con l'esito più probabile il quarto di Kelly conserva il 68% invece del 57%, soprattutto perché si punta su circa la metà delle partite invece che su quasi nove su dieci: con un modello che perde contro il mercato, puntare meno significa perdere meno. Lo schema si ferma nelle stesse giornate con tutte le regole, perché l'allarme guarda soltanto gli errori del modello, e il suo vantaggio sul quarto di Kelly è simile con tutte. La combinazione che conserva di più, l'esito più probabile con la versione principale, arriva al 73%; la regola dell'esito più probabile è stata scelta dopo aver visto le stagioni di valutazione (§4.8).
-
-**La ri-parametrizzazione annuale.** Per esplorare l'alternativa al moltiplicatore (§4.8), il modello è stato ricalibrato prima di ogni stagione sulla stagione precedente. Prima della partita il modello si avvicina al mercato in 14 stagioni su 18, ma non prevede meglio i risultati, e il capitale peggiora: il quarto di Kelly scende dal 57% al 46%. Una sola stagione è poca per stimare bene i parametri: sul 2020-21 giocato a porte chiuse, per esempio, il vantaggio del campo stimato è nullo, e il modello lo applica anche al 2021-22, quando il pubblico era tornato. Ricalibrare il modello ogni anno, quindi, non sostituisce il supervisore.
-
-Altre analisi di supporto, sull'eteroschedasticità dentro la stagione, sulla potenza dell'allarme, sulle squadre neopromosse, sulle stagioni di calibrazione e sulla puntata minima, sono nell'Appendice E.
+**La diagnosi.** Nello scenario in cui cambia solo il tipo di partite l'allarme scatta, perché nella seconda metà gli errori sono davvero più dispersi, ma l'errore è nei dati: la risposta giusta è ridurre un poco la puntata, non molto. È l'unico scenario in cui la distinzione fra le due diagnosi è messa alla prova. Fra le giornate con allarme dopo il cambiamento, la diagnosi a due termini risponde «strutturale» nel 18% dei casi quando è cambiato solo il tipo di partite, e nell'85–92% quando è cambiata la struttura; la misura è fatta con le soglie per giornata, che producono più allarmi da classificare. La diagnosi distingue, ma non è perfetta: con il solo cambio di composizione sbaglia ancora un allarme su cinque, e lo schema perde un po' di capitale anche in questo scenario (6,41 contro 7,04). Poiché la riduzione dura solo finché dura l'allarme, l'errore costa poco: una versione che dopo il primo errore strutturale restasse ferma fino a fine stagione chiuderebbe a 4,65 (Appendice F). La diagnosi, inoltre, non riconosce i falsi allarmi: un falso allarme non è spiegato dal tipo di partite, e viene chiamato strutturale. Quel controllo spetta alle soglie dell'allarme.
 
 ### 5.8 La stagione di KellyBench
 
-La stagione 2023-24 è stata giocata come in KellyBench, partendo da £100 000, la scala in cui il paper riporta i risultati, con il modello calibrato fino al 2020-21. Anche su questa stagione il modello non batte il mercato: lo scarto è −0,043 con le quote Bet365 e −0,051 con quelle di chiusura di Pinnacle. Lo schema è stato costruito dopo che la stagione di test era stata usata, e la versione principale dopo le prime versioni dello schema, già provate su questa stagione: i risultati della versione principale sul 2023-24 vengono da un'unica esecuzione, fatta alla fine del lavoro senza cambiare alcun parametro, e sono esplorativi. La tabella riporta il capitale finale di ogni agente nella stagione vera e in 500 stagioni ricostruite.
+La stagione 2023-24 è stata giocata come in KellyBench, partendo da £100 000, la scala in cui il paper riporta i risultati, con il modello calibrato fino al 2020-21. Anche su questa stagione il modello non batte il mercato: lo scarto è −0,043 con le quote Bet365 e −0,051 con quelle di chiusura di Pinnacle. Lo schema è stato costruito dopo che la stagione di test era stata usata: i risultati della versione definitiva sul 2023-24 vengono da un'unica esecuzione, fatta alla fine del lavoro senza cambiare alcun parametro, e sono esplorativi. La tabella riporta il capitale finale nella stagione vera e in 500 stagioni ricostruite.
 
 | Agente | Stagione vera | Mediana di 500 stagioni ricostruite | 90% delle stagioni ricostruite fra | Stagioni ricostruite in cui fa meglio del quarto di Kelly |
 |---|---|---|---|---|
 | Kelly pieno | £17 | £4 | £0 e £1 563 | 0% |
 | Quarto di Kelly, senza supervisore | £24 348 | £24 544 | £8 546 e £71 157 | – |
-| **Versione principale** | **£24 348** | **£30 879** | **£9 899 e £79 092** | **23%** |
-| Principale, riprende | £24 348 | £25 007 | £8 693 e £74 778 | 16% |
-| Soglie per giornata | £63 713 | £55 291 | £21 691 e £98 961 | 81% |
+| **Schema, versione definitiva** | **£24 348** | **£24 642** | **£8 546 e £73 903** | **16%** |
 
-Nella stagione vera la versione principale non dà mai l'allarme, e chiude con lo stesso capitale del quarto di Kelly: entrambi perdono circa tre quarti del capitale. Il modello usato nel 2023-24 è ancora giovane e la dispersione dei suoi errori è la stessa della stagione di calibrazione (0,181 contro 0,186). Il Kelly pieno, invece, perde quasi tutto, come molti agenti di KellyBench.
+Nella stagione vera l'allarme non scatta mai, e lo schema chiude con lo stesso capitale del quarto di Kelly: entrambi perdono circa tre quarti del capitale. È coerente con il §5.4: il modello usato nel 2023-24 è ancora giovane, e la dispersione dei suoi errori è la stessa della stagione di calibrazione (0,181 contro 0,186), come nelle altre due stagioni previste con lo stesso modello. Il Kelly pieno, invece, perde quasi tutto, come molti agenti di KellyBench. Sulle stagioni ricostruite lo schema fa meglio del quarto di Kelly nel 16% dei casi e coincide con esso quasi sempre negli altri: una stagione ricostruita ripete alcune giornate e ne salta altre, e a volte crea un periodo di errori anomali che fa scattare l'allarme.
 
-La variante con le soglie per giornata dà l'allarme una sola volta, presto nella stagione, riceve una diagnosi strutturale e resta ferma per l'80% delle giornate: conserva così £63 713, quasi tre volte il quarto di Kelly. È lo stesso meccanismo del §5.6: con un vantaggio negativo un falso allarme che ferma lo schema fa guadagnare capitale, e la stagione vera non permette di distinguerlo da un allarme giusto.
-
-Sulle stagioni ricostruite la versione principale fa meglio del quarto di Kelly nel 23% dei casi e coincide con esso nel 75%. È in buona parte un effetto del ricampionamento: una stagione ricostruita ripete alcune giornate e ne salta altre, e a volte crea un periodo di errori anomali che fa scattare l'allarme. La stagione vera è una sola fra quelle possibili, e in quella l'allarme non è scattato.
-
-Il quarto di Kelly e lo schema chiudono la stagione con circa il 25% del capitale, cioè con una perdita del 75%, molto maggiore dell'11% perso dai migliori agenti di KellyBench. Il confronto in sterline non è però diretto: gli agenti del benchmark scelgono anche quanto puntare e su quante partite, con regole diverse fra loro, e dispongono di più dati. Il punto non è l'entità della perdita, ma la sua causa: con un modello che non batte il mercato, il capitale perso dipende soprattutto da quanto si punta. L'Appendice A riporta i risultati delle prime versioni dello schema su questa stagione.
+Il quarto di Kelly e lo schema chiudono la stagione con circa il 25% del capitale, cioè con una perdita del 75%, molto maggiore dell'11% perso dai migliori agenti di KellyBench. Il confronto in sterline non è però diretto: gli agenti del benchmark scelgono anche quanto puntare e su quante partite, con regole diverse fra loro, e dispongono di più dati. Il punto non è l'entità della perdita, ma la sua causa: con un modello che non batte il mercato, il capitale perso dipende soprattutto da quanto si punta.
 
 ## 6. Dinamica evolutiva
 
-Lo schema stabilisce in anticipo come reagire quando il modello peggiora. La dinamica evolutiva (§2.9) rovescia la prospettiva: invece di scegliere una strategia, si lascia che sia il capitale a selezionarla fra molte, come in un mercato in cui sopravvive chi guadagna. Se la reazione dello schema è utile, le strategie che la adottano dovrebbero conquistare capitale a spese delle altre. La selezione si può applicare a due livelli. Al primo le strategie già costruite giocano insieme, come una popolazione che si contende il capitale: c'è selezione, ma le strategie restano quelle di partenza. Al secondo cambiano le strategie stesse, per variazione, selezione ed ereditarietà, e ci si può chiedere se l'evoluzione ritrovi da sola le scelte della versione principale. Entrambe le analisi sono condotte senza puntata minima: solo così la quota di capitale affidata a una strategia non ne modifica il rendimento, e il capitale della popolazione si calcola esattamente dai percorsi delle singole strategie.
+KellyBench mette alla prova molti agenti sulla stessa stagione e guarda chi perde meno. Questo studio ha seguito finora un solo agente; la dinamica evolutiva (§2.9) permette di fare la stessa cosa con molte strategie, sulle stesse partite, lasciando che sia il capitale a scegliere fra loro, come in un mercato in cui sopravvive chi guadagna. Se la reazione dello schema è utile, le strategie che la adottano dovrebbero conquistare capitale a spese delle altre. La selezione si può applicare a due livelli. Al primo le strategie già costruite giocano insieme, come una popolazione che si contende il capitale: c'è selezione, ma le strategie restano quelle di partenza. Al secondo cambiano le strategie stesse, per variazione, selezione ed ereditarietà, e ci si può chiedere se l'evoluzione ritrovi da sola le scelte della versione definitiva. Entrambe le analisi sono condotte senza puntata minima: solo così la quota di capitale affidata a una strategia non ne modifica il rendimento, e il capitale della popolazione si calcola esattamente dai percorsi delle singole strategie.
 
 In entrambe le analisi una strategia è un modo completo di scommettere: il lavoratore, sempre con il modello Elo, e l'eventuale supervisore. La definiscono la puntata quando non c'è allarme, il supervisore, ciò che lo schema fa dopo un errore strutturale e l'esito su cui puntare.
 
 ### 6.1 Una popolazione di strategie che si contende il capitale
 
-**Come funziona.** La popolazione è formata da otto strategie, tutte già valutate singolarmente nel capitolo 5: quattro senza supervisore e quattro con la versione principale dello schema, che resta ferma fino a fine stagione o riprende quando l'allarme si spegne.
+**Come funziona.** La popolazione è formata da otto strategie: quattro senza supervisore e quattro con lo schema, che dopo un errore strutturale riduce la puntata a 0,10 finché dura l'allarme, come la versione definitiva, oppure fino a fine stagione.
 
 | Strategia | Puntata senza allarme | Supervisore | Dopo un errore strutturale | Esito su cui punta | Capitale da sola |
 |---|---|---|---|---|---|
@@ -781,12 +817,12 @@ In entrambe le analisi una strategia è un modo completo di scommettere: il lavo
 | 2 | quarto di Kelly | nessuno | – | valore atteso più alto | 57% |
 | 3 | quarto di Kelly | nessuno | – | scarto maggiore dal mercato | 55% |
 | 4 | quarto di Kelly | nessuno | – | esito più probabile | 68% |
-| 5 | quarto di Kelly | versione principale | fermo fino a fine stagione | valore atteso più alto | 64% |
-| 6 | quarto di Kelly | versione principale | riprende | valore atteso più alto | 57% |
-| 7 | quarto di Kelly | versione principale | fermo fino a fine stagione | esito più probabile | 73% |
-| 8 | quarto di Kelly | versione principale | riprende | esito più probabile | 67% |
+| 5 | quarto di Kelly | schema | 0,10 finché dura l'allarme | valore atteso più alto | 58% |
+| 6 | quarto di Kelly | schema | 0,10 fino a fine stagione | valore atteso più alto | 63% |
+| 7 | quarto di Kelly | schema | 0,10 finché dura l'allarme | esito più probabile | 67% |
+| 8 | quarto di Kelly | schema | 0,10 fino a fine stagione | esito più probabile | 72% |
 
-La strategia 2 è il quarto di Kelly senza supervisore, usato come riferimento in tutto questo studio; la 5 è la versione principale; la 7 è la migliore, individuata solo dopo aver visto i risultati.
+La strategia 2 è il quarto di Kelly senza supervisore, usato come riferimento in tutto questo studio; la 5 è la versione definitiva; l'8 è la migliore, individuata solo dopo aver visto i risultati.
 
 Ogni strategia riceve una quota del capitale, all'inizio uguale per tutte, e dopo ogni giornata le quote cambiano secondo la dinamica del replicatore (2.10). L'unico parametro è l'intensità della mutazione $\mu$, scelta sulle stagioni di calibrazione fra valori fissati in anticipo. Lì la mutazione peggiora sempre il risultato, perché continua ad assegnare capitale anche a strategie che perdono molto, come il Kelly pieno; si è quindi posto $\mu = 0$.
 
@@ -797,25 +833,25 @@ Sono state provate due varianti. Nella prima, **le generazioni**, ogni stagione 
 | Chi gioca | Capitale rimasto | Stagioni meglio / peggio del quarto di Kelly |
 |---|---|---|
 | Strategia 2 da sola: quarto di Kelly, senza supervisore | 57% | – |
-| Strategia 5 da sola: versione principale | 64% | 9 / 3 |
-| Popolazione, quote uguali a inizio stagione | 57% | 10 / 9 |
-| Popolazione con le generazioni | 67% | 14 / 5 |
+| Strategia 5 da sola: versione definitiva | 58% | 4 / 8 |
+| Popolazione, quote uguali a inizio stagione | 57% | 9 / 10 |
+| Popolazione con le generazioni | 66% | 14 / 5 |
 | Popolazione con le generazioni e la cassa | 89% | 15 / 4 |
-| Strategia 7 da sola: la migliore, individuata a posteriori | 73% | 13 / 6 |
+| Strategia 8 da sola: la migliore, individuata a posteriori | 72% | 14 / 5 |
 
 ![Quote del capitale a inizio stagione per famiglia di strategie, senza e con la cassa](figures/us_c31_main_population_shares.png)
 
 *Figura 6.1. La popolazione con le generazioni. Ogni colonna è l'inizio di una stagione, l'ultima la fine del 2022-23; l'altezza di ogni colore è la quota di capitale affidata a una famiglia di strategie. A sinistra senza la cassa, a destra con la cassa (verde scuro).*
 
-All'interno di una stagione la selezione è troppo lenta. In un centinaio di giornate le strategie si separano poco e la popolazione resta vicina alla media: conserva il 57%, quanto il quarto di Kelly, e fa meglio in 10 stagioni su 19, all'incirca quanto accadrebbe per caso.
+All'interno di una stagione la selezione è troppo lenta. In un centinaio di giornate le strategie si separano poco e la popolazione resta vicina alla media: conserva il 57%, quanto il quarto di Kelly, e fa meglio in 9 stagioni su 19, quanto accadrebbe per caso.
 
-Da una stagione all'altra, invece, la selezione funziona. Il Kelly pieno scompare in due stagioni, e il capitale si sposta verso la versione principale dello schema, quella che resta ferma fino a fine stagione. Alla fine del 2022-23 più di metà del capitale (63%) è sulla strategia 7, proprio quella che a posteriori risulta la migliore, e un altro 6% sulla versione principale con la regola standard. La popolazione arriva così al 67% senza sapere in anticipo quale strategia avrebbe vinto. Fra le strategie disponibili, quindi, la selezione sceglie lo schema che si ferma.
+Da una stagione all'altra, invece, la selezione funziona. Il Kelly pieno scompare in due stagioni, e il capitale si sposta verso le strategie che puntano meno: quelle che riducono la puntata fino a fine stagione e quelle che puntano sull'esito più probabile. Alla fine del 2022-23 più di metà del capitale (56%) è sulla strategia 8, proprio quella che a posteriori risulta la migliore, e il resto soprattutto sulle strategie 4 e 7 (18% ciascuna); la versione definitiva con la regola standard ne conserva l'1%. La popolazione arriva così al 66% senza sapere in anticipo quale strategia avrebbe vinto. Fra le strategie disponibili, quindi, la selezione sceglie quelle che riducono di più l'esposizione.
 
-Con la cassa, infine, la popolazione smette di scommettere. La quota della cassa sale dall'11% iniziale al 99,6%, e il capitale tipico arriva all'89%: quando nessuna strategia ha un vantaggio sul mercato, sopravvive chi non punta.
+Con la cassa, infine, la popolazione smette di scommettere. La quota della cassa sale dall'11% iniziale al 99,7%, e il capitale tipico arriva all'89%: quando nessuna strategia ha un vantaggio sul mercato, sopravvive chi non punta.
 
 ### 6.2 Strategie che evolvono
 
-**Come funziona.** Le scelte che definiscono una strategia diventano i suoi geni, e possono ora assumere anche valori diversi da quelli delle strategie del §6.1. Fra i geni ci sono anche le scelte che distinguono la versione principale dalle prime versioni dello schema, così che l'evoluzione possa ritrovarla oppure no:
+**Come funziona.** Le scelte che definiscono una strategia diventano i suoi geni, e possono ora assumere anche valori diversi da quelli delle strategie del §6.1. Fra i geni ci sono anche le scelte che distinguono la versione definitiva dalle prime versioni dello schema, così che l'evoluzione possa ritrovarla oppure no:
 
 | Gene | Valori possibili |
 |---|---|
@@ -824,10 +860,10 @@ Con la cassa, infine, la popolazione smette di scommettere. La quota della cassa
 | Supervisore | nessuno, 40 partite precedenti, stagione di calibrazione |
 | Soglie dell'allarme, con la stagione di calibrazione | per giornata, per stagione |
 | Diagnosi, con la stagione di calibrazione | a tre termini, a due termini |
-| Dopo un errore strutturale | riprende, fermo fino a fine stagione |
+| Durata della reazione a un errore strutturale | finché dura l'allarme, fino a fine stagione |
 | Esito su cui punta | valore atteso più alto, scarto maggiore dal mercato, esito più probabile |
 
-Una strategia con il supervisore che confronta con la stagione di calibrazione, le soglie per stagione, la diagnosi a due termini e lo stop fino a fine stagione ha le scelte della versione principale. Sono tutte scelte che lo schema già prevede, con soglie calibrate in anticipo, e nessuna va ricalibrata durante l'evoluzione. Ogni stagione è una generazione. Venti strategie con geni casuali giocano il 2002-03; sopravvive la metà che ha conservato più capitale, e ogni sopravvissuta genera una figlia con i geni leggermente modificati: la frazione di Kelly è moltiplicata per un fattore casuale, la riduzione è spostata di poco, ogni scelta discreta cambia con probabilità 0,1. La nuova generazione gioca la stagione successiva, e così via fino al 2022-23. Il numero di strategie, la quota che sopravvive e l'intensità delle mutazioni sono stati fissati prima di vedere i risultati. L'evoluzione è ripetuta 30 volte con mutazioni diverse, e si riporta il valore centrale.
+Con il supervisore che confronta con la stagione di calibrazione, dopo un errore strutturale la puntata scende a 0,10, come nella versione definitiva; con le 40 partite precedenti, come nelle prime versioni dello schema, si azzera. Una strategia con la stagione di calibrazione, le soglie per stagione, la diagnosi a due termini e la riduzione finché dura l'allarme ha le scelte della versione definitiva. Sono tutte scelte che lo schema già prevede, con soglie calibrate in anticipo, e nessuna va ricalibrata durante l'evoluzione. Ogni stagione è una generazione. Venti strategie con geni casuali giocano il 2002-03; sopravvive la metà che ha conservato più capitale, e ogni sopravvissuta genera una figlia con i geni leggermente modificati: la frazione di Kelly è moltiplicata per un fattore casuale, la riduzione è spostata di poco, ogni scelta discreta cambia con probabilità 0,1. La nuova generazione gioca la stagione successiva, e così via fino al 2022-23. Il numero di strategie, la quota che sopravvive e l'intensità delle mutazioni sono stati fissati prima di vedere i risultati. L'evoluzione è ripetuta 30 volte con mutazioni diverse, e si riporta il valore centrale.
 
 Anche qui le varianti sono due. Nella variante **libera** evolvono tutti i geni, compresa la frazione di Kelly. Nella variante **con il quarto di Kelly fisso** la puntata in assenza di allarme è obbligatoriamente il quarto di Kelly, ed evolvono soltanto gli altri geni. La domanda diventa: se si deve scommettere, l'evoluzione sceglie lo schema, e quale?
 
@@ -836,34 +872,34 @@ Anche qui le varianti sono due. Nella variante **libera** evolvono tutti i geni,
 | Chi gioca | Capitale rimasto | Stagioni meglio / peggio del quarto di Kelly |
 |---|---|---|
 | Strategia 2 da sola: quarto di Kelly, senza supervisore | 57% | – |
-| Strategia 5 da sola: versione principale | 64% | 9 / 3 |
-| Popolazione che evolve, variante libera | 98% (97–99%) | 17 / 2 |
-| Popolazione che evolve, quarto di Kelly fisso | 69% (66–73%) | 13 / 6 |
-| Strategia 7 da sola: la migliore del §6.1, individuata a posteriori | 73% | 13 / 6 |
+| Strategia 5 da sola: versione definitiva | 58% | 4 / 8 |
+| Popolazione che evolve, variante libera | 98% (97–98%) | 17 / 2 |
+| Popolazione che evolve, quarto di Kelly fisso | 68% (66–72%) | 13 / 6 |
+| Strategia 8 da sola: la migliore del §6.1, individuata a posteriori | 72% | 14 / 5 |
 
 Fra parentesi è riportato l'intervallo fra il 5% e il 95% delle 30 evoluzioni.
 
 ![Evoluzione della frazione di Kelly, dei geni e del capitale, stagione per stagione](figures/us_c32_main_evolution.png)
 
-*Figura 6.2. Ogni punto è una generazione, cioè una stagione; le linee sono il valore centrale delle 30 evoluzioni. (1) Variante libera: la frazione di Kelly media della generazione, in scala logaritmica; la linea tratteggiata è il quarto di Kelly. (2) Quarto di Kelly fisso: la quota di strategie con un supervisore (blu), con il confronto con la stagione di calibrazione (rosso), ferme fino a fine stagione (verde), con la regola dell'esito più probabile (giallo) e con tutte le scelte della versione principale (nero). (3) Quarto di Kelly fisso: il capitale a fine stagione della popolazione (blu, con la fascia fra il 5% e il 95%), del quarto di Kelly senza supervisore (arancione) e della migliore strategia del §6.1, individuata a posteriori (verde).*
+*Figura 6.2. Ogni punto è una generazione, cioè una stagione; le linee sono il valore centrale delle 30 evoluzioni. (1) Variante libera: la frazione di Kelly media della generazione, in scala logaritmica; la linea tratteggiata è il quarto di Kelly. (2) Quarto di Kelly fisso: la quota di strategie con un supervisore (blu), con il confronto con la stagione di calibrazione (rosso), con la reazione a un errore strutturale mantenuta fino a fine stagione (verde), con la regola dell'esito più probabile (giallo) e con tutte le scelte della versione definitiva (nero). (3) Quarto di Kelly fisso: il capitale a fine stagione della popolazione (blu, con la fascia fra il 5% e il 95%), del quarto di Kelly senza supervisore (arancione) e della migliore strategia del §6.1, individuata a posteriori (verde).*
 
 Nella variante libera la popolazione smette quasi di scommettere: la frazione di Kelly scende da 0,19 a 0,03 in una sola stagione e poi fin quasi a zero, e il capitale tipico arriva al 98%; con puntate così piccole gli altri geni non contano più.
 
-Con il quarto di Kelly fisso l'evoluzione sceglie di avere un supervisore: alla fine del 2022-23 lo ha il 96% delle strategie, contro due su tre all'inizio. Circa nove su dieci puntano sull'esito più probabile, e circa sei su dieci di quelle con il supervisore restano ferme fino a fine stagione dopo un errore strutturale. La riduzione dopo un errore nei dati diventa più forte di quella fissata nello schema: la puntata scende a circa metà invece che a tre quarti.
+Con il quarto di Kelly fisso l'evoluzione sceglie di avere un supervisore: alla fine del 2022-23 lo ha il 93% delle strategie, contro due su tre all'inizio. Circa nove su dieci puntano sull'esito più probabile, e circa sei su dieci di quelle con il supervisore mantengono la reazione a un errore strutturale fino a fine stagione. La riduzione dopo un errore nei dati diventa molto più forte di quella fissata nello schema: la puntata scende in media a circa due quinti invece che a tre quarti.
 
-Il supervisore scelto, però, non è quello della versione principale. Alla fine del 2022-23 quasi quattro strategie su cinque confrontano gli errori con le 40 partite precedenti, e meno di una su cinque con la stagione di calibrazione; fra queste ultime, tre su quattro usano le soglie per giornata. Le strategie con tutte le scelte della versione principale sono meno dell'1%.
+Il supervisore scelto, però, non è quello della versione definitiva. Alla fine del 2022-23 sei strategie su dieci confrontano gli errori con le 40 partite precedenti, che dopo un errore strutturale azzerano la puntata, e meno di una su tre con la stagione di calibrazione; fra queste ultime, quasi due su tre usano le soglie per giornata. Le strategie con tutte le scelte della versione definitiva sono il 3%.
 
-La popolazione conserva il 69% del capitale, contro il 57% del quarto di Kelly e il 64% della versione principale, e fa meglio del quarto di Kelly in 13 stagioni su 19, pur restando sotto la migliore strategia individuata a posteriori. La migliore strategia di una stagione, presa da sola, nella stagione successiva fa peggio della popolazione (64%): una stagione è un segnale troppo rumoroso per riconoscere il migliore.
+La popolazione conserva il 68% del capitale, contro il 57% del quarto di Kelly e il 58% della versione definitiva, e fa meglio del quarto di Kelly in 13 stagioni su 19, pur restando sotto la migliore strategia individuata a posteriori. La migliore strategia di una stagione, presa da sola, nella stagione successiva fa peggio della popolazione (64%): una stagione è un segnale troppo rumoroso per riconoscere il migliore.
 
 ### 6.3 Che cosa l'evoluzione seleziona
 
-Le due analisi danno risposte diverse alla stessa domanda, e la differenza dice che cosa la selezione premia. Nella popolazione del §6.1 le uniche strategie che possono fermarsi sono quelle con la versione principale, e la selezione le sceglie. Nell'evoluzione ci sono anche modi di fermarsi più spesso, e la selezione sceglie quelli: confronti e soglie che fanno scattare l'allarme più di frequente, lo stop fino a fine stagione, l'esito più probabile e una riduzione più forte dopo un errore nei dati hanno in comune di ridurre l'esposizione. Le soglie per stagione e la diagnosi a due termini, che rendono l'allarme più affidabile ma più raro, non vengono selezionate.
+Le due analisi danno la stessa risposta per strade diverse, e la risposta dice che cosa la selezione premia. Nella popolazione del §6.1 il capitale va alle strategie che riducono la puntata fino a fine stagione e puntano su meno partite. Nell'evoluzione ci sono anche altri modi di ridurre l'esposizione, e la selezione sceglie quelli: confronti e soglie che fanno scattare l'allarme più di frequente, la puntata azzerata dopo un errore strutturale, la reazione mantenuta fino a fine stagione, l'esito più probabile e una riduzione più forte dopo un errore nei dati. Le soglie per stagione, la diagnosi a due termini e la riduzione che dura solo finché dura l'allarme, che rendono la reazione più affidabile ma più rara, non vengono selezionate.
 
-La selezione premia quindi chi punta meno, non chi riconosce meglio i cambiamenti. È lo stesso limite del §5.3: con un vantaggio negativo il capitale, su cui la selezione agisce, non distingue una buona diagnosi da una riduzione qualsiasi, e un falso allarme che ferma lo schema vale quanto un allarme giusto. La dinamica evolutiva conferma quindi la regola, puntare meno, più che lo schema; per selezionare lo schema per le ragioni per cui è stato pensato servirebbe un vantaggio da proteggere, come nel mondo simulato del §5.6.
+La selezione premia quindi chi punta meno, non chi riconosce meglio i cambiamenti. È lo stesso limite del §5.6: con un vantaggio negativo il capitale, su cui la selezione agisce, non distingue una buona diagnosi da una riduzione qualsiasi, e un falso allarme che riduce la puntata vale quanto un allarme giusto. Ed è la ragione per cui la versione definitiva non è stata scelta guardando il capitale (§3.5). La dinamica evolutiva conferma quindi la regola, puntare meno, più che lo schema; per selezionare lo schema per le ragioni per cui è stato pensato servirebbe un vantaggio da proteggere, come nel mondo simulato del §5.7.
 
 ### 6.4 Il confronto con KellyBench
 
-Le due analisi arrivano alla stessa conclusione per strade diverse: quando è possibile non puntare, vince chi non punta. La cassa raccoglie quasi tutto il capitale della popolazione, e la frazione di Kelly evoluta scende quasi a zero. È ciò che fa l'unica esecuzione corretta di KellyBench, quella di GPT-5.4 che misura di non battere il mercato e passa a puntate minime; l'evoluzione ci arriva senza misurare nulla, soltanto selezionando chi perde meno.
+Le due analisi arrivano alla stessa conclusione: quando è possibile non puntare, vince chi non punta. La cassa raccoglie quasi tutto il capitale della popolazione, e la frazione di Kelly evoluta scende quasi a zero. È ciò che fa l'unica esecuzione corretta di KellyBench, quella di GPT-5.4 che misura di non battere il mercato e passa a puntate minime; l'evoluzione ci arriva senza misurare nulla, soltanto selezionando chi perde meno. Dove KellyBench confronta pochi agenti su una stagione, qui popolazioni di strategie si contendono il capitale per 19 stagioni, e il risultato è lo stesso: senza un vantaggio sul mercato, sopravvive chi rischia meno.
 
 Per entrambe le analisi valgono due cautele: i risultati sono ottenuti senza la puntata minima obbligatoria, e fra le strategie e i geni possibili ci sono scelte individuate dopo aver visto le stagioni di valutazione.
 
@@ -871,44 +907,51 @@ Per entrambe le analisi valgono due cautele: i risultati sono ottenuti senza la 
 
 ### 7.1 I risultati in sintesi
 
-Sulle 19 stagioni di valutazione il modello Elo non batte il mercato: assegna all'esito reale, in media, meno probabilità delle quote senza margine, qualunque sia il metodo usato per togliere il margine, anche contro le quote di chiusura di Pinnacle e anche con un modello più accurato come Dixon-Coles. Chi punta secondo le probabilità del modello, quindi, perde in media.
+**Il vantaggio non c'è.** Sulle 19 stagioni di valutazione il modello Elo non batte il mercato: assegna all'esito reale, in media, meno probabilità delle quote senza margine, qualunque sia il metodo usato per togliere il margine, anche contro le quote di chiusura di Pinnacle e anche con un modello più accurato come Dixon-Coles. Il modello perde soprattutto dove il mercato è più sicuro: sottovaluta le favorite nette, in particolare quando giocano in trasferta, perché il suo vantaggio del campo è troppo grande per una squadra molto più forte dell'avversaria.
 
-La versione principale dello schema conserva in una stagione tipica il 64% del capitale, contro il 57% del quarto di Kelly, ma la differenza non è distinguibile dal caso. La variante con le soglie per giornata conserva il 72%, perché si ferma molto più spesso, in buona parte per falsi allarmi. Nessuna delle due conserva più di una riduzione della puntata della stessa entità applicata in giornate scelte a caso: con un vantaggio negativo il capitale misura soprattutto quanto si punta, non quando.
+**Quanto si punta decide quanto si perde.** Con le stesse previsioni, il capitale rimasto in una stagione tipica va dallo 0,2% del Kelly pieno al 57% del quarto di Kelly e al 67% di chi punta solo sull'esito più probabile, e nessuna regola chiude in guadagno.
 
-Una misura che non dipende dagli esiti mostra però che lo schema si ferma nelle stagioni in cui il modello è più lontano dal mercato prima della partita. Questa distanza cresce con gli anni, soprattutto perché il mercato cambia e solo in parte perché i parametri del modello invecchiano, e il numero di stagioni riconosciute dipende da quanto era regolare la stagione presa come riferimento. La diagnosi a due termini separa i due tipi di peggioramento: nel mondo simulato chiama strutturale il 18% dei cambiamenti dovuti al solo tipo di partite e l'85–92% di quelli strutturali.
+**Il supervisore riconosce le stagioni, non i giorni.** La versione definitiva dello schema riduce la puntata nell'8% delle giornate e conserva il 57,6% del capitale, contro il 57,3% del quarto di Kelly: la differenza non è distinguibile dal caso, e una frazione fissa di pari esposizione conserva di più. Una misura che non dipende dagli esiti mostra però che lo schema riduce la puntata nelle stagioni in cui il modello è più lontano dal mercato prima della partita (−0,033 contro −0,022 per partita), e dà una diagnosi strutturale in tutte le stagioni in cui la dispersione degli errori è cresciuta per ragioni strutturali. Dentro la stagione, invece, il giorno in cui interviene non porta informazione. Gli allarmi nascono dal disaccordo con il mercato sulle partite con una grande squadra in trasferta, e la diagnosi è quasi sempre strutturale: nelle stagioni vere l'errore nei dati compare in una sola giornata. La distanza dal mercato cresce con gli anni anche per un modello ricalibrato ogni stagione: dipende soprattutto dal mercato, che cambia, e solo in parte dall'invecchiamento dei parametri.
 
-Dove un vantaggio c'è e a metà stagione si rovescia, la versione principale se ne accorge in tre stagioni su quattro e chiude con 1,50 volte il capitale iniziale, contro 0,81 del quarto di Kelly; quando nulla cambia rinuncia a poco (6,47 contro 6,79). La dinamica evolutiva conferma la regola, puntare meno: la popolazione sposta il capitale verso la versione principale quando è l'unico modo di fermarsi e verso la cassa quando può non puntare, e l'evoluzione preferisce gli allarmi che scattano più spesso a quelli più affidabili. Sulla stagione 2023-24 di KellyBench l'allarme della versione principale non scatta mai, e lo schema perde quanto il quarto di Kelly.
+**Una stagione vista dall'agente.** Nel 2018-19 lo scommettitore punta contro la favorita in tre partite su quattro. L'allarme scatta alla prima giornata possibile, quando le grandi squadre vincono una dopo l'altra in trasferta, e la riduzione della puntata a settembre e ottobre gli vale 65% contro 42% a fine stagione. Nel 2011-12, con lo stesso modello, l'allarme arriva nelle settimane in cui le scommesse sulle piccole squadre vincono, e la riduzione costa: 63% contro 84%.
+
+**Dove un vantaggio c'è, lo schema protegge in parte e costa poco.** Nel mondo simulato, quando il vantaggio si rovescia a metà stagione, la versione definitiva chiude con 0,95 volte il capitale iniziale contro 0,81 del quarto di Kelly e 0,83 di una frazione fissa di pari esposizione; quando nulla cambia rinuncia a pochissimo (6,77 contro 6,79). Una riduzione mantenuta fino a fine stagione proteggerebbe di più quando il vantaggio si rovescia, ma costerebbe di più quando a cambiare è solo il tipo di partite.
+
+**La selezione premia chi punta meno.** In una popolazione di strategie che si contende il capitale, il capitale si sposta da una stagione all'altra verso le strategie che riducono la puntata più a lungo e puntano su meno partite, e con la possibilità di non puntare finisce quasi tutto nella cassa. Facendo evolvere le strategie, la frazione di Kelly scende quasi a zero; con il quarto di Kelly fisso l'evoluzione sceglie quasi sempre un supervisore, ma non le scelte della versione definitiva: sceglie quelle che riducono di più l'esposizione.
+
+**Imparare dai propri errori non basta.** Un lavoratore che corregge le proprie previsioni con gli errori passati prevede un po' meglio, ma perde più capitale: senza un vantaggio, i disaccordi che restano con il mercato sono quelli in cui il mercato sa qualcosa che il modello non sa. Sulla stagione 2023-24 di KellyBench, infine, l'allarme non scatta mai, e lo schema perde quanto il quarto di Kelly.
 
 ### 7.2 Le risposte alle due domande
 
-L'introduzione poneva due domande. La prima: le perdite degli agenti di KellyBench dipendono da come decidono o dall'assenza di un vantaggio sul mercato? Una volta separata la previsione dalla decisione, la risposta è netta. Un modello classico, che applica sempre la regola di puntata prevista e non soffre di alcun divario fra sapere e fare, perde comunque, perché su 19 stagioni assegna all'esito reale meno probabilità del mercato. L'assenza di un vantaggio basta a spiegare le perdite; i fallimenti di decisione documentati dagli autori le aggravano, ma non sono necessari per produrle.
+L'introduzione poneva due domande. La prima: le perdite degli agenti di KellyBench dipendono da come decidono o dall'assenza di un vantaggio sul mercato? Una volta separata la previsione dalla decisione, la risposta è netta. Un modello classico, che applica sempre la regola di puntata prevista e non soffre di alcun divario fra sapere e fare, perde comunque, perché su 19 stagioni assegna all'esito reale meno probabilità del mercato. Lo stesso vale per un agente che riconosce i propri errori e reagisce, riducendo la puntata o correggendo le previsioni. L'assenza di un vantaggio basta a spiegare le perdite; il modo di decidere stabilisce soltanto quanto si perde, e i fallimenti di decisione documentati dagli autori le aggravano, ma non sono necessari per produrle.
 
 La seconda: ridurre la puntata quando il vantaggio manca può diventare una regola sistematica? La risposta ha tre parti.
 
-- **Come regola di prudenza, sì, ma non serve un supervisore per applicarla.** Con un vantaggio negativo qualunque riduzione conserva capitale. La versione principale dello schema conserva il 64% contro il 57% di una puntata fissa, ma una riduzione di pari entità applicata a caso conserva altrettanto, e una frazione fissa più bassa conserva di più.
-- **Come riconoscimento, in parte.** Lo schema si ferma nelle stagioni in cui il modello è più lontano dal mercato, e lo fa guardando soltanto gli errori passati. Ma quella distanza cresce negli anni anche per un modello ricalibrato ogni stagione, quindi è più una tendenza del mercato che l'invecchiamento dei parametri; e il numero di stagioni riconosciute dipende dalla stagione presa come riferimento.
-- **Come protezione di un vantaggio, sì, dove un vantaggio c'è.** Nel mondo simulato lo schema protegge il capitale quando il vantaggio si rovescia, meglio di una puntata fissa di pari esposizione, e costa poco quando nulla cambia. È una conclusione condizionata: sui dati veri un vantaggio da proteggere non c'è mai stato.
+- **Come regola di prudenza, sì, ma non serve un supervisore per applicarla.** Con un vantaggio negativo qualunque riduzione conserva capitale, e una frazione fissa più bassa del quarto di Kelly conserva più dello schema. Le versioni che riducono la puntata più a lungo, fino a fine stagione, arrivano al 63–64% solo perché puntano meno nel 42% delle giornate.
+- **Come riconoscimento, per le stagioni.** Lo schema riduce la puntata nelle stagioni in cui il modello è più lontano dal mercato, e lo fa guardando soltanto gli errori passati; il giorno esatto, invece, non porta informazione. Quella distanza cresce negli anni anche per un modello ricalibrato ogni stagione, quindi è più una tendenza del mercato che l'invecchiamento dei parametri, e il numero di stagioni riconosciute dipende dalla stagione presa come riferimento.
+- **Come protezione di un vantaggio, in parte, dove un vantaggio c'è.** Nel mondo simulato lo schema protegge il capitale quando il vantaggio si rovescia, meglio di una puntata fissa di pari esposizione, e costa quasi nulla quando nulla cambia. La protezione è parziale perché la riduzione dura solo finché dura l'allarme: è il prezzo di una regola che reagisce soltanto a ciò che vede. È una conclusione condizionata: sui dati veri un vantaggio da proteggere non c'è mai stato.
 
-L'idea alla base dello schema è che un agente debba trattare la stabilità del sistema come una variabile, invece di applicare il criterio di Kelly come un dogma. I risultati la sostengono sul metodo: il Kelly pieno, che non controlla nulla, è il migliore finché il modello è giusto e si azzera appena smette di esserlo, mentre lo schema riconosce un cambiamento strutturale e ferma le perdite. E ne fissano il perimetro: un modulo che gestisce il rischio non crea un vantaggio che il modello non ha, e senza quel vantaggio il mercato non si batte.
+L'idea alla base dello schema è che un agente debba trattare la stabilità del sistema come una variabile, invece di applicare il criterio di Kelly come un dogma. I risultati la sostengono sul metodo: il Kelly pieno, che non controlla nulla, è il migliore finché il modello è giusto e si azzera appena smette di esserlo, mentre lo schema riconosce un cambiamento strutturale e riduce le perdite senza uscire dal gioco. E ne fissano il perimetro: un modulo che gestisce il rischio non crea un vantaggio che il modello non ha, e senza quel vantaggio il mercato non si batte.
 
 ### 7.3 Il confronto con KellyBench
 
 Il risultato principale di KellyBench è confermato: nessun agente guadagna, e il comportamento corretto, quando manca un vantaggio sul mercato, è ridurre le puntate. Questo studio lo ritrova senza modelli linguistici, su 19 stagioni invece che su una, e con intervalli di confidenza al posto di poche esecuzioni.
 
-Cambia invece la spiegazione delle perdite. Il paper le attribuisce soprattutto al divario fra sapere e fare, cioè ad agenti che riconoscono i propri errori ma non cambiano comportamento; come si è visto nel §7.2, l'assenza di un vantaggio basta a produrle, e quel divario le aggrava senza esserne la causa necessaria.
+Cambia invece la spiegazione delle perdite. Il paper le attribuisce soprattutto al divario fra sapere e fare, cioè ad agenti che riconoscono i propri errori ma non cambiano comportamento. L'agente di questo studio non ha quel divario: riconosce quando il modello non è più affidabile e cambia comportamento, eppure perde. Come si è visto nel §7.2, l'assenza di un vantaggio basta a produrre le perdite, e quel divario le aggrava senza esserne la causa necessaria.
 
-Questo studio aggiunge alcune cose che il paper non misura. Mostra che, senza vantaggio, il capitale non distingue una buona regola di riduzione da una riduzione qualsiasi, e propone una misura di ciò che un supervisore riconosce che non dipende dagli esiti delle partite. Verifica, in un mondo simulato, che lo stesso supervisore protegge un vantaggio quando c'è. Usa la scomposizione di Blinder-Oaxaca per distinguere un errore dovuto al tipo di partite da un errore strutturale del modello. Mostra che la puntata minima obbligatoria rende possibile la rovina, che con il criterio di Kelly puro non lo sarebbe, e che il confronto di *log-loss* con il mercato cambia molto a seconda che il margine sia tolto o no.
+Questo studio aggiunge alcune cose che il paper non misura. Segue l'agente partita per partita, e mostra dove e perché il modello sbaglia: sulle grandi squadre in trasferta, che il mercato valuta meglio. Mostra che, senza vantaggio, il capitale non distingue una buona regola di riduzione da una riduzione qualsiasi, e propone una misura di ciò che un supervisore riconosce che non dipende dagli esiti delle partite. Verifica, in un mondo simulato, che lo stesso supervisore protegge un vantaggio quando c'è. Usa la scomposizione di Blinder-Oaxaca per distinguere un errore dovuto al tipo di partite da un errore strutturale del modello. Mostra che la puntata minima obbligatoria rende possibile la rovina, che con il criterio di Kelly puro non lo sarebbe, e che il confronto di *log-loss* con il mercato cambia molto a seconda che il margine sia tolto o no.
 
-Alcune ipotesi da cui questo studio è partito, infine, risultano più deboli del previsto. Le squadre neopromosse non sono per l'Elo una fonte significativa di errore. L'invecchiamento del modello spiega solo in parte la sua distanza dal mercato, che dipende soprattutto dal cambiamento del mercato stesso. E il confronto fra periodi vicini di 40 partite vede poco più dei falsi allarmi, perché i cambiamenti da un periodo al successivo sono troppo piccoli.
+Alcune ipotesi da cui questo studio è partito, infine, risultano più deboli del previsto. Le squadre neopromosse non sono per l'Elo una fonte significativa di errore. L'invecchiamento del modello spiega solo in parte la sua distanza dal mercato, che dipende soprattutto dal cambiamento del mercato stesso. Il confronto fra periodi vicini di 40 partite vede poco più dei falsi allarmi, perché i cambiamenti da un periodo al successivo sono troppo piccoli. E la distinzione fra errore nei dati ed errore strutturale, che nel mondo simulato funziona, nelle stagioni vere dà quasi sempre la stessa risposta.
 
-Tutti i meccanismi studiati portano nella stessa direzione, puntare meno: il supervisore che si ferma, la regola dell'esito più probabile che scommette su meno partite, la popolazione che sposta il capitale verso la cassa, l'evoluzione che riduce la frazione di Kelly fin quasi a zero e, quando deve puntare, preferisce gli allarmi che scattano più spesso. Con un vantaggio negativo conserva più capitale chi rischia meno. Il contributo della supervisione statistica non è generare profitto: è un'assicurazione contro un cambiamento strutturale, che costa poco quando nulla cambia e ripaga quando c'è un vantaggio da perdere.
+Tutti i meccanismi studiati portano nella stessa direzione, puntare meno: la regola dell'esito più probabile, che scommette su meno partite, le versioni dello schema che riducono la puntata più a lungo, la popolazione che sposta il capitale verso la cassa, l'evoluzione che riduce la frazione di Kelly fin quasi a zero. Con un vantaggio negativo conserva più capitale chi rischia meno. Il contributo della supervisione statistica non è generare profitto: è un'assicurazione contro un cambiamento strutturale, che costa pochissimo quando nulla cambia e ripaga, in parte, quando c'è un vantaggio da perdere.
 
 ### 7.4 I limiti
 
-- **Scelte fatte dopo aver visto le stagioni di valutazione.** Il confronto con la stagione di calibrazione, la regola dell'esito più probabile, le soglie per stagione e la diagnosi a due termini sono stati introdotti nel corso del lavoro (§4.8). I risultati sono riportati per tutte le versioni, ma nessuna è confermata su stagioni mai viste: la stagione di test non può farlo, perché lì il modello è giovane e l'allarme della versione principale non scatta mai.
-- **Il riferimento è una sola stagione.** Quante stagioni lo schema riconosca dipende da quanto era regolare la stagione di calibrazione (§5.4).
+- **Scelte fatte dopo aver visto le stagioni di valutazione.** Il confronto con la stagione di calibrazione, la regola dell'esito più probabile, le soglie per stagione, la diagnosi a due termini e la reazione all'errore strutturale sono stati introdotti nel corso del lavoro (§4.8). I risultati sono riportati per tutte le versioni, ma nessuna è confermata su stagioni mai viste: la stagione di test non può farlo, perché lì il modello è giovane e l'allarme non scatta mai.
+- **Il riferimento è una sola stagione.** Quante stagioni lo schema riconosca dipende da quanto era regolare la stagione di calibrazione (§5.5).
 - **Il mondo simulato è ideale.** Vale se l'Elo ha esattamente ragione, con un cambiamento brusco a metà stagione. Non sono stati provati un vantaggio parziale né un modello già lontano dal mercato dall'inizio della stagione.
-- **La diagnosi non è perfetta.** Scambia per strutturale un allarme su cinque dovuto al solo tipo di partite, e non riconosce i falsi allarmi.
+- **La diagnosi non è perfetta.** Scambia per strutturale un allarme su cinque dovuto al solo tipo di partite, non riconosce i falsi allarmi, e sulle stagioni vere dà quasi sempre la stessa risposta.
+- **La riduzione dura quanto l'allarme.** Un allarme può spegnersi per caso mentre la causa resta, e la versione definitiva protegge meno di una riduzione mantenuta fino a fine stagione quando il problema è vero e dura.
 - **Una lega, un bookmaker, un mercato.** I risultati valgono per la Premier League, le quote Bet365 e il mercato dei tre esiti. Il controllo con le quote di chiusura di Pinnacle conferma il risultato principale, ma non lo estende ad altre leghe.
 - **Un solo modello principale.** Il risultato sul vantaggio vale anche per Dixon-Coles, ma lo schema è stato valutato solo con l'Elo.
 - **Le analisi evolutive valgono senza puntata minima**, e la selezione agisce sul capitale di stagioni in cui il modello non ha mai un vantaggio.
@@ -917,36 +960,38 @@ Tutti i meccanismi studiati portano nella stessa direzione, puntare meno: il sup
 ### 7.5 Gli sviluppi futuri
 
 - **Un lavoratore con un vantaggio.** Lo schema non può creare un vantaggio che il modello non ha, e sui dati veri non ha mai avuto nulla da proteggere. Il passo successivo è un lavoratore che combini le proprie previsioni con quelle del mercato, come faceva Benter [@benter1994], per verificare sui dati veri ciò che qui è mostrato solo in simulazione.
-- **Una conferma su stagioni non usate.** La versione principale va provata, senza modifiche, su stagioni successive a quelle di questo studio.
+- **Una conferma su stagioni non usate.** La versione definitiva va provata, senza modifiche, su stagioni successive a quelle di questo studio.
 - **Un riferimento più stabile.** Un riferimento fatto di più stagioni, o aggiornato nel tempo, renderebbe l'allarme meno dipendente da una stagione sola e separerebbe meglio l'età del modello dalla tendenza del mercato.
 - **Simulazioni più vicine ai dati.** Vantaggi parziali, cambiamenti graduali e un modello già lontano dal mercato dall'inizio della stagione.
-- **La ri-parametrizzazione dopo un allarme e il cambio di modello**, le due alternative al moltiplicatore che non sono state realizzate (§4.8).
+- **La ri-parametrizzazione dopo un allarme e il cambio di modello**, le due alternative al moltiplicatore che non sono state realizzate (§4.8), e una correzione delle previsioni che tenga conto anche delle singole squadre (Appendice F.5).
 - **Altre leghe e altri mercati**, per verificare se l'allontanamento del modello dal mercato è un fenomeno generale.
 
 ## Appendici
 
 ### Appendice A. Le versioni dello schema e il loro capitale
 
-La tabella elenca tutte le versioni provate (§4.8). Le prime quattro sono la versione principale e tre varianti che ne cambiano una sola scelta. Le altre cinque sono le prime versioni dello schema, costruite prima della versione principale, chiamate qui «iniziali»: hanno tutte le soglie per giornata e la diagnosi a tre termini, e differiscono per il periodo di riferimento, per la regola dell'allarme e per ciò che fanno dopo un errore strutturale. «Fermo» significa fermo fino a fine stagione; «riprende», che torna a puntare quando l'allarme si spegne.
+La tabella elenca tutte le versioni provate (§4.8). La prima è la versione definitiva; le tre seguenti ne cambiano la reazione all'errore strutturale o le soglie, e la quinta la diagnosi. Le altre cinque sono le prime versioni dello schema, costruite prima delle soglie per stagione e della diagnosi a due termini, chiamate qui «iniziali»: hanno tutte le soglie per giornata e la diagnosi a tre termini, e differiscono per il periodo di riferimento, per la regola dell'allarme e per ciò che fanno dopo un errore strutturale. Nell'ultima colonna, «0 fino a fine stagione» significa che dopo un errore strutturale lo schema non punta più fino a fine stagione, «0 finché dura l'allarme» che torna a puntare quando l'allarme si spegne.
 
 | Nome                              | Periodo di riferimento   | Il 5% dell'allarme vale per | Regola dell'allarme       | Diagnosi    | Dopo un errore strutturale |
 | --------------------------------- | ------------------------ | --------------------------- | ------------------------- | ----------- | -------------------------- |
-| **Versione principale**           | stagione di calibrazione | la stagione                 | una delle due statistiche | due termini | fermo                      |
-| Principale, riprende              | stagione di calibrazione | la stagione                 | una delle due statistiche | due termini | riprende                   |
-| Soglie per giornata               | stagione di calibrazione | ogni giornata               | una delle due statistiche | due termini | fermo                      |
-| Diagnosi a tre termini            | stagione di calibrazione | la stagione                 | una delle due statistiche | tre termini | fermo                      |
-| Iniziale, 40 precedenti           | 40 partite precedenti    | ogni giornata               | una delle due statistiche | tre termini | riprende                   |
-| Iniziale, 40 precedenti, fermo    | 40 partite precedenti    | ogni giornata               | una delle due statistiche | tre termini | fermo                      |
-| Iniziale, 40 precedenti, entrambe | 40 partite precedenti    | ogni giornata               | entrambe le statistiche   | tre termini | riprende                   |
-| Iniziale, calibrazione            | stagione di calibrazione | ogni giornata               | una delle due statistiche | tre termini | riprende                   |
-| Iniziale, calibrazione, fermo     | stagione di calibrazione | ogni giornata               | una delle due statistiche | tre termini | fermo                      |
+| **Versione definitiva**           | stagione di calibrazione | la stagione                 | una delle due statistiche | due termini | 0,10 finché dura l'allarme |
+| Zero fino a fine stagione         | stagione di calibrazione | la stagione                 | una delle due statistiche | due termini | 0 fino a fine stagione     |
+| Zero finché dura l'allarme              | stagione di calibrazione | la stagione                 | una delle due statistiche | due termini | 0 finché dura l'allarme    |
+| Soglie per giornata               | stagione di calibrazione | ogni giornata               | una delle due statistiche | due termini | 0 fino a fine stagione     |
+| Diagnosi a tre termini            | stagione di calibrazione | la stagione                 | una delle due statistiche | tre termini | 0 fino a fine stagione     |
+| Iniziale, 40 precedenti           | 40 partite precedenti    | ogni giornata               | una delle due statistiche | tre termini | 0 finché dura l'allarme    |
+| Iniziale, 40 precedenti, fermo    | 40 partite precedenti    | ogni giornata               | una delle due statistiche | tre termini | 0 fino a fine stagione     |
+| Iniziale, 40 precedenti, entrambe | 40 partite precedenti    | ogni giornata               | entrambe le statistiche   | tre termini | 0 finché dura l'allarme    |
+| Iniziale, calibrazione            | stagione di calibrazione | ogni giornata               | una delle due statistiche | tre termini | 0 finché dura l'allarme    |
+| Iniziale, calibrazione, fermo     | stagione di calibrazione | ogni giornata               | una delle due statistiche | tre termini | 0 fino a fine stagione     |
 
-La tabella seguente riporta, per ogni versione, il capitale rimasto in una stagione tipica sulle 19 stagioni vere, la quota di giornate da fermo e la quota di stagioni in cui fa meglio o peggio del quarto di Kelly, con la puntata minima di £0,01.
+La tabella seguente riporta, per ogni versione, il capitale rimasto in una stagione tipica sulle 19 stagioni vere, la quota di giornate con la puntata ridotta o nulla e la quota di stagioni in cui fa meglio o peggio del quarto di Kelly, con la puntata minima di £0,01.
 
-| Versione                          | Capitale rimasto | Giornate da fermo | Stagioni meglio / peggio del quarto di Kelly |
+| Versione                          | Capitale rimasto | Giornate con la puntata ridotta o nulla | Stagioni meglio / peggio del quarto di Kelly |
 | --------------------------------- | ---------------- | ----------------- | -------------------------------------------- |
-| **Versione principale**           | **64%**          | 42%               | 47% / 16%                                    |
-| Principale, riprende              | 57%              | 8%                | 21% / 42%                                    |
+| **Versione definitiva**           | **57,6%** | 8% | 21% / 42% |
+| Zero fino a fine stagione         | 64%          | 42%               | 47% / 16%                                    |
+| Zero finché dura l'allarme              | 57%              | 8%                | 21% / 42%                                    |
 | Soglie per giornata               | 72%              | 68%               | 74% / 26%                                    |
 | Diagnosi a tre termini            | 61%              | 36%               | 37% / 26%                                    |
 | Iniziale, 40 precedenti           | 60%              | 2%                | 53% / 32%                                    |
@@ -957,28 +1002,28 @@ La tabella seguente riporta, per ogni versione, il capitale rimasto in una stagi
 
 Capitale rimasto a fine stagione, in percentuale del capitale iniziale, nelle 19 stagioni vere, con la puntata minima di £0,01; il lavoratore sceglie l'esito con il valore atteso più alto. I nomi delle versioni sono quelli della tabella precedente. Nell'ultima riga la stagione tipica (media geometrica).
 
-| Stagione | Calibrazione | Quarto di Kelly | Versione principale | Iniziale, 40 precedenti | Iniziale, 40 precedenti, fermo | Iniziale, calibrazione | Iniziale, calibrazione, fermo |
-|---|---|---|---|---|---|---|---|
-| 2002-03 | 2000-01 | 72 | 72 | 72 | 72 | 74 | 74 |
-| 2003-04 | 2000-01 | 60 | 60 | 60 | 60 | 61 | 61 |
-| 2004-05 | 2000-01 | 58 | 58 | 61 | 83 | 61 | 50 |
-| 2005-06 | 2000-01 | 117 | 118 | 116 | 82 | 102 | 119 |
-| 2006-07 | 2000-01 | 94 | 172 | 97 | 172 | 93 | 114 |
-| 2007-08 | 2000-01 | 26 | 26 | 30 | 67 | 28 | 65 |
-| 2008-09 | 2000-01 | 107 | 174 | 107 | 107 | 119 | 148 |
-| 2009-10 | 2000-01 | 49 | 71 | 54 | 64 | 49 | 69 |
-| 2011-12 | 2010-11 | 84 | 36 | 71 | 40 | 85 | 55 |
-| 2012-13 | 2010-11 | 29 | 62 | 28 | 62 | 37 | 70 |
-| 2013-14 | 2010-11 | 67 | 144 | 73 | 90 | 112 | 91 |
-| 2014-15 | 2010-11 | 47 | 47 | 47 | 47 | 47 | 57 |
-| 2015-16 | 2010-11 | 37 | 52 | 34 | 54 | 43 | 71 |
-| 2016-17 | 2010-11 | 100 | 65 | 98 | 106 | 65 | 67 |
-| 2017-18 | 2010-11 | 89 | 94 | 109 | 82 | 104 | 89 |
-| 2018-19 | 2010-11 | 42 | 76 | 42 | 42 | 82 | 76 |
-| 2019-20 | 2010-11 | 79 | 42 | 76 | 76 | 70 | 67 |
-| 2021-22 | 2020-21 | 26 | 26 | 32 | 65 | 26 | 26 |
-| 2022-23 | 2020-21 | 32 | 32 | 43 | 63 | 34 | 60 |
-| **Stagione tipica** | | **57** | **64** | **60** | **71** | **62** | **71** |
+| Stagione | Calibrazione | Quarto di Kelly | Versione definitiva | Zero fino a fine stagione | Iniziale, 40 precedenti | Iniziale, 40 precedenti, fermo | Iniziale, calibrazione | Iniziale, calibrazione, fermo |
+|---|---|---|---|---|---|---|---|---|
+| 2002-03 | 2000-01 | 72 | 72 | 72 | 72 | 72 | 74 | 74 |
+| 2003-04 | 2000-01 | 60 | 60 | 60 | 60 | 60 | 61 | 61 |
+| 2004-05 | 2000-01 | 58 | 58 | 58 | 61 | 83 | 61 | 50 |
+| 2005-06 | 2000-01 | 117 | 110 | 118 | 116 | 82 | 102 | 119 |
+| 2006-07 | 2000-01 | 94 | 96 | 172 | 97 | 172 | 93 | 114 |
+| 2007-08 | 2000-01 | 26 | 26 | 26 | 30 | 67 | 28 | 65 |
+| 2008-09 | 2000-01 | 107 | 110 | 174 | 107 | 107 | 119 | 148 |
+| 2009-10 | 2000-01 | 49 | 46 | 71 | 54 | 64 | 49 | 69 |
+| 2011-12 | 2010-11 | 84 | 63 | 36 | 71 | 40 | 85 | 55 |
+| 2012-13 | 2010-11 | 29 | 28 | 62 | 28 | 62 | 37 | 70 |
+| 2013-14 | 2010-11 | 67 | 63 | 144 | 73 | 90 | 112 | 91 |
+| 2014-15 | 2010-11 | 47 | 47 | 47 | 47 | 47 | 47 | 57 |
+| 2015-16 | 2010-11 | 37 | 36 | 52 | 34 | 54 | 43 | 71 |
+| 2016-17 | 2010-11 | 100 | 90 | 65 | 98 | 106 | 65 | 67 |
+| 2017-18 | 2010-11 | 89 | 126 | 94 | 109 | 82 | 104 | 89 |
+| 2018-19 | 2010-11 | 42 | 65 | 76 | 42 | 42 | 82 | 76 |
+| 2019-20 | 2010-11 | 79 | 69 | 42 | 76 | 76 | 70 | 67 |
+| 2021-22 | 2020-21 | 26 | 26 | 26 | 32 | 65 | 26 | 26 |
+| 2022-23 | 2020-21 | 32 | 32 | 32 | 43 | 63 | 34 | 60 |
+| **Stagione tipica** | | **57** | **58** | **64** | **60** | **71** | **62** | **71** |
 
 Per le versioni iniziali sono disponibili anche le 500 stagioni ricostruite (§4.4). Il capitale tipico, calcolato sulla mediana delle ricostruzioni di ogni stagione, è il seguente.
 
@@ -1012,6 +1057,7 @@ Tutti i parametri sono stati stimati sulle stagioni di calibrazione. Quelli dell
 | Finestra del supervisore | 40 partite | calibrata fra 40, 80, 120 e 190 |
 | Moltiplicatore senza allarme | 0,25 | fissato (quarto di Kelly) |
 | Riduzione dopo un errore nei dati | 0,75 (puntata 0,19) | calibrata |
+| Puntata dopo un errore strutturale | 0,10, finché dura l'allarme | scelta dopo aver visto le stagioni di valutazione (§3.5) |
 | Livello dei falsi allarmi | 5% | fissato |
 | Ricampionamenti per le soglie | 999 | fissato |
 | Soglia strutturale a tre termini con le 40 partite precedenti, per calibrazione | 0,063; 0,077; 0,102 | bootstrap a blocchi |
@@ -1031,6 +1077,12 @@ Tutti i parametri sono stati stimati sulle stagioni di calibrazione. Quelli dell
 **Le soglie per stagione.** Si ricampiona allo stesso modo la stagione di calibrazione, ma in ogni ricampionamento le due statistiche sono calcolate a tutte le giornate di decisione del calendario della stagione, sulle ultime 40 partite precedenti ciascuna giornata, e se ne prende il massimo. La soglia è la statistica d'ordine dei 999 massimi al livello $\alpha/2$ per ciascuna statistica: la probabilità di almeno un allarme in una stagione senza cambiamenti è al più $\alpha$.
 
 **Le soglie della diagnosi a due termini.** Sulla stagione di calibrazione si stimano le due regressioni di riferimento, del residuo e della sua distanza assoluta dalla mediana, sulle caratteristiche delle partite. In ogni ricampionamento si calcola la parte non spiegata (2.9) su un blocco di 40 partite; la soglia di ciascuna delle due parti è la statistica d'ordine al livello $\alpha/2$.
+
+**Errori autocorrelati e soglie nominali.** Le soglie non sono quelle nominali perché, come anticipato nel §2.7, con errori autocorrelati la soglia nominale dell'ANOVA produce troppi falsi allarmi. La Figura B.1 lo mostra su serie simulate con autocorrelazione crescente: nel confronto fra due metà consecutive di una stagione i falsi allarmi passano dal 4% con osservazioni indipendenti al 40% con autocorrelazione forte, mentre con una soglia calibrata per bootstrap a blocchi tornano vicini al 5%. Nella regola «una delle due», ciascuna statistica riceve metà del margine del 5%. Le soglie per stagione sono da due volte e mezzo a tre volte più alte di quelle per giornata.
+
+![Falsi allarmi dell'ANOVA su serie autocorrelate, con soglia nominale e calibrata](figures/us_c2_anova_autocorrelation.png)
+
+*Figura B.1. Quota di falsi allarmi dell'ANOVA su 1 000 serie simulate di 380 osservazioni senza alcun cambiamento, al crescere dell'autocorrelazione $\phi$. (A) Con la soglia nominale, il confronto fra due metà consecutive (rosso) sbaglia sempre più spesso, quello fra 38 blocchi consecutivi (arancione) quasi sempre; se i gruppi sono assegnati a caso (blu) l'autocorrelazione non conta. (B, C) Con soglie calibrate per bootstrap a blocchi di lunghezza 7, 20 e 40, la quota resta vicina al livello nominale del 5% (linea tratteggiata, con l'intervallo Monte Carlo in grigio).*
 
 ### Appendice C. Come riprodurre i risultati
 
@@ -1089,6 +1141,97 @@ Le analisi di questa appendice aiutano a interpretare i risultati del capitolo 5
 **La puntata minima e la rovina.** Con il criterio di Kelly puro il capitale non può arrivare a zero, perché si punta sempre una frazione di ciò che resta. La puntata minima obbligatoria di KellyBench cambia le cose: sotto una certa soglia di capitale la puntata non è più una frazione, e la rovina diventa possibile. Con il capitale di £220 e gli esiti simulati dalle quote, senza puntata minima nessun agente va in rovina; con £0,01 il Kelly pieno va in rovina nel 17,9% dei casi e con £1 nel 69,0%; il quarto di Kelly solo con £1, nello 0,5% dei casi.
 
 **Lo schema con il modello ricalibrato ogni anno.** Con il modello ricalibrato prima di ogni stagione sulla stagione precedente (§5.7), le versioni iniziali che confrontano con la stagione di calibrazione fanno meglio del quarto di Kelly in 12–13 stagioni su 19; quella ferma fino a fine stagione scende dal 71% al 67%, il quarto di Kelly dal 57% al 46%.
+
+### Appendice F. Le altre versioni e le analisi complementari al capitolo 5
+
+Questa appendice raccoglie le versioni dello schema diverse da quella definitiva e le analisi che aiutano a leggere il capitolo 5.
+
+#### F.1 Le altre reazioni all'errore strutturale
+
+La versione definitiva riduce la puntata a 0,10 dopo un errore strutturale, e solo finché dura l'allarme. La tabella riporta, sulle 19 stagioni vere con la puntata minima di £0,01, le altre reazioni provate; allarmi e diagnosi sono gli stessi in tutte, perché non dipendono dalle puntate.
+
+| Dopo un errore strutturale | Capitale rimasto | Giornate con la puntata ridotta o nulla | Stagioni meglio / peggio del quarto di Kelly |
+|---|---|---|---|
+| 0,10 finché dura l'allarme (versione definitiva) | 57,6% | 8% | 4 / 8 |
+| 0 finché dura l'allarme | 57,1% | 8% | 4 / 8 |
+| 0,05 finché dura l'allarme | 57,4% | 8% | 4 / 8 |
+| 0,15 finché dura l'allarme | 57,6% | 8% | 4 / 8 |
+| 0,10 fino a fine stagione | 63,4% | 42% | 9 / 3 |
+| 0 fino a fine stagione | 64,0% | 42% | 9 / 3 |
+| Quarto di Kelly, senza supervisore | 57,3% | – | – |
+
+Le versioni che riducono fino a fine stagione conservano di più, ma la ragione è la stessa per cui conserverebbe di più qualunque riduzione: puntano meno nel 42% delle giornate. Nel mondo simulato, quando il vantaggio si rovescia, proteggono di più (1,18 con 0,10 e 1,50 con lo stop, contro 0,95 della versione definitiva e 0,81 del quarto di Kelly); quando cambia solo il tipo di partite costano molto di più (5,55 e 4,65 contro 6,41, con il quarto di Kelly a 7,04); quando nulla cambia costano di più (6,61 e 6,47 contro 6,77). Il §3.5 spiega perché la versione definitiva è quella che riduce finché dura l'allarme.
+
+**Le soglie per giornata e le prime versioni dello schema.** Le alternative seguenti sono state misurate sulle versioni che restavano ferme fino a fine stagione, le sole disponibili quando sono state provate.
+
+**Le soglie per giornata.** Con soglie calibrate perché il 5% valga per ogni giornata invece che per l'intera stagione, lo schema conserva di più, il 72%, e batte il quarto di Kelly in 14 stagioni su 19 (Wilcoxon $p = 0{,}04$; rapporto fra i capitali tipici 1,25, con intervallo al 95% da 1,04 a 1,49). Si ferma però molto più spesso: in 18 stagioni su 19, e nel 68% delle giornate. Questa differenza non è un merito dell'allarme. Nei controlli a pari esposizione conserva meno dei calendari che non usano l'allarme (80% con i livelli riassegnati, 78% con i calendari di un'altra stagione, 89% con la frazione fissa di pari esposizione, 0,08 volte la frazione di Kelly). Nel mondo simulato, quando nulla cambia, si ferma senza motivo nel 66% delle stagioni e dimezza la crescita (3,51 contro 6,79 del quarto di Kelly): il 5% per giornata, ripetuto su un centinaio di giornate, diventa uno stop per falso allarme in due stagioni su tre. Senza vantaggio conserva di più (0,67 contro 0,53) soltanto perché si ferma più spesso per falso allarme, restando ferma in circa il 30% delle giornate anche senza alcun cambiamento. Il prezzo delle soglie per stagione è la sensibilità: con quelle per giornata un vantaggio che si rovescia è riconosciuto quasi sempre (99% delle stagioni) e prima (8 giornate invece di 14), e il capitale arriva a 1,91. Le giornate da fermo sono comunque più lontane dal mercato delle altre (−0,024 contro −0,020; $p = 0{,}04$), ma il segnale scompare a parità di posizione nella stagione ($p = 0{,}19$). Sul 2023-24 dà l'allarme una sola volta, presto nella stagione, riceve una diagnosi strutturale e resta ferma per l'80% delle giornate: conserva così £63 713, quasi tre volte il quarto di Kelly, con lo stesso meccanismo di un falso allarme che con un vantaggio negativo fa guadagnare capitale.
+
+- **Il confronto con le 40 partite precedenti**, provato nelle prime versioni dello schema, interviene poco: l'allarme scatta in media 1,6 volte per stagione, quanto ci si aspetta dai soli falsi allarmi, e il capitale è il 60%. Non è un difetto dei test: i cambiamenti da un periodo di 40 partite al successivo sono più piccoli di quelli che il confronto è in grado di vedere (Appendice E).
+- **Richiedere che superino la soglia entrambe le statistiche** fa intervenire l'allarme ancora meno, e il capitale scende al 56%.
+
+#### F.2 La diagnosi a tre termini
+
+Prima di applicarla ai dati reali, la scomposizione è stata provata su dati simulati in cui le parti vere sono note (Figura F.1), e lì funziona. Quando cambiano solo le caratteristiche, la parte strutturale stimata è nulla; quando cambia solo il legame, è nulla la composizione; nel caso misto le tre parti sono stimate correttamente. Due casi mostrano i limiti discussi nel §2.8: se una caratteristica rilevante è omessa, tutto il cambiamento viene attribuito alla struttura; con errori autocorrelati le stime restano corrette, ma gli intervalli di confidenza classici coprono il valore vero il 77% delle volte invece del 95%, e vanno sostituiti con intervalli bootstrap a blocchi.
+
+![Scomposizione di Blinder-Oaxaca su dati simulati con parti vere note](figures/us_c7_1_ob_synthetic.png)
+
+*Figura F.1. Scomposizione su 1 000 coppie di gruppi simulati di 190 osservazioni. Le barre sono la media delle stime, con tre errori standard Monte Carlo; i rombi rossi sono i valori veri. (a) Composizione, struttura e interazione insieme; (b) solo composizione; (c) solo struttura; (d) una caratteristica omessa che cambia fra i gruppi; (e) come (a), con errori autocorrelati.*
+
+**La diagnosi a tre termini sulla media.** La prima versione della diagnosi applicava la scomposizione a tre termini alla media del residuo, fra il riferimento e le ultime 40 partite. Sui dati reali separa poco. Il caso di prova più chiaro è la sospensione per il Covid del 2019-20, dopo la quale si è giocato a porte chiuse e il vantaggio del campo è cambiato: ci si aspetterebbe un errore strutturale. Confrontando le 288 partite precedenti la sospensione con le 472 successive, la parte strutturale risulta invece quasi nulla (−0,0004), mentre composizione (+0,012) e interazione (−0,016) si compensano. Le ragioni sono tre.
+
+- **Scompone la grandezza meno adatta.** Le caratteristiche delle partite spiegano dall'1% al 3% della variabilità del residuo, perché l'errore di una partita dipende soprattutto da quale esito si è verificato. Spiegano invece dal 10% al 18% della sua dispersione, che è la grandezza su cui l'allarme scatta più spesso.
+- **Su 40 partite consecutive la componente strutturale è quasi solo rumore.** In una finestra così breve la posizione nella stagione copre un intervallo stretto, e la regressione stimata nella finestra viene estrapolata fino alla media del riferimento. Struttura e interazione diventano due numeri grandi e opposti: fra le 1 756 giornate di decisione delle stagioni vere oscillano con deviazione standard 0,28, contro 0,035 dello scarto totale, e la loro correlazione è −0,99. La diagnosi guardava la sola struttura, che con lo scarto da spiegare ha correlazione 0,12.
+- **La soglia era calibrata in condizioni diverse dall'uso.** Nella calibrazione le 40 partite erano ricampionate da tutta la stagione; nell'uso sono consecutive. La soglia risultava troppo bassa: la diagnosi a tre termini direbbe «strutturale» nel 34% delle giornate senza alcun allarme.
+
+**Il confronto con la diagnosi a due termini.** Lo schema usa la scomposizione a due termini con i coefficienti della stagione di calibrazione, applicata alla grandezza che ha fatto scattare l'allarme (§3.4). Non stima regressioni nella finestra, e la parte non spiegata è la media dei residui del modello di riferimento. La tabella confronta le due diagnosi sulle giornate di decisione delle 19 stagioni vere, con le soglie dell'allarme per giornata.
+
+| Allarme | Giornate | Diagnosi «strutturale», tre termini | Diagnosi «strutturale», due termini |
+|---|---|---|---|
+| Nessuno (la diagnosi non si applica) | 1 148 | 34% | 4% |
+| Solo sulla media | 116 | 49% | 84% |
+| Solo sulla dispersione | 409 | 37% | 63% |
+| Su entrambe | 83 | 57% | 96% |
+
+Senza allarme la diagnosi a due termini resta al livello previsto. Con l'allarme sulla media il peggioramento non è quasi mai spiegato dal tipo di partite, come ci si aspetta da caratteristiche che spiegano così poco della media. Con l'allarme sulla dispersione, invece, in più di un caso su tre l'aumento è spiegato dal tipo di partite: è la distinzione fra errore nei dati ed errore strutturale su cui si basa lo schema, e qui ha un contenuto. Il §5.7 verifica nel mondo simulato che la distinzione sia quella giusta.
+
+Sul capitale delle stagioni vere, nelle versioni che restano ferme fino a fine stagione, le due diagnosi danno risultati simili: 64% contro 61% con le soglie per stagione, 72% contro 71% con quelle per giornata (Appendice A). Nel mondo simulato, fra le giornate con allarme dopo il cambiamento, la diagnosi a tre termini risponde «strutturale» nel 43% dei casi quando è cambiato solo il tipo di partite, nel 55% e nel 56% quando il vantaggio svanisce o si rovescia, e nel 49% dei falsi allarmi: circa metà, qualunque cosa sia successa.
+
+#### F.3 Età del modello o tempo di calendario
+
+Dentro una calibrazione, però, l'età del modello e l'anno di calendario crescono insieme, e la dispersione delle tre stagioni di calibrazione cresce da sola nei decenni: 0,109 nel 2000-01, 0,135 nel 2010-11, 0,186 nel 2020-21. Per separare le due cose il modello congelato è stato confrontato, sulle stesse partite e con le stesse quote, con il modello ricalibrato prima di ogni stagione sulla stagione precedente (Appendice F.4), che ha sempre un anno: ciò che dipende dalla stagione è comune ai due modelli.
+
+![Dispersione degli errori e distanza dal mercato prima della partita, modello congelato e modello ricalibrato ogni anno](figures/tesi_eta_calendario.png)
+
+*Figura F.2. In alto la dispersione del residuo $\delta$, in basso la distanza dal mercato prima della partita ($-\mathbb{E}_q[\delta]$), stagione per stagione. In blu il modello congelato, calibrato da 1 a 9 anni prima; in arancione il modello ricalibrato ogni anno sulla stagione precedente. Le partite e le quote sono le stesse per i due modelli; le etichette in alto indicano la calibrazione del modello congelato. Nel 2002-03 i due modelli coincidono.*
+
+Il confronto dà quattro risultati (Figura F.2).
+
+- **Anche il modello ricalibrato ogni anno si allontana dal mercato.** A età costante, la dispersione dei suoi errori cresce con gli anni (correlazione di Spearman 0,56; $p = 0{,}007$), e così la sua distanza dal mercato prima della partita (0,61; $p = 0{,}004$). La tendenza principale è quindi di calendario.
+- **Sulle stesse partite, il modello congelato è più lontano dal mercato.** Il suo errore atteso è peggiore di quello del modello ricalibrato in 14 stagioni su 16 (test dei segni $p = 0{,}002$), in media di 0,004. Un effetto dell'età dei parametri c'è.
+- **Questo effetto non cresce in modo distinguibile con l'età** ($p = 0{,}22$).
+- **Sulla dispersione degli errori realizzati i due modelli non si distinguono**: quella del modello congelato è maggiore in 10 stagioni su 16 ($p = 0{,}23$).
+
+Il modello ricalibrato usa una sola stagione e ha parametri rumorosi, quindi il confronto sulla dispersione è poco preciso: può nascondere un effetto dell'età, non crearne uno. Con questa cautela, la lettura è che il modello Elo si allontana dal mercato con il passare degli anni soprattutto perché il mercato cambia, e in parte minore perché i suoi parametri invecchiano. Lo conferma il fatto che l'errore del modello da solo, senza il confronto con il mercato, non peggiora, e spiega perché ricalibrare il modello ogni anno non migliora il capitale (Appendice F.4).
+
+#### F.4 La regola di scelta dell'esito e la ri-parametrizzazione annuale
+
+**Le regole di scelta dell'esito.** La prova è stata ripetuta con le tre regole del §3.2. La tabella riporta il capitale rimasto in una stagione tipica e, fra parentesi, le stagioni in cui la versione con lo stop fino a fine stagione fa meglio / peggio del quarto di Kelly con la stessa regola; la versione definitiva, che riduce la puntata in poche giornate, resta vicina al quarto di Kelly con ogni regola.
+
+| Regola di scelta dell'esito | Quarto di Kelly, senza supervisore | Schema fermo fino a fine stagione |
+|---|---|---|
+| Valore atteso più alto | 57% | 64% (9 / 3) |
+| Scarto maggiore dal mercato | 55% | 64% (8 / 4) |
+| Esito più probabile | 68% | 73% (8 / 4) |
+
+La regola di scelta dell'esito incide sul capitale più del supervisore. Con l'esito più probabile il quarto di Kelly conserva il 68% invece del 57%, soprattutto perché si punta su circa la metà delle partite invece che su quasi nove su dieci: con un modello che perde contro il mercato, puntare meno significa perdere meno. Lo schema si ferma nelle stesse giornate con tutte le regole, perché l'allarme guarda soltanto gli errori del modello, e il suo vantaggio sul quarto di Kelly è simile con tutte. La combinazione che conserva di più, l'esito più probabile con lo schema fermo fino a fine stagione, arriva al 73%; la regola dell'esito più probabile è stata scelta dopo aver visto le stagioni di valutazione (§4.8).
+
+**La ri-parametrizzazione annuale.** Per esplorare l'alternativa al moltiplicatore (§3.5), il modello è stato ricalibrato prima di ogni stagione sulla stagione precedente. Prima della partita il modello si avvicina al mercato in 14 stagioni su 18, ma non prevede meglio i risultati, e il capitale peggiora: il quarto di Kelly scende dal 57% al 46%. Una sola stagione è poca per stimare bene i parametri: sul 2020-21 giocato a porte chiuse, per esempio, il vantaggio del campo stimato è nullo, e il modello lo applica anche al 2021-22, quando il pubblico era tornato. Ricalibrare il modello ogni anno, quindi, non sostituisce il supervisore.
+
+#### F.5 Un lavoratore che impara dai propri errori
+
+Un'altra reazione possibile a un modello che sbaglia in modo sistematico è correggere le previsioni invece della puntata: il lavoratore impara dai propri errori passati e aggiusta le stime successive. La prova è stata fatta in forma semplice. Prima di ogni giornata il lavoratore stima, sulle ultime 760 partite già giocate con lo stesso modello, quanto le proprie probabilità vanno corrette per somigliare alla frequenza dei risultati: un logit multinomiale con cinque parametri, che rende le probabilità più o meno nette e corregge il peso della vittoria in casa e del pareggio secondo il divario Elo fra le squadre. Non usa mai le quote del mercato. Il valore tipico del parametro che rende le probabilità più nette è 1,12: il modello era troppo prudente con le favorite.
+
+La correzione migliora le previsioni: lo scarto medio dal mercato passa da −0,022 a −0,017 e la *log-loss* da 0,980 a 0,975, ancora lontana da quella del mercato (0,957). Il capitale, però, peggiora: con il quarto di Kelly scende dal 57,3% al 46,2% in una stagione tipica, ed è più basso in 13 stagioni su 19, anche se la quota di capitale puntata ogni giornata resta quasi la stessa (6,4% contro 6,0%). Con le previsioni corrette il lavoratore punta più spesso sulla favorita del mercato (40% delle scommesse contro 34%), cioè a quote basse, dove il mercato è più preciso. La correzione ripara gli errori che si ripetono per tipo di partita, ma non quelli che riguardano una squadra precisa, come un Manchester United ancora sopravvalutato dal suo punteggio nel 2013-14, e rendendo le probabilità più nette può ingrandirli. Tolti gli errori sistematici, i disaccordi che restano con il mercato sono soprattutto quelli in cui il mercato sa qualcosa che il modello non sa. È un altro modo di vedere il risultato del capitolo 5: senza un vantaggio sul mercato, anche un agente che riconosce i propri errori e li corregge perde. La prova è esplorativa e fatta dopo aver visto le stagioni di valutazione.
 
 ## Bibliografia
 

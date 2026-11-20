@@ -61,6 +61,7 @@ THEMES: Final[dict[str, str]] = {
     "schema": "Allarme ANOVA dello schema: potenza",
     "confronti": "Test set 2023-24",
     "robustezza": "Robustezza: Dixon-Coles",
+    "definitiva": "Versione definitiva dello schema",
 }
 
 _C2: Final[str] = "us_c2_anova_autocorrelation"
@@ -79,6 +80,12 @@ _PW: Final[str] = "us_c12_anova_power"
 _T: Final[str] = "us_c8_5_test_run"
 _TDC: Final[str] = "us_c8_5_test_run_dc"
 _DC: Final[str] = "us_c9_1_dixon_coles"
+_FV: Final[str] = "us_c35_final_version_summary"
+_FVP: Final[str] = "us_c35_final_version_placebo"
+_FSIM: Final[str] = "us_c36_final_simulation"
+_AW: Final[str] = "us_c34_alarm_summary"
+_WC: Final[str] = "us_c38_worker_correction_summary"
+_G01: Final[str] = 'config == "gbp_0.01"'
 
 _NOM: Final[str] = 'design == "contiguous_2" and method == "nominal"'
 _CEN: Final[str] = 'design == "contiguous_2" and method == "block_bootstrap_centered"'
@@ -323,6 +330,49 @@ NUMBERS: Final[tuple[NumberSpec, ...]] = (
                'row_type == "log_loss" and series == "b365_prematch"', "estimate", 3, "nat per partita"),
     NumberSpec("robustezza", "dc_test_g_hat_shin", "ĝ B365 Shin di Dixon-Coles sul 2023-24", _TDC,
                'row_type == "g_hat" and series == "b365_prematch" and method == "shin"', "estimate", 4, "nat per partita"),
+    NumberSpec("definitiva", "def_capitale", "Capitale tipico della versione definitiva, 19 stagioni, £0,01", _FV,
+               _G01 + ' and agent == "F"', "typical_capital", 4, "frazione del capitale iniziale"),
+    NumberSpec("definitiva", "def_capitale_quarto", "Capitale tipico del quarto di Kelly, 19 stagioni, £0,01", _FV,
+               _G01 + ' and agent == "B_0.25"', "typical_capital", 4, "frazione del capitale iniziale"),
+    NumberSpec("definitiva", "def_giornate_ridotte", "Quota di giornate con la puntata ridotta, versione definitiva", _FV,
+               _G01 + ' and agent == "F"', "share_days_reduced", 3, "quota"),
+    NumberSpec("definitiva", "def_meglio", "Stagioni in cui la versione definitiva fa meglio del quarto di Kelly", _FV,
+               _G01 + ' and agent == "F"', "seasons_better", 0, "stagioni"),
+    NumberSpec("definitiva", "def_peggio", "Stagioni in cui la versione definitiva fa peggio del quarto di Kelly", _FV,
+               _G01 + ' and agent == "F"', "seasons_worse", 0, "stagioni"),
+    NumberSpec("definitiva", "def_wilcoxon_p", "p del test di Wilcoxon, versione definitiva contro quarto di Kelly", _FV,
+               _G01 + ' and agent == "F"', "wilcoxon_p", 2, "p"),
+    NumberSpec("definitiva", "def_segni_p", "p del test dei segni, versione definitiva contro quarto di Kelly", _FV,
+               _G01 + ' and agent == "F"', "sign_test_p", 2, "p"),
+    NumberSpec("definitiva", "def_rapporto", "Rapporto fra i capitali tipici, versione definitiva / quarto di Kelly", _FV,
+               _G01 + ' and agent == "F"', "capital_ratio", 3, "rapporto"),
+    NumberSpec("definitiva", "def_stop_stagione", "Capitale tipico con λ = 0 fino a fine stagione (M)", _FV,
+               _G01 + ' and agent == "M"', "typical_capital", 4, "frazione del capitale iniziale"),
+    NumberSpec("definitiva", "def_010_stagione", "Capitale tipico con 0,10 fino a fine stagione", _FV,
+               _G01 + ' and agent == "F_season"', "typical_capital", 4, "frazione del capitale iniziale"),
+    NumberSpec("definitiva", "def_errore_atteso_ridotte", "Errore atteso per partita nelle giornate con la puntata ridotta", _FVP,
+               'row_type == "expected_delta" and placebo == "cross_season"', "mean_intervention", 4, "nat per partita"),
+    NumberSpec("definitiva", "def_errore_atteso_altre", "Errore atteso per partita nelle altre giornate", _FVP,
+               'row_type == "expected_delta" and placebo == "cross_season"', "mean_other", 4, "nat per partita"),
+    NumberSpec("definitiva", "def_errore_atteso_p", "p con i calendari di un'altra stagione (errore atteso)", _FVP,
+               'row_type == "expected_delta" and placebo == "cross_season"', "p_value", 4, "p"),
+    NumberSpec("definitiva", "def_pari_esposizione", "Capitale tipico della frazione fissa di pari esposizione", _FVP,
+               'row_type == "constant"', "placebo_mean", 4, "frazione del capitale iniziale"),
+    NumberSpec("definitiva", "def_sim_rovescio", "Mondo simulato, il vantaggio si rovescia: versione definitiva", _FSIM,
+               'row_type == "capital" and scenario == "edge_reverses" and agent == "F"', "typical_capital", 3,
+               "multiplo del capitale iniziale"),
+    NumberSpec("definitiva", "def_sim_rovescio_pari", "Mondo simulato, il vantaggio si rovescia: pari esposizione", _FSIM,
+               'row_type == "capital" and scenario == "edge_reverses" and agent == "constant:F"', "typical_capital", 3,
+               "multiplo del capitale iniziale"),
+    NumberSpec("definitiva", "def_sim_stabile", "Mondo simulato, il modello ha ragione: versione definitiva", _FSIM,
+               'row_type == "capital" and scenario == "stable_edge" and agent == "F"', "typical_capital", 3,
+               "multiplo del capitale iniziale"),
+    NumberSpec("definitiva", "def_favorite_trasferta", "Partite con la favorita in trasferta fra le 60 con il residuo più grande", _AW,
+               'statistic == "n_largest_away_favourite"', "value", 0, "partite"),
+    NumberSpec("definitiva", "def_correzione_capitale", "Capitale tipico del quarto di Kelly con le previsioni corrette", _WC,
+               'probabilities == "corrected"', "typical_capital", 4, "frazione del capitale iniziale"),
+    NumberSpec("definitiva", "def_correzione_log_loss", "Log-loss media con le previsioni corrette", _WC,
+               'probabilities == "corrected"', "log_loss", 4, "nat per partita"),
 )
 
 

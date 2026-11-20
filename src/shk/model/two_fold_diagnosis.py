@@ -185,9 +185,9 @@ class TwoFoldSchemeAgent(SchemeAgent):
 
     def __init__(self, name: str, supervisor: Module2Supervisor, kappa: float, mean_threshold: float,
                  dispersion_threshold: float, diagnosis: ReferenceDiagnosis, stop: str,
-                 base_lambda: float = BASE_LAMBDA) -> None:
+                 base_lambda: float = BASE_LAMBDA, structural_lambda: float = 0.0) -> None:
         super().__init__(name, supervisor, kappa, mean_threshold, dispersion_threshold, 0.0, stop,
-                         base_lambda=base_lambda, reference=True)
+                         base_lambda=base_lambda, reference=True, structural_lambda=structural_lambda)
         self._diagnosis = diagnosis
 
     def _diagnose(self, day: np.datetime64) -> str:

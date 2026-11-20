@@ -28,7 +28,9 @@ di Agent.decide.
   a composizione fissa); altrimenti errore di composizione (dati), anche a rango non pieno.
 - λ: senza allarme 0.25; composizione 0.25·κ; strutturale 0 finché dura l'allarme (C3) oppure
   fino a fine stagione (C3_stop: «finché il modello non viene ri-parametrizzato», e nella
-  stagione il Modulo 1 non si ri-parametrizza).
+  stagione il Modulo 1 non si ri-parametrizza). Con structural_lambda > 0 l'errore strutturale
+  riduce la puntata a quel λ invece di azzerarla (versione definitiva, decisione del 2026-11-20:
+  0.10 finché dura l'allarme; shk.model.main_version).
 Frazione sull'esito selezionato: kelly_staking(p̂, o − 1, λ), elemento per elemento. Con una
 regola del lavoratore (shk.kelly.outcome_rules.with_outcome_rule) l'esito è quello della regola.
 
@@ -311,15 +313,18 @@ class SchemeAgent(Agent):
         SCHEME_ALARM_OR (una delle due F oltre soglia) o SCHEME_ALARM_AND (entrambe).
     reference : bool, default False
         Se True, allarme e diagnosi contro il riferimento fisso del supervisore (C3_ref, vedi modulo).
+    structural_lambda : float, default 0.0
+        λ dopo un errore strutturale (per la durata indicata da stop); 0 azzera la puntata.
     """
 
     def __init__(self, name: str, supervisor: Module2Supervisor, kappa: float, mean_threshold: float,
                  dispersion_threshold: float, structural_threshold: float, stop: str,
-                 base_lambda: float = BASE_LAMBDA, alarm: str = SCHEME_ALARM_OR, reference: bool = False) -> None:
+                 base_lambda: float = BASE_LAMBDA, alarm: str = SCHEME_ALARM_OR, reference: bool = False,
+                 structural_lambda: float = 0.0) -> None:
         super().__init__(name)
         if not isinstance(supervisor, Module2Supervisor):
             raise TypeError("supervisor must be a Module2Supervisor")
-        for label, value in (("kappa", kappa), ("base_lambda", base_lambda)):
+        for label, value in (("kappa", kappa), ("base_lambda", base_lambda), ("structural_lambda", structural_lambda)):
             if isinstance(value, bool) or not isinstance(value, (float, np.floating)) or not 0.0 <= value <= 1.0:
                 raise ValueError(f"{label} must be a float in [0, 1], got {value!r}")
         for label, value in (("mean_threshold", mean_threshold), ("dispersion_threshold", dispersion_threshold),
@@ -341,6 +346,7 @@ class SchemeAgent(Agent):
         self._structural_threshold = float(structural_threshold)
         self._stop = stop
         self._base_lambda = float(base_lambda)
+        self._structural_lambda = float(structural_lambda)
         self._stopped = False
         self._n_onsets = 0
         self._previous_alarm = False
@@ -395,7 +401,7 @@ class SchemeAgent(Agent):
             if diagnosis == DIAGNOSIS_STRUCTURAL and self._stop == SCHEME_STOP_SEASON:
                 self._stopped = True
             if self._stopped or diagnosis == DIAGNOSIS_STRUCTURAL:
-                lam = 0.0
+                lam = self._structural_lambda
             elif diagnosis == DIAGNOSIS_COMPOSITIONAL:
                 lam = self._base_lambda * self._kappa
             else:

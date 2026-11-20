@@ -2,7 +2,7 @@
 
 La stagione di test era stata sbloccata una volta sola, e lo schema è stato costruito dopo; le versioni
 iniziali vi sono state eseguite in us_c14. Qui vi gioca, una volta, la versione principale con due
-varianti (TEST_ARMS di shk.model.main_version: M, M_clear, M_day) accanto ad A e B_0.25, con i
+varianti (TEST_ARMS di shk.model.main_version: M, M_clear, M_day e la versione definitiva F) accanto ad A e B_0.25, con i
 parametri congelati, il fit 2020-21 e le soglie calibrate sul training, nessuna scelta sui dati del
 2023-24. Stagione vera e N stagioni ricostruite con i seed "block" dell'esecuzione unica, gli stessi di
 us_c14: A e B_0.25 coincidono con quell'esecuzione e i confronti sono appaiati.

@@ -37,6 +37,10 @@ risulterebbe in media peggiore di questi placebo (tests/test_timing_placebo.py l
 simulati). Il placebo "cross_season" non ha questa distorsione, perché il calendario viene da
 un'altra stagione, e non ce l'ha l'errore atteso, che non dipende dagli esiti.
 
+Livello più basso: per gli schemi che dopo un errore strutturale non azzerano la puntata (versione
+definitiva, λ = 0.10; shk.model.main_version) il livello 0 è quel λ invece di 0 (floor), e i suoi
+rendimenti vengono dal Kelly frazionario a λ = floor con la stessa regola; il resto non cambia.
+
 Riferimento a esposizione costante: il Kelly frazionario con λ fisso uguale al λ medio dello schema
 sulle giornate delle 19 stagioni. Per la concavità della crescita in λ, a parità di esposizione media
 una frazione costante rende in attesa più di un calendario acceso/spento privo di informazione: è un
@@ -87,17 +91,17 @@ class SeasonSchedules(NamedTuple):
     actual: dict[str, float]              # schema → ln W_T dell'esecuzione
 
 
-def levels_from_lambda(lam: np.ndarray, base: float, kappa: float) -> np.ndarray:
-    """Livello per giornata dal λ applicato: 0 (nessuna puntata), 1 (base·κ), 2 (base).
+def levels_from_lambda(lam: np.ndarray, base: float, kappa: float, floor: float = 0.0) -> np.ndarray:
+    """Livello per giornata dal λ applicato: 0 (floor, di solito nessuna puntata), 1 (base·κ), 2 (base).
 
     Solleva ValueError se un λ non è uno dei tre valori dello schema.
     """
     values = np.asarray(lam, dtype=np.float64)
     levels = np.full(values.shape, -1, dtype=np.int64)
-    for level, target in ((LEVEL_ZERO, 0.0), (LEVEL_REDUCED, base * kappa), (LEVEL_BASE, base)):
+    for level, target in ((LEVEL_ZERO, floor), (LEVEL_REDUCED, base * kappa), (LEVEL_BASE, base)):
         levels[np.isclose(values, target, rtol=0.0, atol=1e-12)] = level
     if np.any(levels < 0):
-        raise ValueError(f"lambda values outside {{0, {base * kappa}, {base}}}: {np.unique(values[levels < 0])}")
+        raise ValueError(f"lambda values outside {{{floor}, {base * kappa}, {base}}}: {np.unique(values[levels < 0])}")
     return levels
 
 
@@ -192,17 +196,19 @@ def run_placebo_season(params_path: str, setups: Mapping[str, PopulationSetup],
 
 
 def extract_schedules(params: FrozenParams, season: ValidationSeason, agents: Sequence[Agent],
-                      arms: Mapping[str, str]) -> SeasonSchedules:
+                      arms: Mapping[str, str], floor: float = 0.0) -> SeasonSchedules:
     """Esegue gli agenti senza puntata minima e ne estrae rendimenti per livello, calendari e residui.
 
     agents contiene gli schemi di arms (schema → regola) e, per ogni regola, il quarto di Kelly
-    BASELINES[regola]; il Kelly a 0.25·κ di ogni regola viene aggiunto qui.
+    BASELINES[regola]; il Kelly a 0.25·κ di ogni regola (e a floor, se floor > 0) viene aggiunto qui.
     """
     inp = season.inp
     kappa, base = float(params.calibrated["c1_kappa"]), float(params.fixed["c0_lambda"])
     rules = sorted(set(arms.values()))
     agents = list(agents) + [with_outcome_rule(FractionalKellyAgent, r)(f"{r}_reduced", lam=base * kappa)
                              for r in rules]
+    if floor > 0.0:
+        agents += [with_outcome_rule(FractionalKellyAgent, r)(f"{r}_floor", lam=floor) for r in rules]
     runs = {run.name: run for run in run_paired_backtest(agents, inp.dates, inp.probs, inp.odds, inp.outcomes, 0.0,
                                                          fallback_policy=params.fixed["fallback_policy"])}
     by_name = {a.name: a for a in agents}
@@ -212,7 +218,8 @@ def extract_schedules(params: FrozenParams, season: ValidationSeason, agents: Se
 
     days, day_index = np.unique(inp.dates, return_inverse=True)
     n_days = days.shape[0]
-    log_returns = {r: np.stack([np.zeros(n_days), log_path(f"{r}_reduced"), log_path(BASELINES[r])]) for r in rules}
+    log_returns = {r: np.stack([log_path(f"{r}_floor") if floor > 0.0 else np.zeros(n_days),
+                                log_path(f"{r}_reduced"), log_path(BASELINES[r])]) for r in rules}
     levels, lambdas, actual = {}, {}, {}
     for arm in arms:
         agent = by_name[arm]
@@ -220,7 +227,7 @@ def extract_schedules(params: FrozenParams, season: ValidationSeason, agents: Se
         by_date = agent.lambda_by_date
         lam = np.array([by_date[np.datetime64(d, "ns")] for d in days])
         lambdas[arm] = lam
-        levels[arm] = levels_from_lambda(lam, base, kappa)
+        levels[arm] = levels_from_lambda(lam, base, kappa, floor)
         actual[arm] = float(np.log(runs[arm].wealth[0, -1]))
     q = devig_probabilities(inp.odds, "shin")
     features = np.stack([_daily(inp.delta, day_index, n_days), _daily(expected_delta(inp.probs, q), day_index, n_days)])

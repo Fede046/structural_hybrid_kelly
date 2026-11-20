@@ -1,0 +1,8 @@
+statistic,value
+n_windows,12
+n_matches,480
+share_away_favourite,0.325
+n_largest,60
+n_largest_away_favourite,43
+mean_abs_delta_away_favourite,0.3116452221721273
+mean_abs_delta_other,0.14321294528400366

@@ -20,8 +20,8 @@ SURFACE, INK, INK_2, GRID = "#fcfcfb", "#0b0b0b", "#52514e", "#e4e3df"
 FAMILIES = (
     ("Kelly pieno", ("A",), "#2a78d6"),
     ("Quarto di Kelly", ("B_0.25", "R2_brake", "R3_brake"), "#eb6834"),
-    ("Schema, versione principale, riprende", ("M_clear", "R3_M_clear"), "#eda100"),
-    ("Schema, versione principale", ("M", "R3_M"), "#e87ba4"),
+    ("Schema, riduzione fino a fine stagione", ("F_season", "R3_F_season"), "#eda100"),
+    ("Schema, versione definitiva", ("F", "R3_F"), "#e87ba4"),
     ("Cassa (non punta)", ("cash",), "#008300"),
 )
 

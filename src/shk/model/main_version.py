@@ -10,11 +10,20 @@ Le analisi dei capitoli 5 e 6 fatte prima della versione principale usavano le v
 (soglie per giornata, diagnosi a tre termini). Qui la versione principale le sostituisce:
 - us_c29: regole di scelta dell'esito R1, R2, R3 sulle 19 stagioni vere (rule_agents);
 - us_c30: stagione 2023-24, vera e ricostruite con i seed di us_c14 (run_test_instance);
-- us_c31: popolazione di strategie (MAIN_POPULATION_ARMS, run_main_population_season);
-- us_c32: evoluzione con due geni in più (shk.model.evolution_main).
+- us_c31: popolazione di strategie (MAIN_POPULATION_ARMS, run_main_population_season), dal
+  2026-11-20 con la versione definitiva F e la sua variante F_season;
+- us_c32: evoluzione con due geni in più (shk.model.evolution_main), dal 2026-11-20 con la reazione
+  della versione definitiva (0.10 dopo un errore strutturale) per il supervisore "calibration".
+
+Versione definitiva (decisione del 2026-11-20, "F"): come M, ma dopo un errore strutturale la
+puntata scende a STRUCTURAL_LAMBDA = 0.10 (invece di 0) e la riduzione dura finché dura l'allarme,
+come quella dopo un errore nei dati. La puntata dipende quindi solo dalla diagnosi del giorno:
+0.25, 0.25·κ o 0.10. Il valore 0.10 è stato scelto dopo aver visto le stagioni di validazione.
 
 Nomi degli agenti:
-- "M": versione principale; "M_clear": come M, ma riprende quando l'allarme si spegne;
+- "M": versione principale fino al 2026-11-20 (λ = 0 fino a fine stagione dopo un errore strutturale);
+  "M_clear": come M, ma riprende quando l'allarme si spegne;
+- "F": versione definitiva (0.10 finché dura l'allarme); "F_season": 0.10 fino a fine stagione;
 - "M_day": come M, con le soglie dell'allarme per giornata («soglie per giornata» nella tesi);
 - prefisso "R2_" o "R3_": stessa versione con la regola di scelta dell'esito R2 o R3;
 - "B_0.25", "R2_brake", "R3_brake": quarto di Kelly senza supervisore con le regole R1, R2, R3.
@@ -42,11 +51,12 @@ from shk.model.validation_run import METRICS, ValidationSeason, run_metrics
 
 THRESHOLDS: Final[tuple[str, ...]] = ("day", "season")
 DIAGNOSES: Final[tuple[str, ...]] = ("three", "two")
+STRUCTURAL_LAMBDA: Final[float] = 0.10
 RULE_ARMS: Final[tuple[str, ...]] = ("B_0.25", "R2_brake", "R3_brake", "M", "R2_M", "R3_M")
 RULE_REFERENCES: Final[dict[str, str]] = {"M": "B_0.25", "R2_M": "R2_brake", "R3_M": "R3_brake"}
-TEST_ARMS: Final[tuple[str, ...]] = ("A", "B_0.25", "M", "M_clear", "M_day")
+TEST_ARMS: Final[tuple[str, ...]] = ("A", "B_0.25", "M", "M_clear", "M_day", "F")
 MAIN_POPULATION_ARMS: Final[tuple[str, ...]] = (
-    "A", "B_0.25", "R2_brake", "R3_brake", "M", "M_clear", "R3_M", "R3_M_clear",
+    "A", "B_0.25", "R2_brake", "R3_brake", "F", "F_season", "R3_F", "R3_F_season",
 )
 
 
@@ -75,7 +85,8 @@ def reference_supervisor(params: FrozenParams, inp: SeasonInput, setup: MainSetu
 
 def main_agent(name: str, params: FrozenParams, setup: MainSetup, supervisor: Module2Supervisor, rule: str = "R1",
                stop: str = SCHEME_STOP_SEASON, thresholds: str = "season", diagnosis: str = "two",
-               base_lambda: float | None = None, kappa: float | None = None) -> Agent:
+               base_lambda: float | None = None, kappa: float | None = None,
+               structural_lambda: float = 0.0) -> Agent:
     """Schema con riferimento alla stagione di calibrazione; i default sono la versione principale.
 
     thresholds "season" o "day" sceglie le soglie dell'allarme; diagnosis "two" o "three" la diagnosi
@@ -89,10 +100,10 @@ def main_agent(name: str, params: FrozenParams, setup: MainSetup, supervisor: Mo
     if diagnosis == "two":
         return with_outcome_rule(TwoFoldSchemeAgent, rule)(name, supervisor, k, thr.mean_threshold,
                                                            thr.dispersion_threshold, setup.diagnosis, stop,
-                                                           base_lambda=base)
+                                                           base_lambda=base, structural_lambda=structural_lambda)
     return with_outcome_rule(SchemeAgent, rule)(name, supervisor, k, thr.mean_threshold, thr.dispersion_threshold,
                                                 setup.per_date.structural_threshold, stop, base_lambda=base,
-                                                reference=True)
+                                                reference=True, structural_lambda=structural_lambda)
 
 
 def build_agents(params: FrozenParams, setup: MainSetup, supervisor: Module2Supervisor,
@@ -106,7 +117,9 @@ def build_agents(params: FrozenParams, setup: MainSetup, supervisor: Module2Supe
             out.append(with_outcome_rule(FractionalKellyAgent, rule)(name, lam=lam))
             continue
         rule, base = (name[:2], name[3:]) if name[:3] in ("R2_", "R3_") else ("R1", name)
-        variants = {"M": {}, "M_clear": {"stop": SCHEME_STOP_CLEAR}, "M_day": {"thresholds": "day"}}
+        variants = {"M": {}, "M_clear": {"stop": SCHEME_STOP_CLEAR}, "M_day": {"thresholds": "day"},
+                    "F": {"stop": SCHEME_STOP_CLEAR, "structural_lambda": STRUCTURAL_LAMBDA},
+                    "F_season": {"structural_lambda": STRUCTURAL_LAMBDA}}
         if base not in variants:
             raise ValueError(f"unknown arm {name!r}")
         out.append(main_agent(name, params, setup, supervisor, rule=rule, **variants[base]))

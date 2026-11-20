@@ -31,16 +31,16 @@ def arrow(p, q, text="", dx=0.0, dy=1.2, style="-|>", ls="-"):
 
 box(2, 34, 22, 18, "Mercato e dati", "quote Bet365\nrisultati passati\n(solo informazioni\nprima della partita)", GREY)
 box(32, 34, 28, 18, "1. Lavoratore", "modello Elo-Davidson\nprobabilità p̂ dei tre esiti\nregola di scelta dell'esito\nfrazione di Kelly f", BLUE)
-box(70, 34, 36, 18, "Puntata", "puntata = λ · f · capitale\nλ = 0,25 senza allarme\nλ = 0,19 errore nei dati\nλ = 0 errore strutturale", GREY)
-box(32, 3, 28, 22, "2. Supervisore", "residuo δ = ln p̂(esito) − ln q(esito)\nultime 40 partite contro\nun periodo di riferimento\nANOVA sulla media\nBrown-Forsythe sulla dispersione", ORANGE)
-box(70, 3, 36, 22, "3. Ricalibratore", "solo se c'è allarme\nregressione di δ su caratteristiche\ndelle partite nei due periodi\nBlinder-Oaxaca:\ncomposizione (dati) o struttura", GREEN)
+box(70, 34, 36, 18, "Puntata", "puntata = λ · f · capitale\nλ = 0,25 senza allarme\nλ = 0,19 errore nei dati\nλ = 0,10 errore strutturale\n(finché dura l'allarme)", GREY)
+box(32, 3, 28, 22, "2. Supervisore", "residuo δ = ln p̂(esito) − ln q(esito)\nultime 40 partite contro\nun periodo di riferimento\nANOVA sulla media\nANOVA sulla dispersione", ORANGE)
+box(70, 3, 36, 22, "3. Ricalibratore", "solo se c'è allarme\nerrore atteso dalle caratteristiche\ndelle partite (stagione di calibrazione)\nBlinder-Oaxaca a due termini:\nerrore nei dati o strutturale", GREEN)
 
 arrow((24.8, 43), (31.2, 43), "quote, calendario")
 arrow((60.8, 43), (69.2, 43), "p̂, f")
 arrow((46, 33.2), (46, 25.8), "esito osservato\ndopo la partita", dx=-9.5, dy=-2.8)
 arrow((60.8, 14), (69.2, 14), "allarme")
 arrow((88, 25.8), (88, 33.2), "λ", dx=2.5, dy=-1.5)
-ax.text(46, 0.2, "riferimento: le 40 partite precedenti oppure la stagione di calibrazione del modello",
+ax.text(46, 0.2, "riferimento: la stagione di calibrazione del modello",
         ha="center", va="bottom", fontsize=8.6, color="#444444")
 
 fig.tight_layout()
