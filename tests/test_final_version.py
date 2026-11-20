@@ -83,3 +83,12 @@ def test_us_c30_final_version_never_alarms_in_the_true_season():
         pytest.skip("us_c30 non ancora rieseguito con la versione definitiva")
     assert m.loc[("gbp_0.01", "F"), "observed_log_wealth"] == pytest.approx(
         m.loc[("gbp_0.01", "B_0.25"), "observed_log_wealth"])
+
+
+@_needs("us_c39_test_season_trace.csv")
+def test_us_c39_test_season_matches_us_c30():
+    t = pd.read_csv(RESULTS / "us_c39_test_season_trace.csv")
+    m = pd.read_csv(RESULTS / "us_c30_main_kellybench_summary.csv").set_index(["config", "agent"])
+    # Nessun allarme nella stagione vera, e lo stesso capitale finale dell'esecuzione di us_c30
+    assert (t["diagnosis"] == "none").all()
+    assert np.log(t["wealth_main"].iloc[-1]) == pytest.approx(m.loc[("gbp_0.01", "F"), "observed_log_wealth"])

@@ -700,67 +700,39 @@ Che la distanza dal mercato sia l'invecchiamento del modello è vero solo in par
 
 ### 5.6 Il capitale
 
-La tabella riporta, sulle 19 stagioni vere e con la puntata minima di £0,01, il capitale rimasto in una stagione tipica (la media geometrica) e il confronto con il quarto di Kelly stagione per stagione; nelle sette stagioni senza allarme i due capitali coincidono.
+Sulle 19 stagioni vere lo schema conserva in una stagione tipica il 57,6% del capitale, il quarto di Kelly il 57,3%. Lo schema fa meglio in quattro stagioni e peggio in otto, e la differenza non è distinguibile dal caso (test di Wilcoxon, $p = 0{,}38$). Il risultato era prevedibile: lo schema punta come il quarto di Kelly nel 92% delle giornate, e nelle altre punta meno.
 
-| Agente | Capitale rimasto | Giornate con la puntata ridotta | Stagioni meglio / peggio del quarto di Kelly |
-|---|---|---|---|
-| Kelly pieno, senza supervisore | 0,2% | – | 0 / 19 |
-| Quarto di Kelly, senza supervisore | 57,3% | – | – |
-| **Schema, versione definitiva** | **57,6%** | 8% | 4 / 8 |
+La domanda utile, allora, è un'altra: le giornate in cui lo schema riduce la puntata sono quelle giuste? Per rispondere si confronta lo schema con agenti che riducono la puntata nello stesso numero di giornate, ma scelte senza guardare l'allarme (§4.6): giornate spostate a caso dentro la stagione, il calendario degli allarmi di un'altra stagione, oppure una puntata fissa appena più bassa del quarto di Kelly. Tutti conservano almeno quanto lo schema, fra il 58,7% e il 59,7%. Sulle stagioni vere, quindi, ridurre la puntata nei giorni dell'allarme non vale più che ridurla in giorni scelti a caso. Le versioni che riducono la puntata fino a fine stagione conservano di più (63–64%, Appendice F), ma solo perché puntano meno in quasi metà delle giornate.
 
-Lo schema conserva in una stagione tipica il 57,6% del capitale, contro il 57,3% del quarto di Kelly. Fa meglio in quattro stagioni (2006-07, 2008-09, 2017-18, 2018-19) e peggio in otto. La differenza non è distinguibile dal caso: il test dei segni dà $p = 0{,}39$, il test di Wilcoxon $p = 0{,}38$, e il rapporto fra i capitali tipici è 1,004, con intervallo al 95% da 0,94 a 1,08. Nella maggior parte delle stagioni nessuno dei due chiude sopra il capitale iniziale.
-
-**I controlli a pari esposizione.** Con un vantaggio negativo puntare meno aiuta comunque. Per sapere se lo schema riduce la puntata nelle giornate giuste, il suo capitale va confrontato con quello di riduzioni della stessa entità che non usano l'allarme (§4.6). La tabella riporta il confronto senza puntata minima.
-
-| Capitale rimasto in una stagione tipica | |
-|---|---|
-| Schema, versione definitiva | 57,5% |
-| Quarto di Kelly, senza supervisore | 57,3% |
-| Giornate con la puntata ridotta riassegnate a caso nella stessa stagione (mediana) | 58,7% |
-| Calendario spostato a caso nella stessa stagione (mediana) | 58,7% |
-| Calendario di un'altra stagione (mediana; 90% dei casi fra) | 59,3% (56,8–61,8%) |
-| Quota di calendari di un'altra stagione che conservano almeno quanto lo schema | 88% |
-| Frazione fissa di pari esposizione (0,24 volte la frazione di Kelly) | 59,7% |
-
-Lo schema non conserva più capitale di un calendario di pari esposizione che non usa l'allarme, e una frazione fissa appena più bassa del quarto di Kelly conserva di più. Sulle stagioni vere, quindi, il capitale non mostra alcun beneficio del supervisore. È coerente con il §5.5: lo schema riconosce le stagioni in cui il modello è lontano dal mercato, ma dentro la stagione il giorno in cui interviene non porta informazione, e una riduzione in giornate scelte a caso fa lo stesso effetto. Con un vantaggio negativo in ogni giornata, il capitale misura soprattutto quanto si punta. L'Appendice F riporta le versioni che riducono la puntata più a lungo, fino a fine stagione o azzerandola: conservano di più (63–64%) solo perché puntano meno nel 42% delle giornate.
+È coerente con il §5.5. L'allarme riconosce le stagioni in cui il modello è lontano dal mercato, ma dentro quelle stagioni il modello lo è quasi ogni giorno, e il giorno esatto in cui si riduce la puntata non conta. Con un vantaggio negativo in ogni giornata, il capitale misura soprattutto quanto si punta, non quando. Per sapere se lo schema protegge qualcosa serve un caso in cui c'è qualcosa da proteggere: è il mondo simulato del paragrafo seguente.
 
 ### 5.7 Lo schema quando un vantaggio c'è
 
-Sulle stagioni vere non c'è mai un vantaggio da proteggere. Nel mondo simulato del §4.7 sì, e lì si può chiedere allo schema ciò per cui è stato pensato: conservare il guadagno quando la struttura cambia, senza rinunciarvi quando non cambia. La tabella riporta il capitale a fine stagione in una stagione tipica, come multiplo di quello iniziale, su 475 stagioni simulate per scenario.
+Nel mondo simulato del §4.7 le partite, le quote e le previsioni sono quelle vere, ma i risultati sono simulati in modo che il modello abbia, all'inizio della stagione, un vantaggio sul mercato. A metà stagione il mondo può cambiare in cinque modi, uno per scenario, e per ogni scenario si simulano 475 stagioni. Lì si può chiedere allo schema ciò per cui è stato pensato: conservare il guadagno quando il vantaggio si perde, senza rinunciarvi quando non si perde.
 
-| Scenario | Kelly pieno | Quarto di Kelly | Schema, versione definitiva | Frazione fissa di pari esposizione |
+La tabella confronta tre agenti con le stesse previsioni. Il **quarto di Kelly** punta sempre la stessa frazione. Lo **schema** è la versione definitiva. La **puntata fissa di pari esposizione** punta per tutta la stagione la frazione media puntata dallo schema, senza guardare l'allarme: se lo schema fa meglio di lei, è perché riduce la puntata nei momenti giusti, e non soltanto perché punta un po' meno. Ogni numero è il capitale a fine stagione in una stagione tipica, come multiplo di quello iniziale: 6,79 vuol dire che il capitale è quasi settuplicato, 0,81 che ne resta l'81%. L'ultima colonna dice quanto spesso, e con che ritardo dopo il cambiamento, lo schema dà una diagnosi di errore strutturale.
+
+| Scenario: che cosa succede a metà stagione | Quarto di Kelly | Schema | Puntata fissa di pari esposizione | Diagnosi strutturale |
 |---|---|---|---|---|
-| Il modello ha ragione tutta la stagione | 47,9 | 6,79 | 6,77 | 6,77 |
-| Il vantaggio svanisce | 0,48 | 2,01 | 2,03 | 2,00 |
-| Il vantaggio si rovescia | 0,01 | 0,81 | 0,95 | 0,83 |
-| Nessun vantaggio | 0,003 | 0,53 | 0,53 | 0,53 |
-| Cambia solo il tipo di partite | 53,9 | 7,04 | 6,41 | 6,70 |
+| Nulla: il modello ha ragione tutta la stagione | 6,79 | 6,77 | 6,77 | nel 9% delle stagioni, per falso allarme |
+| Il vantaggio svanisce: da metà stagione ha ragione il mercato | 2,01 | 2,03 | 2,00 | nel 33% delle stagioni, dopo 24 giornate |
+| Il vantaggio si rovescia: da metà stagione il modello sbaglia | 0,81 | 0,95 | 0,83 | nel 77% delle stagioni, dopo 14 giornate |
+| Nessun vantaggio in tutta la stagione, come nei dati veri | 0,53 | 0,53 | 0,53 | nel 7% delle stagioni, per falso allarme |
+| Cambia solo il tipo di partite: il modello resta giusto | 7,04 | 6,41 | 6,70 | nel 48% delle stagioni, a torto |
 
-La tabella seguente riporta quanto spesso arriva una diagnosi strutturale e con che ritardo.
+**Quando nulla cambia, lo schema costa quasi nulla.** Un falso allarme strutturale arriva in meno di una stagione su dieci e dura poco: il capitale è 6,77 contro 6,79. È il compito delle soglie per stagione.
 
-| Scenario | Stagioni con almeno una diagnosi strutturale | Ritardo tipico dopo il cambiamento | Giornate con la puntata ridotta, dopo il cambiamento |
-|---|---|---|---|
-| Il modello ha ragione tutta la stagione | 9% | – | 0,3% |
-| Il vantaggio svanisce | 33% | 24 giornate | 3% |
-| Il vantaggio si rovescia | 77% | 14 giornate | 19% |
-| Nessun vantaggio | 7% | – | 0,2% |
-| Cambia solo il tipo di partite | 48% | 21 giornate | 16% |
+**Quando il vantaggio si rovescia, lo schema lo protegge in parte.** Lo schema se ne accorge in tre stagioni su quattro, con un ritardo tipico di 14 giornate, e chiude a 0,95 invece di 0,81: fa meglio del quarto di Kelly in 64 stagioni su 100 e peggio in 13. Fa meglio anche della puntata fissa di pari esposizione (0,83): qui, a differenza delle stagioni vere, ridurre la puntata nei giorni dell'allarme conta. La protezione è parziale, perché dopo il rovescio l'allarme si spegne e si riaccende, e quando è spento lo schema torna al quarto di Kelly su un modello che ora sbaglia. Una riduzione mantenuta fino a fine stagione arriverebbe a 1,18 (Appendice F).
 
-**Quando il vantaggio si rovescia, lo schema lo protegge in parte.** La diagnosi strutturale arriva in tre stagioni su quattro, con un ritardo tipico di 14 giornate, e il capitale chiude a 0,95 volte quello iniziale contro 0,81 del quarto di Kelly: lo schema fa meglio in 64 stagioni su 100 e peggio in 13. Qui il momento dell'intervento conta, perché la frazione fissa di pari esposizione si ferma a 0,83. La protezione è parziale: dopo il rovescio l'allarme si spegne e si riaccende, e quando è spento lo schema torna al quarto di Kelly su un modello che ora ha un vantaggio negativo. Una riduzione che durasse fino a fine stagione arriverebbe a 1,18 (Appendice F).
+**Quando il vantaggio svanisce, lo schema pareggia** (2,03 contro 2,01): un cambiamento piccolo è riconosciuto solo in una stagione su tre.
 
-**Quando nulla cambia, lo schema costa quasi nulla.** Senza cambiamenti l'allarme dà una diagnosi strutturale nel 9% delle stagioni, e la puntata resta ridotta in meno di una giornata su cento: il capitale è 6,77 contro 6,79 del quarto di Kelly. È il compito delle soglie per stagione.
+**Senza vantaggio, come nei dati veri, lo schema coincide con il quarto di Kelly** (0,53), e il Kelly pieno, che nel mondo in cui il modello ha ragione moltiplica il capitale per 48, in questo scenario lo azzera. È il punto di partenza dello schema: il criterio di Kelly applicato in modo rigido presuppone probabilità vere.
 
-**Quando il vantaggio svanisce, lo schema pareggia** (2,03 contro 2,01): un cambiamento piccolo è riconosciuto in una stagione su tre.
-
-**Il Kelly pieno è il migliore finché il modello ha ragione, e si azzera quando smette di averla.** È il punto di partenza dello schema: il criterio di Kelly applicato in modo rigido presuppone probabilità vere, e senza un controllo sulla loro affidabilità porta alla rovina.
-
-**Senza vantaggio, come nei dati veri, lo schema coincide con il quarto di Kelly** (0,53).
-
-**La diagnosi.** Nello scenario in cui cambia solo il tipo di partite l'allarme scatta, perché nella seconda metà gli errori sono davvero più dispersi, ma l'errore è nei dati: la risposta giusta è ridurre un poco la puntata, non molto. È l'unico scenario in cui la distinzione fra le due diagnosi è messa alla prova. Fra le giornate con allarme dopo il cambiamento, la diagnosi a due termini risponde «strutturale» nel 18% dei casi quando è cambiato solo il tipo di partite, e nell'85–92% quando è cambiata la struttura; la misura è fatta con le soglie per giornata, che producono più allarmi da classificare. La diagnosi distingue, ma non è perfetta: con il solo cambio di composizione sbaglia ancora un allarme su cinque, e lo schema perde un po' di capitale anche in questo scenario (6,41 contro 7,04). Poiché la riduzione dura solo finché dura l'allarme, l'errore costa poco: una versione che dopo il primo errore strutturale restasse ferma fino a fine stagione chiuderebbe a 4,65 (Appendice F). La diagnosi, inoltre, non riconosce i falsi allarmi: un falso allarme non è spiegato dal tipo di partite, e viene chiamato strutturale. Quel controllo spetta alle soglie dell'allarme.
+**Quando cambia solo il tipo di partite, la diagnosi sbaglia una volta su cinque.** Nella seconda metà della stagione capitano le partite su cui il modello sbaglia di più, quindi l'allarme scatta, ma il modello è giusto come prima: la risposta corretta è ridurre la puntata di poco. Fra le giornate con allarme, la diagnosi a due termini risponde «strutturale» nel 18% dei casi in questo scenario, e nell'85–92% quando a cambiare è davvero il modello. Quando sbaglia, lo schema riduce la puntata più del necessario, e chiude a 6,41 contro 7,04. Poiché la riduzione dura solo finché dura l'allarme, l'errore costa poco: una versione che dopo il primo errore strutturale restasse ferma fino a fine stagione chiuderebbe a 4,65 (Appendice F).
 
 ### 5.8 La stagione di KellyBench
 
-La stagione 2023-24 è stata giocata come in KellyBench, partendo da £100 000, la scala in cui il paper riporta i risultati, con il modello calibrato fino al 2020-21. Anche su questa stagione il modello non batte il mercato: lo scarto è −0,043 con le quote Bet365 e −0,051 con quelle di chiusura di Pinnacle. Lo schema è stato costruito dopo che la stagione di test era stata usata: i risultati della versione definitiva sul 2023-24 vengono da un'unica esecuzione, fatta alla fine del lavoro senza cambiare alcun parametro, e sono esplorativi. La tabella riporta il capitale finale nella stagione vera e in 500 stagioni ricostruite.
+La stagione 2023-24 è stata giocata come in KellyBench, partendo da £100 000, la scala in cui il paper riporta i risultati, con il modello calibrato fino al 2020-21. Lo schema è stato costruito dopo che la stagione di test era stata usata: i risultati della versione definitiva sul 2023-24 vengono da un'unica esecuzione, fatta alla fine del lavoro senza cambiare alcun parametro, e sono esplorativi. La tabella riporta il capitale finale nella stagione vera e in 500 stagioni ricostruite.
 
 | Agente | Stagione vera | Mediana di 500 stagioni ricostruite | 90% delle stagioni ricostruite fra | Stagioni ricostruite in cui fa meglio del quarto di Kelly |
 |---|---|---|---|---|
@@ -768,7 +740,21 @@ La stagione 2023-24 è stata giocata come in KellyBench, partendo da £100 000, 
 | Quarto di Kelly, senza supervisore | £24 348 | £24 544 | £8 546 e £71 157 | – |
 | **Schema, versione definitiva** | **£24 348** | **£24 642** | **£8 546 e £73 903** | **16%** |
 
-Nella stagione vera l'allarme non scatta mai, e lo schema chiude con lo stesso capitale del quarto di Kelly: entrambi perdono circa tre quarti del capitale. È coerente con il §5.4: il modello usato nel 2023-24 è ancora giovane, e la dispersione dei suoi errori è la stessa della stagione di calibrazione (0,181 contro 0,186), come nelle altre due stagioni previste con lo stesso modello. Il Kelly pieno, invece, perde quasi tutto, come molti agenti di KellyBench. Sulle stagioni ricostruite lo schema fa meglio del quarto di Kelly nel 16% dei casi e coincide con esso quasi sempre negli altri: una stagione ricostruita ripete alcune giornate e ne salta altre, e a volte crea un periodo di errori anomali che fa scattare l'allarme.
+Nella stagione vera l'allarme non scatta mai, e lo schema chiude con lo stesso capitale del quarto di Kelly: entrambi perdono circa tre quarti del capitale. Il Kelly pieno, invece, perde quasi tutto, come molti agenti di KellyBench. La Figura 5.4 mostra la stagione nello stesso formato della Figura 5.1.
+
+![Le statistiche dell'allarme e il capitale nella stagione 2023-24](figures/tesi_allarmi_2023_24.png)
+
+*Figura 5.4. La stagione 2023-24 di KellyBench. In alto le statistiche dell'ANOVA sulla media e dell'ANOVA sulla dispersione del residuo, divise per la loro soglia per stagione: nessuna delle due si avvicina a 1. In basso il capitale della versione definitiva e del quarto di Kelly senza supervisore, che coincidono per tutta la stagione.*
+
+**Perché l'allarme non scatta.** Il modello non è vicino al mercato: nel 2023-24 lo scarto medio è −0,043 per partita, il doppio della media delle 19 stagioni di valutazione, e la media dei residui nelle ultime 40 partite scende fino a −0,10, quanto nel 2018-19, quando l'allarme scattò alla prima giornata possibile. Eppure la statistica della media arriva al massimo al 44% della soglia, e quella della dispersione al 20%. Le ragioni probabili sono tre.
+
+- **Il riferimento sbagliava già.** L'allarme non misura la distanza dal mercato, ma il peggioramento rispetto alla stagione di calibrazione. Per questo modello la stagione di calibrazione è il 2020-21, giocato quasi tutto a porte chiuse: già allora il modello dava al risultato meno probabilità del mercato (residuo medio −0,021, contro +0,004 del 2010-11), e i suoi errori erano molto dispersi (scarto tipico 0,186, contro 0,135 del 2010-11 e 0,109 del 2000-01). Rispetto a un riferimento che sbagliava già molto, il 2023-24 non sembra peggiore: lo scarto tipico delle ultime 40 partite arriva al massimo a 1,24 volte quello del riferimento, mentre gli allarmi sulla dispersione delle altre stagioni sono scattati intorno a una volta e mezza.
+- **Un riferimento più disperso rende l'allarme più cauto.** L'ANOVA confronta la differenza fra i due periodi con la variabilità degli errori: se gli errori del riferimento variano molto, la stessa differenza pesa meno, e serve un peggioramento più forte per superare la soglia.
+- **Il modello sbaglia meno sulle grandi squadre in trasferta.** La calibrazione del 2020-21 ha stimato un vantaggio del campo di 78 punti invece di 125–128, perché giocare in casa a porte chiuse contava meno. Il disaccordo con il mercato sulle favorite in trasferta, che nelle altre stagioni fa scattare gli allarmi sulla dispersione (§5.4), è quindi più piccolo: 56% contro 73%, invece di 50% contro 73%.
+
+Lo stesso accade nelle due stagioni di valutazione previste con questo modello, il 2021-22 e il 2022-23: il modello è lontano dal mercato, ma l'allarme non scatta mai. È il limite del §5.5 visto dall'altro lato: l'allarme vede un modello che peggiora rispetto a quando è stato stimato, e se la stagione di calibrazione era già insolita, come quella giocata a porte chiuse, un modello lontano dal mercato può sembrare normale. Un riferimento fatto di più stagioni renderebbe l'allarme meno dipendente da una stagione sola (§7.5).
+
+Sulle stagioni ricostruite lo schema fa meglio del quarto di Kelly nel 16% dei casi e coincide con esso quasi sempre negli altri: una stagione ricostruita ripete alcune giornate e ne salta altre, e a volte crea un periodo di errori anomali che fa scattare l'allarme.
 
 Il quarto di Kelly e lo schema chiudono la stagione con circa il 25% del capitale, cioè con una perdita del 75%, molto maggiore dell'11% perso dai migliori agenti di KellyBench. Il confronto in sterline non è però diretto: gli agenti del benchmark scelgono anche quanto puntare e su quante partite, con regole diverse fra loro, e dispongono di più dati. Il punto non è l'entità della perdita, ma la sua causa: con un modello che non batte il mercato, il capitale perso dipende soprattutto da quanto si punta.
 

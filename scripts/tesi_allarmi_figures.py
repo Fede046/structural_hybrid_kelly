@@ -3,6 +3,8 @@
 - thesis/figures/tesi_allarmi_stagioni.png: le 19 stagioni vere giornata per giornata, con la
   puntata della versione definitiva (quarto di Kelly senza allarme, 0.25·κ dopo un errore nei dati,
   0.10 dopo un errore strutturale, finché dura l'allarme) e il capitale finale dei due agenti;
+- thesis/figures/tesi_allarmi_2023_24.png: lo stesso per la stagione 2023-24 di KellyBench, da
+  results/us_c39_test_season_trace.csv;
 - thesis/figures/tesi_allarmi_2018_19.png: la stagione 2018-19, con le statistiche dell'ANOVA sulla media e sulla dispersione divise per la loro soglia e il capitale della
   versione principale e del quarto di Kelly.
 
@@ -25,6 +27,7 @@ RESULTS = REPO_ROOT / "results"
 SEASONS_PNG = FIG_DIR / "tesi_allarmi_stagioni.png"
 DETAIL_PNG = FIG_DIR / "tesi_allarmi_2018_19.png"
 DETAIL_SEASONS = ("2018-19",)
+TEST_PNG = FIG_DIR / "tesi_allarmi_2023_24.png"
 
 SURFACE = "#fcfcfb"
 INK = "#0b0b0b"
@@ -102,11 +105,13 @@ def plot_seasons() -> None:
     plt.close(fig)
 
 
-def plot_detail() -> None:
-    trace = pd.read_csv(RESULTS / "us_c33_main_alarm_trace.csv")
-    fig, axes = plt.subplots(2, len(DETAIL_SEASONS), figsize=(3 + 5 * len(DETAIL_SEASONS), 6.4),
+def plot_detail(trace_csv: str = "us_c33_main_alarm_trace.csv", seasons: tuple[str, ...] = DETAIL_SEASONS,
+                png: Path = DETAIL_PNG) -> None:
+    trace = pd.read_csv(RESULTS / trace_csv)
+    DETAIL = seasons
+    fig, axes = plt.subplots(2, len(DETAIL), figsize=(3 + 5 * len(DETAIL), 6.4),
                              facecolor=SURFACE, sharex=True, squeeze=False, gridspec_kw={"height_ratios": [1, 1]})
-    for col, season in enumerate(DETAIL_SEASONS):
+    for col, season in enumerate(DETAIL):
         d = trace[(trace["season"] == season) & trace["f_mean"].notna()]
         full = trace[trace["season"] == season]
         x = d["matches_before"]
@@ -127,10 +132,10 @@ def plot_detail() -> None:
                     ax.axvspan(s0, s1, color=STOPPED, alpha=0.18, linewidth=0)
         top.set_title(season, color=INK, fontsize=10, loc="left")
         after = np.append(0, (full["matches_before"] + full["n_matches"]).to_numpy())
-        bottom.plot(after, np.append(100, 100 * full["wealth_quarter"]), color=SERIES_KELLY, linewidth=1.4,
-                    label="quarto di Kelly, senza supervisore")
-        bottom.plot(after, np.append(100, 100 * full["wealth_main"]), color=SERIES_SCHEME, linewidth=1.4,
+        bottom.plot(after, np.append(100, 100 * full["wealth_main"]), color=SERIES_SCHEME, linewidth=2.2,
                     label="schema, versione definitiva")
+        bottom.plot(after, np.append(100, 100 * full["wealth_quarter"]), color=SERIES_KELLY, linewidth=1.2,
+                    linestyle=(0, (4, 2)), label="quarto di Kelly, senza supervisore")
         bottom.axhline(100, color=INK_2, linewidth=0.8)
         bottom.set_xlim(0, 380)
         bottom.set_xlabel("Partite giocate nella stagione", color=INK_2, fontsize=9)
@@ -143,10 +148,12 @@ def plot_detail() -> None:
     fig.legend(h1 + h2 + [span], l1 + l2 + [span.get_label()], loc="lower center", ncol=1, frameon=False,
                fontsize=9)
     fig.tight_layout(rect=(0, 0.17, 1, 1))
-    fig.savefig(DETAIL_PNG, dpi=200, facecolor=SURFACE)
+    fig.savefig(png, dpi=200, facecolor=SURFACE)
     plt.close(fig)
 
 
 if __name__ == "__main__":
     plot_seasons()
     plot_detail()
+    if (RESULTS / "us_c39_test_season_trace.csv").exists():
+        plot_detail("us_c39_test_season_trace.csv", ("2023-24",), TEST_PNG)

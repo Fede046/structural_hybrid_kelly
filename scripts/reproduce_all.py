@@ -138,6 +138,7 @@ STEPS: tuple[Step, ...] = (
     Step("elo", "kellybench_2023_24", outputs=(_r("kellybench_2023_24"),), test_set=True),
     Step("elo", "us_c14_test_scheme_seeds", outputs=(_r("us_c14_test_scheme_seeds_summary"),), test_set=True),
     Step("elo", "us_c30_main_kellybench", outputs=(_r("us_c30_main_kellybench_summary"),), test_set=True),
+    Step("elo", "us_c39_test_season_trace", outputs=(_r("us_c39_test_season_trace"),), test_set=True),
     Step("dixon_coles", "us_c9_1_dixon_coles", outputs=(_r("us_c9_1_dixon_coles"),)),
     Step("dixon_coles", "us_c7_2_covariates", DC, outputs=(_r("us_c7_2_covariates_dc"),)),
     Step("dixon_coles", "us_c7_3_module2", DC, outputs=(_r("us_c7_3_module2_dc"), _r("us_c7_3_module2_ci_dc"))),
