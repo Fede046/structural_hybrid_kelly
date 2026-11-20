@@ -587,42 +587,15 @@ Il capitolo risponde alla domanda di KellyBench in tre passi. Il primo è stabil
 
 ### 5.1 Il modello non batte il mercato
 
-Sulle 19 stagioni di valutazione (7 220 partite) il modello Elo assegna all'esito reale, in media, meno probabilità delle quote Bet365 senza margine: lo scarto medio $\hat g$ della (2.4) è −0,022, con intervallo al 95% da −0,030 a −0,015. Contro le quote di chiusura di Pinnacle, più precise, lo scarto è più ampio: −0,032, con intervallo da −0,044 a −0,020. Il risultato non dipende dal metodo usato per togliere il margine, perché con i cinque metodi del §2.1 lo scarto va da −0,021 a −0,022, e non dipende nemmeno dal modello: Dixon-Coles prevede meglio dell'Elo (*log-loss* 0,971 contro 0,980), ma resta sotto il mercato (−0,014). Nessuna stagione ha uno scarto significativamente positivo, e il valore cumulato è negativo alla fine di ogni stagione (Figura 5.1).
+Sulle 19 stagioni di valutazione il modello assegna all'esito reale, in media, meno probabilità del mercato: lo scarto medio $\hat g$ della (2.4) è −0,022 per partita, con intervallo al 95% da −0,030 a −0,015, ed è negativo alla fine di ogni stagione. Il risultato non dipende dal metodo usato per togliere il margine né dal modello: contro le quote di chiusura di Pinnacle lo scarto è più ampio (−0,032), e anche Dixon-Coles, che prevede meglio dell'Elo, resta sotto il mercato (−0,014).
 
-![Scarto cumulato fra modello e mercato, partita per partita](figures/us_c4_2_g_hat.png)
+Il modello perde soprattutto dove il mercato è più sicuro, sulle favorite nette (quota sotto 1,5), e in particolare quando giocano in trasferta. Il 1° settembre 2018 il Liverpool gioca sul campo del Leicester: il mercato gli dà il 68% di probabilità di vincere, il modello il 37%, e vince il Liverpool. Non è un caso isolato: quando una favorita netta gioca in trasferta, il modello le dà in media il 52% di probabilità, il mercato il 72%, e la favorita vince nel 73% dei casi. Il vantaggio del campo del modello, fra 125 e 128 punti Elo con le prime due calibrazioni, è troppo grande per una squadra molto più forte dell'avversaria. Sono le partite che, nei §5.3 e 5.4, fanno scattare gli allarmi.
 
-*Figura 5.1. Lo scarto medio fra modello e mercato, $\hat g$, calcolato sulle prime $t$ partite in ordine cronologico, con i cinque metodi per togliere il margine. A sinistra le quote pre-partita di Bet365 sulle 19 stagioni di valutazione, a destra le quote di chiusura di Pinnacle dal 2012-13. Dopo le prime centinaia di partite la curva resta stabilmente sotto lo zero, e i cinque metodi quasi coincidono.*
-
-Il modello perde di più proprio dove il mercato è più sicuro: nelle partite con una favorita netta (quota sotto 1,5) lo scarto è −0,037. Un esempio rende l'idea. Il 1° settembre 2018 il Liverpool gioca sul campo del Leicester. Bet365 paga la vittoria del Liverpool 1,44: tolto il margine, il mercato le assegna il 68%. Il modello Elo le assegna il 37%, e dà al Leicester il 32% contro il 13% del mercato. Vince il Liverpool, e il residuo della partita è $\delta = \ln(0{,}37/0{,}68) = -0{,}60$: il modello aveva dato al risultato poco più della metà della probabilità che gli dava il mercato.
-
-Non è un caso isolato. La tabella riporta le partite delle 19 stagioni di valutazione con una favorita netta, divise secondo il campo della favorita.
-
-| Favorita netta | Partite | Probabilità della favorita, modello | Probabilità della favorita, mercato | Vittorie della favorita | $\delta$ medio |
-|---|---|---|---|---|---|
-| In casa | 1 237 | 68,5% | 75,5% | 76,7% | −0,024 |
-| In trasferta | 273 | 52,2% | 72,3% | 73,3% | −0,097 |
-| In trasferta, modello calibrato sul 2010-11 | 144 | 49,5% | 73,0% | 75,0% | −0,139 |
-
-Il modello dà quasi sempre alla favorita meno probabilità del mercato, e il mercato è più vicino alla frequenza con cui la favorita vince davvero. Lo scarto è grande soprattutto quando la favorita gioca in trasferta: il modello le dà poco più di una probabilità su due, il mercato quasi tre su quattro. È ciò che succede se il vantaggio del campo del modello, fra 125 e 128 punti Elo in tutte le partite con le prime due calibrazioni, è troppo grande per una squadra molto più forte dell'avversaria. Con il modello calibrato sul 2010-11, negli anni in cui Manchester City e Liverpool dominano il campionato, lo scarto medio su queste partite arriva a −0,139. Con quello calibrato sul 2020-21, che ha un vantaggio del campo di 78 punti, la distanza in trasferta si riduce: 56% contro 73%.
-
-Un controllo con gli esiti rimescolati a caso all'interno di ogni stagione esclude che il risultato sia un artefatto della procedura: lo scarto osservato resta al di sotto di tutti i valori ottenuti con gli esiti rimescolati.
-
-La conseguenza è quella ricavata nel §2.3: chi punta secondo le probabilità del modello perde in media, e una regola di puntata più prudente può soltanto ridurre le perdite. È lo stesso risultato di KellyBench, ottenuto senza modelli linguistici e su 19 stagioni invece che su una.
+Chi punta secondo le probabilità del modello, quindi, perde in media (§2.3). È lo stesso risultato di KellyBench, ottenuto senza modelli linguistici e su 19 stagioni invece che su una.
 
 ### 5.2 Quanto si punta decide quanto si perde
 
-Se il vantaggio non c'è, le perdite non dipendono da quanto è bravo l'agente a prevedere, ma da quanto e quanto spesso punta. La tabella lo mostra con lo stesso modello e le stesse previsioni: cambia soltanto la regola di puntata.
-
-| Agente | Capitale rimasto in una stagione tipica | Scommesse per stagione |
-|---|---|---|
-| Kelly pieno | 0,2% | come il quarto di Kelly, finché ha capitale |
-| Quarto di Kelly | 57% | 333 |
-| Quarto di Kelly, puntando solo sull'esito più probabile | 67% | 179 |
-| Schema, versione definitiva | 58% | 333 |
-
-Il Kelly pieno, che punta la frazione intera indicata dalle stime, lascia in una stagione tipica lo 0,2% del capitale: è il comportamento degli agenti di KellyBench che puntano molto e azzerano il capitale. Il quarto di Kelly, con le stesse scommesse e puntate quattro volte più piccole, ne conserva il 57%. Puntare su meno partite aiuta allo stesso modo: con la regola dell'esito più probabile (§3.2) il lavoratore scommette su circa metà delle partite e conserva il 67%. Lo schema, che riduce la puntata solo nelle giornate con l'allarme, resta vicino al quarto di Kelly (58%).
-
-Con lo stesso modello, quindi, il capitale va dallo 0,2% al 67% secondo come si punta, e nessuna regola chiude in guadagno in una stagione tipica. È la prima parte della risposta: le perdite vengono dall'assenza di vantaggio, e il modo di decidere stabilisce soltanto quanto si perde.
+Se il vantaggio non c'è, a parità di previsioni il capitale dipende soltanto da come si punta. Con lo stesso modello, in una stagione tipica il Kelly pieno lascia lo 0,2% del capitale, come gli agenti di KellyBench che puntano molto e lo azzerano; il quarto di Kelly, con puntate quattro volte più piccole, ne conserva il 57%; puntando solo sull'esito più probabile, cioè su circa metà delle partite, se ne conserva il 67%; lo schema, che riduce la puntata solo nelle giornate con l'allarme, resta al 58%. Nessuna regola chiude in guadagno. È la prima parte della risposta: le perdite vengono dall'assenza di vantaggio, e il modo di decidere stabilisce soltanto quanto si perde.
 
 ### 5.3 Una stagione vista dall'agente: il 2018-19
 
@@ -630,7 +603,7 @@ Per capire che cosa fa lo schema conviene seguirlo in una stagione, scommessa do
 
 ![Le statistiche dell'allarme, i giorni con la puntata ridotta e il capitale nel 2018-19](figures/tesi_allarmi_2018_19.png)
 
-*Figura 5.2. La stagione 2018-19. In alto le statistiche dell'ANOVA sulla media e dell'ANOVA sulla dispersione del residuo, divise per la loro soglia per stagione: l'allarme scatta quando una delle due supera 1. Sono calcolabili dalla 40ª partita in poi. Le fasce colorate sono le giornate con una diagnosi di errore strutturale, in cui lo schema punta 0,10 invece di 0,25. In basso il capitale della versione definitiva e del quarto di Kelly senza supervisore, che coincidono fino al primo allarme.*
+*Figura 5.1. La stagione 2018-19. In alto le statistiche dell'ANOVA sulla media e dell'ANOVA sulla dispersione del residuo, divise per la loro soglia per stagione: l'allarme scatta quando una delle due supera 1. Sono calcolabili dalla 40ª partita in poi. Le fasce colorate sono le giornate con una diagnosi di errore strutturale, in cui lo schema punta 0,10 invece di 0,25. In basso il capitale della versione definitiva e del quarto di Kelly senza supervisore, che coincidono fino al primo allarme.*
 
 **Lo scommettitore.** Nel 2018-19 il lavoratore scommette su 376 partite su 380: quasi sempre trova un esito con valore atteso stimato positivo. In tre scommesse su quattro punta contro la favorita del mercato, e punta in media l'1,9% del capitale. È il comportamento di uno scommettitore convinto che il mercato sopravvaluti le grandi squadre: vede occasioni ovunque una piccola squadra affronti una grande.
 
@@ -652,11 +625,11 @@ Per capire che cosa fa lo schema conviene seguirlo in una stagione, scommessa do
 
 ### 5.4 Dove scattano gli allarmi
 
-La Figura 5.3 riporta le 19 stagioni nello stesso formato: per ogni giornata di decisione, la puntata dello schema e le giornate in cui l'allarme è acceso.
+La Figura 5.2 riporta le 19 stagioni nello stesso formato: per ogni giornata di decisione, la puntata dello schema e le giornate in cui l'allarme è acceso.
 
 ![Allarmi e puntata della versione definitiva nelle 19 stagioni vere](figures/tesi_allarmi_stagioni.png)
 
-*Figura 5.3. Le 19 stagioni vere, giornata per giornata, in funzione delle partite già giocate. In azzurro le giornate senza allarme, in cui lo schema punta il quarto di Kelly; in giallo quelle con un errore nei dati (puntata 0,19); in arancione quelle con un errore strutturale (puntata 0,10). I trattini neri sono le giornate con l'allarme acceso. La linea tratteggiata a 40 partite è la prima giornata in cui il confronto è possibile. A destra il capitale rimasto a fine stagione, con la puntata minima di £0,01, per lo schema e per il quarto di Kelly senza supervisore; il segno indica se lo schema fa meglio (+), peggio (−) o uguale (=).*
+*Figura 5.2. Le 19 stagioni vere, giornata per giornata, in funzione delle partite già giocate. In azzurro le giornate senza allarme, in cui lo schema punta il quarto di Kelly; in giallo quelle con un errore nei dati (puntata 0,19); in arancione quelle con un errore strutturale (puntata 0,10). I trattini neri sono le giornate con l'allarme acceso. La linea tratteggiata a 40 partite è la prima giornata in cui il confronto è possibile. A destra il capitale rimasto a fine stagione, con la puntata minima di £0,01, per lo schema e per il quarto di Kelly senza supervisore; il segno indica se lo schema fa meglio (+), peggio (−) o uguale (=).*
 
 La tabella riporta le 12 stagioni in cui scatta almeno un allarme.
 
@@ -719,11 +692,11 @@ Lo schema dà una diagnosi strutturale in tutte le otto stagioni in cui la dispe
 
 **Le stagioni, non il giorno.** Dentro la stagione il segnale scompare. Riassegnando a caso le giornate con la puntata ridotta all'interno della stessa stagione, una differenza come quella osservata si ottiene nel 13% dei casi, spostando il calendario nel 14%; e a parità di posizione nella stagione non si distingue dal caso ($p = 0{,}17$). Nel 2018-19, per esempio, l'errore atteso è −0,038 sia nelle giornate con la puntata ridotta sia nelle altre: il modello è lontano dal mercato per tutta la stagione, e l'allarme lo vede solo in alcune giornate. Lo schema riconosce in quali stagioni il modello non funziona; il giorno esatto in cui interviene non aggiunge informazione misurabile. Per questo, nel 2018-19, l'aver ridotto la puntata proprio a settembre e ottobre è stato in buona parte fortunato (§5.3).
 
-**Perché quelle stagioni.** Dentro ciascuna calibrazione la dispersione degli errori cresce con gli anni trascorsi dalla calibrazione (Figura 5.4): la correlazione di Spearman fra dispersione ed età del modello, calcolata dentro ogni calibrazione, è 0,71, e una tendenza così netta si ottiene per caso nello 0,2% delle permutazioni. Con il modello calibrato sul 2010-11 la dispersione passa da 0,135 nella stagione di calibrazione a 0,19–0,20 nelle stagioni dal 2017-18 al 2019-20; con quello calibrato sul 2000-01 la crescita c'è, ma è più lenta; con quello calibrato sul 2020-21, ancora giovane, la dispersione resta sotto il riferimento. Le stagioni con le diagnosi strutturali sono quelle in cui la linea della Figura 5.4 si allontana dal riferimento.
+**Perché quelle stagioni.** Dentro ciascuna calibrazione la dispersione degli errori cresce con gli anni trascorsi dalla calibrazione (Figura 5.3): la correlazione di Spearman fra dispersione ed età del modello, calcolata dentro ogni calibrazione, è 0,71, e una tendenza così netta si ottiene per caso nello 0,2% delle permutazioni. Con il modello calibrato sul 2010-11 la dispersione passa da 0,135 nella stagione di calibrazione a 0,19–0,20 nelle stagioni dal 2017-18 al 2019-20; con quello calibrato sul 2000-01 la crescita c'è, ma è più lenta; con quello calibrato sul 2020-21, ancora giovane, la dispersione resta sotto il riferimento. Le stagioni con le diagnosi strutturali sono quelle in cui la linea della Figura 5.3 si allontana dal riferimento.
 
 ![Media e dispersione degli errori del modello rispetto al mercato, stagione per stagione](figures/relatore_invecchiamento.png)
 
-*Figura 5.4. Media (in basso) e dispersione (in alto) del residuo $\delta$, stagione per stagione. Il colore indica la calibrazione usata; il cerchio vuoto è la stagione di calibrazione e la linea tratteggiata il suo valore, cioè il riferimento dello schema. In alto la grandezza che confronta l'ANOVA sulla dispersione: più è alta, peggio è. In basso quella che confronta l'ANOVA sulla media: più è bassa, peggio è.*
+*Figura 5.3. Media (in basso) e dispersione (in alto) del residuo $\delta$, stagione per stagione. Il colore indica la calibrazione usata; il cerchio vuoto è la stagione di calibrazione e la linea tratteggiata il suo valore, cioè il riferimento dello schema. In alto la grandezza che confronta l'ANOVA sulla dispersione: più è alta, peggio è. In basso quella che confronta l'ANOVA sulla media: più è bassa, peggio è.*
 
 Che la distanza dal mercato sia l'invecchiamento del modello è vero solo in parte. Anche un modello ricalibrato ogni anno sulla stagione precedente si allontana dal mercato con il passare degli anni, sulle stesse partite (Appendice F.3): il mercato diventa più preciso e lascia indietro il modello, e l'età dei parametri aggiunge una distanza più piccola. Per lo schema la differenza non cambia la decisione, perché in entrambi i casi il modello non descrive più il campionato come nella stagione su cui è stato stimato; cambia invece il rimedio, perché ricalibrare il modello non basta a raggiungere il mercato.
 
