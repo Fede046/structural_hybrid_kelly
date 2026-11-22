@@ -13,7 +13,11 @@ thesis/TESI.md -> thesis/latex/TESI_unibo.tex -> thesis/latex/TESI_unibo.pdf
 - Formule, figure con didascalia numerata, tabelle (booktabs, tabularx), elenchi, codice.
 
 Uso, dalla radice del repository:
-    .venv/Scripts/python.exe scripts/build_tesi_latex.py [--tectonic PERCORSO] [--tex-only]
+    .venv/Scripts/python.exe scripts/build_tesi_latex.py [--source thesis/ALTRA.md] [--tectonic PERCORSO] [--tex-only]
+
+Con --source un altro file Markdown diventa thesis/latex/<nome>_unibo.tex e .pdf; se esiste
+thesis/latex/frontespizio_<nome senza "tesi_">.tex il frontespizio è quello (TESI_kellybench.md usa
+frontespizio_kellybench.tex).
 """
 from __future__ import annotations
 
@@ -51,7 +55,7 @@ PREAMBLE = r"""\documentclass[11pt,a4paper,oneside]{report}
 \usepackage[a4paper,top=3cm,bottom=3cm,left=3cm,right=3cm]{geometry}
 \usepackage{amsmath,amssymb}
 \usepackage{graphicx}
-\usepackage{booktabs,tabularx,array}
+\usepackage{booktabs,tabularx,array,xltabular}
 \usepackage{xcolor}
 \usepackage{caption}
 \usepackage[hidelinks]{hyperref}
@@ -178,9 +182,10 @@ def column_spec(rows: list[list[str]]) -> str:
 
 def table(rows: list[list[str]], cited: list[str]) -> str:
     body = [" & ".join(inline(c, cited) for c in r) + r" \\" for r in rows]
-    return "\n".join([r"\begin{center}\small", r"\begin{tabularx}{\textwidth}{" + column_spec(rows) + "}",
-                      r"\toprule", body[0], r"\midrule", *body[1:], r"\bottomrule", r"\end{tabularx}",
-                      r"\end{center}"])
+    # xltabular (tabularx su longtable): una tabella più alta di una pagina va a capo, con l'intestazione ripetuta
+    return "\n".join([r"\begingroup\small", r"\begin{xltabular}{\textwidth}{" + column_spec(rows) + "}",
+                      r"\toprule", body[0], r"\midrule", r"\endhead", *body[1:], r"\bottomrule", r"\end{xltabular}",
+                      r"\endgroup"])
 
 
 # ---------- blocchi ----------
@@ -294,12 +299,17 @@ def main() -> None:
     ap = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     ap.add_argument("--tectonic", default=str(DEFAULT_TECTONIC))
     ap.add_argument("--tex-only", action="store_true")
+    ap.add_argument("--source", default=str(SOURCE))
     args = ap.parse_args()
+    source = Path(args.source)
+    tex = TEX if source.resolve() == SOURCE.resolve() else OUT_DIR / f"{source.stem}_unibo.tex"
+    front_name = "frontespizio_" + source.stem.lower().replace("tesi_", "")
+    front = front_name if (OUT_DIR / f"{front_name}.tex").exists() else "frontespizio"
 
     OUT_DIR.mkdir(parents=True, exist_ok=True)
     if not FRONT.exists():
         FRONT.write_text(FRONT_TEMPLATE, encoding="utf-8")
-    body, cited = convert(SOURCE.read_text(encoding="utf-8"))
+    body, cited = convert(source.read_text(encoding="utf-8"))
     bib = parse_bib(BIB)
     missing = [k for k in cited if k not in bib]
     if missing:
@@ -310,15 +320,16 @@ def main() -> None:
     if (OUT_DIR / "ringraziamenti.tex").exists():
         body += ("\n\n\\chapter*{Ringraziamenti}\n\\addcontentsline{toc}{chapter}{Ringraziamenti}\n"
                  "\\input{ringraziamenti}")
-    TEX.write_text(PREAMBLE + body + "\n\n\\end{document}\n", encoding="utf-8")
-    print("TEX:", TEX)
+    preamble = PREAMBLE.replace("\\input{frontespizio}", "\\input{" + front + "}")
+    tex.write_text(preamble + body + "\n\n\\end{document}\n", encoding="utf-8")
+    print("TEX:", tex)
     if args.tex_only:
         return
     tectonic = args.tectonic if Path(args.tectonic).exists() else shutil.which("tectonic")
     if not tectonic:
         raise SystemExit("Tectonic non trovato: passare --tectonic PERCORSO")
-    subprocess.run([str(tectonic), "--keep-logs", TEX.name], cwd=OUT_DIR, check=True)
-    print("PDF:", TEX.with_suffix(".pdf"))
+    subprocess.run([str(tectonic), "--keep-logs", tex.name], cwd=OUT_DIR, check=True)
+    print("PDF:", tex.with_suffix(".pdf"))
 
 
 if __name__ == "__main__":
