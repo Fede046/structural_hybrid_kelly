@@ -55,7 +55,7 @@ PREAMBLE = r"""\documentclass[11pt,a4paper,oneside]{report}
 \usepackage[a4paper,top=3cm,bottom=3cm,left=3cm,right=3cm]{geometry}
 \usepackage{amsmath,amssymb}
 \usepackage{graphicx}
-\usepackage{booktabs,tabularx,array}
+\usepackage{booktabs,tabularx,array,xltabular}
 \usepackage{xcolor}
 \usepackage{caption}
 \usepackage[hidelinks]{hyperref}
@@ -182,9 +182,10 @@ def column_spec(rows: list[list[str]]) -> str:
 
 def table(rows: list[list[str]], cited: list[str]) -> str:
     body = [" & ".join(inline(c, cited) for c in r) + r" \\" for r in rows]
-    return "\n".join([r"\begin{center}\small", r"\begin{tabularx}{\textwidth}{" + column_spec(rows) + "}",
-                      r"\toprule", body[0], r"\midrule", *body[1:], r"\bottomrule", r"\end{tabularx}",
-                      r"\end{center}"])
+    # xltabular (tabularx su longtable): una tabella più alta di una pagina va a capo, con l'intestazione ripetuta
+    return "\n".join([r"\begingroup\small", r"\begin{xltabular}{\textwidth}{" + column_spec(rows) + "}",
+                      r"\toprule", body[0], r"\midrule", r"\endhead", *body[1:], r"\bottomrule", r"\end{xltabular}",
+                      r"\endgroup"])
 
 
 # ---------- blocchi ----------
