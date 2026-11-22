@@ -29,4 +29,7 @@ markers = [
     "slow: marks tests as slow (deselect with '-m \"not slow\"')",
 ]
 addopts = "-m 'not slow'"
+# solo test_*.py: gli script e i moduli che finiscono in _test.py (us_c41_test, full_kelly_test,
+# us_c5_2_daily_z_test) non sono test, e importarli imposta variabili d'ambiente come SHK_ELO_ENTRY
+python_files = ["test_*.py"]
 
