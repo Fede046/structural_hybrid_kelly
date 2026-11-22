@@ -1,5 +1,13 @@
-"""Modulo per le previsioni Elo walk-forward con regola per le neopromosse."""
+"""Modulo per le previsioni Elo walk-forward con regola per le neopromosse.
 
+La regola di ingresso delle squadre mai viste è "relegated_mean" (media delle tre retrocesse della
+stagione precedente, il default di tutto il progetto) oppure, con la variabile d'ambiente
+SHK_ELO_ENTRY=plain, "plain": la squadra entra dal rating iniziale, come in un Elo senza regole per le
+neopromosse (nuova tesi, thesis/TESI_kellybench.md). La variabile si legge all'import, quindi vale anche
+nei processi figli che la ereditano.
+"""
+
+import os
 from collections.abc import Collection
 from itertools import groupby
 import re
@@ -9,6 +17,12 @@ import pandas as pd
 
 from shk.data.walkforward import assert_no_leakage, walkforward_split
 from shk.model.elo import davidson_probabilities, elo_delta, elo_update
+
+ENTRY_RELEGATED_MEAN: Final[str] = "relegated_mean"
+ENTRY_PLAIN: Final[str] = "plain"
+ENTRY_RULE: Final[str] = os.environ.get("SHK_ELO_ENTRY", ENTRY_RELEGATED_MEAN)
+if ENTRY_RULE not in (ENTRY_RELEGATED_MEAN, ENTRY_PLAIN):
+    raise ValueError(f"SHK_ELO_ENTRY must be {ENTRY_RELEGATED_MEAN!r} or {ENTRY_PLAIN!r}, got {ENTRY_RULE!r}")
 
 SEASON_REGEX: Final[re.Pattern] = re.compile(r"^(\d{4})-(\d{2})$")
 _CALC_COLS: Final[list[str]] = [
@@ -297,8 +311,13 @@ class _EloTracker:
                 self.current_ratings[team] = self.last_active_ratings[team]
                 status = "returning"
             else:
-                # Mai vista prima: eredita la media delle 3 ultime di s - 1
-                self.current_ratings[team] = self.r_new_current_season
+                # Mai vista prima: eredita la media delle 3 ultime di s - 1, oppure, con la variabile
+                # d'ambiente SHK_ELO_ENTRY=plain (nuova tesi, 2026-11-21), entra dal rating iniziale come
+                # in un Elo senza regole per le neopromosse
+                if ENTRY_RULE == ENTRY_PLAIN:
+                    self.current_ratings[team] = self.initial_rating
+                else:
+                    self.current_ratings[team] = self.r_new_current_season
                 status = "new"
 
         self.team_season_status[(self.current_season, team)] = status

@@ -1,0 +1,2 @@
+k,h,nu,c,n_reference,reference_first,reference_last,window,block_length,mean_threshold,dispersion_threshold,unexplained_mean_threshold,unexplained_dispersion_threshold,reference_median,reference_mean,reference_dispersion,lambda_free,lambda_data,lambda_structural,seed
+23.957702860633056,94.46210362653098,0.7482614350228998,0.24851258581235697,7980,2002-03,2022-23,40,1,9.809928234432448,13.247456531166952,0.05182137325414895,0.03926290000153466,-0.03665319680256032,-0.01473981934481175,0.11906755216050736,1.0,0.75,0.4,20261121
