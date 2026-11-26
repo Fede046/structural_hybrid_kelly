@@ -86,7 +86,7 @@ def plot_aging(stats: pd.DataFrame) -> None:
     axes[0].set_ylim(0.09, 0.222)
     axes[1].set_xticks(range(len(x)))
     axes[1].set_xticklabels(list(x), rotation=60, fontsize=8)
-    fig.suptitle("Gli errori del modello rispetto al mercato crescono man mano che il modello invecchia",
+    fig.suptitle("Gli errori del modello rispetto al mercato, stagione per stagione",
                  color=INK, fontsize=12, x=0.02, ha="left")
     fig.text(0.02, 0.915, "Cerchio vuoto: stagione di calibrazione. Linea tratteggiata: il suo valore, "
              "che è il riferimento del confronto con la stagione di calibrazione.", color=INK_2, fontsize=9)

@@ -33,8 +33,8 @@ KELLY, EQUAL, RECENT = "#2a78d6", "#7a4fb5", "#eb6834"
 STRUCTURAL, DATA_ERROR = "#c8443b", "#e0b330"  # diagnosi del ricalibratore: errore strutturale, errore nei dati
 MONTHS = ("gen", "feb", "mar", "apr", "mag", "giu", "lug", "ago", "set", "ott", "nov", "dic")
 AGENTS = (("kelly", "Kelly pieno senza ricalibrazione", KELLY),
-          ("uguale", "ricalibrazione, ristima a pesi uguali", EQUAL),
-          ("recente", "ricalibrazione, ristima recente", RECENT))
+          ("uguale", "ricalibrazione, rivalutazione a pesi uguali", EQUAL),
+          ("recente", "ricalibrazione, rivalutazione recente", RECENT))
 
 
 def _style(ax, grid="y"):
@@ -122,11 +122,11 @@ def season_detail(season: str, png: Path) -> None:
     bottom.set_xlim(start, end)
     bottom.xaxis.set_major_locator(mdates.MonthLocator())
     bottom.xaxis.set_major_formatter(plt.FuncFormatter(lambda v, _: MONTHS[mdates.num2date(v).month - 1]))
-    bottom.set_xlabel("Data delle partite (le linee punteggiate sono le ristime)", color=INK_2, fontsize=9)
+    bottom.set_xlabel("Data delle partite (le linee punteggiate sono le rivalutazioni)", color=INK_2, fontsize=9)
     h, l = bottom.get_legend_handles_labels()
     h += [Patch(color=STRUCTURAL, alpha=0.3, lw=0), Patch(color=DATA_ERROR, alpha=0.3, lw=0),
           Line2D([], [], color=INK_2, lw=0.9, ls=":")]
-    l += ["allarme con errore strutturale", "allarme con errore nei dati", "ristima del modello"]
+    l += ["allarme con errore strutturale", "allarme con errore nei dati", "rivalutazione del modello"]
     fig.legend(h, l, loc="lower center", ncol=3, frameon=False, fontsize=8.5)
     fig.tight_layout(rect=(0, 0.075, 1, 1))
     fig.savefig(png, dpi=200, facecolor=SURFACE)
@@ -280,7 +280,7 @@ def agent_detail(season: str, agent: dict, days: pd.DatetimeIndex, png: Path) ->
                Patch(color=STRUCTURAL, alpha=0.35, lw=0), Patch(color=DATA_ERROR, alpha=0.35, lw=0),
                Line2D([], [], color=INK, lw=0.9, ls=":"), Line2D([], [], color=STRUCTURAL, lw=1.0, ls=(0, (5, 3)))]
     names = ["statistica della media / soglia", "statistica della dispersione / soglia",
-             "allarme con errore strutturale", "allarme con errore nei dati", "ristima del modello",
+             "allarme con errore strutturale", "allarme con errore nei dati", "rivalutazione del modello",
              "soglia della rovina"]
     fig.legend(handles, names, loc="lower center", ncol=3, frameon=False, fontsize=8.5)
     fig.tight_layout(rect=(0, 0.06, 1, 1))
@@ -291,8 +291,9 @@ def agent_detail(season: str, agent: dict, days: pd.DatetimeIndex, png: Path) ->
 def agents_compared(season: str, days: pd.DatetimeIndex, agents: list[dict], png: Path) -> None:
     """I tre agenti a confronto: linea del tempo degli allarmi di ciascuno, con le ristime, e capitale."""
     start, end = days[0] - pd.Timedelta(days=1), days[-1] + pd.Timedelta(days=3)
-    fig, (line, cap) = plt.subplots(2, 1, figsize=(9, 7.5), sharex=True, facecolor=SURFACE,
-                                    gridspec_kw={"height_ratios": [0.9, 2]})
+    # stesse proporzioni delle figure di un solo agente, così occupa tutta la pagina
+    fig, (line, cap) = plt.subplots(2, 1, figsize=(9, 11), sharex=True, facecolor=SURFACE,
+                                    gridspec_kw={"height_ratios": [1, 2.6]})
     _style(line, grid="")
     _style(cap)
     for ax in (line, cap):
@@ -308,13 +309,13 @@ def agents_compared(season: str, days: pd.DatetimeIndex, agents: list[dict], png
         for d in ag["refit_days"]:
             line.plot(d, row + 0.42, marker="v", color=INK, ms=6, zorder=3)
         n_alarm, n_refit = len(spans), len(ag["refit_days"])
-        line.text(end, row, f"  {n_alarm} giornate" + (f", {n_refit} ristime" if ag["key"] != "kelly" else ""),
+        line.text(end, row, f"  {n_alarm} giornate" + (f", {n_refit} rivalutazioni" if ag["key"] != "kelly" else ""),
                   va="center", ha="left", fontsize=8, color=INK_2)
     line.set_yticks([2, 1, 0])
-    line.set_yticklabels(["Kelly pieno", "pesi uguali", "ristima recente"], fontsize=8.5)
+    line.set_yticklabels(["Kelly pieno", "pesi uguali", "rivalutazione recente"], fontsize=8.5)
     line.set_ylim(-0.7, 2.8)
     line.tick_params(axis="y", length=0)
-    line.set_title(f"{season}: i tre agenti a confronto. Giornate di allarme (barre) e ristime (▼)",
+    line.set_title(f"{season}: i tre agenti a confronto. Giornate di allarme (barre) e rivalutazioni (▼)",
                    color=INK, fontsize=10, loc="left")
     lo = min(min(float(np.min(ag["wealth"])) for ag in agents), RUIN) / 3
     hi = max(max(float(np.max(ag["wealth"])) for ag in agents), 100) * 2
@@ -331,9 +332,9 @@ def agents_compared(season: str, days: pd.DatetimeIndex, agents: list[dict], png
     _month_axis(cap, start, end)
     h, l = cap.get_legend_handles_labels()
     h.append(Line2D([], [], color=INK_2, lw=0.9, ls=":"))
-    l.append("ristima (nel colore dell'agente)")
+    l.append("rivalutazione (nel colore dell'agente)")
     fig.legend(h, l, loc="lower center", ncol=2, frameon=False, fontsize=8.5)
-    fig.tight_layout(rect=(0, 0.07, 1, 1))
+    fig.tight_layout(rect=(0, 0.05, 1, 1))
     fig.savefig(png, dpi=200, facecolor=SURFACE)
     plt.close(fig)
 
@@ -348,8 +349,8 @@ def season_agents(season: str) -> None:
 
 def population(png: Path) -> None:
     sh = pd.read_csv(RES / "us_c43_population_shares.csv")
-    labels = {"kelly_pieno": ("Kelly pieno", KELLY), "ristima_uguale": ("Ristima a pesi uguali", EQUAL),
-              "ristima_recente": ("Ristima recente", RECENT), "cassa": ("Cassa", "#008300")}
+    labels = {"kelly_pieno": ("Kelly pieno", KELLY), "ristima_uguale": ("Rivalutazione a pesi uguali", EQUAL),
+              "ristima_recente": ("Rivalutazione recente", RECENT), "cassa": ("Cassa", "#008300")}
     fig, axes = plt.subplots(1, 2, figsize=(12, 5.2), sharey=True, facecolor=SURFACE)
     titles = {"generazioni_solo_kelly": "I tre agenti che puntano il Kelly pieno",
               "generazioni_cassa": "Con la cassa"}

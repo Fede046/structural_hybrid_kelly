@@ -39,13 +39,13 @@ box(2, 34, 22, 18, "Mercato e dati", "quote Bet365\nrisultati passati\n(solo inf
 box(32, 34, 28, 18, "1. Lavoratore", "modello Elo-Davidson\nstimato sulle stagioni passate\nesito con valore atteso più alto\nfrazione di Kelly pieno f", BLUE)
 box(70, 34, 36, 18, "La puntata", "puntata = f · capitale\nKelly pieno, sempre\n(la ricalibrazione cambia\nil modello, non la puntata)", GREY)
 box(32, 3, 28, 22, "2. Supervisore", "residuo δ = ln p̂(esito) − ln q(esito)\nultime 40 partite contro\ntutte le stagioni passate\nANOVA sulla media\nANOVA sulla dispersione", ORANGE)
-box(70, 3, 36, 22, "3. Ricalibratore", "solo se c'è allarme\nBlinder-Oaxaca a due termini:\nerrore nei dati o strutturale\nse strutturale: ristima K, h, ν\n(pesi uguali o recenti)", GREEN)
+box(70, 3, 36, 22, "3. Ricalibratore", "solo se c'è allarme\nBlinder-Oaxaca a due termini:\nerrore nei dati o strutturale\nse strutturale: rivaluta K, h, ν\n(pesi uguali o recenti)", GREEN)
 
 arrow((24.8, 43), (31.2, 43), "quote, calendario")
 arrow((60.8, 43), (69.2, 43), "p̂, f")
 arrow((46, 33.2), (46, 25.8), "esito osservato\ndopo la partita", dx=-9.5, dy=-2.8)
 arrow((60.8, 14), (69.2, 14), "allarme")
-arrow((70, 25.6), (60.6, 33.4), "modello ristimato", dx=-1.0, dy=-1.6)
+arrow((70, 25.6), (60.6, 33.4), "modello rivalutato", dx=-1.0, dy=-1.6)
 
 fig.tight_layout()
 fig.savefig(out, dpi=200)

@@ -6,7 +6,8 @@
 - thesis/figures/tesi_allarmi_2023_24.png: lo stesso per la stagione 2023-24 di KellyBench, da
   results/us_c39_test_season_trace.csv;
 - thesis/figures/tesi_allarmi_2018_19.png: la stagione 2018-19, con le statistiche dell'ANOVA sulla media e sulla dispersione divise per la loro soglia e il capitale della
-  versione principale e del quarto di Kelly.
+  versione principale e del quarto di Kelly; l'asse orizzontale è la data delle partite, come nel
+  racconto della stagione nel testo (§5.3).
 
 Legge results/us_c33_main_alarm_trace.csv e results/us_c33_main_alarm_seasons.csv.
 """
@@ -20,6 +21,7 @@ import numpy as np
 import pandas as pd
 from matplotlib.patches import Patch
 from matplotlib.lines import Line2D
+import matplotlib.dates as mdates
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
 FIG_DIR = REPO_ROOT / "thesis" / "figures"
@@ -41,6 +43,7 @@ STOPPED = "#eb6834"
 ALARM = "#0b0b0b"
 MEAN_LINE = "#7a4fb5"
 DISP_LINE = "#1f9e89"
+MONTHS_IT = ("gen", "feb", "mar", "apr", "mag", "giu", "lug", "ago", "set", "ott", "nov", "dic")
 
 
 def _style(ax: plt.Axes, grid_axis: str = "y") -> None:
@@ -114,7 +117,9 @@ def plot_detail(trace_csv: str = "us_c33_main_alarm_trace.csv", seasons: tuple[s
     for col, season in enumerate(DETAIL):
         d = trace[(trace["season"] == season) & trace["f_mean"].notna()]
         full = trace[trace["season"] == season]
-        x = d["matches_before"]
+        x = pd.to_datetime(d["date"])
+        dates = pd.to_datetime(full["date"]).reset_index(drop=True)
+        season_end = dates.iloc[-1] + pd.Timedelta(days=3)
         top, bottom = axes[0, col], axes[1, col]
         _style(top)
         _style(bottom)
@@ -123,22 +128,23 @@ def plot_detail(trace_csv: str = "us_c33_main_alarm_trace.csv", seasons: tuple[s
         top.plot(x, d["f_dispersion"] / d["f_dispersion_threshold"], color=DISP_LINE, linewidth=1.3,
                  label="ANOVA sulla dispersione del residuo, divisa per la soglia")
         top.axhline(1.0, color=INK, linewidth=1, linestyle="--")
-        top.text(380, 1.03, "soglia", color=INK, fontsize=8, ha="right", va="bottom")
-        starts = full["matches_before"].to_numpy(float)
-        ends = np.append(starts[1:], 380.0)
-        for s0, s1, diag in zip(starts, ends, full["diagnosis"]):
+        top.text(season_end, 1.03, "soglia", color=INK, fontsize=8, ha="right", va="bottom")
+        ends = list(dates.iloc[1:]) + [season_end]
+        for s0, s1, diag in zip(dates, ends, full["diagnosis"]):
             if diag == "structural":
                 for ax in (top, bottom):
                     ax.axvspan(s0, s1, color=STOPPED, alpha=0.18, linewidth=0)
         top.set_title(season, color=INK, fontsize=10, loc="left")
-        after = np.append(0, (full["matches_before"] + full["n_matches"]).to_numpy())
+        after = [dates.iloc[0] - pd.Timedelta(days=1)] + list(dates)
         bottom.plot(after, np.append(100, 100 * full["wealth_main"]), color=SERIES_SCHEME, linewidth=2.2,
                     label="schema, versione definitiva")
         bottom.plot(after, np.append(100, 100 * full["wealth_quarter"]), color=SERIES_KELLY, linewidth=1.2,
                     linestyle=(0, (4, 2)), label="quarto di Kelly, senza supervisore")
         bottom.axhline(100, color=INK_2, linewidth=0.8)
-        bottom.set_xlim(0, 380)
-        bottom.set_xlabel("Partite giocate nella stagione", color=INK_2, fontsize=9)
+        bottom.set_xlim(after[0], season_end)
+        bottom.xaxis.set_major_locator(mdates.MonthLocator())
+        bottom.xaxis.set_major_formatter(plt.FuncFormatter(lambda v, _: MONTHS_IT[mdates.num2date(v).month - 1]))
+        bottom.set_xlabel("Data delle partite", color=INK_2, fontsize=9)
         if col == 0:
             top.set_ylabel("Statistica / soglia", color=INK_2, fontsize=9)
             bottom.set_ylabel("Capitale (%)", color=INK_2, fontsize=9)
